@@ -1,0 +1,175 @@
+## CMake specification for src directory
+
+set(CONFIG_SOURCES config.h)
+
+set(ISOSTUFFER_SOURCES
+    isostuffer/tables.h            isostuffer/IsoStuffer.hpp
+    isostuffer/OctTree.h           isostuffer/OctTree.cpp
+    isostuffer/DistValProc.h       isostuffer/DistValProc.cpp)
+
+# utils/
+set(UTILS_SRC
+    utils/macros.h      utils/math.hpp
+    utils/nano_timer.h  utils/nano_timer.c)
+
+# linearalgebra
+set(LINEAR_SRC
+    linearalgebra/eig3.h          linearalgebra/eig3.cpp
+    linearalgebra/Quaternion.hpp  linearalgebra/Quaternion.cpp
+    linearalgebra/mat4inv.cpp)
+
+set(GENERIC_SRC
+    generic/precision_type.cpp)
+
+set(LOGGING_SRC
+    logging/logging.cpp)
+
+set(DEFORMABLE_SRC
+    deformable/linear.cpp         deformable/stvk.cpp
+    deformable/StVKMesh.cpp)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${Boost_INCLUDE_DIR}
+    ${MKL_INCLUDE_DIR})
+link_directories(${Boost_LIBRARY_DIRS})
+
+# =============================================================================
+#   Isostuffer GUI
+# =============================================================================
+if ( BUILD_ISOSTUFFER_GUI )
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    include_directories(
+        ${GLUT_INCLUDE_DIR}
+        ${OPENGL_INCLUDE_DIR}
+        ${QGLViewer_INCLUDE_DIR})
+
+    # setup the qrc files
+    set(UI_QRC_FILES ui/images.qrc)
+    QT4_ADD_RESOURCES(UI_QRC_SRCS ${UI_QRC_FILES})
+
+    # headers to be moc-ified
+    set(UI_MOC_HEADERS 
+        ui/IsoStufferFrame.h    ui/IsoStufferCanvas.h
+        ui/ParamsDialog.h)
+    # the ui files
+    set(UI_UI_FILES ui/IsoStufferFrame.ui ui/Params.ui)
+
+    # Modification made here to fix compiler error with Boost 1.48.
+    # Original version of this command is:
+    #       QT4_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS})
+    # -Jeff Chadwick
+    QT4_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS} 
+                 OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+    QT4_WRAP_UI(UI_UI_SRCS ${UI_UI_FILES})
+
+    set(GUIAPP_SRCS tools/isostuffer/GuiMain.cpp
+        ui/IsoStufferFrame.h    ui/IsoStufferFrame.cpp
+        io/TglMeshReader.hpp    io/TglMeshReader.cpp
+        ui/IsoStufferCanvas.h   ui/IsoStufferCanvas.cpp
+        ${UI_UI_SRCS} ${UI_MOC_SRCS} ${UI_QRC_SRCS} )
+    
+    # =========================================================================
+    # set for the final executable for isostuffer
+    add_executable(isostuffer-gui
+        ${CONFIG_SOURCES}       ${GUIAPP_SRCS}          ${ISOSTUFFER_SOURCES}
+        ${UTILS_SRC}            ${LINEAR_SRC}           ${GENERIC_SRC})
+
+    target_link_libraries(isostuffer-gui
+        ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
+        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt)
+
+    set_target_properties(isostuffer-gui PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+endif ( BUILD_ISOSTUFFER_GUI ) 
+
+
+# =============================================================================
+#   Command-line isostuffer
+# =============================================================================
+if ( BUILD_ISOSTUFFER )
+  add_executable(isostuffer
+      io/TglMeshReader.hpp    io/TglMeshReader.cpp
+      tools/isostuffer/main.cpp
+      ${CONFIG_SOURCES}           ${ISOSTUFFER_SOURCES}       ${UTILS_SRC}
+      ${LINEAR_SRC}               ${GENERIC_SRC})
+
+  target_link_libraries(isostuffer ${ICC_LIBS}        boost_program_options
+                        rt)
+
+  set_target_properties(isostuffer PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+endif ( BUILD_ISOSTUFFER )
+
+# =============================================================================
+#   Tetmesh viewer
+# =============================================================================
+if ( BUILD_TETVIEWER )
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+    include_directories(
+        ${GLUT_INCLUDE_DIR}
+        ${OPENGL_INCLUDE_DIR}
+        ${QGLViewer_INCLUDE_DIR}
+        ${Boost_INCLUDE_DIR})
+    
+    # =================== TETVIEWER ==================
+    # the qrc files
+    set(TETVIEWER_QRC_FILES tools/images.qrc)
+    QT4_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
+
+    QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer.ui)
+    QT4_WRAP_CPP(TETVIEWER_MOC_SRC 
+            tools/TetViewerFrame.h tools/TetViewerCanvas.h)
+
+    add_executable(tetviewer
+        tools/TetViewerFrame.h      tools/TetViewerFrame.cpp    
+        tools/TetViewerCanvas.h     tools/TetViewerCanvas.cpp
+        generic/precision_type.hpp  generic/precision_type.cpp
+        ${TETVIEWER_QRC_SRCS}
+        ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC})
+    target_link_libraries(tetviewer
+        ${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
+        ${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
+endif ( BUILD_TETVIEWER )
+
+# =============================================================================
+#   Elasticity solver (builds mass and stiffness matrices)
+# =============================================================================
+if ( BUILD_ELASTICITY_SOLVER )
+    link_directories(${MKL_LIBRARY_DIR})
+
+    add_executable(elasticity_solver
+        tools/elasticity/elasticity_solver.cpp
+        ${LOGGING_SRC}        ${UTILS_SRC}
+        ${DEFORMABLE_SRC}     ${LINEAR_SRC})
+    target_link_libraries(elasticity_solver
+        ${MKL_LIBS}           boost_program_options
+        rt)
+endif ( BUILD_ELASTICITY_SOLVER )
+
+# =============================================================================
+#   Modal eigensolver
+# =============================================================================
+if ( BUILD_EIGENSOLVER )
+    include_directories(
+        ${ARPACK_INCLUDE_DIR})
+
+    link_directories(${MKL_LIBRARY_DIR})
+
+    add_executable(eigensolver
+        tools/eigensolver/eigensolver.cpp
+        ${LOGGING_SRC}        ${UTILS_SRC})
+    target_link_libraries(eigensolver
+        ${SUPERLU_LIBRARIES}
+        ${ARPACK_LIBRARY}     ${ARPACKpp_LIBRARY}
+        ${MKL_LIBS}           boost_program_options
+        rt)
+endif ( BUILD_EIGENSOLVER )
