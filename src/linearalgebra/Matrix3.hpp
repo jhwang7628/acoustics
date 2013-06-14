@@ -20,6 +20,8 @@
 #include <iostream>
 #include <assert.h>
 
+#include <stdlib.h>
+
 #include "Vector3.hpp"
 #include "geometry/Point3.hpp"
 #include "utils/math.hpp"

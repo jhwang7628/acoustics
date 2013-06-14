@@ -136,8 +136,10 @@ if ( BUILD_TETVIEWER )
         ${TETVIEWER_QRC_SRCS}
         ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC})
     target_link_libraries(tetviewer
-        ${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
-        ${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
+        #${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
+        #${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
+        ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
+        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt)
 endif ( BUILD_TETVIEWER )
 
 # =============================================================================
