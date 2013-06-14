@@ -35,11 +35,14 @@ static void mass_mat(const FixVtxTetMesh<T>* pmesh, PardisoMatrix<T>& M)
             if ( pmesh->is_fixed_vertex(idx[tetid][n2id]) ) continue;
             int colId = (idx[tetid][n2id] - numFixedVtx) * 3;
 
-            for(size_t dir = 0;dir < 3;++ dir)              // x,y,z component
+            for(size_t dir = 0;dir < 3;++ dir) {            // x,y,z component 
                 M.set_nonzero(rowId+dir, colId+dir);
+            }
         }
     }
     M.generate_pattern();
+
+    printf( "Generated mass matrix with %d entries\n", M.num_nonzeros() );
 
     // construct the mass matrix
     M.zeros();

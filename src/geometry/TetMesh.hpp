@@ -304,9 +304,10 @@ TetMesh<T>::TetMesh(const TetMesh<T>& rhs)
         add_vertex_unsafe(rhs.m_vertices[i], rhs.m_restPos[i]);
 #endif /* DIFF_DEFINE */
 
-    for(size_t i = 0;i < rhs.m_tets.size();++ i)
+    for(size_t i = 0;i < rhs.m_tets.size();++ i) {
         add_tet(rhs.m_tetIdx[i][0], rhs.m_tetIdx[i][1], 
                 rhs.m_tetIdx[i][2], rhs.m_tetIdx[i][3]);
+    }
 
 #ifdef WITH_DEFORMABLE_TET
     //// initialize it

@@ -13,9 +13,12 @@
 
 #include <config.h>
 
-#include <deformable/StVKMesh.h>
+#include <deformable/fem.hpp>
+#include <deformable/stvk.h>
 
 #include <geometry/FixVtxTetMesh.hpp>
+
+#include <linearalgebra/PardisoMatrix.hpp>
 
 #include <io/MatrixIO.hpp>
 #include <io/TetMeshReader.hpp>
@@ -29,22 +32,51 @@ int main(int argc, char** argv)
     if ( argc < 4 ) {
         cerr << "Usage: " << argv[ 0 ]
              << " <tet mesh file>"
-                " <Lame's first parameter>"
+                " <Young's modulus>"
                 " <Poisson ratio>" << endl;
         return 1;
     }
 
-    REAL                     lambda = atof( argv[2] );
+    REAL                     E = atof( argv[2] );
+    REAL                     lambda = 0.0;
     REAL                     nu = atof( argv[3] );
 
-    FixVtxTetMesh<double>    mesh;
+    FixVtxTetMesh<REAL>      mesh;
 
     // Load the mesh
     FV_TetMeshLoader_Double::load_mesh( argv[1], mesh );
 
-    // Initialize construct the stiffness matrix
-    StVKMesh                 materialMesh( mesh, lambda, nu );
+    // Calculate Lame's first parameter based on Young's modulus and
+    // Poisson ratio
+    //  Source: http://en.wikipedia.org/wiki/Youngs_modulus
+    lambda = E * nu / ( (1.0 + nu) * (1.0 - 2.0 * nu) );
 
+    // Create St. Venant-Kirchhoff material model
+    StVKMaterial             material( lambda, nu );
+
+    // Mass (unscaled) and stiffness matrices
+    PardisoMatrix<REAL>      mass, stiffness;
+
+    printf( "Generating system for mesh with %d tets\n", (int)mesh.tets().size() );
+    printf( "Generating system for mesh with %d tets\n", (int)mesh.num_tets() );
+
+    // Assemble the system matrices
+    DeformableFEM::mass_mat( &mesh, mass );
+    DeformableFEM::stiffness_mat( &mesh, &material, stiffness );
+
+    // Write the matrices to disk
+    //
+    // Choose an output file prefix
+    const char              *outputPrefix = ( argc >= 5 ) ? argv[4] : argv[1];
+    char                     outputFile[1024];
+
+    sprintf( outputFile, "%s_mass.mat", outputPrefix );
+    PardisoMatrixIO::write_csc_format( mass, outputFile );
+
+    sprintf( outputFile, "%s_stiffness.mat", outputPrefix );
+    PardisoMatrixIO::write_csc_format( stiffness, outputFile );
+
+#if 0
     const StVKMesh::TStiffMat &stiffness = materialMesh.update_stiffness_matrix();
 
     // Write the stiffness matrix to disk
@@ -57,6 +89,7 @@ int main(int argc, char** argv)
     } else {
         PardisoMatrixIO::write_csc_format( stiffness, argv[4] );
     }
+#endif
 
     return 0;
 }

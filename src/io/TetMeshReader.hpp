@@ -378,6 +378,9 @@ int FV_TetMeshLoader_Double::load_mesh(
         mesh.add_tet(idx[0], idx[1], idx[2], idx[3]);
     }
     fclose(file);
+
+    mesh.init();
+
     return SUCC_RETURN;
 }
 

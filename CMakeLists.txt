@@ -29,9 +29,11 @@ add_definitions(-DDIFF_DEFINE)
 ## Compiler
 # set compiler flags for debug/release
 if ( USE_DEBUG )
+    MESSAGE(STATUS "Using debug mode")
     add_definitions(-DDEBUG)
     set(CMAKE_BUILD_TYPE Debug)
 else ( USE_DEBUG )
+    MESSAGE(STATUS "Using release mode")
     set(CMAKE_BUILD_TYPE Release)
 endif ( USE_DEBUG )
 

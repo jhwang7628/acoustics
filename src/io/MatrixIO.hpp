@@ -94,6 +94,16 @@ struct PardisoMatrixIO
         fout.write((const char *)colidx, sizeof(int)*n);
         fout.write((const char *)data, sizeof(double)*n);
 
+        printf( "Writing %d x %d matrix with %d entries\n", h, h, n );
+#if 0
+        for (int col_idx = 0; col_idx < h; col_idx++) {
+            printf( "Column %d: [ %d, %d ]\n", col_idx, colidx[col_idx], colidx[col_idx+1] );
+            for (int row_ptr = colidx[col_idx]; row_ptr < colidx[col_idx+1]; row_ptr++) {
+                printf( "  (%d, %f)\n", rowidx[row_ptr], data[row_ptr] );
+            }
+        }
+#endif
+
         fout.close();
         return SUCC_RETURN;
     }

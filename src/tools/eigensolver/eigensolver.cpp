@@ -19,9 +19,14 @@
 
 #include "logging/logging.h"
 
-#include <arpack++/arlsmat.h>
-#include <arpack++/arlgsym.h>
-#include <arpack++/arlssym.h>
+#include <arlsmat.h>
+#include <arlgsym.h>
+#include <arlssym.h>
+
+#if 0
+#include <arusmat.h>
+#include <arugsym.h>
+#endif
 
 using namespace std;
 
@@ -29,6 +34,9 @@ static vector<int> ptrrow[2];
 static vector<int> idxcol[2];
 static vector<double> data[2];
 static ARluSymMatrix<double>* mat[2] = {NULL, NULL};
+#if 0
+static ARumSymMatrix<double>* mat[2] = {NULL, NULL};
+#endif
 static string stiffMFile, massMFile, outFile;
 static int numEigv = 200;
 static double EV_THRESHOLD = 1.;
@@ -262,20 +270,33 @@ int main(int argc, char* argv[])
             &data[0][0], &idxcol[0][0], &ptrrow[0][0]);
     mat[1] = new ARluSymMatrix<double>(nrow2, (int)data[1].size(),
             &data[1][0], &idxcol[1][0], &ptrrow[1][0]);
+#if 0
+    mat[0] = new ARumSymMatrix<double>(nrow1, (int)data[0].size(), 
+            &data[0][0], &idxcol[0][0], &ptrrow[0][0]);
+    mat[1] = new ARumSymMatrix<double>(nrow2, (int)data[1].size(),
+            &data[1][0], &idxcol[1][0], &ptrrow[1][0]);
+#endif
+
+    cout << "Running eigensolver with shift " << EV_THRESHOLD << endl;
 
     //// solve eigen problem 
     char which[] = "LM";
     /*
     ARluSymStdEig<double> solver(numEigv, *mat[0], 0, which); //0, 0.1);
     */
-    ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], 0, which);
+    //ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], 0, which);
+    ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], EV_THRESHOLD, which);
+#if 0
+    ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], EV_THRESHOLD, which);
+#endif
 
     LOGGING_INFO("max #iter:  %d", solver.GetMaxit());
     LOGGING_INFO("dimension:  %d", solver.GetN());
     LOGGING_INFO("tolenrence: %f", solver.GetTol());
 
-    if ( verbose )
+    if ( verbose ) {
         LOGGING_INFO("Start solving eigen problem %d X %d ...", nrow1, ncol1);
+    }
     double st = GetMilliTimed();
     solver.FindEigenvectors();
 
@@ -291,9 +312,10 @@ int main(int argc, char* argv[])
     //// sort the eigen value, discard the very low frequency ones
     sort(sortids.begin(), sortids.end(), EIGV_CMP_(eval));
 
-    if ( verbose )
+    if ( verbose ) {
         LOGGING_INFO("Wrote eigenvalues and eigenvectors to file: %s", 
                 outFile.c_str());
+    }
     write_eigenvalues(ncov, nrow1, &sortids[0], eval, evec, outFile.c_str());
 
     delete mat[0];

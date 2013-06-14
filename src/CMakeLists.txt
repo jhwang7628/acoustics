@@ -125,13 +125,13 @@ if ( BUILD_TETVIEWER )
     set(TETVIEWER_QRC_FILES tools/images.qrc)
     QT4_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
 
-    QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer.ui)
+    QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer/tetviewer.ui)
     QT4_WRAP_CPP(TETVIEWER_MOC_SRC 
-            tools/TetViewerFrame.h tools/TetViewerCanvas.h)
+            tools/tetviewer/TetViewerFrame.h tools/tetviewer/TetViewerCanvas.h)
 
     add_executable(tetviewer
-        tools/TetViewerFrame.h      tools/TetViewerFrame.cpp    
-        tools/TetViewerCanvas.h     tools/TetViewerCanvas.cpp
+        tools/tetviewer/TetViewerFrame.h      tools/tetviewer/TetViewerFrame.cpp
+        tools/tetviewer/TetViewerCanvas.h     tools/tetviewer/TetViewerCanvas.cpp
         generic/precision_type.hpp  generic/precision_type.cpp
         ${TETVIEWER_QRC_SRCS}
         ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC})
@@ -151,7 +151,8 @@ if ( BUILD_ELASTICITY_SOLVER )
     add_executable(elasticity_solver
         tools/elasticity/elasticity_solver.cpp
         ${LOGGING_SRC}        ${UTILS_SRC}
-        ${DEFORMABLE_SRC}     ${LINEAR_SRC})
+        ${DEFORMABLE_SRC}     ${LINEAR_SRC}
+        ${GENERIC_SRC})
     target_link_libraries(elasticity_solver
         ${MKL_LIBS}           boost_program_options
         rt)
@@ -162,16 +163,17 @@ endif ( BUILD_ELASTICITY_SOLVER )
 # =============================================================================
 if ( BUILD_EIGENSOLVER )
     include_directories(
-        ${ARPACK_INCLUDE_DIR})
-
+        #${ARPACK_INCLUDE_DIR})
+        #/home/chadwick/packages/arpack++/include)
+        arpack++/include)
+        
     link_directories(${MKL_LIBRARY_DIR})
 
     add_executable(eigensolver
         tools/eigensolver/eigensolver.cpp
         ${LOGGING_SRC}        ${UTILS_SRC})
     target_link_libraries(eigensolver
-        ${SUPERLU_LIBRARIES}
-        ${ARPACK_LIBRARY}     ${ARPACKpp_LIBRARY}
+        ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
         ${MKL_LIBS}           boost_program_options
         rt)
 endif ( BUILD_EIGENSOLVER )
