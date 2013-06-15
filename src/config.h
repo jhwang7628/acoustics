@@ -43,4 +43,7 @@
 
 const REAL  EPS = 1e-10;
 
+// Usefull definition
+#define SDUMP(x)	" " << #x << "=[ " << x << " ] "
+
 #endif
