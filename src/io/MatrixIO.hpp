@@ -57,6 +57,62 @@ struct PardisoMatrixIO
         }
     }
 
+    /* Writes a binary file which can be read by MATLAB
+    */
+    template <typename T>
+    static int write_matlab_binary(const PardisoMatrix<T>& mat, const char* file)
+    {
+        std::ofstream fout(file, std::ios::binary);
+        if ( !fout.good() )
+        {
+            std::cerr << "PardisoMatrixIO::Failed to open file: " << file << " for writing"
+                      << std::endl;
+            return ERROR_RETURN;
+        }
+
+        if ( mat.is_symmetric() ) {
+            std::cout << "Writing symmetric matrix to MATLAB binary file "
+                      << file << std::endl;
+        } else {
+            std::cout << "Writing non-symmetric matrix to MATLAB binary file "
+                      << file << std::endl;
+        }
+
+        int h = mat.num_rows(), w = mat.num_cols(), n = mat.num_nonzeros();
+        fout.write((char *)&h, sizeof(int));
+        fout.write((char *)&w, sizeof(int));
+        fout.write((char *)&n, sizeof(int));
+
+        std::vector<int>     rowEntries;
+        std::vector<int>     colEntries;
+        std::vector<T>       dataEntries;
+
+        for(int i = 0;i < (int)mat.m_rows.size();++ i)
+        {
+            typename std::map<int, T*>::const_iterator end = mat.m_rows[i].end();
+            for(typename std::map<int, T*>::const_iterator it = mat.m_rows[i].begin();
+                    it != end;++ it)
+            {
+                rowEntries.push_back( i + 1 );
+                colEntries.push_back( it->first + 1 );
+                dataEntries.push_back( *it->second );
+
+                if ( mat.is_symmetric() && i != it->first ) {
+                    colEntries.push_back( i + 1 );
+                    rowEntries.push_back( it->first + 1 );
+                    dataEntries.push_back( *it->second );
+                }
+            }
+        }
+
+        fout.write((const char *)rowEntries.data(), sizeof(int) * rowEntries.size());
+        fout.write((const char *)colEntries.data(), sizeof(int) * colEntries.size());
+        fout.write((const char *)dataEntries.data(), sizeof(T) * dataEntries.size());
+
+        fout.close();
+        return SUCC_RETURN;
+    }
+
     /*
      * My own CSC binary format for sparse matrix
      * <unsigned char> :: 0: float 1: double 2: complex float 3: complex double

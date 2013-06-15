@@ -7,6 +7,7 @@
 //
 /////////////////////////////////////////////////////////////////////////
 
+#include <fstream>
 #include <iostream>
 
 #include <boost/program_options.hpp>
@@ -70,11 +71,19 @@ int main(int argc, char** argv)
     const char              *outputPrefix = ( argc >= 5 ) ? argv[4] : argv[1];
     char                     outputFile[1024];
 
+    // Write binary files
     sprintf( outputFile, "%s_mass.mat", outputPrefix );
     PardisoMatrixIO::write_csc_format( mass, outputFile );
 
     sprintf( outputFile, "%s_stiffness.mat", outputPrefix );
     PardisoMatrixIO::write_csc_format( stiffness, outputFile );
+
+    // Write files in MATLAB format
+    sprintf( outputFile, "%s_mass.bcsm", outputPrefix );
+    PardisoMatrixIO::write_matlab_binary( mass, outputFile );
+
+    sprintf( outputFile, "%s_stiffness.bcsm", outputPrefix );
+    PardisoMatrixIO::write_matlab_binary( stiffness, outputFile );
 
 #if 0
     const StVKMesh::TStiffMat &stiffness = materialMesh.update_stiffness_matrix();
