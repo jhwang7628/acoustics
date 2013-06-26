@@ -145,7 +145,7 @@ if ( BUILD_TETVIEWER )
         #${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
         #${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
-        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     #${MKL_LIBS}
+        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     #${BLAS_LAPACK_LIBS}
         rt)
 endif ( BUILD_TETVIEWER )
 
@@ -161,7 +161,7 @@ if ( BUILD_ELASTICITY_SOLVER )
         ${DEFORMABLE_SRC}     ${LINEAR_SRC}
         ${GENERIC_SRC}        ${IO_SRC})
     target_link_libraries(elasticity_solver
-        ${MKL_LIBS}           boost_program_options
+        ${BLAS_LAPACK_LIBS}   boost_program_options
         rt)
 endif ( BUILD_ELASTICITY_SOLVER )
 
@@ -182,7 +182,7 @@ if ( BUILD_EIGENSOLVER )
         ${IO_SRC})
     target_link_libraries(eigensolver
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-        ${MKL_LIBS}
+        ${BLAS_LAPACK_LIBS}
         boost_program_options rt)
 endif ( BUILD_EIGENSOLVER )
 

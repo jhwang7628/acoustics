@@ -48,10 +48,17 @@ endif ( USE_64BIT_ARCH )
 # check boost libraries
 find_package(Boost 1.33 REQUIRED)
 
-# check for Intel MKL
-find_package(MKL REQUIRED)
-set(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5)
-add_definitions(-DUSE_MKL)
+option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
+
+if ( USE_MKL_BLAS )
+  # check for Intel MKL
+  find_package(MKL REQUIRED)
+  set(BLAS_LAPACK_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5)
+  add_definitions(-DUSE_MKL)
+else ()
+  # Try using default libraries
+  set(BLAS_LAPACK_LIBS blas lapack)
+endif ()
 
 # ARPACK for eigensolvers
 find_package(ARPACK REQUIRED)
