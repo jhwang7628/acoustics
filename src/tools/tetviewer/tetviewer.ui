@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>889</width>
+    <width>1280</width>
     <height>702</height>
    </rect>
   </property>
@@ -19,8 +19,54 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMinAndMaxSize</enum>
+    </property>
     <item>
-     <widget class="TetViewerCanvas" name="canvas" native="true"/>
+     <widget class="QWidget" name="buttonContainer" native="true">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>300</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>300</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="baseSize">
+       <size>
+        <width>300</width>
+        <height>597</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinAndMaxSize</enum>
+       </property>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="TetViewerCanvas" name="canvas" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>956</width>
+        <height>0</height>
+       </size>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -29,8 +75,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>889</width>
-     <height>26</height>
+     <width>1280</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

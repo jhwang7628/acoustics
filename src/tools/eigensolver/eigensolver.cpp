@@ -210,8 +210,9 @@ static void write_eigenvalues(int nev, int nsz,
         printf("ev#%3d:  %lf\n", vid, eval[ids[vid]]);
     }
     // output eigenvectors
-    for(int vid = stid;vid < nev;++ vid)
+    for(int vid = stid;vid < nev;++ vid) {
         fout.write((const char*)&evec[ids[vid]*nsz], sizeof(double)*nsz);
+    }
 
     fout.close();
 }

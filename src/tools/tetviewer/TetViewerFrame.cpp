@@ -43,6 +43,27 @@ void TetViewerFrame::open()
     update_mesh(msh);
 }
 
+void TetViewerFrame::load_modes()
+{
+    QString file = QFileDialog::getOpenFileName(this,
+            "Select the mode file", ".", 
+            "mode data binary file (*.modes)");
+    if ( file.isEmpty() ) return;
+    
+    TMesh* msh = new TMesh;
+    if ( file.endsWith(".tet", Qt::CaseInsensitive) )
+        FV_TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
+        //TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
+    else if ( file.endsWith(".node", Qt::CaseInsensitive) )
+    {
+        StellarTetMeshLoader::load_mesh(file.left(file.length()-5).toAscii().data(), msh);
+    }
+    msh->init();
+    msh->update_surface();
+
+    update_mesh(msh);
+}
+
 void TetViewerFrame::export_bin_tet()
 {
     if ( !mesh_ ) return;
