@@ -182,6 +182,9 @@ struct EIGV_CMP_
  * ...
  * <eigenvec_n>
  */
+
+static const int NUM_RIGID_MODES = 6;
+
 static void write_eigenvalues(int nev, int nsz, 
         const int* ids, const double* eval, const double* evec, 
         const char* file)
@@ -199,6 +202,8 @@ static void write_eigenvalues(int nev, int nsz,
 #if 0
     while (stid < nev && eval[ids[stid]] < EV_THRESHOLD ) ++ stid;
 #endif
+
+    stid = NUM_RIGID_MODES;
 
     int nevout = nev - stid;    // # of eigenvalue to output
     fout.write((char *)&nevout, sizeof(int));
@@ -317,7 +322,7 @@ int main(int argc, char* argv[])
 
     LOGGING_INFO("max #iter:  %d", solver.GetMaxit());
     LOGGING_INFO("dimension:  %d", solver.GetN());
-    LOGGING_INFO("tolenrence: %f", solver.GetTol());
+    LOGGING_INFO("tolerance: %f", solver.GetTol());
 
     if ( verbose ) {
         LOGGING_INFO("Start solving eigen problem %d X %d ...", nrow1, ncol1);

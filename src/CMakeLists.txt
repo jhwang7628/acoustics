@@ -139,12 +139,14 @@ if ( BUILD_TETVIEWER )
         generic/precision_type.hpp  generic/precision_type.cpp
         ${TETVIEWER_QRC_SRCS}
         ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC}
-        ${IO_SRC})
+        ${IO_SRC}                   ${DEFORMABLE_SRC}
+        ${LINEAR_SRC})
     target_link_libraries(tetviewer
         #${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
         #${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
-        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt)
+        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     #${MKL_LIBS}
+        rt)
 endif ( BUILD_TETVIEWER )
 
 # =============================================================================
@@ -180,8 +182,8 @@ if ( BUILD_EIGENSOLVER )
         ${IO_SRC})
     target_link_libraries(eigensolver
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-        ${MKL_LIBS}           boost_program_options
-        rt)
+        ${MKL_LIBS}
+        boost_program_options rt)
 endif ( BUILD_EIGENSOLVER )
 
 # =============================================================================
