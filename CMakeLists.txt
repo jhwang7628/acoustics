@@ -54,8 +54,17 @@ set(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5)
 add_definitions(-DUSE_MKL)
 
 # ARPACK for eigensolvers
-find_package(SuperLU REQUIRED)
 find_package(ARPACK REQUIRED)
+
+# SuperLU is also required for the eigensolver
+#
+# The prepackaged version that can be installed with Ubuntu doesn't
+# seem to work.  Try downloading and compiling the new version (v4.3).
+# 
+# When setting up the cmake project, use the flag
+#   -DSUPERLU_LIBRARIES=<path to version 4.3 SuperLU library>
+#   -DSUPERLU_INCLUDES=<SuperLU include directory>
+find_package(SuperLU REQUIRED)
 
 if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     # package for opengl and glut
