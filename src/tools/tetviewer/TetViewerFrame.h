@@ -35,6 +35,7 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
 
     public slots:
         void open();
+        void load_modes();
         void export_bin_tet();
         void export_abaqus_tet();
         void check_useless_vtx();
@@ -48,11 +49,16 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
             canvas->parent_ = this;
 
             QObject::connect(actionOpen, SIGNAL(triggered()), this, SLOT(open()));
-            QObject::connect(actionWireframe, SIGNAL(toggled(bool)), canvas, SLOT(toggle_wireframe(bool)));
-            QObject::connect(actionMeshInfo, SIGNAL(toggled(bool)), canvas, SLOT(toggle_show_info(bool)));
-            QObject::connect(actionBinaryTetFormat, SIGNAL(triggered()), this, SLOT(export_bin_tet()));
-            QObject::connect(actionAbaqusTetFormat, SIGNAL(triggered()), this, SLOT(export_abaqus_tet()));
-            QObject::connect(actionCheckUselessVertex, SIGNAL(triggered()), this, SLOT(check_useless_vtx()));
+            QObject::connect(actionWireframe, SIGNAL(toggled(bool)), canvas,
+                             SLOT(toggle_wireframe(bool)));
+            QObject::connect(actionMeshInfo, SIGNAL(toggled(bool)), canvas,
+                             SLOT(toggle_show_info(bool)));
+            QObject::connect(actionBinaryTetFormat, SIGNAL(triggered()), this,
+                             SLOT(export_bin_tet()));
+            QObject::connect(actionAbaqusTetFormat, SIGNAL(triggered()), this,
+                             SLOT(export_abaqus_tet()));
+            QObject::connect(actionCheckUselessVertex, SIGNAL(triggered()), this,
+                             SLOT(check_useless_vtx()));
             statusbar->addWidget(new QLabel("  Press \"H\" for help   ", statusbar));
         }
         ~TetViewerFrame()

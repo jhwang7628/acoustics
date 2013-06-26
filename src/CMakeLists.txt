@@ -25,8 +25,8 @@ set(LOGGING_SRC
     logging/logging.cpp)
 
 set(DEFORMABLE_SRC
-    deformable/linear.cpp         deformable/stvk.cpp
-    deformable/StVKMesh.cpp)
+    deformable/linear.cpp         deformable/ModeData.cpp
+    deformable/stvk.cpp           deformable/StVKMesh.cpp)
 
 set(IO_SRC
     io/MatrixIO.cpp               io/TglMeshReader.cpp)
@@ -126,7 +126,7 @@ if ( BUILD_TETVIEWER )
     
     # =================== TETVIEWER ==================
     # the qrc files
-    set(TETVIEWER_QRC_FILES tools/images.qrc)
+    set(TETVIEWER_QRC_FILES tools/tetviewer/images.qrc)
     QT4_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
 
     QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer/tetviewer.ui)
