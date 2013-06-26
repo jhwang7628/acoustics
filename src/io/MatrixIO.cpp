@@ -196,3 +196,101 @@ ERR_RET:
     return -2;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+int DenseMatrixIO::write_matrix( const char* filename, const Matrix<double>& mat )
+{
+    FILE                    *f;
+    int                      rows = mat.shape()[0];
+    int                      cols = mat.shape()[1];
+
+    f = fopen( filename, "wb" );
+
+    if ( !f ) return ERROR_RETURN;
+
+    if ( fwrite( &rows, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+    if ( fwrite( &cols, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+
+    // Write the actual data
+    if ( fwrite( (const void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
+        goto ERR_RET;
+    }
+
+    fclose(f);
+    return SUCC_RETURN;
+
+ERR_RET:
+    fclose( f );
+    return ERROR_RETURN;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+int DenseMatrixIO::read_matrix( const char* filename, Matrix<double>& mat )
+{
+    FILE                    *f;
+    int                      rows;
+    int                      cols;
+
+    f = fopen( filename, "bb" );
+
+    if ( !f ) return ERROR_RETURN;
+
+    if ( fread( &rows, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+    if ( fread( &cols, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+
+    mat = Matrix<double>( rows, cols );
+
+    // Write the actual data
+    if ( fread( (void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
+        goto ERR_RET;
+    }
+
+    fclose(f);
+    return SUCC_RETURN;
+
+ERR_RET:
+    fclose( f );
+    return ERROR_RETURN;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+int DenseMatrixIO::write_matrix( const char* filename, const Matrix3<double>& mat )
+{
+    FILE                    *f;
+    int                      rows = 3;
+    int                      cols = 3;
+
+    f = fopen( filename, "wb" );
+
+    if ( !f ) return ERROR_RETURN;
+
+    if ( fwrite( &rows, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+    if ( fwrite( &cols, sizeof(int), 1, f ) != 1 ) {
+        goto ERR_RET;
+    }
+
+    // Write the actual data
+    if ( fwrite( (const void*)&mat.cols, sizeof(double), rows * cols, f ) != rows * cols ) {
+        goto ERR_RET;
+    }
+
+    fclose(f);
+    return SUCC_RETURN;
+
+ERR_RET:
+    fclose( f );
+    return ERROR_RETURN;
+}

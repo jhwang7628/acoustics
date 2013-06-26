@@ -26,7 +26,8 @@
 #include <stdint.h>
 #include "utils/macros.h"
 #ifdef DIFF_DEFINE
-#include "linearalgebra/Matrix.hpp"
+#include <linearalgebra/Matrix.hpp>
+#include <linearalgebra/Matrix3.hpp>
 #endif /* DIFF_DEFINE */
 #include "linearalgebra/PardisoMatrix.hpp"
 
@@ -78,10 +79,10 @@ struct PardisoMatrixIO
                       << file << std::endl;
         }
 
-        int h = mat.num_rows(), w = mat.num_cols(), n = mat.num_nonzeros();
+        int h = mat.num_rows(), w = mat.num_cols();
+        int nnz;
         fout.write((char *)&h, sizeof(int));
         fout.write((char *)&w, sizeof(int));
-        fout.write((char *)&n, sizeof(int));
 
         std::vector<int>     rowEntries;
         std::vector<int>     colEntries;
@@ -104,6 +105,9 @@ struct PardisoMatrixIO
                 }
             }
         }
+
+        nnz = rowEntries.size();
+        fout.write((const char *)&nnz, sizeof(int));
 
         fout.write((const char *)rowEntries.data(), sizeof(int) * rowEntries.size());
         fout.write((const char *)colEntries.data(), sizeof(int) * colEntries.size());
@@ -180,6 +184,19 @@ static const char MA_MAGIC_STR[] = "MA";
 Matrix<double>* load_ma_matrixd(const char* file);
 int             write_ma_matrixd(const char* filename, const Matrix<double>* mat);
 int             write_ma_matrixd(const char* filename, int m, int n, const double* ele);
+
+///////////////////////////////////////////////////////////////////////////////
+// Simpler set of Matrix IO routines for dense matrices
+//
+// These don't do anything machine-specific
+///////////////////////////////////////////////////////////////////////////////
+struct DenseMatrixIO {
+    static int          write_matrix(const char* filename, const Matrix<double>& mat);
+    static int          read_matrix(const char* filename, Matrix<double>& mat);
+
+    static int          write_matrix(const char* filename, const Matrix3<double>& mat);
+
+};
 
 // ======================================================================================
 #endif /* DIFF_DEFINE */

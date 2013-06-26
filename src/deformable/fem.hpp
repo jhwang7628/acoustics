@@ -5,6 +5,8 @@
 #include "linearalgebra/PardisoMatrix.hpp"
 #include "geometry/FixVtxTetMesh.hpp"
 
+#include <io/MatrixIO.hpp>
+
 namespace DeformableFEM
 {
 
@@ -60,8 +62,12 @@ static void mass_mat(const FixVtxTetMesh<T>* pmesh, PardisoMatrix<T>& M)
                      idx[tetid][nid] > idx[tetid][n2id] ) continue;
 
                 int colId = (idx[tetid][n2id] - numFixedVtx) * 3;
-                for(size_t dir = 0;dir < 3;++ dir)      // (a)
+                for(size_t dir = 0;dir < 3;++ dir) {    // (a)
+#if 0
+                    M.add(rowId+dir, colId+dir, vol*(REAL)(1 + (nid == n2id)));
+#endif
                     M.add(rowId+dir, colId+dir, vol*0.05*(1 + (nid == n2id)));
+                }
             }
         }
     }  // end for tetid
@@ -109,6 +115,22 @@ static void stiffness_mat(const FixVtxTetMesh<T>* pmesh,
     for(size_t tetid = 0;tetid < tets.size();++ tetid)  // each tet
     {
         pmaterial->stiffness_matrix(tets[tetid], stiff);
+
+#if 0
+        // FIXME: test something out here
+        char fname[1024];
+        sprintf( fname, "tet_stiffness_%04zd.matrix", tetid );
+        DenseMatrixIO::write_matrix( fname, stiff );
+
+        sprintf( fname, "tet_Dminv_%04zd.matrix", tetid );
+        DenseMatrixIO::write_matrix( fname, tets[tetid].inverse_Dm() );
+
+        sprintf( fname, "tet_F_%04zd.matrix", tetid );
+        Matrix3<REAL> F;
+        tets[tetid].deformation_gradient( F );
+        DenseMatrixIO::write_matrix( fname, F );
+#endif
+
         for(size_t nid = 0;nid < 4;++ nid)              // each node
         {
             if ( pmesh->is_fixed_vertex(idx[tetid][nid]) ) continue;
@@ -132,6 +154,11 @@ static void stiffness_mat(const FixVtxTetMesh<T>* pmesh,
                      */
                     K.add(rowId+dir, colId+dir2, 
                             srow <= scol ? -stiff[srow][scol] : -stiff[scol][srow]);
+#if 0
+                    printf( "Adding to (%02zd, %02zd): %f\n",
+                            rowId + dir, colId + dir2,
+                            srow <= scol ? -stiff[srow][scol] : -stiff[scol][srow] );
+#endif
                 }
             }
         }

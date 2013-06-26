@@ -7,18 +7,21 @@ find_path(SUPERLU_INCLUDES
   NAMES
   superlu/supermatrix.h
   PATHS
-  $ENV{SUPERLUDIR}
+  ${SUPERLUDIR}
   ${INCLUDE_INSTALL_DIR}
 )
 
-find_library(SUPERLU_LIBRARIES superlu PATHS $ENV{SUPERLUDIR} ${LIB_INSTALL_DIR})
+find_library(SUPERLU_LIBRARIES
+  NAMES superlu
+  #PATHS ${SUPERLUDIR} ${LIB_INSTALL_DIR})
+  PATHS ${SUPERLUDIR})
 
 if(SUPERLU_LIBRARIES AND CMAKE_COMPILER_IS_GNUCXX)
   set(SUPERLU_LIBRARIES ${SUPERLU_LIBRARIES} -lgfortran)
 endif(SUPERLU_LIBRARIES AND CMAKE_COMPILER_IS_GNUCXX)
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SUPERLU DEFAULT_MSG
-                                  SUPERLU_INCLUDES SUPERLU_LIBRARIES)
+#include(FindPackageHandleStandardArgs)
+#find_package_handle_standard_args(SUPERLU DEFAULT_MSG
+#                                  SUPERLU_INCLUDES SUPERLU_LIBRARIES)
 
 mark_as_advanced(SUPERLU_INCLUDES SUPERLU_LIBRARIES)

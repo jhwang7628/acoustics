@@ -1,4 +1,4 @@
-function A = read_sparse_binary( fname )
+function [ A, rows, cols, vals, n_row, n_col, n_nz ] = read_sparse_binary( fname )
     fid = fopen (fname, 'rb');
     
     % Faster structs-of-arrays format
