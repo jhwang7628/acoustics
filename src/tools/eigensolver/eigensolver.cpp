@@ -196,7 +196,9 @@ static void write_eigenvalues(int nev, int nsz,
     // size of the eigen-problem. Here square matrix is assumed.
     fout.write((char *)&nsz, sizeof(int));
     int stid = 0;
+#if 0
     while (stid < nev && eval[ids[stid]] < EV_THRESHOLD ) ++ stid;
+#endif
 
     int nevout = nev - stid;    // # of eigenvalue to output
     fout.write((char *)&nevout, sizeof(int));
@@ -232,6 +234,24 @@ int main(int argc, char* argv[])
         cerr << "Symmetric matrix is excepted from file " << stiffMFile << endl;
         exit(1);
     }
+
+#if 0
+    // FIXME:
+    cout << "Stiffness matrix rows: " << endl;
+    for ( int i = 0; i < ptrrow[0].size(); i++) {
+        cout << "    " << ptrrow[0][i] << endl;
+    }
+
+    cout << endl << "Stiffness matrix columns: " << endl;
+    for ( int i = 0; i < idxcol[0].size(); i++) {
+        cout << "    " << idxcol[0][i] << endl;
+    }
+
+    cout << endl << "Stiffness matrix data: " << endl;
+    for ( int i = 0; i < data[0].size(); i++) {
+        cout << "    " << data[0][i] << endl;
+    }
+#endif
 
     int nrow2, ncol2;
     c = read_csc_dmatrix(massMFile.c_str(), ptrrow[1], idxcol[1],
@@ -286,6 +306,10 @@ int main(int argc, char* argv[])
     */
     //ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], 0, which);
     ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], EV_THRESHOLD, which);
+#if 0
+    ARluSymStdEig<double> solver(numEigv, *mat[0], EV_THRESHOLD, which);
+    //solver.SetShiftInvertMode(EV_THRESHOLD);
+#endif
 #if 0
     ARluSymGenEig<double> solver('S', numEigv, *mat[0], *mat[1], EV_THRESHOLD, which);
 #endif

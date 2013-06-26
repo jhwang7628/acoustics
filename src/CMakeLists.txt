@@ -28,6 +28,9 @@ set(DEFORMABLE_SRC
     deformable/linear.cpp         deformable/stvk.cpp
     deformable/StVKMesh.cpp)
 
+set(IO_SRC
+    io/MatrixIO.cpp               io/TglMeshReader.cpp)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -79,7 +82,8 @@ if ( BUILD_ISOSTUFFER_GUI )
     # set for the final executable for isostuffer
     add_executable(isostuffer-gui
         ${CONFIG_SOURCES}       ${GUIAPP_SRCS}          ${ISOSTUFFER_SOURCES}
-        ${UTILS_SRC}            ${LINEAR_SRC}           ${GENERIC_SRC})
+        ${UTILS_SRC}            ${LINEAR_SRC}           ${GENERIC_SRC}
+        ${IO_SRC})
 
     target_link_libraries(isostuffer-gui
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
@@ -97,7 +101,7 @@ if ( BUILD_ISOSTUFFER )
       io/TglMeshReader.hpp    io/TglMeshReader.cpp
       tools/isostuffer/main.cpp
       ${CONFIG_SOURCES}           ${ISOSTUFFER_SOURCES}       ${UTILS_SRC}
-      ${LINEAR_SRC}               ${GENERIC_SRC})
+      ${LINEAR_SRC}               ${GENERIC_SRC}              ${IO_SRC})
 
   target_link_libraries(isostuffer ${ICC_LIBS}        boost_program_options
                         rt)
@@ -134,7 +138,8 @@ if ( BUILD_TETVIEWER )
         tools/tetviewer/TetViewerCanvas.h     tools/tetviewer/TetViewerCanvas.cpp
         generic/precision_type.hpp  generic/precision_type.cpp
         ${TETVIEWER_QRC_SRCS}
-        ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC})
+        ${TETVIEWER_UI_SRC}         ${TETVIEWER_MOC_SRC}
+        ${IO_SRC})
     target_link_libraries(tetviewer
         #${GLUT_LIBRARIES}    ${OPENGL_LIBRARIES}
         #${QT_LIBRARIES}      ${QGLViewer_LIBRARY})
@@ -152,7 +157,7 @@ if ( BUILD_ELASTICITY_SOLVER )
         tools/elasticity/elasticity_solver.cpp
         ${LOGGING_SRC}        ${UTILS_SRC}
         ${DEFORMABLE_SRC}     ${LINEAR_SRC}
-        ${GENERIC_SRC})
+        ${GENERIC_SRC}        ${IO_SRC})
     target_link_libraries(elasticity_solver
         ${MKL_LIBS}           boost_program_options
         rt)
@@ -171,9 +176,23 @@ if ( BUILD_EIGENSOLVER )
 
     add_executable(eigensolver
         tools/eigensolver/eigensolver.cpp
-        ${LOGGING_SRC}        ${UTILS_SRC})
+        ${LOGGING_SRC}        ${UTILS_SRC}
+        ${IO_SRC})
     target_link_libraries(eigensolver
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
         ${MKL_LIBS}           boost_program_options
         rt)
 endif ( BUILD_EIGENSOLVER )
+
+# =============================================================================
+#   Simple utility for generating a tet mesh with one tet
+# =============================================================================
+if ( BUILD_SINGLE_TET )
+    add_executable(single_tet
+        tools/single_tet.cpp
+        ${UTILS_SRC}          ${IO_SRC}
+        ${LINEAR_SRC}         ${GENERIC_SRC})
+
+    target_link_libraries(single_tet
+        rt)
+endif ( BUILD_SINGLE_TET )

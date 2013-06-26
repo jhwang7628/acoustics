@@ -19,6 +19,7 @@ option(BUILD_ISOSTUFFER_GUI     "Compile the isostuffer GUI" ON)
 option(BUILD_TETVIEWER          "Compile tetmesh viewer" ON)
 option(BUILD_ELASTICITY_SOLVER  "Compiles elasticity solver" ON)
 option(BUILD_EIGENSOLVER        "Compile modal eigensolver" ON)
+option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
@@ -74,6 +75,7 @@ if ( USE_OPENMP )
 endif ( USE_OPENMP )
 
 set(LINK_FLAGS " ")
+
 # check if we're using Intel's compiler
 if ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
     add_definitions(-wd981 -wd383 -wd444 -wd1224 -wd1572)

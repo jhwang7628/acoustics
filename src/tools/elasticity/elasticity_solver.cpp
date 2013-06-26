@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     }
 
     REAL                     E = atof( argv[2] );
-    REAL                     lambda = 0.0;
+    REAL                     lambda = 0.0, G = 0.0;
     REAL                     nu = atof( argv[3] );
 
     FixVtxTetMesh<REAL>      mesh;
@@ -51,9 +51,10 @@ int main(int argc, char** argv)
     // Poisson ratio
     //  Source: http://en.wikipedia.org/wiki/Youngs_modulus
     lambda = E * nu / ( (1.0 + nu) * (1.0 - 2.0 * nu) );
+    G = E / ( 2.0 * ( 1 + nu ) );
 
     // Create St. Venant-Kirchhoff material model
-    StVKMaterial             material( lambda, nu );
+    StVKMaterial             material( lambda, G );
 
     // Mass (unscaled) and stiffness matrices
     PardisoMatrix<REAL>      mass, stiffness;
