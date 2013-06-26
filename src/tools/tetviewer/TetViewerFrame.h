@@ -25,7 +25,9 @@
 #error Only Qt with the version higher than 4.0 is supported right now
 #endif
 
-#include "geometry/FixVtxTetMesh.hpp"
+#include <deformable/ModeData.h>
+
+#include <geometry/FixVtxTetMesh.hpp>
 
 class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
 {
@@ -39,6 +41,8 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
         void export_bin_tet();
         void export_abaqus_tet();
         void check_useless_vtx();
+        void update_active_mode();
+        void update_mode_displacement();
 
     public:
         typedef FixVtxTetMesh<double>     TMesh;
@@ -49,6 +53,7 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
             canvas->parent_ = this;
 
             QObject::connect(actionOpen, SIGNAL(triggered()), this, SLOT(open()));
+            QObject::connect(actionLoadModes, SIGNAL(triggered()), this, SLOT(load_modes()));
             QObject::connect(actionWireframe, SIGNAL(toggled(bool)), canvas,
                              SLOT(toggle_wireframe(bool)));
             QObject::connect(actionMeshInfo, SIGNAL(toggled(bool)), canvas,
@@ -59,10 +64,20 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
                              SLOT(export_abaqus_tet()));
             QObject::connect(actionCheckUselessVertex, SIGNAL(triggered()), this,
                              SLOT(check_useless_vtx()));
+            QObject::connect(modeIndex, SIGNAL(valueChanged(int)), this,
+                             SLOT(update_active_mode()));
+            QObject::connect(modalCoordinate, SIGNAL(valueChanged(int)), this,
+                             SLOT(update_mode_displacement()));
+            QObject::connect(modeScale, SIGNAL(valueChanged(double)), this,
+                             SLOT(update_mode_displacement()));
+            QObject::connect(objectDensity, SIGNAL(valueChanged(double)), this,
+                             SLOT(update_active_mode()));
             statusbar->addWidget(new QLabel("  Press \"H\" for help   ", statusbar));
         }
         ~TetViewerFrame()
         {   delete mesh_; }
+
+    protected:
 
     private:
         void update_mesh(TMesh* msh);
@@ -73,6 +88,10 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
         std::vector<Point3d>    vtx_;       // vertices in the tet mesh
         std::vector<Vector3d>   nml_;       // vertex normal. if the vertex is not on the surface
                                             // its normal is undefined.
+
+        ModeData                modeData_;
+        int                     activeMode_;
+
 };
 
 #endif   /* ----- #ifndef TET_VIEWER_FRAME_INC  ----- */

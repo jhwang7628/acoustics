@@ -32,8 +32,15 @@ class TetViewerCanvas : public QGLViewer
 
     public:
         TetViewerCanvas(QWidget* parent):QGLViewer(parent), 
-                wireframe_(false), showMshInfo_(false)
+                wireframe_(false), showMshInfo_(false),
+                modeInfo_index_(0)
         { }
+
+        void update_mode_info(int modeIndex, double modeFrequency)
+        {
+            modeInfo_index_ = modeIndex;
+            modeInfo_frequency_ = modeFrequency;
+        }
 
     protected:
         void init();
@@ -44,10 +51,14 @@ class TetViewerCanvas : public QGLViewer
         void init_gl();
         void draw_obj();
         void show_mesh_info();
+        void show_mode_info();
 
     private:
         bool            wireframe_;
         bool            showMshInfo_;
+
+        int             modeInfo_index_;
+        double          modeInfo_frequency_;
 
         TetViewerFrame* parent_;
 };

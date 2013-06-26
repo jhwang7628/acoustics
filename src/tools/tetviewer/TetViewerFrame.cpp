@@ -15,6 +15,8 @@
  */
 #include "TetViewerFrame.h"
 #include <QFileDialog>
+#include <QMessageBox>
+#include <QKeyEvent>
 #include "io/StellarIO.hpp"
 #include "io/TetMeshReader.hpp"
 #include "io/TetMeshWriter.hpp"
@@ -45,23 +47,45 @@ void TetViewerFrame::open()
 
 void TetViewerFrame::load_modes()
 {
+    if ( !mesh_ ) {
+        // Can't load modes if we don't have a mesh
+        QMessageBox msgBox;
+        msgBox.setText("Must load a tet mesh first");
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.exec();
+
+        return;
+    }
+
     QString file = QFileDialog::getOpenFileName(this,
             "Select the mode file", ".", 
             "mode data binary file (*.modes)");
     if ( file.isEmpty() ) return;
-    
-    TMesh* msh = new TMesh;
-    if ( file.endsWith(".tet", Qt::CaseInsensitive) )
-        FV_TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
-        //TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
-    else if ( file.endsWith(".node", Qt::CaseInsensitive) )
-    {
-        StellarTetMeshLoader::load_mesh(file.left(file.length()-5).toAscii().data(), msh);
-    }
-    msh->init();
-    msh->update_surface();
 
-    update_mesh(msh);
+    modeData_.read( file.toAscii().data() );
+
+    if ( modeData_.numDOF() != vtx_.size() * 3 ) {
+        QMessageBox msgBox;
+        msgBox.setText("Error: Mode size does not match mesh size");
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.exec();
+
+        return;
+    }
+
+    modeIndex->setEnabled( true );
+    modalCoordinate->setEnabled( true );
+    modeScale->setEnabled( true );
+
+    modeIndex->setMinimum( 0 );
+    modeIndex->setMaximum( modeData_.numModes() );
+    modeIndex->setValue( 1 );
+
+    modalCoordinate->setValue( 0 );
+
+    modeScale->setValue( 1.0 );
+
+    activeMode_ = 0;
 }
 
 void TetViewerFrame::export_bin_tet()
@@ -161,6 +185,36 @@ void TetViewerFrame::check_useless_vtx()
             return;
         }
     PRINT_MSG("No Free Vertex detected\n");
+}
+
+void TetViewerFrame::update_active_mode()
+{
+    modalCoordinate->setValue( 0 );
+
+    int idx = modeIndex->value() - 1;
+    REAL frequency = sqrt( modeData_.omegaSquared( idx ) / objectDensity->value() );
+    frequency /= 2.0 * M_PI;
+    canvas->update_mode_info( modeIndex->value(), frequency );
+
+    update_mode_displacement();
+}
+
+void TetViewerFrame::update_mode_displacement()
+{
+    const vector<Point3d>& vs = mesh_->vertices();
+    memcpy(&vtx_[0], &vs[0], sizeof(Point3d)*vs.size());
+
+    REAL displacementScale = (REAL)modalCoordinate->value() / 100.0;
+    displacementScale *= (REAL)modeScale->value();
+    const vector<REAL> &mode = modeData_.mode( modeIndex->value() - 1 );
+
+    REAL *vertexData = (REAL *)&vtx_[0];
+    for ( int i = 0; i < mode.size(); i++ ) {
+        vertexData[i] += displacementScale * mode[i];
+    }
+    update_normals();
+
+    canvas->updateGL();
 }
 
 // ============================================================================

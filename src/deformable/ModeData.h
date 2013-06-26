@@ -36,6 +36,16 @@ struct ModeData {
                                     return _omegaSquared[ modeIndex ];
                                  }
 
+        int                      numModes() const
+                                 {
+                                     return _omegaSquared.size();
+                                 }
+
+        int                      numDOF() const
+                                 {
+                                     return ( numModes() > 0 ) ? _modes[ 0 ].size() : 0;
+                                 }
+
         void                     read( const char *filename );
         void                     write( const char *filename ) const;
 

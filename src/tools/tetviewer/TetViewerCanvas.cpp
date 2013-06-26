@@ -88,10 +88,9 @@ void TetViewerCanvas::keyPressEvent(QKeyEvent* e)
 {
     const Qt::KeyboardModifiers modifiers = e->modifiers();
     
-    if ( e->key() == Qt::Key_W && modifiers == Qt::NoButton )
+    if ( e->key() == Qt::Key_W && modifiers == Qt::NoButton ) {
         toggle_wireframe(!wireframe_);
-    else if ( e->key() == Qt::Key_I && modifiers == Qt::NoButton )
-    {
+    } else if ( e->key() == Qt::Key_I && modifiers == Qt::NoButton ) {
         printf("=========== Mesh Statistics ===========\n");
         printf(" # of vertices:          %d\n", (int)parent_->mesh_->num_vertices());
         printf(" # of tetrahedron:       %d\n", (int)parent_->mesh_->num_tets());
@@ -99,9 +98,9 @@ void TetViewerCanvas::keyPressEvent(QKeyEvent* e)
         printf(" # of free vertices:     %d\n", (int)parent_->mesh_->num_free_vertices());
         printf(" # of fixed vertices:    %d\n", (int)parent_->mesh_->num_fixed_vertices());
         printf("=======================================\n");
-    }
-    else
+    } else {
         QGLViewer::keyPressEvent(e);
+    }
 }
 
 void TetViewerCanvas::show_mesh_info()
@@ -117,6 +116,15 @@ void TetViewerCanvas::show_mesh_info()
                 parent_->mesh_->num_free_vertices(), 0));
     drawText(width()-180, 100, QString("# of fixed vtx: %1").arg(
                 parent_->mesh_->num_fixed_vertices(), 0));
+}
+
+void TetViewerCanvas::show_mode_info()
+{
+    if ( modeInfo_index_ > 0 ) {
+        glColor3f(1.f, 1.f, 1.f);
+        drawText(width()-180, 550, QString("Mode %1: %2 Hz").arg(
+                modeInfo_index_ ).arg( modeInfo_frequency_));
+    }
 }
 
 void TetViewerCanvas::draw()
@@ -138,6 +146,8 @@ void TetViewerCanvas::draw()
     }
 
     if ( showMshInfo_ ) show_mesh_info();
+
+    show_mode_info();
 }
 
 void TetViewerCanvas::draw_obj()
