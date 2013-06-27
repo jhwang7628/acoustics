@@ -70,6 +70,7 @@ find_package(ARPACK REQUIRED)
 # 
 # When setting up the cmake project, use the flag
 #   -DSUPERLU_LIBRARIES=<path to version 4.3 SuperLU library>
+#     NOTE: for now, includes aren't needed
 #   -DSUPERLU_INCLUDES=<SuperLU include directory>
 find_package(SuperLU REQUIRED)
 
@@ -108,6 +109,8 @@ else ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
     if ( USE_OPENMP )
         add_definitions(-fopenmp)
     endif ( USE_OPENMP )
+
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
 
 add_subdirectory(src)
