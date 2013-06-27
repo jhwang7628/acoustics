@@ -198,3 +198,16 @@ if ( BUILD_SINGLE_TET )
     target_link_libraries(single_tet
         rt)
 endif ( BUILD_SINGLE_TET )
+
+# =============================================================================
+#   Builds input files for the FastBEM acoustics solver
+# =============================================================================
+if ( BUILD_FBEM_INPUT_GEN )
+    add_executable(fbem_input_gen
+        tools/fbem_input_gen/fbem_input_gen.cpp
+        ${UTILS_SRC}        ${IO_SRC}
+        ${GENERIC_SRC})
+
+    target_link_libraries(fbem_input_gen
+        boost_program_options   boost_filesystem  boost_system  rt)
+endif ( BUILD_FBEM_INPUT_GEN )
