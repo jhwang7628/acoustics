@@ -20,6 +20,7 @@ option(BUILD_TETVIEWER          "Compile tetmesh viewer" ON)
 option(BUILD_ELASTICITY_SOLVER  "Compiles elasticity solver" ON)
 option(BUILD_EIGENSOLVER        "Compile modal eigensolver" ON)
 option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
+option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
