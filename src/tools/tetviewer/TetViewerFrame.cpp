@@ -77,7 +77,7 @@ void TetViewerFrame::load_modes()
     modalCoordinate->setEnabled( true );
     modeScale->setEnabled( true );
 
-    modeIndex->setMinimum( 0 );
+    modeIndex->setMinimum( 1 );
     modeIndex->setMaximum( modeData_.numModes() );
     modeIndex->setValue( 1 );
 
