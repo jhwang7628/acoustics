@@ -64,7 +64,7 @@ void TetViewerFrame::load_modes()
 
     modeData_.read( file.toAscii().data() );
 
-    if ( modeData_.numDOF() != vtx_.size() * 3 ) {
+    if ( modeData_.numDOF() != (int)vtx_.size() * 3 ) {
         QMessageBox msgBox;
         msgBox.setText("Error: Mode size does not match mesh size");
         msgBox.setIcon(QMessageBox::Information);
@@ -129,7 +129,7 @@ void TetViewerFrame::update_normals()
     nml_.resize(mesh_->num_vertices());
     const vector<Tuple3ui>& tgl = mesh_->surface_indices();
     vector<Vector3d> tglnmls(tgl.size());
-    for(int i = 0;i < tgl.size();++ i)
+    for(size_t i = 0;i < tgl.size();++ i)
     {
         tglnmls[i] = Triangle<double>::normal(
                 vtx_[tgl[i][0]], vtx_[tgl[i][1]], vtx_[tgl[i][2]]);
@@ -143,7 +143,7 @@ void TetViewerFrame::update_normals()
     }
 
     memset(&nml_[0], 0, sizeof(double)*nml_.size());
-    for(int i = 0;i < tgl.size();++ i)
+    for(size_t i = 0;i < tgl.size();++ i)
     {
         const Vector3d& n = tglnmls[i];
         nml_[tgl[i][0]] += n * Triangle<double>::angle(
@@ -154,8 +154,9 @@ void TetViewerFrame::update_normals()
                 vtx_[tgl[i][1]], vtx_[tgl[i][2]], vtx_[tgl[i][0]]);
     }
 
-    for(size_t i = 0;i < nml_.size();++ i) 
+    for(size_t i = 0;i < nml_.size();++ i) {
         if ( nml_[i].lengthSqr() > 1E-14 ) nml_[i].normalize();
+    }
 }
 
 void TetViewerFrame::check_useless_vtx()
@@ -170,7 +171,7 @@ void TetViewerFrame::check_useless_vtx()
     memset(used, false, sizeof(bool)*mesh_->num_vertices());
 
     const vector<TetMesh<double>::TetIdx>& idx = mesh_->tet_indices();
-    for(int i = 0;i < idx.size();++ i)
+    for(size_t i = 0;i < idx.size();++ i)
     {
         used[idx[i][0]] = true;
         used[idx[i][1]] = true;
@@ -178,12 +179,12 @@ void TetViewerFrame::check_useless_vtx()
         used[idx[i][3]] = true;
     }
 
-    for(int i = 0;i < mesh_->num_vertices();++ i)
-        if ( !used[i] ) 
-        {
+    for(size_t i = 0;i < mesh_->num_vertices();++ i) {
+        if ( !used[i] ) {
             PRINT_WARNING("Free vertex that is not in use is detected! VID=%d\n", i);
             return;
         }
+    }
     PRINT_MSG("No Free Vertex detected\n");
 }
 

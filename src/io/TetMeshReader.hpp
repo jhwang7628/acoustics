@@ -318,15 +318,15 @@ int FV_TetMeshLoader_Double::load_mesh(
     mesh.clear();
 
     int freeNumVtx, fixedNumVtx;
-#ifndef NDEBUG
     size_t nb;
+#ifndef NDEBUG
     nb = fread((void*)&fixedNumVtx, sizeof(int), 1, file);
     assert(nb == 1);
     nb = fread((void*)&freeNumVtx, sizeof(int), 1, file);
     assert(nb == 1);
 #else
-    fread((void*)&fixedNumVtx, sizeof(int), 1, file);
-    fread((void*)&freeNumVtx, sizeof(int), 1, file);
+    nb = fread((void*)&fixedNumVtx, sizeof(int), 1, file);
+    nb = fread((void*)&freeNumVtx, sizeof(int), 1, file);
 #endif
 
     printf("INFO: Read tetrahedron mesh: %d free vertices, %d fixed vertices\n",
@@ -339,7 +339,7 @@ int FV_TetMeshLoader_Double::load_mesh(
         nb = fread((void*)&vtx, sizeof(double), 3, file);
         assert(nb == 3);
 #else
-        fread((void*)&vtx, sizeof(double), 3, file);
+        nb = fread((void*)&vtx, sizeof(double), 3, file);
 #endif
         mesh.add_vertex(vtx);
     }
@@ -351,7 +351,7 @@ int FV_TetMeshLoader_Double::load_mesh(
         nb = fread((void*)&vtx, sizeof(double), 3, file);
         assert(nb == 3);
 #else
-        fread((void*)&vtx, sizeof(double), 3, file);
+        nb = fread((void*)&vtx, sizeof(double), 3, file);
 #endif
         mesh.add_vertex(vtx);
     }
@@ -364,7 +364,7 @@ int FV_TetMeshLoader_Double::load_mesh(
     nb = fread((void *)&ntet, sizeof(int), 1, file);
     assert(nb == 1);
 #else
-    fread((void *)&ntet, sizeof(int), 1, file);
+    nb = fread((void *)&ntet, sizeof(int), 1, file);
 #endif
     printf("INFO: Read %d tets\n", ntet);
     for(int i = 0;i < ntet;++ i)
@@ -373,7 +373,7 @@ int FV_TetMeshLoader_Double::load_mesh(
         nb = fread((void *)idx, sizeof(int), 4, file);
         assert(nb == 4);
 #else
-        fread((void *)idx, sizeof(int), 4, file);
+        nb = fread((void *)idx, sizeof(int), 4, file);
 #endif
         mesh.add_tet(idx[0], idx[1], idx[2], idx[3]);
     }
