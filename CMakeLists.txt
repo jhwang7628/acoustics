@@ -21,6 +21,7 @@ option(BUILD_ELASTICITY_SOLVER  "Compiles elasticity solver" ON)
 option(BUILD_EIGENSOLVER        "Compile modal eigensolver" ON)
 option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
 option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
+option(BUILD_RIGIDSIM_GUI       "Compile rigid-body solver GUI" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
@@ -85,6 +86,9 @@ if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     # check the existence of libQGLViewer
     find_package(QGLViewer 1.0 REQUIRED)
 endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
+
+# LibConfig needed for configuration files in certain projects
+find_package(LibConfig 1.0 REQUIRED)
 
 add_definitions(-Wall)
 

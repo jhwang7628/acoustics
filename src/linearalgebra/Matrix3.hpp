@@ -132,6 +132,7 @@ class Matrix3
         }
 
         //! right multiply a vector
+#if 0
 #ifndef DIFF_DEFINE
         Vector3<T> operator * (const Vector3<T>& rhs) const
         {
@@ -151,6 +152,16 @@ class Matrix3
 #else /* DIFF_DEFINE */
             return cols[0]*rhs.x + cols[1]*rhs.y + cols[2]*rhs.z;
 #endif /* DIFF_DEFINE */
+        }
+#endif
+        Vector3<T> operator * (const Vector3<T>& rhs) const
+        {
+            return cols[0]*rhs[0] + cols[1]*rhs[1] + cols[2]*rhs[2];
+        }
+
+        Point3<T> operator * (const Point3<T>& rhs) const
+        {
+            return cols[0]*rhs[0] + cols[1]*rhs[1] + cols[2]*rhs[2];
         }
 
 #ifdef DIFF_DEFINE

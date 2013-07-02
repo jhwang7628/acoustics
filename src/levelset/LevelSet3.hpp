@@ -1,7 +1,7 @@
 /******************************************************************************
  *  File: LevelSet3.hpp
- *
- *  This file is part of isostuffer
+ *  A discrete level-set domain divided by voxels in 3D space
+ *  Copyright (c) 2007 by Changxi Zheng
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,17 +94,22 @@ LevelSet3<T, DistFunc, BeLazy>::LevelSet3(
 {
     printf("MSG: Allocate LevelSet Voxels ... ");
     Vector3<T> dd = m_maxPt - m_minPt;
-    m_VS = fmin(dd.z*0.5, fmin(dd.y*0.5, fmin(LEVELSET_VOXEL_SIZE, dd.x*0.5)));
+    T dmax = fmax(dd.x, fmax(dd.y, dd.z));
+    T dmin = fmin(dd.x, fmin(dd.y, dd.z));
+    m_VS = fmin(dmin*0.5, dmax / (double)LEVELSET_RES); // voxel size
     m_invVS = 1. / m_VS;
 
+    // voxel resolution
     m_res.set((int)(dd.x * m_invVS) + 9,
               (int)(dd.y * m_invVS) + 9,
               (int)(dd.z * m_invVS) + 9);
+    printf("resolution=(%u,%u,%u)", m_res.x, m_res.y, m_res.z);
 
+    // size of voxel bounding box 
     Vector3<T> dd2(m_res.x * m_VS, m_res.y * m_VS, m_res.z * m_VS);
     dd2 -= dd;
     dd2 *= 0.5;
-    m_minPt -= dd2;
+    m_minPt -= dd2; // min point of the voxel bounding box
     m_maxPt += dd2;
 
     m_minBound = m_minPt + 0.5*m_VS;

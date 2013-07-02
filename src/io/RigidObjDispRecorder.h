@@ -50,7 +50,9 @@ class RigidObjDispRecorder
 
         void init(const char* file)
         {
-            m_fout.close();
+            if ( m_fout.is_open() ) {
+                m_fout.close();
+            }
             m_fout.open(file, std::ios::binary);
         }
 
@@ -88,7 +90,9 @@ class RigidObjDispRecorder
 
         ~RigidObjDispRecorder()
         {
-            m_fout.close();
+            if ( m_fout.is_open() ) {
+                m_fout.close();
+            }
         }
 
     private:
