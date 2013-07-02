@@ -69,6 +69,10 @@ class DistValProc
         const Point3d& min_point() const
         {   return m_minCorner; }
 
+        // Need this here to make this compatible with rigid/DistFunc
+        const TriangleMesh<double>* surface_mesh() const
+        {   return mp_mesh; }
+
         /*!
          * \param res    The lowest level resolution (the highest resolution) of the
          *               bounding box.

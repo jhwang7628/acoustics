@@ -1,23 +1,3 @@
-#ifndef DIFF_DEFINE
-/******************************************************************************
- *  File: RigidObjImpRecorder.h
- *
- *  This file is part of isostuffer
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
-#endif /* ! DIFF_DEFINE */
 #ifndef IO_RIGID_IMPULSE_RECORDER_H
 #   define IO_RIGID_IMPULSE_RECORDER_H
 
@@ -46,10 +26,16 @@ class RigidObjImpRecorder
     public:
         ~RigidObjImpRecorder()
         {
-            m_fout.close();
+            if ( m_fout.is_open() ) {
+                m_fout.close();
+            }
+
+            if ( m_modalImpulseOut.is_open() ) {
+                m_modalImpulseOut.close();
+            }
         }
 
-        void init(const char* file, int precision = 12);
+        void init(const char* file, const char *modalFile, int precision = 10);
         /*
          * record the impulse, applied on the vertex (id = cRec.vtxId)
          * of the rigid object (body).
@@ -59,8 +45,18 @@ class RigidObjImpRecorder
         void record_impulse(REAL ts, const Vector3<REAL>& imp, 
                 const Point3<REAL>& pt, const TRigidBody* body);
 
+        void record_constraint_impulse(REAL ts, 
+                const Vector3<REAL>& imp, const CollisionRec<REAL>& cRec,
+                const TRigidBody* body);
+
+        void record_inter_obj_impulse(REAL ts, 
+                const Vector3<REAL>& imp, const CollisionRec<REAL>& cRec,
+                const TRigidBody* ba, const TRigidBody* bb);
+
     private:
         std::ofstream       m_fout;
+
+        std::ofstream       m_modalImpulseOut;
 };
 
 #endif

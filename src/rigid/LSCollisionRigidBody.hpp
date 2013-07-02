@@ -1,21 +1,3 @@
-/******************************************************************************
- *  File: LSCollisionRigidBody.hpp
- *
- *  This file is part of isostuffer
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
 #ifndef LSCOLLISION_RIGID_BODY_HPP
 #   define LSCOLLISION_RIGID_BODY_HPP
 
@@ -70,7 +52,7 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
          */
         void apply_forces()
         {
-            if ( m_fixed )
+            if ( m_fixed || specified_state() )
             {
                 m_acc.zero();
                 m_angAcc.zero();
@@ -154,8 +136,12 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
          */
         void update_velocity_predicted_position(REAL dt);
 
+        const Point3<T>& predicted_mass_center() const
+        {  return m_predx; }
         const Quaternion<T>& predicted_inverse_rotation() const
         {  return m_predinvq; }
+        const Quaternion<T>& predicted_rotation() const
+        {  return m_predq; }
         TCollProc* collision_processor() 
         {  return &m_cproc; }
         const TCollProc* collision_processor() const
@@ -178,8 +164,8 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
         using RigidBody<T, TMesh>::m_angAcc;
         using RigidBody<T, TMesh>::m_invI0;
         using RigidBody<T, TMesh>::m_invI;
-        using RigidBody<T, TMesh>::mp_mesh;
         using RigidBody<T, TMesh>::m_invMass;
+        using RigidBody<T, TMesh>::specified_state;
 
         int                 m_id;           // obj ID
         /*======= Predicted State Variables ======*/
@@ -231,14 +217,13 @@ template <typename T, class _TMesh>
 void LSCollisionRigidBody<T, _TMesh>::apply_impulse_to_prediction(
         const Vector3<T>& impl, const Vector3<T>& r)
 {
-    if ( m_fixed ) return;
+    if ( m_fixed || specified_state() ) return;
 
     // change the current unpredicted velocity and angular velocity
     m_v += impl * m_invMass;    
 
     // when computing the angular velocity changes, use the predicted
     // position and inertia
-    // m_omega += m_predinvI * (pt - m_predx).crossProduct(impl);
     m_omega += m_predinvI * r.crossProduct(impl);
 }
 
@@ -318,7 +303,7 @@ void LSCollisionRigidBody<T, _TMesh>::update_velocity_predicted_position(REAL dt
 template <typename T, class _TMesh>
 void LSCollisionRigidBody<T, _TMesh>::init_kdtree()
 {
-    const std::vector< Point3<T> >& restPos = mp_mesh->rest_positions();
+    const std::vector< Point3<T> >& restPos = m_cproc.surface_mesh()->vertices();
     m_kdtree.reinitialize(&restPos[0], restPos.size());
 }
 #endif

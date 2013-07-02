@@ -1,21 +1,3 @@
-/******************************************************************************
- *  File: LSCollisionDetect.hpp
- *
- *  This file is part of isostuffer
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************/
 #ifndef RIGID_LEVEL_SET_COLLISION_PROCESSOR_H
 #   define RIGID_LEVEL_SET_COLLISION_PROCESSOR_H
 
@@ -145,25 +127,28 @@ class CollisionProcessor
         void inc_pred_timestamp() 
         {  ++ m_predTimestamp; }
 
-        /* compute the lumped area for each vertex */
+        /* compute the lumped area for each vertex 
         inline void update_surface_vtx_areas()
         {   m_surface.update_vertex_areas(); }
+        */
 
         /* ============= retrieval methods ============ */
-        const TTree* bounding_tree() const
+        inline const TTree* bounding_tree() const
         {   return mp_boundingTree; }
-        const TRigidBody* rigid_body() const
+        inline const TRigidBody* rigid_body() const
         {   return mp_rigidObj; }
-        const TriangleMesh<T>* surface_mesh() const
+        inline const TriangleMesh<T>* surface_mesh() const
         {   return &m_surface; }
-        TTreeNode* bounding_tree_root()
+        inline TTreeNode* bounding_tree_root()
         {   return mp_boundingTree->root(); }
-        const TTreeNode* bounding_tree_root() const
+        inline const TTreeNode* bounding_tree_root() const
         {   return mp_boundingTree->root(); }
-        int pred_timestamp() const
+        inline int pred_timestamp() const
         {   return m_predTimestamp; }
-        const std::vector< Vector3<T> >& vtx_pseudo_nml() const
+        inline const std::vector< Vector3<T> >& vtx_pseudo_nml() const
         {   return m_vtxPseudoNml; }
+        inline TLevelSet* levelset()
+        {   return mp_levelset; }
 
     private:
         void compute_tgl_pseudo_normals();
@@ -173,7 +158,6 @@ class CollisionProcessor
 
     private:
         TRigidBody*                         mp_rigidObj;
-        TMesh*                              mp_mesh;        // pointer to the tet mesh
         TriangleMesh<T>                     m_surface;      // surface triangle mesh
 
         /* 
@@ -227,10 +211,11 @@ class CollisionProcessor
 
 template <typename T, class TRigidBody>
 CollisionProcessor<T, TRigidBody>::CollisionProcessor(TRigidBody* rbody, TMesh* pmesh):
-        mp_rigidObj(rbody), mp_mesh(pmesh), m_predTimestamp(1)
+        mp_rigidObj(rbody), m_predTimestamp(1)
 {
     //// extract triangle mesh for the surface
-    pmesh->extract_surface(m_surface);
+    pmesh->extract_surface(&m_surface);
+    m_surface.update_vertex_areas();
     mp_boundingTree = new TTree(&m_surface);
 
     // find the min/max point of mesh
@@ -546,7 +531,7 @@ static bool is_disjoint(
  * both bdNodeA and bdNodeB are leaf node
  */
 template <typename T, class TRigidBody>
-static void collision_vtx_candiates(
+static void collision_vtx_candidates(
         typename CollisionProcessor<T, TRigidBody>::TTreeNode* bdNodeA,
         CollisionProcessor<T, TRigidBody>* procA)
 {
@@ -585,8 +570,8 @@ static void detect_tree_node_collisions(
     //   do the level-set based collision detection
     if ( bdNodeA->is_leaf() && bdNodeB->is_leaf() )
     {
-        collision_vtx_candiates(bdNodeA, procA);
-        collision_vtx_candiates(bdNodeB, procB);
+        collision_vtx_candidates(bdNodeA, procA);
+        collision_vtx_candidates(bdNodeB, procB);
         return;
     }
 

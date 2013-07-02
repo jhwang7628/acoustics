@@ -31,6 +31,13 @@ set(DEFORMABLE_SRC
 set(IO_SRC
     io/MatrixIO.cpp               io/TglMeshReader.cpp)
 
+set(RIGID_SRC
+    rigid/Simulator.cpp           rigid/Simulator_QS.cpp
+    rigid/ContactGraph.cpp)
+
+set(RIGID_IO_SRC
+    io/RigidObjImpRecorder.cpp    io/RigidObjRecorder.cpp)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -211,3 +218,45 @@ if ( BUILD_FBEM_INPUT_GEN )
     target_link_libraries(fbem_input_gen
         boost_program_options   boost_filesystem  boost_system  rt)
 endif ( BUILD_FBEM_INPUT_GEN )
+
+# =============================================================================
+#   Builds a rigid-body solver GUI
+# =============================================================================
+if ( BUILD_RIGIDSIM_GUI )
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    # Set up the QRC files
+    set(RIGIDSIM_UI_QRC_FILES tools/rigidsim-gui/images.qrc)
+    QT4_ADD_RESOURCES(RIGIDSIM_UI_QRC_SRCS ${RIGIDSIM_UI_QRC_FILES})
+
+    # Headers to be moc-ified
+    set(RIGIDSIM_UI_MOC_HEADERS tools/rigidsim-gui/RigidSim.h)
+    # The ui files
+    set(RIGIDSIM_UI_UI_FILES tools/rigidsim-gui/RigidSim.ui)
+
+    QT4_WRAP_CPP(RIGIDSIM_UI_MOC_SRCS ${RIGIDSIM_UI_MOC_HEADERS})
+    QT4_WRAP_UI(RIGIDSIM_UI_UI_SRCS ${RIGIDSIM_UI_UI_FILES})
+
+    # Turn on impact and displacement recording
+    add_definitions(-DUSE_RECORDER)
+
+    add_executable(rigidsim-gui
+        tools/rigidsim-gui/RigidSim.cpp   tools/rigidsim-gui/RigidCanvas.cpp
+        tools/rigidsim-gui/demo/DemoDropObjs.cpp
+        tools/rigidsim-gui/demo/DemoDropObjsWithFixed.cpp
+        tools/rigidsim-gui/demo/DemoShakingPiggy.cpp
+        ${GENERIC_SRC}                    ${DEFORMABLE_SRC}
+        ${IO_SRC}                         ${RIGID_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${RIGID_IO_SRC}                   ${RIGIDSIM_UI_UI_SRCS}
+        ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS})
+
+    target_link_libraries(rigidsim-gui
+        ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
+        ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
+        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
+endif ( BUILD_RIGIDSIM_GUI )

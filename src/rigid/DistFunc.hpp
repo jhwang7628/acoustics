@@ -112,11 +112,16 @@ class DistFunc
                         else
                             return ret;
                     case 2:     // nearest point is on vertex
+#if 0
                         if ( (pt - mp_cproc->mp_mesh->vertex(nearestPtRec.ids[0])).dotProduct(
-                                    mp_cproc->m_vtxPseudoNml[nearestPtRec.ids[0]]) < 0. )
+                                    mp_cproc->m_vtxPseudoNml[nearestPtRec.ids[0]]) < 0. ) {
+#endif
+                        if ( (pt - mp_cproc->surface_mesh()->vertex(nearestPtRec.ids[0])).dotProduct(
+                                    mp_cproc->m_vtxPseudoNml[nearestPtRec.ids[0]]) < 0. ) {
                             return -ret;
-                        else
+                        } else {
                             return ret;
+                        }
                     default:
                         fprintf(stderr, "ERROR: Unknown _MinPtRec.type %d\n",  nearestPtRec.type);
                         exit(1);
