@@ -95,7 +95,8 @@ class DistValProc
         double                          m_gds;          // grid size in the bounding volume
         Tuple3i                         m_res;
         Point3d                         m_minCorner;    // minimum corner of the bounding volume
-        Point3d                         m_minP, m_maxP; // minimum/maximum point of the given triangle mesh
+        Point3d                         m_minP, m_maxP; // minimum/maximum point of the given
+                                                        // triangle mesh
         
         // the pre-computed pseudo normal information, and triangle transformation info for computing
         // the signed distance field. 
@@ -108,7 +109,8 @@ class DistValProc
 #else
         __gnu_cxx::hash_map< int, __gnu_cxx::hash_map< int, Vector3d > >            m_edgePseudoNml;
 #endif
-        std::vector< TriangleForCollision<double> >     m_tglCollInfo;  // collision information for each triangle
+        std::vector< TriangleForCollision<double> >     m_tglCollInfo;  // collision information
+                                                                        // for each triangle
 };
 
 #endif
