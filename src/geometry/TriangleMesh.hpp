@@ -58,11 +58,17 @@ class TriangleMesh
             int id[3];
         };
 
+        TriangleMesh()
+            : m_totArea(0)
+        {
+        }
+
         void clear()
         {
             m_vertices.clear();
             m_normals.clear();
             m_triangles.clear();
+            m_totArea = 0;
         }
 
         //! Return the ID of the added vertices

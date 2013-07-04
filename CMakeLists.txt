@@ -58,6 +58,7 @@ if ( USE_MKL_BLAS )
   find_package(MKL REQUIRED)
   set(BLAS_LAPACK_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5)
   add_definitions(-DUSE_MKL)
+  add_definitions(-DUSE_LAPACKE)
 else ()
   # Try using default libraries
   set(BLAS_LAPACK_LIBS blas lapack)

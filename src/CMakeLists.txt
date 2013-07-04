@@ -18,6 +18,11 @@ set(LINEAR_SRC
     linearalgebra/Quaternion.hpp  linearalgebra/Quaternion.cpp
     linearalgebra/mat4inv.cpp)
 
+# Linear algebra sources that depend on BLAS/LAPACK implementations
+set(LINEAR_BLAS_LAPACK_SRC
+    linearalgebra/MATRIX.h        linearalgebra/MATRIX_FAST.cpp
+    linearalgebra/VECTOR.h        linearalgebra/VECTOR_FAST.cpp)
+
 set(GENERIC_SRC
     generic/precision_type.cpp)
 
@@ -61,6 +66,13 @@ set(DISTANCEFIELD_SRC
     distancefield/vec2d.h               distancefield/vec2d.cpp
     distancefield/vec3d.h               distancefield/vec3d.cpp
     distancefield/vec_types.h)
+
+set(MATH_SRC
+    math/InterpolationFunction.h        math/InterpolationFunction.cpp
+    math/Function.h                     math/Function.cpp)
+
+set(GEOMETRY_SRC
+    geometry/RigidMesh.h                geometry/RigidMesh.cpp)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -277,7 +289,8 @@ if ( BUILD_RIGIDSIM_GUI )
         ${IO_SRC}                         ${RIGID_SRC}
         ${LOGGING_SRC}                    ${LINEAR_SRC}
         ${RIGID_IO_SRC}                   ${RIGIDSIM_UI_UI_SRCS}
-        ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS})
+        ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS}
+        ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC})
 
     target_link_libraries(rigidsim-gui
         ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
@@ -305,10 +318,11 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ui/WaveViewer.cpp
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEAR_SRC}
-        ${RIGID_SRC})
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC})
 
     target_link_libraries(precompute-pan-gui
         ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
-        ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
+        ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
         ${BLAS_LAPACK_LIBS})
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
