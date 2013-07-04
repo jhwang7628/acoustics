@@ -313,6 +313,64 @@ class Matrix3
                            cols[2][0], cols[2][1], cols[2][2]);
         }
 
+        // Read the contents of this matrix from the given file.
+        // If rowMajor == true, then we assume that the contents of the
+        // file are stored in row major, rather than column major format
+        bool read( const char *fileName, bool rowMajor = false )
+        {
+            FILE* file;
+            file = fopen(fileName, "rb");
+
+            if ( !file )
+            {
+                std::cerr << "Error opening " << fileName << std::endl;
+                return false;
+            }
+
+            fread( (void *)&cols[ 0 ], sizeof( Vector3<T> ), 1, file );
+            fread( (void *)&cols[ 1 ], sizeof( Vector3<T> ), 1, file );
+            fread( (void *)&cols[ 2 ], sizeof( Vector3<T> ), 1, file );
+
+            fclose( file );
+
+            // Transpose if necessary
+            if ( rowMajor ) {
+                *this = this->transpose();
+            }
+
+            return true;
+        }
+
+        // Write contents of this matrix to the given file.
+        // If rowMajor == true, then we will write this data in row major
+        // format.
+        bool write( const char *fileName, bool rowMajor = false ) const
+        {
+            if ( rowMajor ) {
+                return transpose().write( fileName, false );
+            } else {
+
+                FILE* file;
+                file = fopen(fileName, "wb");
+
+                if ( !file )
+                {
+                    std::cerr << "Error opening " << fileName << std::endl;
+                    return false;
+                }
+
+                fwrite( (void *)&cols[ 0 ], sizeof( Vector3<T> ), 1, file );
+                fwrite( (void *)&cols[ 1 ], sizeof( Vector3<T> ), 1, file );
+                fwrite( (void *)&cols[ 2 ], sizeof( Vector3<T> ), 1, file );
+
+                fclose( file );
+
+                return true;
+            }
+        }
+
+        // Writes the contents
+
         friend std::ostream& operator<<(std::ostream& lhs, const Matrix3<T>& rhs) 
         {
             lhs << rhs.cols[0][0] << ' ' << rhs.cols[1][0] << ' ' << rhs.cols[2][0] << std::endl
@@ -329,6 +387,13 @@ class Matrix3
         {
             return Matrix3<T>(v.x, 0, 0, 0, v.y, 0, 0, 0, v.z);
         }
+        static Matrix3<T> crossProductMatrix(const Tuple3<T>& v)
+        {
+            return Matrix3<T>( 0.0, -v[2], v[1],
+                               v[2], 0.0, -v[0],
+                               -v[1], v[0], 0.0 );
+        }
+
 };
 
 template <typename T>

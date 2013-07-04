@@ -125,7 +125,7 @@ class Tuple3
             return Tuple3<T> (x + rhs.x, y + rhs.y, z + rhs.z);
         }
        
-        /*! Substraction operator */
+        /*! Subtraction operator */
         Tuple3<T> operator - (const Tuple3<T>& rhs) const 
         {
             return Tuple3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
@@ -337,6 +337,48 @@ class Tuple3
          * used for passing Tuple3<T> values to gl*3[fd] functions.
          */    
         operator const T*() const { return (const T*) this; }
+
+        // Read this Tuple from the given file
+        bool read( const char *fileName )
+        {
+            FILE* file;
+            file = fopen(fileName, "rb");
+
+            if ( !file )
+            {
+                std::cerr << "Error opening " << fileName << std::endl;
+                return false;
+            }
+
+            fread( (void *)&x, sizeof( T ), 1, file );
+            fread( (void *)&y, sizeof( T ), 1, file );
+            fread( (void *)&z, sizeof( T ), 1, file );
+
+            fclose( file );
+
+            return true;
+        }
+
+        // Write this Tuple to the given file
+        bool write( const char *fileName )
+        {
+            FILE* file;
+            file = fopen(fileName, "wb");
+
+            if ( !file )
+            {
+                std::cerr << "Error opening " << fileName << std::endl;
+                return false;
+            }
+
+            fwrite( (void *)&x, sizeof( T ), 1, file );
+            fwrite( (void *)&y, sizeof( T ), 1, file );
+            fwrite( (void *)&z, sizeof( T ), 1, file );
+
+            fclose( file );
+
+            return true;
+        }
        
         //============== stream operator =================
         /*! Output to stream operator */
