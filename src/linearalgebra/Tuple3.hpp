@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <stdio.h>
 
 #ifdef USE_NAMESPACE
 namespace carbine

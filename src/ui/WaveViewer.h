@@ -10,7 +10,6 @@
 #include <QGLViewer/qglviewer.h>
 
 #include <linearalgebra/MATRIX.h>
-#include <linearalgebra/MATRIX3.h>
 #include <linearalgebra/VECTOR.h>
 
 #include <util/Evaluator.h>
