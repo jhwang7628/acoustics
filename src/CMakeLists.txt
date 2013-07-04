@@ -38,6 +38,30 @@ set(RIGID_SRC
 set(RIGID_IO_SRC
     io/RigidObjImpRecorder.cpp    io/RigidObjRecorder.cpp)
 
+set(WAVESOLVER_SRC
+    wavesolver/MAC_Grid.cpp       wavesolver/MAC_Grid.h
+    wavesolver/PML_WaveSolver.cpp wavesolver/PML_WaveSolver.h
+    wavesolver/WaveSolver.cpp     wavesolver/WaveSolver.h)
+
+# Sources for Jernej Barbic's flat signed distance function classes
+set(DISTANCEFIELD_SRC
+    distancefield/boundingBox.h         distancefield/boundingBox.cpp
+    distancefield/closestPointField.h   distancefield/closestPointField.cpp
+    distancefield/distanceField.h       distancefield/distanceField.cpp
+    distancefield/mat3d.h               distancefield/mat3d.cpp
+    distancefield/minivector.h
+    distancefield/objfile.h             distancefield/objfile.cpp
+    distancefield/objfileOctree.h       distancefield/objfileOctree.cpp
+    distancefield/obj.h
+    distancefield/octree.h              distancefield/octree.cpp
+    distancefield/sphere.h              distancefield/sphere.cpp
+    distancefield/triangle.h            distancefield/triangle.cpp
+    distancefield/tribox2.h             distancefield/tribox2.cpp
+    distancefield/triple.h
+    distancefield/vec2d.h               distancefield/vec2d.cpp
+    distancefield/vec3d.h               distancefield/vec3d.cpp
+    distancefield/vec_types.h)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -260,3 +284,31 @@ if ( BUILD_RIGIDSIM_GUI )
         ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
         ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
 endif ( BUILD_RIGIDSIM_GUI )
+
+# =============================================================================
+#   Builds a GUI for the PAN Wavesolver
+# =============================================================================
+if ( BUILD_PAN_PRECOMPUTE_GUI )
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    # Headers to be moc-ified
+    set(PAN_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
+
+    QT4_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
+
+    add_executable(precompute-pan-gui
+        tools/precompute_acceleration_pulse.cpp
+        ui/WaveViewer.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${RIGID_SRC})
+
+    target_link_libraries(precompute-pan-gui
+        ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+        ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
+        ${BLAS_LAPACK_LIBS})
+endif ( BUILD_PAN_PRECOMPUTE_GUI )
