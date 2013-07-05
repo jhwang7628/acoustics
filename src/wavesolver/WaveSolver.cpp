@@ -14,12 +14,12 @@
 // Provide the size of the domain (bbox), finite difference division
 // size, and a signed distance function for the interior boundary.
 //////////////////////////////////////////////////////////////////////
-WaveSolver::WaveSolver( Real timeStep,
-                        const BoundingBox &bbox, Real cellSize,
+WaveSolver::WaveSolver( REAL timeStep,
+                        const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
                         const DistanceField &distanceField,
                         bool useLeapfrog,
-                        Real distanceTolerance,
+                        REAL distanceTolerance,
                         bool useBoundary,
                         bool rasterize,
                         const Vector3Array *listeningPositions,
@@ -83,12 +83,12 @@ WaveSolver::WaveSolver( Real timeStep,
 // Provide the size of the domain (bbox), finite difference division
 // size, and a list of SDFs for the interior boundary
 //////////////////////////////////////////////////////////////////////
-WaveSolver::WaveSolver( Real timeStep,
-        const BoundingBox &bbox, Real cellSize,
+WaveSolver::WaveSolver( REAL timeStep,
+        const BoundingBox &bbox, REAL cellSize,
         vector<const TriMesh *> &meshes,
         vector<const DistanceField *> &boundaryFields,
         bool useLeapfrog,
-        Real distanceTolerance,
+        REAL distanceTolerance,
         bool useBoundary,
         bool rasterize,
         const Vector3Array *listeningPositions,
@@ -155,14 +155,14 @@ WaveSolver::~WaveSolver()
 //////////////////////////////////////////////////////////////////////
 // Time steps the system in the given interval
 //////////////////////////////////////////////////////////////////////
-void WaveSolver::solveSystem( Real startTime, Real endTime,
+void WaveSolver::solveSystem( REAL startTime, REAL endTime,
         const BoundaryEvaluator &bcEvaluator )
 {
 }
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-void WaveSolver::initSystem( Real startTime,
+void WaveSolver::initSystem( REAL startTime,
         VECTOR *initialPressure,
         VECTOR *initialVelocity )
 {
@@ -211,7 +211,7 @@ void WaveSolver::initSystem( Real startTime,
 //////////////////////////////////////////////////////////////////////
 bool WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
 {
-    _stepTimer.tick();
+    _stepTimer.start();
     if ( _useLeapfrog )
     {
         stepLeapfrog( bcEvaluator );
@@ -222,7 +222,7 @@ bool WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
     }
 
     _timeIndex += 1;
-    _stepTimer.tock();
+    _stepTimer.pause();
 
     printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
 #if 0
@@ -281,11 +281,11 @@ void WaveSolver::writeWaveOutput() const
 //////////////////////////////////////////////////////////////////////
 void WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 {
-    _algebraTimer.tick();
+    _algebraTimer.start();
 
-    Real                       dt2 = _timeStep * _timeStep;
-    Real                       c2 = WAVE_SPEED * WAVE_SPEED;
-    Real                       laplacianMultiplier = c2;
+    REAL                       dt2 = _timeStep * _timeStep;
+    REAL                       c2 = WAVE_SPEED * WAVE_SPEED;
+    REAL                       laplacianMultiplier = c2;
 
     _p.parallelAxpy( _timeStep, _v );
     _p.parallelAxpy( dt2 / 2.0, _a );
@@ -293,32 +293,32 @@ void WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _v.parallelAxpy( _timeStep / 2.0, _a );
 
     _currentTime += _timeStep;
-    _algebraTimer.tock();
+    _algebraTimer.pause();
 
     // Get new acceleration at next time step
 #if 0
-    _memoryTimer.tick();
+    _memoryTimer.start();
     _a.clear();
-    _memoryTimer.tock();
+    _memoryTimer.pause();
 #endif
 
-    _laplacianTimer.tick();
+    _laplacianTimer.start();
     _laplacian.apply( _p, _a, laplacianMultiplier );
-    _laplacianTimer.tock();
+    _laplacianTimer.pause();
 
-    _boundaryTimer.tick();
+    _boundaryTimer.start();
     _laplacian.applyBoundary( _a, bcEvaluator, _currentTime, laplacianMultiplier );
-    _boundaryTimer.tock();
+    _boundaryTimer.pause();
 
     // Add to the velocity
-    _algebraTimer.tick();
+    _algebraTimer.start();
     _v.parallelAxpy( _timeStep / 2.0, _a );
-    _algebraTimer.tock();
+    _algebraTimer.pause();
 
-    _writeTimer.tick();
+    _writeTimer.start();
     if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
     {
-        Real                     listenerOutput;
+        REAL                     listenerOutput;
         const ScalarField       &field = _laplacian.field();
 
         for ( int i = 0; i < _listeningPositions->size(); i++ )
@@ -346,12 +346,12 @@ void WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
                     sprintf( buf, "%s_field_%d_position_%03d.vector", _outputFile,
                             field_id, i );
 
-                    writeRealVector( buf, _waveOutput[ i ][ field_id ] );
+                    writeVector( buf, _waveOutput[ i ][ field_id ] );
                 }
             }
         }
     }
-    _writeTimer.tock();
+    _writeTimer.pause();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -362,9 +362,9 @@ void WaveSolver::stepCenteredDifference(
         const BoundaryEvaluator &bcEvaluator )
 {
     // p2 = c^2 * dt^2 * L(p1) + ( 2 p1 - p0 )     NO! / dt^2
-    Real                       dt2 = _timeStep * _timeStep;
-    Real                       c2 = WAVE_SPEED * WAVE_SPEED;
-    Real                       laplacianMultiplier = c2 * dt2;
+    REAL                       dt2 = _timeStep * _timeStep;
+    REAL                       c2 = WAVE_SPEED * WAVE_SPEED;
+    REAL                       laplacianMultiplier = c2 * dt2;
 
     _p2.clear();
     _p2.copyInplace( _p1 );

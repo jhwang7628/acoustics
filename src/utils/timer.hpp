@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  timer.h
+ *       Filename:  timer.hpp
  *
  *    Description:  Timer class
  *
@@ -20,41 +20,49 @@
 
 #include "nano_timer.h"
 
+#include <string>
+
 template <bool NanoAccu>
 class Timer
 {
     public:
-        Timer():tStart_(0.), elapsed_(0.) { }
+        Timer()
+            : tStart_(0.),
+              elapsed_(0.),
+              cycles_(0)
+        {
+        }
+
+        Timer(const std::string &name)
+            : tStart_(0.),
+              elapsed_(0.),
+              cycles_(0),
+              name_(name)
+        {
+        }
 
         void start();
         void pause();
 
         inline void reset()
-        {   elapsed_ = tStart_ = 0.; }
+        {
+            elapsed_ = tStart_ = 0.;
+            cycles_ = 0;
+        }
 
         inline double elapsed() const
         {   return elapsed_; }
 
+        double getMsPerCycle() const;
+
     private:
-        double  tStart_;
-        double  elapsed_;
+        double       tStart_;
+        double       elapsed_;
+
+        unsigned int cycles_;
+
+        std::string  name_;
 };
-
-template<>
-void Timer<false>::start()
-{   tStart_ = GetMilliTimed(); }
-
-template<>
-void Timer<false>::pause()
-{   elapsed_ += (GetMilliTimed()-tStart_); }
-
-template<>
-void Timer<true>::start()
-{   tStart_ = GetNanoTimed(); }
-
-template<>
-void Timer<true>::pause()
-{   elapsed_ += (GetNanoTimed()-tStart_); }
 
 #endif   /* ----- #ifndef UTILS_TIMER_INC  ----- */
 

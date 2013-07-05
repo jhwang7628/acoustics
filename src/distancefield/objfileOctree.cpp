@@ -78,11 +78,10 @@ ObjFileOctree<TriangleClass>::ObjFileOctree( ObjFile * objFileIn, int maxTriCoun
     //cout << "done" << endl;
 }
 
-#if 0
 template<class TriangleClass>
-ObjFileOctree<TriangleClass>::ObjFileOctree( TriMesh *mesh, int maxTriCount_g,
-        int maxDepth_g, int printInfo ) : 
-    maxTriCount(maxTriCount_g), maxDepth(maxDepth_g)
+ObjFileOctree<TriangleClass>::ObjFileOctree( TriangleMesh<REAL> *mesh, int maxTriCount_g,
+                                             int maxDepth_g, int printInfo )
+    : maxTriCount(maxTriCount_g), maxDepth(maxDepth_g)
 {
     int triangleIndex = 0;
     triangles.clear();
@@ -99,13 +98,18 @@ ObjFileOctree<TriangleClass>::ObjFileOctree( TriMesh *mesh, int maxTriCount_g,
             triangles.push_back(triangle);
         }
 #endif
-    vector<Triangle *> &meshTriangles = mesh->getTriangles();
-    for (unsigned int i = 0; i < meshTriangles.size(); i++)
+    for (unsigned int i = 0; i < mesh->triangles().size(); i++)
     {
+        const Tuple3ui &t = mesh->triangle_ids( i );
+#if 0
         Triangle *t = meshTriangles.at(i);
         const VEC3F &x0 = t->getX(0);
         const VEC3F &x1 = t->getX(1);
         const VEC3F &x2 = t->getX(2);
+#endif
+        const Point3d &x0 = mesh->vertex( t[ 0 ] );
+        const Point3d &x1 = mesh->vertex( t[ 1 ] );
+        const Point3d &x2 = mesh->vertex( t[ 2 ] );
 
         Vec3d p0( x0[0], x0[1], x0[2] );
         Vec3d p1( x1[0], x1[1], x1[2] );
@@ -116,7 +120,10 @@ ObjFileOctree<TriangleClass>::ObjFileOctree( TriMesh *mesh, int maxTriCount_g,
 
         // Set the vertex indices for future reference.  These
         // refer to indices in the TriMesh object
+#if 0
         triangle.setVertexIndex( t->getIndex(0), t->getIndex(1), t->getIndex(2) );
+#endif
+        triangle.setVertexIndex( t[ 0 ], t[ 1 ], t[ 2 ] );
 
         triangleIndex++;
         triangles.push_back(triangle);
@@ -146,7 +153,6 @@ ObjFileOctree<TriangleClass>::ObjFileOctree( TriMesh *mesh, int maxTriCount_g,
     triangles.clear(); // release memory
     //cout << "done" << endl;
 }
-#endif
 
 template<>
 ObjFileOctree<TriangleWithCollisionInfoAndPseudoNormals>::ObjFileOctree( ObjFile * objFileIn, int maxTriCount_g, int maxDepth_g, int printInfo ) : 
@@ -293,10 +299,8 @@ template ObjFileOctree<TriangleBasic>::ObjFileOctree( const std::string& filenam
 template ObjFileOctree<TriangleWithCollisionInfo>::ObjFileOctree( const std::string& filename, int maxTriCount_g, int maxDepth_g, int printInfo );  
 template ObjFileOctree<TriangleWithCollisionInfoAndPseudoNormals>::ObjFileOctree( const std::string& filename, int maxTriCount_g, int maxDepth_g, int printInfo );  
 
-#if 0
-template ObjFileOctree<TriangleBasic>::ObjFileOctree( TriMesh *mesh,
+template ObjFileOctree<TriangleBasic>::ObjFileOctree( TriangleMesh<REAL> *mesh,
         int maxTriCount_g, int maxDepth_g, int printInfo );  
 template ObjFileOctree<TriangleWithCollisionInfo>::ObjFileOctree(
-        TriMesh *mesh, int maxTriCount_g, int maxDepth_g,
+        TriangleMesh<REAL> *mesh, int maxTriCount_g, int maxDepth_g,
         int printInfo );  
-#endif

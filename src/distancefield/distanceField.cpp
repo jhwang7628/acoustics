@@ -437,14 +437,12 @@ void DistanceField::setBoundingBox(Vec3d bmin_g, Vec3d bmax_g)
     bmax_ = bmax_g;
 }
 
-#if 0
-REAL DistanceField::distance(const VEC3F &pos) const
+REAL DistanceField::distance(const Vector3d &pos) const
 {
     Vec3d v_pos( pos[0], pos[1], pos[2] );
 
     return (REAL)( distance( v_pos ) );
 }
-#endif
 
 float DistanceField::distance(Vec3d pos, int constrainToBox) const
 {
@@ -599,15 +597,13 @@ Vec3d DistanceField::gradient(Vec3d pos) const
 
 }
 
-#if 0
-VEC3F DistanceField::gradient( const VEC3F &pos ) const
+Vector3d DistanceField::gradient( const Vector3d &pos ) const
 {
     Vec3d v_pos( pos[0], pos[1], pos[2] );
     Vec3d v_gradient = gradient( v_pos );
 
-    return VEC3F( v_gradient[ 0 ], v_gradient[ 1 ], v_gradient[ 2 ] );
+    return Vector3d( v_gradient[ 0 ], v_gradient[ 1 ], v_gradient[ 2 ] );
 }
-#endif
 
 // Checks to see if a voxel is either fully or partially inside an object
 bool DistanceField::voxelInside( int i, int j, int k, bool full,

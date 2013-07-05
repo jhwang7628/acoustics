@@ -305,9 +305,8 @@ void ClosestPointField::closestPoint(float pos[3], float result[3])
 		 c0[2], c1[2], c2[2], c3[2], c4[2], c5[2], c6[2], c7[2]);
 }
 
-#if 0
-void ClosestPointField::interpolateScalar( const VEC3F &pos,
-														VECTOR &data, REAL &result )
+void ClosestPointField::interpolateScalar( const Vector3d &pos,
+                                           VECTOR &data, REAL &result )
 {
 	int i,j,k;
 
@@ -354,8 +353,8 @@ void ClosestPointField::interpolateScalar( const VEC3F &pos,
 		 s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
 }
 
-void ClosestPointField::interpolateVector( const VEC3F &pos,
-														VECTOR &data, VEC3F &result )
+void ClosestPointField::interpolateVector( const Vector3d &pos,
+                                           VECTOR &data, Vector3d &result )
 {
 	int i,j,k;
 
@@ -386,8 +385,8 @@ void ClosestPointField::interpolateVector( const VEC3F &pos,
 	closestFeature(i,j+1,k+1,f[7]);
 
 	// Find a scalar value pertaining to each corner
-	VEC3F v[8];
-	VEC3F v_i1, v_i2, v_i3;
+	Vector3d v[8];
+	Vector3d v_i1, v_i2, v_i3;
 	for (int i = 0; i < 8; i++)
 	{
 		// Get the values at triangle corners
@@ -413,7 +412,6 @@ void ClosestPointField::interpolateVector( const VEC3F &pos,
 	result[2] = TRILINEAR_INTERPOLATION(wx,wy,wz,
 		 v[0][2], v[1][2], v[2][2], v[3][2], v[4][2], v[5][2], v[6][2], v[7][2]);
 }
-#endif
 
 bool ClosestPointField::sanityCheck()
 {

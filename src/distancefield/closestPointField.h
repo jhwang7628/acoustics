@@ -3,10 +3,8 @@
 
 #include "distanceField.h"
 
-#if 0
 #include <linearalgebra/VECTOR.h>
-#include <linearalgebra/VEC3.h>
-#endif
+#include <linearalgebra/Vector3.hpp>
 
 #include <config.h>
 
@@ -37,21 +35,19 @@ public:
 	~ClosestPointField();
 
 	int computeUnsignedField(const std::string& filename,
-													 int resolution, int maxTriCount=15,
-													 int maxDepth=10);
+                             int resolution, int maxTriCount=15,
+                             int maxDepth=10);
 	int computeSignedField(const std::string& filename,
-												 int resolution, int maxTriCount=15,
-												 int maxDepth=10);
+                           int resolution, int maxTriCount=15,
+                           int maxDepth=10);
 
 	int computeUnsignedField(ObjFile * objFile, int resolution,
-													 int maxTriCount=15, int maxDepth=10);
+                             int maxTriCount=15, int maxDepth=10);
 	int computeSignedField(ObjFile * objFile, int resolution,
-												 int maxTriCount=15, int maxDepth=10);
+                           int maxTriCount=15, int maxDepth=10);
 
-#if 0
-	int computeUnsignedField(TriMesh *mesh, int resolution,
-													 int maxTriCount=15, int maxDepth=10);
-#endif
+	int computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution,
+                             int maxTriCount=15, int maxDepth=10);
 
 	int load(const std::string& filename);
 	int save(const std::string& filename, bool doublePrecision=true);
@@ -87,15 +83,13 @@ public:
 		result = closestFeatureData[pos];
 	}
 
-#if 0
 	// Interpolate 3-vector and scalar quantities using
 	// closest point data.  For scalar quantities, the
 	// input vector should have size equal to the number
 	// of vertices in the input mesh.  For vector quantities,
 	// the input vector should be three times this large.
-	void interpolateScalar( const VEC3F &pos, VECTOR &data, REAL &result );
-	void interpolateVector( const VEC3F &pos, VECTOR &data, VEC3F &result );
-#endif
+	void interpolateScalar( const Vector3d &pos, VECTOR &data, REAL &result );
+	void interpolateVector( const Vector3d &pos, VECTOR &data, Vector3d &result );
 
 protected:
 	float * closestPointData;
