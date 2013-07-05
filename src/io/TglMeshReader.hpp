@@ -39,7 +39,7 @@ class MeshObjReader
 
         template <typename T>
         static int read(const char* file, TriangleMesh<T>& mesh, 
-                bool centerize = false, bool reversetglrot = false)
+                        bool centerize = false, bool reversetglrot = false)
         {
             using namespace std;
 
