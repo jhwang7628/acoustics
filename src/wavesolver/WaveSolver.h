@@ -13,15 +13,14 @@
 #include <linearalgebra/MATRIX.h>
 #include <linearalgebra/VECTOR.h>
 
-#include <mesh/TriMesh.h>
+#include <geometry/BoundingBox.h>
+#include <geometry/TriangleMesh.hpp>
 
-#include <util/BoundingBox.h>
-#include <util/Evaluator.h>
-#include <util/timer.h>
+#include <utils/Evaluator.h>
+#include <utils/timer.hpp>
 
 #include "Laplacian.h"
 
-#include <SETTINGS.h>
 #include <TYPES.h>
 
 #include <boost/function.hpp>
@@ -31,28 +30,31 @@
 //
 //////////////////////////////////////////////////////////////////////
 class Solver {
-  public:
-    Solver()
-    {
-    }
+    public:
+        typedef TriangleMesh<REAL>  TriMesh;
 
-    virtual ~Solver()
-    {
-    }
+    public:
+        Solver()
+        {
+        }
 
-    virtual const Tuple3i &fieldDivisions() const = 0;
-    virtual int N() const = 0;
-    virtual const vector<const TriMesh *> &meshes() const = 0;
-    virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator ) = 0;
-    virtual void writeWaveOutput() const = 0;
-    virtual VEC3F fieldPosition( const Tuple3i &index ) const = 0;
-    virtual VEC3F fieldPosition( int index ) const = 0;
-    virtual const Vector3Array *listeningPositions() const = 0;
-    virtual Real fieldDiameter() const = 0;
-    virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) = 0;
-    virtual int numCells() const = 0;
-    virtual Real currentSimTime() const = 0;
-    virtual VEC3F sceneCenter() const = 0;
+        virtual ~Solver()
+        {
+        }
+
+        virtual const Tuple3i &fieldDivisions() const = 0;
+        virtual int N() const = 0;
+        virtual const vector<const TriMesh *> &meshes() const = 0;
+        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator ) = 0;
+        virtual void writeWaveOutput() const = 0;
+        virtual Vector3d fieldPosition( const Tuple3i &index ) const = 0;
+        virtual Vector3d fieldPosition( int index ) const = 0;
+        virtual const Vector3Array *listeningPositions() const = 0;
+        virtual REAL fieldDiameter() const = 0;
+        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) = 0;
+        virtual int numCells() const = 0;
+        virtual REAL currentSimTime() const = 0;
+        virtual Vector3d sceneCenter() const = 0;
 
 };
 
@@ -66,18 +68,18 @@ class Solver {
 //       some form of damping.
 //////////////////////////////////////////////////////////////////////
 class WaveSolver : public Solver {
-	public:
+    public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)>
-                                                                    WriteCallback;
+            WriteCallback;
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
-		WaveSolver( Real timeStep,
-                    const BoundingBox &bbox, Real cellSize,
+        WaveSolver( REAL timeStep,
+                    const BoundingBox &bbox, REAL cellSize,
                     const TriMesh &mesh,
                     const DistanceField &distanceField,
                     bool useLeapfrog,
-                    Real distanceTolerance = 0.0,
+                    REAL distanceTolerance = 0.0,
                     bool useBoundary = true,
                     bool rasterize = false,
                     const Vector3Array *listeningPositions = NULL,
@@ -88,30 +90,30 @@ class WaveSolver : public Solver {
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a list of SDFs for the interior boundary
-        WaveSolver( Real timeStep,
-                    const BoundingBox &bbox, Real cellSize,
-                    std::vector<const TriMesh *> &meshes,
-                    std::vector<const DistanceField *> &boundaryFields,
-                    bool useLeapfrog,
-                    Real distanceTolerance = 0.0,
-                    bool useBoundary = true,
-                    bool rasterize = false,
-                    const Vector3Array *listeningPositions = NULL,
-                    const char *outputFile = NULL,
-                    WriteCallback *callback = NULL,
-                    int subSteps = 1,
-                    int N = 1 );
+        WaveSolver( REAL timeStep,
+                const BoundingBox &bbox, REAL cellSize,
+                std::vector<const TriMesh *> &meshes,
+                std::vector<const DistanceField *> &boundaryFields,
+                bool useLeapfrog,
+                REAL distanceTolerance = 0.0,
+                bool useBoundary = true,
+                bool rasterize = false,
+                const Vector3Array *listeningPositions = NULL,
+                const char *outputFile = NULL,
+                WriteCallback *callback = NULL,
+                int subSteps = 1,
+                int N = 1 );
 
         // Destructor
         virtual ~WaveSolver();
 
         // Time steps the system in the given interval
-        void solveSystem( Real startTime, Real endTime,
-                          const BoundaryEvaluator &bcEvaluator );
+        void solveSystem( REAL startTime, REAL endTime,
+                const BoundaryEvaluator &bcEvaluator );
 
-        void initSystem( Real startTime,
-                         VECTOR *initialPressure = NULL,
-                         VECTOR *initialVelocity = NULL );
+        void initSystem( REAL startTime,
+                VECTOR *initialPressure = NULL,
+                VECTOR *initialVelocity = NULL );
 
         // Takes a single time step
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
@@ -121,91 +123,91 @@ class WaveSolver : public Solver {
         virtual void writeWaveOutput() const;
 
         virtual const Tuple3i   &fieldDivisions() const
-                                 {
-                                   return _laplacian.fieldDivisions();
-                                 }
+        {
+            return _laplacian.fieldDivisions();
+        }
 
-        virtual VEC3F            fieldPosition( const Tuple3i &index ) const
-                                 {
-                                   return _laplacian.fieldPosition( index );
-                                 }
+        virtual Vector3d         fieldPosition( const Tuple3i &index ) const
+        {
+            return _laplacian.fieldPosition( index );
+        }
 
-        virtual  VEC3F           fieldPosition( int index ) const
-                                 {
-                                   return _laplacian.fieldPosition( index );
-                                 }
+        virtual  Vector3d        fieldPosition( int index ) const
+        {
+            return _laplacian.fieldPosition( index );
+        }
 
 #if 0
         inline const TriMesh    &mesh() const
-                                 {
-                                   return _laplacian.mesh();
-                                 }
+        {
+            return _laplacian.mesh();
+        }
 #endif
         virtual const vector<const TriMesh *> &meshes() const
-                                 {
-                                   return _laplacian.meshes();
-                                 }
+        {
+            return _laplacian.meshes();
+        }
 
         virtual int              numCells() const
-                                 {
-                                   return _laplacian.numCells();
-                                 }
+        {
+            return _laplacian.numCells();
+        }
 
         inline const IntArray   &ghostCells() const
-                                 {
-                                   return _laplacian.ghostCells();
-                                 }
+        {
+            return _laplacian.ghostCells();
+        }
 
         inline const IntArray   &interfacialCells() const
-                                 {
-                                   return _laplacian.interfacialCells();
-                                 }
+        {
+            return _laplacian.interfacialCells();
+        }
 
         virtual const Vector3Array *listeningPositions() const
-                                 {
-                                   return _listeningPositions;
-                                 }
-        
-        virtual Real             fieldDiameter() const
-                                 {
-                                   return _laplacian.fieldDiameter();
-                                 }
+        {
+            return _listeningPositions;
+        }
+
+        virtual REAL             fieldDiameter() const
+        {
+            return _laplacian.fieldDiameter();
+        }
 
         virtual  int             N() const
-                                 {
-                                   return _N;
-                                 }
+        {
+            return _N;
+        }
 
-        virtual Real             currentSimTime() const
-                                 {
-                                   return _timeStep * (Real)_timeIndex;
-                                 }
-        
-        virtual VEC3F            sceneCenter() const
-                                 {
-                                   return _laplacian.field().bbox().center();
-                                 }
+        virtual REAL             currentSimTime() const
+        {
+            return _timeStep * (REAL)_timeIndex;
+        }
+
+        virtual Vector3d         sceneCenter() const
+        {
+            return _laplacian.field().bbox().center();
+        }
 
     protected:
 
     private:
         void                     stepLeapfrog(
-                                            const BoundaryEvaluator &bcEvaluator );
+                const BoundaryEvaluator &bcEvaluator );
 
         // Time stepping based on standard centered difference of 2nd
         // time derivative
         void                     stepCenteredDifference(
-                                            const BoundaryEvaluator &bcEvaluator );
+                const BoundaryEvaluator &bcEvaluator );
 
-	private:
-        static const Real        WAVE_SPEED = 343.0;
+    private:
+        static const REAL        WAVE_SPEED = 343.0;
 
         // Laplacian discretization for this domain
         Laplacian                _laplacian;
 
         // Pretty self-explanatory
-        Real                     _timeStep;
-        Real                     _currentTime;
+        REAL                     _timeStep;
+        REAL                     _currentTime;
         int                      _timeIndex;
         int                      _subSteps;
 
@@ -233,18 +235,18 @@ class WaveSolver : public Solver {
         const char              *_outputFile;
 
         std::vector<std::vector<FloatArray> >
-                                 _waveOutput;
-      
+            _waveOutput;
+
         VECTOR                   _listenerOutput;
 
         WriteCallback           *_callback;
 
-        Timer                    _laplacianTimer;
-        Timer                    _boundaryTimer;
-        Timer                    _stepTimer;
-        Timer                    _algebraTimer;
-        Timer                    _memoryTimer;
-        Timer                    _writeTimer;
+        Timer<false>             _laplacianTimer;
+        Timer<false>             _boundaryTimer;
+        Timer<false>             _stepTimer;
+        Timer<false>             _algebraTimer;
+        Timer<false>             _memoryTimer;
+        Timer<false>             _writeTimer;
 
 };
 

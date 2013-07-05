@@ -10,9 +10,7 @@
 #include <set>
 #include <vector>
 
-#if 0
-#include <linearalgebra/VEC3.h>
-#endif
+#include <linearalgebra/Vector3.hpp>
 
 using namespace std;
 
@@ -25,15 +23,10 @@ using namespace std;
 
 typedef std::vector<int>			        IntArray;
 typedef std::vector<bool>			        BoolArray;
-#if 0
-typedef std::vector<VEC3F>                  Vector3Array;
-#endif
+typedef std::vector<Vector3<REAL> >         Vector3Array;
 typedef std::vector<REAL>			        FloatArray;
 
-#if 0
-typedef TVEC3<int>					        Tuple3i;
 typedef std::vector<Tuple3i>	            Tuple3Array;
-#endif
 
 typedef std::pair<int,int>                  IndexRange;
 typedef std::pair<int,int>                  IntPair;
@@ -45,10 +38,8 @@ typedef std::set<IntPair>                   IndexPairSet;
 // 2D and 3D arrays for various data types
 typedef boost::multi_array<REAL, 2>		    ScalarArray2D;
 typedef boost::multi_array<REAL, 3>		    ScalarArray3D;
-#if 0
-typedef boost::multi_array<VEC3F, 2>	    Vec3Array2D;
-typedef boost::multi_array<VEC3F, 3>	    Vec3Array3D;
-#endif
+typedef boost::multi_array<Vector3d, 2>	    Vec3Array2D;
+typedef boost::multi_array<Vector3d, 3>	    Vec3Array3D;
 typedef boost::multi_array<bool, 2>		    BoolArray2D;
 typedef boost::multi_array<bool, 3>		    BoolArray3D;
 typedef boost::multi_array<int, 2>		    IntArray2D;

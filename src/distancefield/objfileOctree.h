@@ -20,9 +20,7 @@
 #include "objfile.h"
 #include "minivector.h"
 
-#if 0
-class TriMesh;
-#endif
+#include <geometry/TriangleMesh.hpp>
 
 template<class TriangleClass>
 class ObjFileOctree 
@@ -33,11 +31,10 @@ class ObjFileOctree
         ObjFileOctree( const std::string& filename, int maxTriCount_g, int maxDepth_g,
                        int printInfo = 1 );
 
-#if 0
         // Build an octree using a triangle mesh (which was originally generated
         // via an obj file)
-        ObjFileOctree( TriMesh *mesh, int maxTriCount_g, int maxDepth_g, int printInfo = 1 );
-#endif
+        ObjFileOctree( TriangleMesh<REAL> *mesh, int maxTriCount_g, int maxDepth_g,
+                       int printInfo = 1 );
 
         ~ObjFileOctree() { delete(root); }
 

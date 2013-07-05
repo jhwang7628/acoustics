@@ -10,7 +10,8 @@ set(ISOSTUFFER_SOURCES
 # utils/
 set(UTILS_SRC
     utils/macros.h      utils/math.hpp
-    utils/nano_timer.h  utils/nano_timer.c)
+    utils/nano_timer.h  utils/nano_timer.c
+    utils/timer.hpp     utils/timer.cpp)
 
 # linearalgebra
 set(LINEAR_SRC
@@ -43,7 +44,11 @@ set(RIGID_SRC
 set(RIGID_IO_SRC
     io/RigidObjImpRecorder.cpp    io/RigidObjRecorder.cpp)
 
+set(FIELD_SRC
+    field/ScalarField.h           field/ScalarField.cpp)
+
 set(WAVESOLVER_SRC
+    wavesolver/Laplacian.cpp      wavesolver/Laplacian.h
     wavesolver/MAC_Grid.cpp       wavesolver/MAC_Grid.h
     wavesolver/PML_WaveSolver.cpp wavesolver/PML_WaveSolver.h
     wavesolver/WaveSolver.cpp     wavesolver/WaveSolver.h)
@@ -290,7 +295,9 @@ if ( BUILD_RIGIDSIM_GUI )
         ${LOGGING_SRC}                    ${LINEAR_SRC}
         ${RIGID_IO_SRC}                   ${RIGIDSIM_UI_UI_SRCS}
         ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS}
-        ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC})
+        ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${DISTANCEFIELD_SRC})
 
     target_link_libraries(rigidsim-gui
         ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}

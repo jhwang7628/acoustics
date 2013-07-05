@@ -1,9 +1,6 @@
 #include <float.h>
 
-#if 0
-#include <mesh/Triangle.h>
-#include <mesh/TriMesh.h>
-#endif
+#include <geometry/TriangleMesh.hpp>
 
 #include "distanceField.h"
 
@@ -361,14 +358,13 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
 }
 
 
-#if 0
 #ifndef COMPUTE_SIGNED_FIELD
 #ifdef COMPUTE_CLOSEST_POINT
-int ClosestPointField::computeUnsignedField(TriMesh *mesh, int resolution_g,
-        int maxTriCount_g, int maxDepth_g)
+int ClosestPointField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution_g,
+                                            int maxTriCount_g, int maxDepth_g)
 #else
-int DistanceField::computeUnsignedField(TriMesh *mesh, int resolution_g,
-        int maxTriCount_g, int maxDepth_g)
+int DistanceField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution_g,
+                                        int maxTriCount_g, int maxDepth_g)
 #endif
 {
     //ObjFile objFile(*objFileIn);
@@ -609,5 +605,4 @@ int DistanceField::computeUnsignedField(TriMesh *mesh, int resolution_g,
 
     return 0;
 }
-#endif
 #endif

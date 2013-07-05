@@ -3,17 +3,10 @@
 
 #include "obj.h"
 
-#if 0
-class TriMesh;
-#endif
+#include <geometry/TriangleMesh.hpp>
 
-#if 0
-#include <linearalgebra/VEC3.h>
-#endif
+#include <linearalgebra/Vector3.hpp>
 
-#if 0
-#include <SETTINGS.h>
-#endif
 #include <config.h>
 
 /*
@@ -65,10 +58,8 @@ class DistanceField
                 int maxDepth=10);
         virtual int computeUnsignedField(ObjFile * objFile, int resolution,
                 int maxTriCount=15, int maxDepth=10);
-#if 0
-        virtual int computeUnsignedField(TriMesh *mesh, int resolution,
+        virtual int computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution,
                 int maxTriCount=15, int maxDepth=10);
-#endif
 
         // computes signed distance field
         // filename is the obj filename
@@ -140,17 +131,13 @@ class DistanceField
             distanceData[(k * (resolution+1) + j ) * (resolution+1) + i] = value;
         }
 
-#if 0
-        REAL distance(const VEC3F &pos) const;
-#endif
+        REAL distance(const Vector3d &pos) const;
         // computes distance and gradient at arbitrary position
         float distance(Vec3d pos, int constrainToBox=0) const;
         // gradient is computed with respect to trilinear interpolation
         // note: gradient is discontinuous at the cell boundaries
         Vec3d gradient(Vec3d pos) const;
-#if 0
-        VEC3F gradient(const VEC3F &pos) const;
-#endif
+        Vector3d gradient(const Vector3d &pos) const;
 
         // Checks to see if a voxel is either fully or partially inside an object
         bool voxelInside( int i, int j, int k, bool full,
@@ -160,14 +147,12 @@ class DistanceField
         // must have: 0 <= i,j,k <= resolution   (i,j,k of course not necessarily sorted)
         inline Vec3d position(int i, int j, int k);
 
-#if 0
-        inline VEC3F gridPosition( int i, int j, int k )
+        inline Vector3d gridPosition( int i, int j, int k )
         {
             Vec3d pos = position( i, j, k );
 
-            return VEC3F( pos[ 0 ], pos[ 1 ], pos[ 2 ] );
+            return Vector3d( pos[ 0 ], pos[ 1 ], pos[ 2 ] );
         }
-#endif
 
         // get distance field resolution
         inline int getResolution() { return resolution;}

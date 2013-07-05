@@ -42,10 +42,8 @@ typedef boost::function<bool (const VEC3F &x, REAL &value)> ScalarEvaluator_E;
 
 typedef boost::function<REAL (REAL)> RealFunction;
 
-#if 0
-typedef boost::function<REAL (const VEC3F &x, const VEC3F &n,
+typedef boost::function<REAL (const Vector3d &x, const Vector3d &n,
                               int obj_id, REAL t, int field_id)>
                                                 BoundaryEvaluator;
-#endif
 
 #endif

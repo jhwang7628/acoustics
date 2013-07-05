@@ -10,19 +10,19 @@
 
 #include <field/ScalarField.h>
 
+#include <geometry/BoundingBox.h>
+#include <geometry/TriangleMesh.hpp>
+
 #include <linearalgebra/MATRIX.h>
 #include <linearalgebra/VECTOR.h>
+#include <linearalgebra/Vector3.hpp>
 
-#include <mesh/TriMesh.h>
-
-#include <util/BoundingBox.h>
-#include <util/Evaluator.h>
-#include <util/timer.h>
+#include <utils/Evaluator.h>
+#include <utils/timer.hpp>
 
 #include "MAC_Grid.h"
 #include "WaveSolver.h"
 
-#include <SETTINGS.h>
 #include <TYPES.h>
 
 #include <boost/function.hpp>
@@ -36,169 +36,168 @@
 //
 //////////////////////////////////////////////////////////////////////
 class PML_WaveSolver : public Solver {
-	public:
-    typedef boost::function<void (const vector<vector<FloatArray> >&w)>
-                                                                WriteCallback;
+    public:
+        typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
 
-    // Provide the size of the domain (bbox), finite difference division
-    // size, and a signed distance function for the interior boundary.
-		PML_WaveSolver( Real timeStep,
-                    const BoundingBox &bbox, Real cellSize,
-                    const TriMesh &mesh,
-                    const DistanceField &distanceField,
-                    Real distanceTolerance = 0.0,
-                    bool useBoundary = true,
-                    const Vector3Array *listeningPositions = NULL,
-                    const char *outputFile = NULL,
-                    WriteCallback *callback = NULL,
-                    int subSteps = 1,
-                    int N = 1,
-                    Real endTime = -1.0 );
+        // Provide the size of the domain (bbox), finite difference division
+        // size, and a signed distance function for the interior boundary.
+        PML_WaveSolver( REAL timeStep,
+                        const BoundingBox &bbox, REAL cellSize,
+                        const TriMesh &mesh,
+                        const DistanceField &distanceField,
+                        REAL distanceTolerance = 0.0,
+                        bool useBoundary = true,
+                        const Vector3Array *listeningPositions = NULL,
+                        const char *outputFile = NULL,
+                        WriteCallback *callback = NULL,
+                        int subSteps = 1,
+                        int N = 1,
+                        REAL endTime = -1.0 );
 
-    // Provide the size of the domain (bbox), finite difference division
-    // size, and a list of SDFs for the interior boundary
-		PML_WaveSolver( Real timeStep,
-                    const BoundingBox &bbox, Real cellSize,
-                    std::vector<const TriMesh *> &meshes,
-                    std::vector<const DistanceField *> &boundaryFields,
-                    Real distanceTolerance = 0.0,
-                    bool useBoundary = true,
-                    const Vector3Array *listeningPositions = NULL,
-                    const char *outputFile = NULL,
-                    WriteCallback *callback = NULL,
-                    int subSteps = 1,
-                    int N = 1,
-                    Real endTime = -1.0 );
+        // Provide the size of the domain (bbox), finite difference division
+        // size, and a list of SDFs for the interior boundary
+        PML_WaveSolver( REAL timeStep,
+                        const BoundingBox &bbox, REAL cellSize,
+                        std::vector<const TriMesh *> &meshes,
+                        std::vector<const DistanceField *> &boundaryFields,
+                        REAL distanceTolerance = 0.0,
+                        bool useBoundary = true,
+                        const Vector3Array *listeningPositions = NULL,
+                        const char *outputFile = NULL,
+                        WriteCallback *callback = NULL,
+                        int subSteps = 1,
+                        int N = 1,
+                        REAL endTime = -1.0 );
 
-		// Destructor
-		virtual ~PML_WaveSolver();
+        // Destructor
+        virtual ~PML_WaveSolver();
 
-    void setPMLBoundaryWidth( Real width, Real strength );
+        void setPMLBoundaryWidth( REAL width, REAL strength );
 
-    // Time steps the system in the given interval
-    void solveSystem( Real startTime, Real endTime,
-                      const BoundaryEvaluator &bcEvaluator );
+        // Time steps the system in the given interval
+        void solveSystem( REAL startTime, REAL endTime,
+                const BoundaryEvaluator &bcEvaluator );
 
-    void initSystem( Real startTime );
+        void initSystem( REAL startTime );
 
-    // Takes a single time step
-    virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
+        // Takes a single time step
+        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
 
-    virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
+        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
-    virtual void writeWaveOutput() const;
+        virtual void writeWaveOutput() const;
 
-    virtual  const Tuple3i  &fieldDivisions() const
-                             {
-                               return _grid.pressureFieldDivisions();
-                             }
+        virtual  const Tuple3i  &fieldDivisions() const
+        {
+            return _grid.pressureFieldDivisions();
+        }
 
-    virtual VEC3F            fieldPosition( const Tuple3i &index ) const
-                             {
-                               return _grid.pressureFieldPosition( index );
-                             }
+        virtual Vector3d         fieldPosition( const Tuple3i &index ) const
+        {
+            return _grid.pressureFieldPosition( index );
+        }
 
-    virtual VEC3F            fieldPosition( int index ) const
-                             {
-                               return _grid.pressureFieldPosition( index );
-                             }
+        virtual Vector3d         fieldPosition( int index ) const
+        {
+            return _grid.pressureFieldPosition( index );
+        }
 
 #if 0
-    inline const TriMesh    &mesh() const
-                             {
-                               return _grid.mesh();
-                             }
+        inline const TriMesh    &mesh() const
+        {
+            return _grid.mesh();
+        }
 #endif
-    virtual const vector<const TriMesh *> &meshes() const
-                             {
-                               return _grid.meshes();
-                             }
+        virtual const vector<const TriMesh *> &meshes() const
+        {
+            return _grid.meshes();
+        }
 
-    virtual int              numCells() const
-                             {
-                               return _grid.numPressureCells();
-                             }
+        virtual int              numCells() const
+        {
+            return _grid.numPressureCells();
+        }
 
-    virtual const Vector3Array *listeningPositions() const
-                             {
-                               return _listeningPositions;
-                             }
-    
-    virtual Real             fieldDiameter() const
-                             {
-                               return _grid.fieldDiameter();
-                             }
+        virtual const Vector3Array *listeningPositions() const
+        {
+            return _listeningPositions;
+        }
 
-    virtual  int             N() const
-                             {
-                               return _N;
-                             }
+        virtual REAL             fieldDiameter() const
+        {
+            return _grid.fieldDiameter();
+        }
 
-    virtual Real             currentSimTime() const
-                             {
-                               return _timeStep * (Real)_timeIndex;
-                             }
+        virtual  int             N() const
+        {
+            return _N;
+        }
 
-    virtual VEC3F            sceneCenter() const
-                             {
-                               return _grid.pressureField().bbox().center();
-                             }
+        virtual REAL             currentSimTime() const
+        {
+            return _timeStep * (REAL)_timeIndex;
+        }
 
-    void                     setZSlice( int slice )
-                             {
-                               _zSlice = slice;
-                             }
+        virtual Vector3d         sceneCenter() const
+        {
+            return _grid.pressureField().bbox().center();
+        }
 
-	protected:
+        void                     setZSlice( int slice )
+        {
+            _zSlice = slice;
+        }
 
-  private:
-    void                     stepLeapfrog(
-                                        const BoundaryEvaluator &bcEvaluator );
+    protected:
 
-	private:
-    static const Real        WAVE_SPEED = 343.0;
+    private:
+        void                     stepLeapfrog(
+                const BoundaryEvaluator &bcEvaluator );
 
-    // Discretization for the domain
-    MAC_Grid                 _grid;
+    private:
+        static const REAL        WAVE_SPEED = 343.0;
 
-    // Pretty self-explanatory
-    Real                     _timeStep;
-    Real                     _currentTime;
-    int                      _timeIndex;
-    int                      _subSteps;
+        // Discretization for the domain
+        MAC_Grid                 _grid;
 
-    // Leapfrog variables for a MAC grid
-    //
-    // PML requires a separate pressure for each direction
-    MATRIX                   _v[ 3 ];
-    MATRIX                   _p[ 3 ];
-    MATRIX                   _pFull;
+        // Pretty self-explanatory
+        REAL                     _timeStep;
+        REAL                     _currentTime;
+        int                      _timeIndex;
+        int                      _subSteps;
 
-    // Number of fields to solve for
-    int                      _N;
+        // Leapfrog variables for a MAC grid
+        //
+        // PML requires a separate pressure for each direction
+        MATRIX                   _v[ 3 ];
+        MATRIX                   _p[ 3 ];
+        MATRIX                   _pFull;
 
-    Real                     _endTime;
+        // Number of fields to solve for
+        int                      _N;
 
-    const Vector3Array      *_listeningPositions;
-    const char              *_outputFile;
+        REAL                     _endTime;
 
-    std::vector<std::vector<FloatArray> >
-                             _waveOutput;
-  
-    VECTOR                   _listenerOutput;
+        const Vector3Array      *_listeningPositions;
+        const char              *_outputFile;
 
-    WriteCallback           *_callback;
+        std::vector<std::vector<FloatArray> >
+            _waveOutput;
 
-    Timer                    _gradientTimer;
-    Timer                    _divergenceTimer;
-    Timer                    _stepTimer;
-    Timer                    _algebraTimer;
-    Timer                    _memoryTimer;
-    Timer                    _writeTimer;
+        VECTOR                   _listenerOutput;
 
-    // Optionally write a 2D slice out of the finite difference grid
-    int                      _zSlice;
-    MATRIX                   _sliceData;
+        WriteCallback           *_callback;
+
+        Timer<false>             _gradientTimer;
+        Timer<false>             _divergenceTimer;
+        Timer<false>             _stepTimer;
+        Timer<false>             _algebraTimer;
+        Timer<false>             _memoryTimer;
+        Timer<false>             _writeTimer;
+
+        // Optionally write a 2D slice out of the finite difference grid
+        int                      _zSlice;
+        MATRIX                   _sliceData;
 
 };
 
