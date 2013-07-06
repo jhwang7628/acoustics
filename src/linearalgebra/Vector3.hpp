@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <assert.h>
 #include "Tuple3.hpp"
 #include "utils/math.hpp"
@@ -220,6 +221,22 @@ typedef class Vector3<int>      Vector3i;
 
 template <typename T>
 const Vector3<T> Vector3<T>::ZERO(0, 0, 0);
+
+inline Vector3d str2vec3d( const std::string& str )
+{
+	Vector3d v;
+	std::istringstream ss( str );
+	ss >> v[0] >> v[1] >> v[2];
+	return v;
+}
+
+inline Vector3f str2vec3f( const std::string& str )
+{
+	Vector3f v;
+	std::istringstream ss( str );
+	ss >> v[0] >> v[1] >> v[2];
+	return v;
+}
 
 #ifdef USE_NAMESPACE
 }

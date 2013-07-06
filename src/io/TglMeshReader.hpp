@@ -39,7 +39,9 @@ class MeshObjReader
 
         template <typename T>
         static int read(const char* file, TriangleMesh<T>& mesh, 
-                        bool centerize = false, bool reversetglrot = false)
+                        bool centerize = false, bool reversetglrot = false,
+                        // Optional uniform scaling parameter
+                        REAL scale = 1.0)
         {
             using namespace std;
 
@@ -76,7 +78,7 @@ class MeshObjReader
                     }
                     vtx.push_back(Point3d(carbine::Double(tokens[1]),
                                           carbine::Double(tokens[2]),
-                                          carbine::Double(tokens[3])));
+                                          carbine::Double(tokens[3])) * scale);
                 }
                 else if ( tokens[0] == "vn" )
                 {

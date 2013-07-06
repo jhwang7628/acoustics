@@ -162,6 +162,10 @@ class TriangleMesh
         double total_area() const 
         {  return m_totArea; }
 
+        // Find the radius of the bounding sphere enclosing this mesh and centered
+        // at the given point
+        T boundingSphereRadius( const Point3<T> &center ) const;
+
 #ifdef DIFF_DEFINE
         void bounding_box(Point3<T>& low, Point3<T>& up) const;
 
@@ -510,6 +514,23 @@ int TriangleMesh<T>::load_mesh_txt(const char* file)
     fin.close();
     return 0;
 #ifdef DIFF_DEFINE
+}
+
+// Find the radius of the bounding sphere enclosing this mesh and centered
+// at the given point
+template <typename T>
+T TriangleMesh<T>::boundingSphereRadius( const Point3<T> &center ) const
+{
+    Vector3<T>               diff;
+    T                        maxRadius = 0.0;
+
+    for ( int vertex_id = 0; vertex_id < m_vertices.size(); vertex_id++ ) {
+        diff = m_vertices[ vertex_id ] - center;
+
+        maxRadius = max( maxRadius, diff.length() );
+    }
+
+    return maxRadius;
 }
 
 template <typename T>
