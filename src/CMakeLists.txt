@@ -11,7 +11,8 @@ set(ISOSTUFFER_SOURCES
 set(UTILS_SRC
     utils/macros.h      utils/math.hpp
     utils/nano_timer.h  utils/nano_timer.c
-    utils/timer.hpp     utils/timer.cpp)
+    utils/timer.hpp     utils/timer.cpp
+    utils/MathUtil.cpp  utils/MathUtil.cpp)
 
 # linearalgebra
 set(LINEAR_SRC
@@ -70,7 +71,8 @@ set(DISTANCEFIELD_SRC
     distancefield/triple.h
     distancefield/vec2d.h               distancefield/vec2d.cpp
     distancefield/vec3d.h               distancefield/vec3d.cpp
-    distancefield/vec_types.h)
+    distancefield/vec_types.h
+    distancefield/FieldBuilder.h        distancefield/FieldBuilder.cpp)
 
 set(MATH_SRC
     math/InterpolationFunction.h        math/InterpolationFunction.cpp
@@ -78,6 +80,13 @@ set(MATH_SRC
 
 set(GEOMETRY_SRC
     geometry/RigidMesh.h                geometry/RigidMesh.cpp)
+
+# tinyXML-based Parser
+set(PARSER_SRC
+    parser/Parser.cpp                   parser/Parser.h
+    tinyxml/tinystr.cpp                 tinyxml/tinystr.h
+    tinyxml/tinyxml.cpp                 tinyxml/tinyxmlerror.cpp
+    tinyxml/tinyxml.h                   tinyxml/tinyxmlparser.cpp)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -294,10 +303,7 @@ if ( BUILD_RIGIDSIM_GUI )
         ${IO_SRC}                         ${RIGID_SRC}
         ${LOGGING_SRC}                    ${LINEAR_SRC}
         ${RIGID_IO_SRC}                   ${RIGIDSIM_UI_UI_SRCS}
-        ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS}
-        ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC}
-        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
-        ${UTILS_SRC}                      ${DISTANCEFIELD_SRC})
+        ${RIGIDSIM_UI_MOC_SRCS}           ${RIGIDSIM_UI_QRC_SRCS})
 
     target_link_libraries(rigidsim-gui
         ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
@@ -323,10 +329,13 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
     add_executable(precompute-pan-gui
         tools/precompute_acceleration_pulse.cpp
         ui/WaveViewer.cpp
+        ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEAR_SRC}
         ${DISTANCEFIELD_SRC}              ${MATH_SRC}
-        ${LINEAR_BLAS_LAPACK_SRC})
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC})
 
     target_link_libraries(precompute-pan-gui
         ${GLUT_LIBRARIES}               ${QT_LIBRARIES}

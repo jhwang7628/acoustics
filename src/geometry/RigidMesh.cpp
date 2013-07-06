@@ -63,7 +63,7 @@ RigidMesh::~RigidMesh()
 //        (1/m) + f^T * I_x^{T} * M^{-1} * I_x * f
 //      where m is the object mass and M is the inertia matrix
 //////////////////////////////////////////////////////////////////////
-REAL RigidMesh::inverseEffectiveMass( const Vector3d &x,
+REAL RigidMesh::inverseEffectiveMass( const Point3d &x,
                                       const Vector3d &forceDirection ) const
 {
     Matrix3d                   I_x;
@@ -92,7 +92,7 @@ REAL RigidMesh::inverseEffectiveMass( const Vector3d &x,
 // applied in the given direction to the given point
 //////////////////////////////////////////////////////////////////////
 void RigidMesh::accelerationCoefficients(
-        const Vector3d &x, const Vector3d &force,
+        const Point3d &x, const Vector3d &force,
         Vector3d &translationalAcceleration,
         Vector3d &rotationalAcceleration ) const
 {

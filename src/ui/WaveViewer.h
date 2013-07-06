@@ -11,12 +11,12 @@
 
 #include <linearalgebra/MATRIX.h>
 #include <linearalgebra/VECTOR.h>
+#include <linearalgebra/Vector3.hpp>
 
-#include <util/Evaluator.h>
+#include <utils/Evaluator.h>
 
 #include <wavesolver/WaveSolver.h>
 
-#include <SETTINGS.h>
 #include <TYPES.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -26,79 +26,83 @@
 // difference grid
 //////////////////////////////////////////////////////////////////////
 class WaveViewer : public QGLViewer {
-	public:
-		WaveViewer( Solver &solver );
+    private:
+        // Convenience definition
+        typedef TriangleMesh<REAL>  TriMesh;
 
-		// Destructor
-		virtual ~WaveViewer();
+    public:
+        WaveViewer( Solver &solver );
 
-    inline const Tuple3i    &fieldDivisions()
-                             {
-                               return _solver.fieldDivisions();
-                             }
+        // Destructor
+        virtual ~WaveViewer();
 
-    void                     setAccelerationFunction(
-                                        BoundaryEvaluator *acceleration )
-                             {
-                               _acceleration = acceleration;
-                             }
+        inline const Tuple3i    &fieldDivisions()
+        {
+            return _solver.fieldDivisions();
+        }
 
-    void setDrawRange( const Tuple3i &minBound, const Tuple3i &maxBound );
+        void                     setAccelerationFunction(
+                BoundaryEvaluator *acceleration )
+        {
+            _acceleration = acceleration;
+        }
 
-    void setDrawColourRange( Real colourRange );
+        void setDrawRange( const Tuple3i &minBound, const Tuple3i &maxBound );
 
-	protected:
-    // Draws the desired range of the current finite difference grid
-    virtual void draw();
-    virtual void init();
+        void setDrawColourRange( REAL colourRange );
 
-    virtual void animate();
+    protected:
+        // Draws the desired range of the current finite difference grid
+        virtual void draw();
+        virtual void init();
 
-    // Define shortcut for stepping system
-    virtual void keyPressEvent( QKeyEvent *e );
+        virtual void animate();
 
-  private:
-    // Draws walls of the finite difference grid along one axis
-    void drawGridWalls( GridDirection direction );
+        // Define shortcut for stepping system
+        virtual void keyPressEvent( QKeyEvent *e );
 
-    void drawPlane( int planeDirection, int uDirection, int vDirection,
-                    int planeIndex, const VEC3F &normal );
+    private:
+        // Draws walls of the finite difference grid along one axis
+        void drawGridWalls( GridDirection direction );
 
-    void drawMesh();
-    void drawReceivers();
+        void drawPlane( int planeDirection, int uDirection, int vDirection,
+                        int planeIndex, const Vector3d &normal );
+
+        void drawMesh();
+        void drawReceivers();
 
 #if 0
-    void drawGhostCells();
-    void drawInterfacialCells();
+        void drawGhostCells();
+        void drawInterfacialCells();
 #endif
 
-    // Computes a red/green (negative/positive) colour for the
-    // given pressure value
-    VEC3F computeVertexColour( const Tuple3i &index );
+        // Computes a red/green (negative/positive) colour for the
+        // given pressure value
+        Vector3d computeVertexColour( const Tuple3i &index );
 
-    // Get the current pressure associated with the given vertex 
-    void vertexPressure( const Tuple3i &index, VECTOR &pressure );
+        // Get the current pressure associated with the given vertex 
+        void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
-	private:
-    Solver                  &_solver;
+    private:
+        Solver                  &_solver;
 
-    BoundaryEvaluator       *_acceleration;
+        BoundaryEvaluator       *_acceleration;
 
-    Tuple3i                  _minDrawBound;
-    Tuple3i                  _maxDrawBound;
+        Tuple3i                  _minDrawBound;
+        Tuple3i                  _maxDrawBound;
 
-    Real                     _drawColourMax;
+        REAL                     _drawColourMax;
 
-    bool                     _wireframe;
+        bool                     _wireframe;
 
-    bool                     _drawMesh;
-    bool                     _drawReceivers;
+        bool                     _drawMesh;
+        bool                     _drawReceivers;
 
-    bool                     _drawGhostCells;
-    bool                     _drawInterfacialCells;
+        bool                     _drawGhostCells;
+        bool                     _drawInterfacialCells;
 
-    int                      _drawField;
-    VECTOR                   _drawPressure;
+        int                      _drawField;
+        VECTOR                   _drawPressure;
 
 };
 
@@ -108,64 +112,64 @@ class WaveViewer : public QGLViewer {
 // Main application window storing a wave viewer and some controls
 //////////////////////////////////////////////////////////////////////
 class WaveWindow : public QObject {
-  Q_OBJECT
+    Q_OBJECT
 
-  public:
-    WaveWindow( Solver &solver );
+    public:
+        WaveWindow( Solver &solver );
 
-    // Destructor
-    virtual ~WaveWindow();
+        // Destructor
+        virtual ~WaveWindow();
 
-    QWidget *createWindow();
+        QWidget *createWindow();
 
-    void                     setAccelerationFunction(
-                                        BoundaryEvaluator *acceleration )
-                             {
-                               _viewer.setAccelerationFunction( acceleration );
-                             }
+        void                     setAccelerationFunction(
+                BoundaryEvaluator *acceleration )
+        {
+            _viewer.setAccelerationFunction( acceleration );
+        }
 
-  protected:
+    protected:
 
-  public slots:
-    void rangeValueChanged( int x );
+        public slots:
+            void rangeValueChanged( int x );
 
-    void drawRangeValueChanged( double x );
+        void drawRangeValueChanged( double x );
 
-  private:
-    //////////////////////////////////////////////////////////////////////
-    // UI widgits
-    //////////////////////////////////////////////////////////////////////
+    private:
+        //////////////////////////////////////////////////////////////////////
+        // UI widgits
+        //////////////////////////////////////////////////////////////////////
 
-    // Main layout
-    QHBoxLayout              _layout;
+        // Main layout
+        QHBoxLayout              _layout;
 
-    // Layout for the control pane
-    QVBoxLayout              _controlLayout;
+        // Layout for the control pane
+        QVBoxLayout              _controlLayout;
 
-    // Individual control layouts
-    QHBoxLayout              _xControlLayout;
-    QHBoxLayout              _yControlLayout;
-    QHBoxLayout              _zControlLayout;
+        // Individual control layouts
+        QHBoxLayout              _xControlLayout;
+        QHBoxLayout              _yControlLayout;
+        QHBoxLayout              _zControlLayout;
 
-    // Spin boxes for controlling drawing region, and labels
-    QSpinBox                 _xMinBox;
-    QSpinBox                 _xMaxBox;
-    QSpinBox                 _yMinBox;
-    QSpinBox                 _yMaxBox;
-    QSpinBox                 _zMinBox;
-    QSpinBox                 _zMaxBox;
+        // Spin boxes for controlling drawing region, and labels
+        QSpinBox                 _xMinBox;
+        QSpinBox                 _xMaxBox;
+        QSpinBox                 _yMinBox;
+        QSpinBox                 _yMaxBox;
+        QSpinBox                 _zMinBox;
+        QSpinBox                 _zMaxBox;
 
-    QLabel                   _xLabel;
-    QLabel                   _yLabel;
-    QLabel                   _zLabel;
+        QLabel                   _xLabel;
+        QLabel                   _yLabel;
+        QLabel                   _zLabel;
 
-    // For controlling wave drawing
-    QHBoxLayout              _drawingLayout;
-    QDoubleSpinBox           _absMaxBox;
-    QLabel                   _absMaxLabel;
+        // For controlling wave drawing
+        QHBoxLayout              _drawingLayout;
+        QDoubleSpinBox           _absMaxBox;
+        QLabel                   _absMaxLabel;
 
-    // OpenGL drawing region
-    WaveViewer               _viewer;
+        // OpenGL drawing region
+        WaveViewer               _viewer;
 
 };
 

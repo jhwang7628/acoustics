@@ -11,6 +11,7 @@
 #include <linearalgebra/VECTOR.h>
 #include <linearalgebra/Vector3.hpp>
 
+#include <geometry/Point3.hpp>
 #include <geometry/TriangleMesh.hpp>
 
 #include <TYPES.h>
@@ -31,12 +32,12 @@ class RigidMesh {
         // Figures out an inverse effective mass for the given
         // position on the surface of the mesh, and a force applied in the
         // given direction
-        REAL inverseEffectiveMass( const Vector3d &x,
+        REAL inverseEffectiveMass( const Point3d &x,
                                    const Vector3d &forceDirection ) const;
 
         // Returns acceleration directional magnitudes, given a force
         // applied in the given direction to the given point
-        void accelerationCoefficients( const Vector3d &x, const Vector3d &force,
+        void accelerationCoefficients( const Point3d &x, const Vector3d &force,
                                        Vector3d &translationalAcceleration,
                                        Vector3d &rotationalAcceleration ) const;
 
@@ -55,7 +56,7 @@ class RigidMesh {
             return _poissonRatio;
         }
 
-        const Vector3d &centerOfMass() const
+        const Point3d &centerOfMass() const
         {
             return _centerOfMass;
         }
@@ -100,7 +101,7 @@ class RigidMesh {
         // Rigid body quantities
         REAL                         _mass;
         REAL                         _density;
-        Vector3d                     _centerOfMass;
+        Point3d                      _centerOfMass;
         Matrix3d                     _inertia;
         Matrix3d                     _inertiaInverse;
 
