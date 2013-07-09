@@ -24,11 +24,17 @@ VECTOR::VECTOR() :
     _vector = NULL;
 }
 
-VECTOR::VECTOR(int size) :
+VECTOR::VECTOR(int size, REAL val) :
     _size(size)
 {
     _vector = new REAL[_size];
     clear();
+
+    if ( val != 0 ) {
+        for ( int i = 0; i < size; i++ ) {
+            _vector[ i ] = val;
+        }
+    }
 }
 
 VECTOR::VECTOR(const char* filename)
@@ -420,7 +426,7 @@ REAL VECTOR::sum()
 //////////////////////////////////////////////////////////////////////
 // in-place copy, since operator= must allocate a new VECTOR
 //////////////////////////////////////////////////////////////////////
-void VECTOR::copyInplace(VECTOR& vector)
+void VECTOR::copyInplace(const VECTOR& vector)
 {
 #if BOUNDS_CHECKING_ENABLED
     if (_size != vector._size)
@@ -432,7 +438,7 @@ void VECTOR::copyInplace(VECTOR& vector)
 //////////////////////////////////////////////////////////////////////
 // in-place copy, starting from a given index
 //////////////////////////////////////////////////////////////////////
-void VECTOR::copyInplace(VECTOR& vector, int start)
+void VECTOR::copyInplace(const VECTOR& vector, int start)
 {
 #if BOUNDS_CHECKING_ENABLED
     if ( (_size - start) < vector._size)
@@ -445,9 +451,9 @@ void VECTOR::copyInplace(VECTOR& vector, int start)
 // Copies a sub vector from the input vector in to the
 // given location in this vector.
 //////////////////////////////////////////////////////////////////////
-void VECTOR::copySubVectorInplace(VECTOR &vector,
-        int startLoc_in, int startLoc_out,
-        int size)
+void VECTOR::copySubVectorInplace(const VECTOR &vector,
+                                  int startLoc_in, int startLoc_out,
+                                  int size)
 {
     if ( size <= 0 )
         return;
@@ -599,5 +605,29 @@ REAL VECTOR::norm2( REAL *v, int size )
     return cblas_snrm2( size, v, 1 );
 #else
     return cblas_dnrm2( size, v, 1 );
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+// Vector dot product
+//////////////////////////////////////////////////////////////////////
+REAL VECTOR::dot( int n, const REAL *x, const REAL *y, int incX, int incY )
+{
+#ifdef SINGLE_PRECISION
+  return cblas_sdot( n, x, incX, y, incY );
+#else
+  return cblas_ddot( n, x, incX, y, incY );
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+// Absolute sum of vector components
+//////////////////////////////////////////////////////////////////////
+REAL VECTOR::absSum( int n, const REAL *x, int incX )
+{
+#ifdef SINGLE_PRECISION
+  return cblas_sasum( n, x, incX );
+#else
+  return cblas_dasum( n, x, incX );
 #endif
 }

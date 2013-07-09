@@ -23,6 +23,7 @@ option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
 option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
 option(BUILD_RIGIDSIM_GUI       "Compile rigid-body solver GUI" ON)
 option(BUILD_PAN_PRECOMPUTE_GUI "Compile GUI for PAN precomputation" OFF)
+option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases

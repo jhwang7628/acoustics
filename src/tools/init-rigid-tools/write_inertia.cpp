@@ -5,9 +5,9 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "geometry/FixVtxTetMesh.hpp"
-#include "io/TetMeshReader.hpp"
-#include "utils/tuple.hpp"
+
+#include <geometry/FixVtxTetMesh.hpp>
+#include <io/TetMeshReader.hpp>
 
 using namespace std;
 
