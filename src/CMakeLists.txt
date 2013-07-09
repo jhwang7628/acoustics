@@ -23,7 +23,8 @@ set(LINEAR_SRC
 # Linear algebra sources that depend on BLAS/LAPACK implementations
 set(LINEAR_BLAS_LAPACK_SRC
     linearalgebra/MATRIX.h        linearalgebra/MATRIX_FAST.cpp
-    linearalgebra/VECTOR.h        linearalgebra/VECTOR_FAST.cpp)
+    linearalgebra/VECTOR.h        linearalgebra/VECTOR_FAST.cpp
+    linearalgebra/SPARSE_MATRIX.h linearalgebra/SPARSE_MATRIX.cpp)
 
 set(GENERIC_SRC
     generic/precision_type.cpp)
@@ -53,6 +54,10 @@ set(WAVESOLVER_SRC
     wavesolver/MAC_Grid.cpp       wavesolver/MAC_Grid.h
     wavesolver/PML_WaveSolver.cpp wavesolver/PML_WaveSolver.h
     wavesolver/WaveSolver.cpp     wavesolver/WaveSolver.h)
+
+set(SUPERLU_INTERFACE_SRC
+    superlu-interface/SuperLU_Interface.h
+    superlu-interface/SuperLU_Interface.cpp)
 
 # Sources for Jernej Barbic's flat signed distance function classes
 set(DISTANCEFIELD_SRC
@@ -230,14 +235,28 @@ if ( BUILD_EIGENSOLVER )
         #${ARPACK_INCLUDE_DIR})
         #/home/chadwick/packages/arpack++/include)
         arpack++/include)
+
+    include_directories(
+        ${SUPERLU_INCLUDES})
         
     link_directories(${MKL_LIBRARY_DIR})
 
     add_executable(eigensolver
         tools/eigensolver/eigensolver.cpp
         ${LOGGING_SRC}        ${UTILS_SRC}
-        ${IO_SRC})
+        ${IO_SRC}             ${SUPERLU_INTERFACE_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC})
     target_link_libraries(eigensolver
+        ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
+        ${BLAS_LAPACK_LIBS}
+        boost_program_options rt)
+
+    add_executable(test-superlu
+        tools/test-superlu.cpp
+        ${LOGGING_SRC}        ${UTILS_SRC}
+        ${IO_SRC}             ${SUPERLU_INTERFACE_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC})
+    target_link_libraries(test-superlu
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
         ${BLAS_LAPACK_LIBS}
         boost_program_options rt)
@@ -342,3 +361,16 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
         ${BLAS_LAPACK_LIBS})
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
+
+# =============================================================================
+#   Builds tools for writing rigid-body data to disk (inertia and mass)
+# =============================================================================
+if ( BUILD_INIT_RIGID_TOOLS )
+    add_executable(write-inertia
+        tools/init-rigid-tools/write_inertia.cpp
+        ${GENERIC_SRC}                    ${IO_SRC})
+
+    add_executable(write-mass-center
+        tools/init-rigid-tools/write_mass_center.cpp
+        ${GENERIC_SRC}                    ${IO_SRC})
+endif ( BUILD_INIT_RIGID_TOOLS )
