@@ -32,6 +32,7 @@ class SuperLU_Solver {
         virtual ~SuperLU_Solver();
 
         // Solves the system with the given right hand side
+        void solve( const REAL *rhs, REAL *solution );
         void solve( const VECTOR &rhs, VECTOR &solution );
 
     protected:

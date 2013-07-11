@@ -22,6 +22,7 @@ class VECTOR {
     public:
         VECTOR();
         VECTOR(int size, REAL val = 0);
+        VECTOR(int size, const REAL* data);
         VECTOR(const char* filename);
         VECTOR(const VECTOR& v);
         VECTOR(FILE* file);
@@ -151,12 +152,12 @@ inline ostream &operator<<(ostream &out, VECTOR& vector)
 }
 
 // overloaded operators
-VECTOR operator-(VECTOR& x, VECTOR& y);
-VECTOR operator+(VECTOR& x, VECTOR& y);
-VECTOR operator*(VECTOR& x, REAL& scalar);
-VECTOR operator*(REAL& scalar, VECTOR& x);
+VECTOR operator-(const VECTOR& x, const VECTOR& y);
+VECTOR operator+(const VECTOR& x, const VECTOR& y);
+VECTOR operator*(const VECTOR& x, const REAL& scalar);
+VECTOR operator*(const REAL& scalar, const VECTOR& x);
 
 // x^T . y
-REAL operator^(VECTOR& x, VECTOR& y);
+REAL operator^(const VECTOR& x, const VECTOR& y);
 
 #endif

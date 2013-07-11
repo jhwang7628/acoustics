@@ -59,30 +59,26 @@ SuperLU_Solver::~SuperLU_Solver()
 
 //////////////////////////////////////////////////////////////////////
 // Solves the system with the given right hand side
+//
+// This function assumes that rhs and solution have the correct size
 //////////////////////////////////////////////////////////////////////
-void SuperLU_Solver::solve( const VECTOR &rhs, VECTOR &solution )
+void SuperLU_Solver::solve( const REAL *rhs, REAL *solution )
 {
     SuperMatrix              B;
     int                      info;
     REAL                    *rhsStorage;
 
-    TRACE_ASSERT( rhs.size() == _A.nrow, "RHS size mismatch" );
-
-    if ( solution.size() != rhs.size() ) {
-        solution.resizeAndWipe( rhs.size() );
-    }
-
-    if ( !(rhsStorage = doubleMalloc( rhs.size() )) ) {
+    if ( !(rhsStorage = doubleMalloc( _A.nrow )) ) {
         TRACE_ASSERT( NULL, "Error allocating RHS storage" );
     }
 
     // Copy
-    for ( int i = 0; i < rhs.size(); i++ ) {
-        rhsStorage[ i ] = rhs( i );
+    for ( int i = 0; i < _A.nrow; i++ ) {
+        rhsStorage[ i ] = rhs[ i ];
     }
 
-    dCreate_Dense_Matrix( &B, rhs.size(), 1 /* Single RHS */, rhsStorage,
-                          rhs.size(), /* Screwed up leading dimension due to column-major */
+    dCreate_Dense_Matrix( &B, _A.nrow, 1 /* Single RHS */, rhsStorage,
+                          _A.nrow, /* Screwed up leading dimension due to column-major */
                           SLU_DN, SLU_D, SLU_GE /* Various SuperLU definitions */ );
 
     if ( _options.Fact == DOFACT ) {
@@ -93,18 +89,45 @@ void SuperLU_Solver::solve( const VECTOR &rhs, VECTOR &solution )
     }
 
     // Copy back to the solution
-    for ( int i = 0; i < rhs.size(); i++ ) {
-        solution( i ) = rhsStorage[ i ];
+    for ( int i = 0; i < _A.nrow; i++ ) {
+        solution[ i ] = rhsStorage[ i ];
     }
 
 #if 0
     dPrint_CompCol_Matrix( "A", &_A );
     dPrint_CompCol_Matrix( "U", &_U );
     dPrint_SuperNode_Matrix( "L", &_L );
+
+    printf( "Row permutation: \n" );
+    for ( int i = 0; i < _A.nrow; i++ ) {
+        printf( "  %d --> %d\n", i, _rowPermutation[ i ] );
+    }
+    printf( "\n" );
+
+    printf( "Column permutation: \n" );
+    for ( int i = 0; i < _A.ncol; i++ ) {
+        printf( "  %d --> %d\n", i, _columnPermutation[ i ] );
+    }
+    printf( "\n" );
 #endif
 
     SUPERLU_FREE( rhsStorage );
     Destroy_SuperMatrix_Store( &B );
+}
+
+//////////////////////////////////////////////////////////////////////
+// Solves the system with the given right hand side
+//////////////////////////////////////////////////////////////////////
+void SuperLU_Solver::solve( const VECTOR &rhs, VECTOR &solution )
+{
+    // Extra error checking
+    TRACE_ASSERT( rhs.size() == _A.nrow, "RHS size mismatch" );
+
+    if ( solution.size() != rhs.size() ) {
+        solution.resizeAndWipe( rhs.size() );
+    }
+
+    solve( rhs.data(), solution.data() );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -128,7 +151,7 @@ void SuperLU_Solver::init( const SPARSE_MATRIX::SparseColumnMatrix &A )
         memcpy( (void *)_rowindices, (void *)A._i, A._nzmax * sizeof( int ) );
     }
 
-    if ( !(_colptr = intMalloc( A._ncol + 1)) ) {
+    if ( !(_colptr = intMalloc(A._ncol + 1)) ) {
         TRACE_ASSERT( "Error building colptr array" );
     } else {
         memcpy( (void *)_colptr, (void *)A._p, (A._ncol + 1) * sizeof( int ) );
@@ -168,7 +191,7 @@ void SuperLU_Solver::init( const SPARSE_MATRIX::SparseColumnMatrix &A )
                                    -1.0, false );
 
     printf( "SuperLU_Solver::init: Linear system solution yields relative residual "
-            "error of %f (this should be close to zero)\n",
+            "error of %e (this should be close to zero)\n",
             rhs.norm2() / rhsNorm );
 
     // Finally, set our options to reflect the fact that the matrix has already been factored

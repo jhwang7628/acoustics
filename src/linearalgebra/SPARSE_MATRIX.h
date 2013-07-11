@@ -10,6 +10,7 @@
 #include "MATRIX.h"
 #include <vector>
 #include <map>
+#include <iomanip>
 #include <iostream>
 #include <cstdio>
 
@@ -44,8 +45,8 @@ class SPARSE_MATRIX {
         int cols() const { return _cols; }
         void resize(int rows, int cols) { _rows = rows; _cols = cols; };
         SPARSE_MATRIX& operator*=(const REAL& alpha);
-        SPARSE_MATRIX& operator+=(SPARSE_MATRIX& A);
-        SPARSE_MATRIX& operator-=(SPARSE_MATRIX& A);
+        SPARSE_MATRIX& operator+=(const SPARSE_MATRIX& A);
+        SPARSE_MATRIX& operator-=(const SPARSE_MATRIX& A);
 
         // Set the matrix to zero. Note this will *NOT* stomp the underlying map!
         // It will instead set all current entries to zero so that we are not
@@ -69,6 +70,7 @@ class SPARSE_MATRIX {
 
         // direct access to the matrix
         map<pair<int,int>, REAL>& matrix() { return _matrix; };
+        const map<pair<int,int>, REAL>& matrix() const { return _matrix; };
 
         iterator begin() { return _matrix.begin(); }
         iterator end() { return _matrix.end(); }
@@ -145,6 +147,18 @@ class SPARSE_MATRIX {
         // Converts this to a dense matrix
         MATRIX dense();
 
+        // Writes a text representation of this matrix
+        void writeText( std::ostream &os ) const
+        {
+            os << setprecision(12);
+            os << "A = SPARSE_MATRIX( " << rows() << ", " << cols() << " );" << endl << endl;
+            for ( map<pair<int, int>, REAL>::const_iterator iter = _matrix.begin();
+                  iter != _matrix.end(); iter++ ) {
+                os << "A( " << iter->first.first << ", " << iter->first.second
+                   << " ) = " << iter->second << ";" << endl;
+            }
+        }
+
         // Sparse column matrix representation
         // This representation follows from the one used by CHOLMOD,
         // except that we always represent the full matrix, not just
@@ -152,21 +166,21 @@ class SPARSE_MATRIX {
         struct SparseColumnMatrix {
             SparseColumnMatrix()
                 : _nrow( 0 ),
-                _ncol( 0 ),
-                _nzmax( 0 ),
-                _p( NULL ),
-                _i( NULL ),
-                _x( NULL )
+                  _ncol( 0 ),
+                  _nzmax( 0 ),
+                  _p( NULL ),
+                  _i( NULL ),
+                  _x( NULL )
             {
             }
 
             SparseColumnMatrix( SparseColumnMatrix &M )
                 : _nrow( 0 ),
-                _ncol( 0 ),
-                _nzmax( 0 ),
-                _p( NULL ),
-                _i( NULL ),
-                _x( NULL )
+                  _ncol( 0 ),
+                  _nzmax( 0 ),
+                  _p( NULL ),
+                  _i( NULL ),
+                  _x( NULL )
             {
                 copy( M );
             }
@@ -184,9 +198,17 @@ class SPARSE_MATRIX {
 
             void clear()
             {
-                free( _p );
-                free( _i );
-                free( _x );
+                if ( _p != NULL ) {
+                    free( _p );
+                }
+
+                if ( _i != NULL ) {
+                    free( _i );
+                }
+
+                if ( _x != NULL ) {
+                    free( _x );
+                } 
 
                 _p = NULL;
                 _i = NULL;
@@ -372,12 +394,12 @@ class SPARSE_MATRIX {
 
         // Writes a sparse column matrix to disk
         static void writeToBinary( const SPARSE_MATRIX::SparseColumnMatrix &A,
-                const char *filename,
-                bool newVersion = false );
+                                   const char *filename,
+                                   bool newVersion = false );
 
         // Reads a sparse column matrix from disk
         static void readFromBinary( SPARSE_MATRIX::SparseColumnMatrix &A,
-                const char *filename );
+                                    const char *filename );
 
         // Computes Gaussian elimination fill-in for a matrix stored in
         // sparse column format.
@@ -387,10 +409,10 @@ class SPARSE_MATRIX {
 
 };
 
-ostream& operator<<(ostream &out, SPARSE_MATRIX& matrix);
-VECTOR operator*(SPARSE_MATRIX& A, VECTOR& x);
-VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, VECTOR &x);
-SPARSE_MATRIX operator*(SPARSE_MATRIX& A, REAL& alpha);
-MATRIX operator*(SPARSE_MATRIX& A, MATRIX& B);
+ostream& operator<<(ostream &out, const SPARSE_MATRIX& matrix);
+VECTOR operator*(const SPARSE_MATRIX& A, const VECTOR& x);
+VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, const VECTOR &x);
+SPARSE_MATRIX operator*(const SPARSE_MATRIX& A, const REAL& alpha);
+MATRIX operator*(const SPARSE_MATRIX& A, const MATRIX& B);
 
 #endif
