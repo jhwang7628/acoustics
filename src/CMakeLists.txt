@@ -59,6 +59,11 @@ set(SUPERLU_INTERFACE_SRC
     superlu-interface/SuperLU_Interface.h
     superlu-interface/SuperLU_Interface.cpp)
 
+set(EIGENSOLVER_SRC
+    eigensolver/areigs.cpp        eigensolver/areigs.h
+    eigensolver/arinfo.cc
+    eigensolver/Eigensolver.cpp   eigensolver/Eigensolver.h)
+
 # Sources for Jernej Barbic's flat signed distance function classes
 set(DISTANCEFIELD_SRC
     distancefield/boundingBox.h         distancefield/boundingBox.cpp
@@ -251,11 +256,22 @@ if ( BUILD_EIGENSOLVER )
         ${BLAS_LAPACK_LIBS}
         boost_program_options rt)
 
+    add_executable(arpack-eigensolver
+        tools/eigensolver/arpack-eigensolver.cpp
+        ${LOGGING_SRC}        ${UTILS_SRC}
+        ${IO_SRC}             ${SUPERLU_INTERFACE_SRC}
+        ${EIGENSOLVER_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC})
+    target_link_libraries(arpack-eigensolver
+        ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
+        ${BLAS_LAPACK_LIBS}
+        boost_program_options rt)
+
     add_executable(test-superlu
         tools/test-superlu.cpp
         ${LOGGING_SRC}        ${UTILS_SRC}
         ${IO_SRC}             ${SUPERLU_INTERFACE_SRC}
-        ${LINEAR_BLAS_LAPACK_SRC})
+        ${EIGENSOLVER_SRC}    ${LINEAR_BLAS_LAPACK_SRC})
     target_link_libraries(test-superlu
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
         ${BLAS_LAPACK_LIBS}

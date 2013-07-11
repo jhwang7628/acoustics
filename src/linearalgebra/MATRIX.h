@@ -55,6 +55,7 @@ class MATRIX {
 
         // return a pointer to the beginning of a row
         REAL* row(int index) { return &_matrix[index * _cols]; };
+        const REAL* row(int index) const { return &_matrix[index * _cols]; };
 
         // wipe the whole matrix
         void clear();

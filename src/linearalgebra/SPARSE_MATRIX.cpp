@@ -207,7 +207,7 @@ void SPARSE_MATRIX::printRow(int row)
 //////////////////////////////////////////////////////////////////////
 // Print matrix to stream
 //////////////////////////////////////////////////////////////////////
-ostream& operator<<(ostream &out, SPARSE_MATRIX& matrix)
+ostream& operator<<(ostream &out, const SPARSE_MATRIX& matrix)
 {
     // iterate through all the entries
     map<pair<int,int>, REAL>::const_iterator i;
@@ -286,7 +286,7 @@ void SPARSE_MATRIX::gemv(VECTOR &x, VECTOR &y)
 //////////////////////////////////////////////////////////////////////
 // sparse matrix-vector multiply
 //////////////////////////////////////////////////////////////////////
-VECTOR operator*(SPARSE_MATRIX& A, VECTOR& x) 
+VECTOR operator*(const SPARSE_MATRIX& A, const VECTOR& x) 
 {
     assert(A.cols() == x.size());
 
@@ -309,7 +309,7 @@ VECTOR operator*(SPARSE_MATRIX& A, VECTOR& x)
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, VECTOR &x)
+VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, const VECTOR &x)
 {
     assert(A._ncol == x.size());
 
@@ -330,7 +330,7 @@ VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, VECTOR &x)
 //////////////////////////////////////////////////////////////////////
 // sparse matrix-vector multiply
 //////////////////////////////////////////////////////////////////////
-SPARSE_MATRIX operator*(SPARSE_MATRIX& A, REAL& alpha) 
+SPARSE_MATRIX operator*(const SPARSE_MATRIX& A, const REAL& alpha) 
 {
     SPARSE_MATRIX B(A);
     B *= alpha;
@@ -340,13 +340,13 @@ SPARSE_MATRIX operator*(SPARSE_MATRIX& A, REAL& alpha)
 //////////////////////////////////////////////////////////////////////
 // sparse-full matrix multiply
 //////////////////////////////////////////////////////////////////////
-MATRIX operator*(SPARSE_MATRIX& A, MATRIX& B)
+MATRIX operator*(const SPARSE_MATRIX& A, const MATRIX& B)
 {
     MATRIX C(A.rows(), B.cols());
 
-    map<pair<int,int>, REAL>& matrix = A.matrix(); 
+    const map<pair<int,int>, REAL>& matrix = A.matrix(); 
 
-    map<pair<int,int>, REAL>::iterator iter;
+    map<pair<int,int>, REAL>::const_iterator iter;
     for (iter = matrix.begin(); iter != matrix.end(); iter++)
     {
         pair<int,int> index = iter->first;
@@ -377,7 +377,7 @@ SPARSE_MATRIX& SPARSE_MATRIX::operator*=(const REAL& alpha)
 //////////////////////////////////////////////////////////////////////
 // add two sparse matrices together
 //////////////////////////////////////////////////////////////////////
-SPARSE_MATRIX& SPARSE_MATRIX::operator+=(SPARSE_MATRIX& A) 
+SPARSE_MATRIX& SPARSE_MATRIX::operator+=(const SPARSE_MATRIX& A) 
 {
     assert(A.rows() == _rows && A.cols() == _cols);
 
@@ -399,7 +399,7 @@ SPARSE_MATRIX& SPARSE_MATRIX::operator+=(SPARSE_MATRIX& A)
 //////////////////////////////////////////////////////////////////////
 // subtract one sparse matrix from another
 //////////////////////////////////////////////////////////////////////
-SPARSE_MATRIX& SPARSE_MATRIX::operator-=(SPARSE_MATRIX& A) 
+SPARSE_MATRIX& SPARSE_MATRIX::operator-=(const SPARSE_MATRIX& A) 
 {
     assert(A.rows() == _rows && A.cols() == _cols);
 
@@ -1452,8 +1452,10 @@ void SPARSE_MATRIX::writeToBinary( const SPARSE_MATRIX::SparseColumnMatrix &A,
 
     // Write entry count, rows and columns
     if ( newVersion ) {
+#if 0
         int header = -1;
         fwrite( (void *)&header, sizeof( int ), 1, file );
+#endif
         fwrite( (void *)&( A._nrow ), sizeof( int ), 1, file );
         fwrite( (void *)&( A._ncol ), sizeof( int ), 1, file );
         fwrite( (void *)&( A._nzmax ), sizeof( int ), 1, file );

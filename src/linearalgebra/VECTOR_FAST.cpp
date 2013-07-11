@@ -37,6 +37,16 @@ VECTOR::VECTOR(int size, REAL val) :
     }
 }
 
+VECTOR::VECTOR(int size, const REAL* data)
+    : _size(size)
+{
+    _vector = new REAL[_size];
+
+    for (int x = 0; x < _size; x++) {
+        _vector[x] = data[x];
+    }
+}
+
 VECTOR::VECTOR(const char* filename)
 {
     _vector = NULL;
@@ -477,7 +487,7 @@ void VECTOR::copySubVectorInplace(const VECTOR &vector,
 //////////////////////////////////////////////////////////////////////
 // add two vectors
 //////////////////////////////////////////////////////////////////////
-VECTOR operator+(VECTOR& x, VECTOR& y) 
+VECTOR operator+(const VECTOR& x, const VECTOR& y) 
 {
     VECTOR z(x.size());
 
@@ -489,7 +499,7 @@ VECTOR operator+(VECTOR& x, VECTOR& y)
 //////////////////////////////////////////////////////////////////////
 // subtract two vectors
 //////////////////////////////////////////////////////////////////////
-VECTOR operator-(VECTOR& x, VECTOR& y) 
+VECTOR operator-(const VECTOR& x, const VECTOR& y) 
 {
     VECTOR z(x.size());
 
@@ -501,7 +511,7 @@ VECTOR operator-(VECTOR& x, VECTOR& y)
 //////////////////////////////////////////////////////////////////////
 // scale a vector
 //////////////////////////////////////////////////////////////////////
-VECTOR operator*(VECTOR& x, REAL& scalar) 
+VECTOR operator*(const VECTOR& x, const REAL& scalar) 
 {
     VECTOR z(x.size());
 
@@ -513,7 +523,7 @@ VECTOR operator*(VECTOR& x, REAL& scalar)
 //////////////////////////////////////////////////////////////////////
 // scale a vector
 //////////////////////////////////////////////////////////////////////
-VECTOR operator*(REAL& scalar, VECTOR& x) 
+VECTOR operator*(const REAL& scalar, const VECTOR& x) 
 {
     VECTOR z(x.size());
 
@@ -525,7 +535,7 @@ VECTOR operator*(REAL& scalar, VECTOR& x)
 //////////////////////////////////////////////////////////////////////
 // compute the 2 norm
 //////////////////////////////////////////////////////////////////////
-REAL operator^(VECTOR& x, VECTOR& y)
+REAL operator^(const VECTOR& x, const VECTOR& y)
 {
     REAL total = 0;
     for (int i = 0; i < x.size(); i++)
