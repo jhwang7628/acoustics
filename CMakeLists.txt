@@ -96,8 +96,10 @@ find_package(LibConfig 1.0 REQUIRED)
 # Whether or not we need the GNU triangulated surface (GTS) package
 if ( BUILD_PAN_PRECOMPUTE_GUI )
     option(USE_GTS    "Compile with GTS"  ON)
+    option(USE_CGAL   "Compile with CGAL" ON) 
 else ( BUILD_PAN_PRECOMPUTE_GUI )
     option(USE_GTS    "Compile with GTS"  OFF)
+    option(USE_CGAL   "Compile with CGAL" OFF) 
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 if ( USE_GTS )
@@ -106,6 +108,12 @@ if ( USE_GTS )
     # GTS requires GLIB
     find_package(GLIB 2.4 REQUIRED)
 endif ( USE_GTS )
+
+if ( USE_CGAL )
+    find_package(CGAL REQUIRED)
+
+    add_definitions(-DUSE_CGAL)
+endif ( USE_CGAL )
 
 
 add_definitions(-Wall)

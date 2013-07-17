@@ -86,7 +86,7 @@
 #endif /* DIFF_DEFINE */
 #if defined(DEBUG) | defined(_DEBUG)
 #   ifndef V
-#       define V(x)                                                     \
+#       define __V__(x)                                                     \
         {                                                               \
             int hr = x;                                                 \
             if( _FAILED(hr) ) {                                         \
@@ -96,8 +96,8 @@
             }                                                           \
         }
 #   endif
-#   ifndef V_RETURN
-#       define V_RETURN(x)                                              \
+#   ifndef __V_RETURN
+#       define __V_RETURN(x)                                              \
         {                                                               \
             int hr = x;                                                 \
             if( _FAILED(hr) ) {                                         \
@@ -135,10 +135,10 @@
 #   endif
 #else
 #   ifndef V
-#       define V(x)         { x; }
+#       define __V__(x)         { x; }
 #   endif
-#   ifndef V_RETURN
-#       define V_RETURN(x)  { int hr = x; if( _FAILED(hr) ) { return hr; } }
+#   ifndef __V_RETURN
+#       define __V_RETURN(x)  { int hr = x; if( _FAILED(hr) ) { return hr; } }
 #   endif
 #   ifndef MSG_ASSERT
 #       define MSG_ASSERT(x, ...)   (__ASSERT_VOID_CAST (0))
