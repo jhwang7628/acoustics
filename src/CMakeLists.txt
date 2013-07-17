@@ -86,7 +86,8 @@ set(DISTANCEFIELD_SRC
 
 set(MATH_SRC
     math/InterpolationFunction.h        math/InterpolationFunction.cpp
-    math/Function.h                     math/Function.cpp)
+    math/Function.h                     math/Function.cpp
+    math/SampledFunction.h              math/SampledFunction.cpp)
 
 set(GEOMETRY_SRC
     geometry/RigidMesh.h                geometry/RigidMesh.cpp)
