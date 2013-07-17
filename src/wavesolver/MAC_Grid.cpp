@@ -8,6 +8,10 @@
 #include <utils/IO.h>
 #include <utils/trace.h>
 
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // Constructor
 //
@@ -129,7 +133,9 @@ void MAC_Grid::velocityDerivative( const MATRIX &p,
         = _interfacialBoundaryDirections[ dimension ];
 
     // Handle all bulk cells
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
             bulk_cell_idx++ )
     {
@@ -169,7 +175,9 @@ void MAC_Grid::velocityDerivative( const MATRIX &p,
     }
 
     // Handle boundary cells
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int interfacial_cell_idx = 0;
             interfacial_cell_idx < interfacialCells.size();
             interfacial_cell_idx++ )
@@ -202,7 +210,9 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
                                    REAL alpha ) const
 {
     // We only have to worry about bulk cells here
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
@@ -264,7 +274,9 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         = _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
             bulk_cell_idx++ )
     {
@@ -331,7 +343,9 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     //
     // Note: we assume here that all boundary cells have zero absorption
     // coefficient
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int interfacial_cell_idx = 0;
             interfacial_cell_idx < interfacialCells.size();
             interfacial_cell_idx++ )
@@ -368,7 +382,9 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
                                    REAL timeStep, REAL c, REAL density )
 {
     // We only have to worry about bulk cells here
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
