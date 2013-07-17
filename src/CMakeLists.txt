@@ -91,6 +91,9 @@ set(MATH_SRC
 set(GEOMETRY_SRC
     geometry/RigidMesh.h                geometry/RigidMesh.cpp)
 
+set(GTS_GEOMETRY_SRC
+    geometry/GTS_TriMesh.h              geometry/GTS_TriMesh.cpp)
+
 # tinyXML-based Parser
 set(PARSER_SRC
     parser/Parser.cpp                   parser/Parser.h
@@ -104,6 +107,12 @@ include_directories(
     ${Boost_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
+
+if ( USE_GTS )
+    include_directories(
+        ${GTS_INCLUDE_DIR}
+        ${GLIB_INCLUDE_DIRS})
+endif ( USE_GTS )
 
 # =============================================================================
 #   Isostuffer GUI
@@ -372,12 +381,14 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${DISTANCEFIELD_SRC}              ${MATH_SRC}
         ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
         ${FIELD_SRC}                      ${WAVESOLVER_SRC}
-        ${UTILS_SRC}                      ${PARSER_SRC})
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC})
 
     target_link_libraries(precompute-pan-gui
         ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
         ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
-        ${BLAS_LAPACK_LIBS})
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES})
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 # =============================================================================

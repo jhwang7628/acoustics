@@ -93,6 +93,21 @@ endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 # LibConfig needed for configuration files in certain projects
 find_package(LibConfig 1.0 REQUIRED)
 
+# Whether or not we need the GNU triangulated surface (GTS) package
+if ( BUILD_PAN_PRECOMPUTE_GUI )
+    option(USE_GTS    "Compile with GTS"  ON)
+else ( BUILD_PAN_PRECOMPUTE_GUI )
+    option(USE_GTS    "Compile with GTS"  OFF)
+endif ( BUILD_PAN_PRECOMPUTE_GUI )
+
+if ( USE_GTS )
+    find_package(GTS REQUIRED)
+
+    # GTS requires GLIB
+    find_package(GLIB 2.4 REQUIRED)
+endif ( USE_GTS )
+
+
 add_definitions(-Wall)
 
 if ( USE_OPENMP )

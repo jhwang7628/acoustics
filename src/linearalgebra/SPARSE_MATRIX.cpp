@@ -794,7 +794,7 @@ int SPARSE_MATRIX::matrixMultiply( const SparseColumnMatrix &A,
         }
     }
 
-    for ( int col_idx = 0; col_idx < A._ncol; col_idx++ )
+    for ( int col_idx = 0; col_idx < A._ncol; col_idx++ ) {
         for ( int row_idx = A._p[ col_idx ]; row_idx < A._p[ col_idx + 1 ];
                 row_idx++ )
         {
@@ -827,6 +827,9 @@ int SPARSE_MATRIX::matrixMultiply( const SparseColumnMatrix &A,
 #endif
             }
         }
+    }
+
+    return 0;
 }
 
 //////////////////////////////////////////////////////////////////////
