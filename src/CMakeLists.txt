@@ -94,6 +94,10 @@ set(GEOMETRY_SRC
 set(GTS_GEOMETRY_SRC
     geometry/GTS_TriMesh.h              geometry/GTS_TriMesh.cpp)
 
+set(CGAL_GEOMETRY_SRC
+    geometry/MeshTree.h                 geometry/MeshTree.cpp
+    geometry/ClosestPointMesh.h         geometry/ClosestPointMesh.cpp)
+
 # tinyXML-based Parser
 set(PARSER_SRC
     parser/Parser.cpp                   parser/Parser.h
@@ -113,6 +117,11 @@ if ( USE_GTS )
         ${GTS_INCLUDE_DIR}
         ${GLIB_INCLUDE_DIRS})
 endif ( USE_GTS )
+
+if ( USE_CGAL )
+    include_directories(
+        ${CGAL_INCLUDE_DIRS})
+endif ( USE_CGAL )
 
 # =============================================================================
 #   Isostuffer GUI
@@ -382,13 +391,13 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
         ${FIELD_SRC}                      ${WAVESOLVER_SRC}
         ${UTILS_SRC}                      ${PARSER_SRC}
-        ${GTS_GEOMETRY_SRC})
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC})
 
     target_link_libraries(precompute-pan-gui
         ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
         ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES})
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES})
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 # =============================================================================
