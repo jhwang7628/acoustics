@@ -8,6 +8,10 @@
 #include <utils/IO.h>
 #include <utils/trace.h>
 
+#ifdef USE_OPENMP
+#include <omp.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // Constructor
 //
@@ -114,7 +118,9 @@ void Laplacian::apply( const MATRIX &p, MATRIX &Lp, REAL alpha ) const
     }
 
     // Handle all bulk cells
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
@@ -205,7 +211,9 @@ void Laplacian::apply( const MATRIX &p, MATRIX &Lp, REAL alpha ) const
 #endif
 
     // Handle all interfacial cells
+#ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
+#endif
     for ( int interfacial_cell_idx = 0;
             interfacial_cell_idx < _interfacialCells.size();
             interfacial_cell_idx++ )
