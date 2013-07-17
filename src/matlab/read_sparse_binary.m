@@ -1,4 +1,5 @@
-function [ A, rows, cols, vals, n_row, n_col, n_nz ] = read_sparse_binary( fname )
+function [ A, rows, cols, vals, n_row, n_col, n_nz ] = read_sparse_binary( ...
+                                                          fname, adjust )
     fid = fopen (fname, 'rb');
     
     % Faster structs-of-arrays format
@@ -8,6 +9,12 @@ function [ A, rows, cols, vals, n_row, n_col, n_nz ] = read_sparse_binary( fname
     rows = fread( fid, n_nz, 'int32' );
     cols = fread( fid, n_nz, 'int32' );
     vals = fread( fid, n_nz, 'double' );
+
+    if ( nargin > 1 )
+        rows = rows + 1;
+        cols = cols + 1;
+    end
+
     A = sparse( rows, cols, vals, n_row, n_col );        
     
     fclose( fid );

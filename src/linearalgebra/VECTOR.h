@@ -21,7 +21,8 @@ class VECTOR {
 
     public:
         VECTOR();
-        VECTOR(int size);
+        VECTOR(int size, REAL val = 0);
+        VECTOR(int size, const REAL* data);
         VECTOR(const char* filename);
         VECTOR(const VECTOR& v);
         VECTOR(FILE* file);
@@ -99,16 +100,16 @@ class VECTOR {
         REAL sum();
 
         // in-place copy, since operator= must allocate a new VECTOR
-        void copyInplace(VECTOR& vector);
-        void equals(VECTOR& vector) { copyInplace(vector); }
+        void copyInplace(const VECTOR& vector);
+        void equals(const VECTOR& vector) { copyInplace(vector); }
 
         // In place copy from one vector to a specified location
         // in this vector.
-        void copyInplace(VECTOR &vector, int startLoc);
+        void copyInplace(const VECTOR &vector, int startLoc);
 
         // Copies a sub vector from the input vector in to the
         // given location in this vector.
-        void copySubVectorInplace(VECTOR &vector,
+        void copySubVectorInplace(const VECTOR &vector,
                 int startLoc_in, int startLoc_out,
                 int size);
 
@@ -125,6 +126,13 @@ class VECTOR {
         void fabs();
 
         static REAL norm2( REAL *v, int size );
+
+        // Vector dot product
+        static REAL dot( int n, const REAL *x, const REAL *y,
+                         int incX = 1, int incY = 1 );
+
+        // Absolute sum of vector components
+        static REAL absSum( int n, const REAL *x, int incX = 1 );
 
     private:
         int _size;
@@ -144,12 +152,12 @@ inline ostream &operator<<(ostream &out, VECTOR& vector)
 }
 
 // overloaded operators
-VECTOR operator-(VECTOR& x, VECTOR& y);
-VECTOR operator+(VECTOR& x, VECTOR& y);
-VECTOR operator*(VECTOR& x, REAL& scalar);
-VECTOR operator*(REAL& scalar, VECTOR& x);
+VECTOR operator-(const VECTOR& x, const VECTOR& y);
+VECTOR operator+(const VECTOR& x, const VECTOR& y);
+VECTOR operator*(const VECTOR& x, const REAL& scalar);
+VECTOR operator*(const REAL& scalar, const VECTOR& x);
 
 // x^T . y
-REAL operator^(VECTOR& x, VECTOR& y);
+REAL operator^(const VECTOR& x, const VECTOR& y);
 
 #endif

@@ -55,6 +55,7 @@ class MATRIX {
 
         // return a pointer to the beginning of a row
         REAL* row(int index) { return &_matrix[index * _cols]; };
+        const REAL* row(int index) const { return &_matrix[index * _cols]; };
 
         // wipe the whole matrix
         void clear();
@@ -210,6 +211,15 @@ class MATRIX {
         static inline void clear( REAL *A, int rows, int cols )
         {
             memset( (void *)A, 0, rows * cols * sizeof( REAL ) );
+        }
+
+        // Zero a matrix with a given leading dimension
+        static inline void clear( REAL *A, int rows, int cols, int lda )
+        {
+            for ( int row_idx = 0; row_idx < rows; row_idx++ )
+            {
+                clear( A + row_idx * lda, 1, cols );
+            }
         }
 
         // Generate a diagonal matrix
