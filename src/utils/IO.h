@@ -84,8 +84,7 @@ class IO {
 			// Use the existing read/write functionality in VECTOR
 			VECTOR v_data( data.size() );
 
-			for ( int i = 0; i < data.size(); i++ )
-			{
+			for ( size_t i = 0; i < data.size(); i++ ) {
 				v_data(i) = data[i];
 			}
 
@@ -102,8 +101,7 @@ class IO {
 
 			data.resize( v_data.size() );
 
-			for ( int i = 0; i < v_data.size(); i++ )
-			{
+			for ( int i = 0; i < v_data.size(); i++ ) {
 				data[i] = v_data(i);
 			}
 		}
