@@ -97,9 +97,11 @@ find_package(LibConfig 1.0 REQUIRED)
 if ( BUILD_PAN_PRECOMPUTE_GUI )
     option(USE_GTS    "Compile with GTS"  ON)
     option(USE_CGAL   "Compile with CGAL" ON) 
+    option(USE_GSL    "Compile with GSL"  ON)
 else ( BUILD_PAN_PRECOMPUTE_GUI )
     option(USE_GTS    "Compile with GTS"  OFF)
     option(USE_CGAL   "Compile with CGAL" OFF) 
+    option(USE_GSL    "Compile with GSL"  OFF)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 if ( USE_GTS )
@@ -112,8 +114,13 @@ endif ( USE_GTS )
 if ( USE_CGAL )
     find_package(CGAL REQUIRED)
 
+    add_definitions(-frounding-math)
     add_definitions(-DUSE_CGAL)
 endif ( USE_CGAL )
+
+if ( USE_GSL )
+    find_package(GSL REQUIRED)
+endif ( USE_GSL )
 
 
 add_definitions(-Wall)

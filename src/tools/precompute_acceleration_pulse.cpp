@@ -25,9 +25,7 @@
 
 #include <parser/Parser.h>
 
-#if 0
 #include <transfer/PulseApproximation.h>
-#endif
 
 #include <ui/WaveViewer.h>
 
@@ -102,7 +100,6 @@ REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
     return bcResult;
 }
 
-#if 0
 //////////////////////////////////////////////////////////////////////
 // Callback for building the pulse approximation
 //////////////////////////////////////////////////////////////////////
@@ -126,13 +123,13 @@ void buildPulseApproximation( const vector<vector<FloatArray> > &waveOutput,
             accel_direction++ )
     {
         pulseModel._allFields[ accel_direction ] = new PulseApproximation(
-                waveOutput, fieldCenter,
-                fieldRadius,
-                parms._listeningResolution,
-                interp->h(),
-                interp->supportLength(),
-                parms._timeStepFrequency,
-                accel_direction );
+                                                                    waveOutput, fieldCenter,
+                                                                    fieldRadius,
+                                                                    parms._listeningResolution,
+                                                                    interp->h(),
+                                                                    interp->supportLength(),
+                                                                    parms._timeStepFrequency,
+                                                                    accel_direction );
     }
 
     RadialApproximation::WriteAccelerationSet( parms._outputFile, pulseModel );
@@ -205,7 +202,6 @@ void buildPulseApproximation( const vector<vector<FloatArray> > &waveOutput,
     systemMatrix2.writeToBinary( "test2.bcsm" );
 #endif
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -360,12 +356,10 @@ int main( int argc, char **argv )
 
     interp = new InterpolationMitchellNetravali( parms._pulseTimeScale );
 
-#if 0
     // Callback for writing out the pulse approximation
     callback = boost::bind( buildPulseApproximation, _1,
-            boost::ref( parms ), interp,
-            rigidMesh->centerOfMass(), listeningRadius );
-#endif
+                            boost::ref( parms ), interp,
+                            rigidMesh->centerOfMass(), listeningRadius );
 
 #if 0
     WaveSolver                 solver( timeStep, fieldBBox, cellSize,
@@ -387,10 +381,10 @@ int main( int argc, char **argv )
             true, /* use boundary */
             &listeningPositions,
             NULL, /* No output file */
-#if 0
             &callback, /* Write callback */
-#endif
+#if 0
             NULL, /* No write callback for now */
+#endif
             parms._subSteps,
             6, /* acceleration directions */
             endTime );
