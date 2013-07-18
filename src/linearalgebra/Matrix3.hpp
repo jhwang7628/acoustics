@@ -256,6 +256,12 @@ class Matrix3
         {
             Vector3<T> v0 = cols[1].crossProduct(cols[2]);
             T det = v0.dotProduct(cols[0]);
+
+            // FIXME: This singularity check is really flakey (a matrix can have
+            //        a small determinant and be very far from singular), so I'm
+            //        removing it for now.
+            //         - Jeff Chadwick
+#if 0
 #ifndef DIFF_DEFINE
             if ( M_ABS(det) < 1E-28 )
 #else /* DIFF_DEFINE */
@@ -266,10 +272,18 @@ class Matrix3
                 fprintf(stderr, "ERROR: Invert matrix(1) with det<1E-28 %.30lf\n", det);
 #else /* DIFF_DEFINE */
                 fprintf(stderr, "ERROR: Invert matrix(1) with det close to 0 %.20lf\n", det);
+
+                fprintf(stderr, "Matrix entries: \n"
+                                " [ %e, %e, %e; %e, %e, %e; %e, %e, %e ]\n",
+                                cols[0][0], cols[1][0], cols[2][0],
+                                cols[0][1], cols[1][1], cols[2][1],
+                                cols[0][2], cols[1][2], cols[2][2] );
+
                 exit(1);
 #endif /* DIFF_DEFINE */
                 return Matrix3<T>::I;
             }
+#endif
             Vector3<T> v1 = cols[2].crossProduct(cols[0]);
             Vector3<T> v2 = cols[0].crossProduct(cols[1]);
 
