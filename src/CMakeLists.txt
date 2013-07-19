@@ -100,6 +100,7 @@ set(CGAL_GEOMETRY_SRC
     geometry/ClosestPointMesh.h         geometry/ClosestPointMesh.cpp)
 
 set(TRANSFER_SRC
+    transfer/AccelerationNoiseModel.h   transfer/AccelerationNoiseModel.cpp
     transfer/MultiTermApproximation.h   transfer/MultiTermApproximation.cpp
     transfer/PulseApproximation.h       transfer/PulseApproximation.cpp
     transfer/ProxyManager.h             transfer/ProxyManager.cpp
