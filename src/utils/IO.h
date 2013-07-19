@@ -112,7 +112,7 @@ class IO {
 			int start = 0;
 			while( 1 )
 			{
-				int occur = s.find_first_of( splitters, start );
+				size_t occur = s.find_first_of( splitters, start );
 
 				if( occur == string::npos ) {
 					// we're done. add the last string

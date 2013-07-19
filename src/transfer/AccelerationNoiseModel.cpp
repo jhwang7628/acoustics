@@ -6,8 +6,8 @@
 
 #include "AccelerationNoiseModel.h"
 
-#include <util/IO.h>
-#include <util/trace.h>
+#include <utils/IO.h>
+#include <utils/trace.h>
 
 using namespace std;
 
@@ -36,322 +36,320 @@ AccelerationNoiseModel::~AccelerationNoiseModel()
 // as the relative collision velocity, impact magnitude, contact normal
 // and the current rotation state for each object.
 //////////////////////////////////////////////////////////////////////
-bool AccelerationNoiseModel::AddImpactNoise(
-                              const MeshSet &objectA,
-                              const MeshSet &objectB,
-                              const TwoObjectImpact &impactData,
-                              const VEC3F &listeningPosition,
-                              /*
-                              RadialApproximation::AccelerationSet &pulseDataA,
-                              RadialApproximation::AccelerationSet &pulseDataB,
-                              */
-                              CompactRadialApproximation *pulseDataA,
-                              CompactRadialApproximation *pulseDataB,
-                              SampledFunction &outputSignal,
-                              ofstream *outputFile,
-                              Real *impactLength,
-                              Real *impactScale,
-                              ProxyManager *proxyManager,
-                              Real collisionTimeScale )
+bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
+                                             const MeshSet &objectB,
+                                             const TwoObjectImpact &impactData,
+                                             const Point3d &listeningPosition,
+                                             /*
+                                             RadialApproximation::AccelerationSet &pulseDataA,
+                                             RadialApproximation::AccelerationSet &pulseDataB,
+                                             */
+                                             CompactRadialApproximation *pulseDataA,
+                                             CompactRadialApproximation *pulseDataB,
+                                             SampledFunction &outputSignal,
+                                             ofstream *outputFile,
+                                             REAL *impactLength,
+                                             REAL *impactScale,
+                                             ProxyManager *proxyManager,
+                                             REAL collisionTimeScale )
 {
-  Real                       timeScale;
-  VEC3F                      impulseDirectionA;
-  VEC3F                      impulseDirectionB;
+    REAL                       timeScale;
+    Vector3d                   impulseDirectionA;
+    Vector3d                   impulseDirectionB;
 
-  Real                       inverseEffectiveMass;
-  Real                       forceScale;
+    REAL                       inverseEffectiveMass;
+    REAL                       forceScale;
 
-  VEC3F                      translationalAccelerationA;
-  VEC3F                      translationalAccelerationB;
-  VEC3F                      rotationalAccelerationA;
-  VEC3F                      rotationalAccelerationB;
+    Vector3d                   translationalAccelerationA;
+    Vector3d                   translationalAccelerationB;
+    Vector3d                   rotationalAccelerationA;
+    Vector3d                   rotationalAccelerationB;
 
-  VEC3F                      listeningPositionA;
-  VEC3F                      listeningPositionB;
+    Point3d                    listeningPositionA;
+    Point3d                    listeningPositionB;
 
-  bool                       addingSound = false;
+    bool                       addingSound = false;
 
-  Real                       scaleA = 1.0;
-  Real                       scaleB = 1.0;
+    REAL                       scaleA = 1.0;
+    REAL                       scaleB = 1.0;
 
-  impulseDirectionA.normalize();
-  impulseDirectionB.normalize();
+    impulseDirectionA.normalize();
+    impulseDirectionB.normalize();
 
-  // Get the Hertz timescale, and effective masses for both objects
-  // in the given collision configuration
-  impulseDirectionA
-    = impactData._inverseRotationA.rotate( impactData._impulseDirection );
-  impulseDirectionB
-    = impactData._inverseRotationB.rotate( impactData._impulseDirection );
+    // Get the Hertz timescale, and effective masses for both objects
+    // in the given collision configuration
+    impulseDirectionA
+        = impactData._inverseRotationA.rotate( impactData._impulseDirection );
+    impulseDirectionB
+        = impactData._inverseRotationB.rotate( impactData._impulseDirection );
 
-  // Figure out the acceleration magnitude in each direction
-  // given a unit force
-  objectA._rigidMesh.accelerationCoefficients( impactData._posA,
-                                               impulseDirectionA,
-                                               translationalAccelerationA,
-                                               rotationalAccelerationA );
-  objectB._rigidMesh.accelerationCoefficients( impactData._posB,
-                                               impulseDirectionB,
-                                               translationalAccelerationB,
-                                               rotationalAccelerationB );
+    // Figure out the acceleration magnitude in each direction
+    // given a unit force
+    objectA._rigidMesh.accelerationCoefficients( impactData._posA,
+            impulseDirectionA,
+            translationalAccelerationA,
+            rotationalAccelerationA );
+    objectB._rigidMesh.accelerationCoefficients( impactData._posB,
+            impulseDirectionB,
+            translationalAccelerationB,
+            rotationalAccelerationB );
 
-  // Get listening positions for each of the objects
-  listeningPositionA = ObjectListeningPosition(
-                                          listeningPosition,
-                                          objectA._rigidMesh.centerOfMass(),
-                                          impactData._posA,
-                                          impactData._inverseRotationA );
-  listeningPositionB = ObjectListeningPosition(
-                                          listeningPosition,
-                                          objectB._rigidMesh.centerOfMass(),
-                                          impactData._posB,
-                                          impactData._inverseRotationB );
+    // Get listening positions for each of the objects
+    listeningPositionA = ObjectListeningPosition(
+            listeningPosition,
+            objectA._rigidMesh.centerOfMass(),
+            impactData._posA,
+            impactData._inverseRotationA );
+    listeningPositionB = ObjectListeningPosition(
+            listeningPosition,
+            objectB._rigidMesh.centerOfMass(),
+            impactData._posB,
+            impactData._inverseRotationB );
 
-  if ( proxyManager ) {
-    // Use proxies for each object
-    if ( objectA._useProxy ) {
-      CompactRadialApproximation  *proxyA = NULL;
+    if ( proxyManager ) {
+        // Use proxies for each object
+        if ( objectA._useProxy ) {
+            CompactRadialApproximation  *proxyA = NULL;
 
-      proxyManager->getProxyData( objectA._objectID, proxyA, scaleA,
-                                  listeningPositionA,
-                                  translationalAccelerationA,
-                                  rotationalAccelerationA );
+            proxyManager->getProxyData( objectA._objectID, proxyA, scaleA,
+                    listeningPositionA,
+                    translationalAccelerationA,
+                    rotationalAccelerationA );
 
-      pulseDataA = proxyA;
+            pulseDataA = proxyA;
 #if 0
-      pulseDataA = pulseDataA != NULL ? proxyA : NULL;
+            pulseDataA = pulseDataA != NULL ? proxyA : NULL;
 #endif
+        }
+
+        if ( objectB._useProxy ) {
+            CompactRadialApproximation  *proxyB = NULL;
+
+            proxyManager->getProxyData( objectB._objectID, proxyB, scaleB,
+                    listeningPositionB,
+                    translationalAccelerationB,
+                    rotationalAccelerationB );
+
+            pulseDataB = proxyB;
+#if 0
+            pulseDataB = pulseDataB != NULL ? proxyB : NULL;
+#endif
+        }
     }
 
-    if ( objectB._useProxy ) {
-      CompactRadialApproximation  *proxyB = NULL;
+    // Figure out the impact time scale
+    timeScale = HertzImpactTimeScale( objectA, objectB, impactData,
+            impulseDirectionA, impulseDirectionB,
+            inverseEffectiveMass );
+    timeScale *= collisionTimeScale;
 
-      proxyManager->getProxyData( objectB._objectID, proxyB, scaleB,
-                                  listeningPositionB,
-                                  translationalAccelerationB,
-                                  rotationalAccelerationB );
-
-      pulseDataB = proxyB;
-#if 0
-      pulseDataB = pulseDataB != NULL ? proxyB : NULL;
-#endif
+    // FIXME: clamp the time scale
+    if ( pulseDataA && pulseDataB ) {
+        timeScale = max( timeScale, max( pulseDataA->h() * scaleA,
+                    pulseDataB->h() * scaleB ) );
     }
-  }
+    else if ( pulseDataA ) {
+        timeScale = max( timeScale, pulseDataA->h() * scaleA );
+    }
+    else if ( pulseDataB ) {
+        timeScale = max( timeScale, pulseDataB->h() * scaleB );
+    }
+    else {
+        return addingSound;
+    }
 
-  // Figure out the impact time scale
-  timeScale = HertzImpactTimeScale( objectA, objectB, impactData,
-                                    impulseDirectionA, impulseDirectionB,
-                                    inverseEffectiveMass );
-  timeScale *= collisionTimeScale;
-    
-  // FIXME: clamp the time scale
-  if ( pulseDataA && pulseDataB ) {
-    timeScale = max( timeScale, max( pulseDataA->h() * scaleA,
-                                     pulseDataB->h() * scaleB ) );
-  }
-  else if ( pulseDataA ) {
-    timeScale = max( timeScale, pulseDataA->h() * scaleA );
-  }
-  else if ( pulseDataB ) {
-    timeScale = max( timeScale, pulseDataB->h() * scaleB );
-  }
-  else {
+    forceScale = ImpactForceScale( inverseEffectiveMass, timeScale,
+            impactData._impulseMagnitude );
+
+
+#if 0
+    // FIXME:
+    if ( forceScale < 0.1 )
+    {
+        timeScale = -1.0;
+        forceScale = -1.0;
+    }
+#endif
+
+    // Clamp the force scale
+    REAL forceScaleA = forceScale;
+#if 0
+    forceScaleA = min( forceScale,
+            impactData._impulseMagnitude / pulseDataA->h() );
+#endif
+
+    // Clamp the force scale
+    REAL forceScaleB = forceScale;
+#if 0
+    forceScaleB = min( forceScale,
+            impactData._impulseMagnitude / pulseDataB->h() );
+#endif
+
+    if ( outputFile )
+    {
+        ( *outputFile ) << timeScale << ' ' << forceScale << endl;
+    }
+
+    if ( impactLength && impactScale )
+    {
+        ( *impactLength ) = timeScale;
+        ( *impactScale ) = forceScale;
+    }
+
+#if 0
+    // FIXME:
+    if ( forceScale < 0.0 )
+    {
+        return true;
+    }
+#endif
+
+    addingSound = addingSound
+        || AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScaleA,
+                translationalAccelerationA,
+                rotationalAccelerationA,
+                listeningPositionA, pulseDataA, outputSignal,
+                scaleA );
+
+    addingSound = addingSound
+        || AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScaleB,
+                translationalAccelerationB,
+                rotationalAccelerationB,
+                listeningPositionB, pulseDataB, outputSignal,
+                scaleB );
+
+#if 0
+    cout << SDUMP( timeScale ) << endl;
+    cout << SDUMP( forceScale ) << endl;
+    cout << SDUMP( objectA._rigidMesh.mass() ) << endl;
+    cout << SDUMP( impactData._impulseMagnitude ) << endl;
+    cout << SDUMP( translationalAccelerationA * forceScale ) << endl;
+    cout << SDUMP( rotationalAccelerationA * forceScale ) << endl;
+#endif
+
     return addingSound;
-  }
-
-  forceScale = ImpactForceScale( inverseEffectiveMass, timeScale,
-                                 impactData._impulseMagnitude );
-
-
-#if 0
-  // FIXME:
-  if ( forceScale < 0.1 )
-  {
-    timeScale = -1.0;
-    forceScale = -1.0;
-  }
-#endif
-
-  // Clamp the force scale
-  Real forceScaleA = forceScale;
-#if 0
-  forceScaleA = min( forceScale,
-                     impactData._impulseMagnitude / pulseDataA->h() );
-#endif
-
-  // Clamp the force scale
-  Real forceScaleB = forceScale;
-#if 0
-  forceScaleB = min( forceScale,
-                     impactData._impulseMagnitude / pulseDataB->h() );
-#endif
-
-  if ( outputFile )
-  {
-    ( *outputFile ) << timeScale << ' ' << forceScale << endl;
-  }
-
-  if ( impactLength && impactScale )
-  {
-    ( *impactLength ) = timeScale;
-    ( *impactScale ) = forceScale;
-  }
-
-#if 0
-  // FIXME:
-  if ( forceScale < 0.0 )
-  {
-    return true;
-  }
-#endif
-
-  addingSound = addingSound
-    || AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScaleA,
-                             translationalAccelerationA,
-                             rotationalAccelerationA,
-                             listeningPositionA, pulseDataA, outputSignal,
-                             scaleA );
-
-  addingSound = addingSound
-    || AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScaleB,
-                             translationalAccelerationB,
-                             rotationalAccelerationB,
-                             listeningPositionB, pulseDataB, outputSignal,
-                             scaleB );
-
-#if 0
-  cout << SDUMP( timeScale ) << endl;
-  cout << SDUMP( forceScale ) << endl;
-  cout << SDUMP( objectA._rigidMesh.mass() ) << endl;
-  cout << SDUMP( impactData._impulseMagnitude ) << endl;
-  cout << SDUMP( translationalAccelerationA * forceScale ) << endl;
-  cout << SDUMP( rotationalAccelerationA * forceScale ) << endl;
-#endif
-
-  return addingSound;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Adds impact noise for a single impact with a plane of infinite
 // size and mass
 //////////////////////////////////////////////////////////////////////
-bool AccelerationNoiseModel::AddImpactNoise(
-                              const MeshSet &objectA,
-                              const PlaneImpact &impactData,
-                              const VEC3F &listeningPosition,
-                              /*
-                              RadialApproximation::AccelerationSet &pulseDataA,
-                              */
-                              CompactRadialApproximation *pulseDataA,
-                              SampledFunction &outputSignal,
-                              ofstream *outputFile,
-                              Real *impactLength,
-                              Real *impactScale,
-                              ProxyManager *proxyManager,
-                              Real collisionTimeScale )
+bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
+                                             const PlaneImpact &impactData,
+                                             const Point3d &listeningPosition,
+                                             /*
+                                             RadialApproximation::AccelerationSet &pulseDataA,
+                                             */
+                                             CompactRadialApproximation *pulseDataA,
+                                             SampledFunction &outputSignal,
+                                             ofstream *outputFile,
+                                             REAL *impactLength,
+                                             REAL *impactScale,
+                                             ProxyManager *proxyManager,
+                                             REAL collisionTimeScale )
 {
-  Real                       timeScale;
-  VEC3F                      impulseDirectionA;
+    REAL                       timeScale;
+    Vector3d                   impulseDirectionA;
 
-  Real                       inverseEffectiveMass;
-  Real                       forceScale;
+    REAL                       inverseEffectiveMass;
+    REAL                       forceScale;
 
-  VEC3F                      translationalAccelerationA;
-  VEC3F                      rotationalAccelerationA;
+    Vector3d                   translationalAccelerationA;
+    Vector3d                   rotationalAccelerationA;
 
-  VEC3F                      listeningPositionA;
+    Point3d                    listeningPositionA;
 
-  Real                       scaleA = 1.0;
+    REAL                       scaleA = 1.0;
 
-  // Get the Hertz timescale, and effective masses for both objects
-  // in the given collision configuration
-  impulseDirectionA
-    = impactData._inverseRotationA.rotate( impactData._impulseDirection );
+    // Get the Hertz timescale, and effective masses for both objects
+    // in the given collision configuration
+    impulseDirectionA
+        = impactData._inverseRotationA.rotate( impactData._impulseDirection );
 
-  // Figure out the acceleration magnitude in each direction
-  // given a unit force
-  objectA._rigidMesh.accelerationCoefficients( impactData._posA,
-                                               impulseDirectionA,
-                                               translationalAccelerationA,
-                                               rotationalAccelerationA );
+    // Figure out the acceleration magnitude in each direction
+    // given a unit force
+    objectA._rigidMesh.accelerationCoefficients( impactData._posA,
+            impulseDirectionA,
+            translationalAccelerationA,
+            rotationalAccelerationA );
 
-  // Get listening positions for each of the objects
-  listeningPositionA = ObjectListeningPosition(
-                                          listeningPosition,
-                                          objectA._rigidMesh.centerOfMass(),
-                                          impactData._posA,
-                                          impactData._inverseRotationA );
+    // Get listening positions for each of the objects
+    listeningPositionA = ObjectListeningPosition(
+            listeningPosition,
+            objectA._rigidMesh.centerOfMass(),
+            impactData._posA,
+            impactData._inverseRotationA );
 
-  if ( proxyManager && objectA._useProxy ) {
-    // Use proxies for each object
-    CompactRadialApproximation  *proxyA = NULL;
+    if ( proxyManager && objectA._useProxy ) {
+        // Use proxies for each object
+        CompactRadialApproximation  *proxyA = NULL;
 
-    proxyManager->getProxyData( objectA._objectID, proxyA, scaleA,
-                                listeningPositionA,
-                                translationalAccelerationA,
-                                rotationalAccelerationA );
+        proxyManager->getProxyData( objectA._objectID, proxyA, scaleA,
+                listeningPositionA,
+                translationalAccelerationA,
+                rotationalAccelerationA );
 
-    pulseDataA = proxyA;
+        pulseDataA = proxyA;
 #if 0
-    pulseDataA = pulseDataA != NULL ? proxyA : NULL;
+        pulseDataA = pulseDataA != NULL ? proxyA : NULL;
 #endif
-  }
+    }
 
-  // Figure out the impact time scale
-  timeScale = HertzImpactTimeScale( objectA, impactData,
-                                    impulseDirectionA,
-                                    inverseEffectiveMass );
-  timeScale *= collisionTimeScale;
+    // Figure out the impact time scale
+    timeScale = HertzImpactTimeScale( objectA, impactData,
+            impulseDirectionA,
+            inverseEffectiveMass );
+    timeScale *= collisionTimeScale;
 
-  // FIXME: clamp the time scale
-  if ( pulseDataA ) {
-    timeScale = max( timeScale, pulseDataA->h() * scaleA );
-  }
-  else {
-    return false;
-  }
+    // FIXME: clamp the time scale
+    if ( pulseDataA ) {
+        timeScale = max( timeScale, pulseDataA->h() * scaleA );
+    }
+    else {
+        return false;
+    }
 
-  forceScale = ImpactForceScale( inverseEffectiveMass, timeScale,
-                                 impactData._impulseMagnitude );
-
-#if 0
-  // Clamp the force scale
-  forceScale = min( forceScale, impactData._impulseMagnitude / pulseDataA->h() );
-#endif
+    forceScale = ImpactForceScale( inverseEffectiveMass, timeScale,
+            impactData._impulseMagnitude );
 
 #if 0
-  // FIXME:
-  if ( forceScale < 0.1 )
-  {
-    timeScale = -1.0;
-    forceScale = -1.0;
-  }
+    // Clamp the force scale
+    forceScale = min( forceScale, impactData._impulseMagnitude / pulseDataA->h() );
 #endif
-
-  if ( outputFile )
-  {
-    ( *outputFile ) << timeScale << ' ' << forceScale << endl;
-  }
-
-  if ( impactLength && impactScale )
-  {
-    ( *impactLength ) = timeScale;
-    ( *impactScale ) = forceScale;
-  }
 
 #if 0
-  // FIXME:
-  if ( forceScale < 0.0 )
-  {
-    return true;
-  }
+    // FIXME:
+    if ( forceScale < 0.1 )
+    {
+        timeScale = -1.0;
+        forceScale = -1.0;
+    }
 #endif
 
-  return AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScale,
-                               translationalAccelerationA,
-                               rotationalAccelerationA,
-                               listeningPositionA, pulseDataA, outputSignal,
-                               scaleA );
+    if ( outputFile )
+    {
+        ( *outputFile ) << timeScale << ' ' << forceScale << endl;
+    }
+
+    if ( impactLength && impactScale )
+    {
+        ( *impactLength ) = timeScale;
+        ( *impactScale ) = forceScale;
+    }
+
+#if 0
+    // FIXME:
+    if ( forceScale < 0.0 )
+    {
+        return true;
+    }
+#endif
+
+    return AddObjectImpactNoise( impactData._impulseTime, timeScale, forceScale,
+            translationalAccelerationA,
+            rotationalAccelerationA,
+            listeningPositionA, pulseDataA, outputSignal,
+            scaleA );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -360,231 +358,227 @@ bool AccelerationNoiseModel::AddImpactNoise(
 //
 // See [Johnson, 1985] page 353
 //////////////////////////////////////////////////////////////////////
-Real AccelerationNoiseModel::HertzImpactTimeScale(
-                                        const MeshSet &objectA,
-                                        const MeshSet &objectB,
-                                        const TwoObjectImpact &impactData,
-                                        const VEC3F &impulseDirectionA,
-                                        const VEC3F &impulseDirectionB,
-                                        Real &inverseEffectiveMass )
+REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
+                                                   const MeshSet &objectB,
+                                                   const TwoObjectImpact &impactData,
+                                                   const Vector3d &impulseDirectionA,
+                                                   const Vector3d &impulseDirectionB,
+                                                   REAL &inverseEffectiveMass )
 {
-  ClosestPointMesh::MeshPoint    closestPointA;
-  ClosestPointMesh::MeshPoint    closestPointB;
+    ClosestPointMesh::MeshPoint    closestPointA;
+    ClosestPointMesh::MeshPoint    closestPointB;
 
-  Real                           curvatureA;
-  Real                           curvatureB;
+    REAL                           curvatureA;
+    REAL                           curvatureB;
 
-  Real                           inverseEffectiveMassA;
-  Real                           inverseEffectiveMassB;
+    REAL                           inverseEffectiveMassA;
+    REAL                           inverseEffectiveMassB;
 
-  Real                           inverseEffectiveRadius;
+    REAL                           inverseEffectiveRadius;
 
-  Real                           materialConstant;
+    REAL                           materialConstant;
 
-  Real                           timeScale;
+    REAL                           timeScale;
 
-  TRACE_ASSERT( impactData._relativeSpeed < 0.0 );
+    TRACE_ASSERT( impactData._relativeSpeed < 0.0 );
 
-  // For the given impact positions (which may be interior to the meshes)
-  // determine a nearby point on the object surface so that we can
-  // use this for curvature calculations
-  closestPointA = objectA._closestPointMesh.closestPoint( impactData._posA );
-  closestPointB = objectB._closestPointMesh.closestPoint( impactData._posB );
+    // For the given impact positions (which may be interior to the meshes)
+    // determine a nearby point on the object surface so that we can
+    // use this for curvature calculations
+    closestPointA = objectA._closestPointMesh.closestPoint( impactData._posA );
+    closestPointB = objectB._closestPointMesh.closestPoint( impactData._posB );
 
-  if ( closestPointA._triangleID >= 0 )
-  {
-    curvatureA = objectA._curvatureMesh.meanCurvature(
-                                          closestPointA._triangleID,
-                                          closestPointA._barycentricPosition );
-  }
-  else
-  {
+    if ( closestPointA._triangleID >= 0 )
+    {
+        curvatureA = objectA._curvatureMesh.meanCurvature(
+                closestPointA._triangleID,
+                closestPointA._barycentricPosition );
+    }
+    else
+    {
 #if 0
-    cerr << "Object impact: No closest point found" << endl;
+        cerr << "Object impact: No closest point found" << endl;
 #endif
-    curvatureA = 0.0;
-  }
+        curvatureA = 0.0;
+    }
 
-  if ( closestPointB._triangleID >= 0 )
-  {
-    curvatureB = objectB._curvatureMesh.meanCurvature(
-                                          closestPointB._triangleID,
-                                          closestPointB._barycentricPosition );
-  }
-  else
-  {
+    if ( closestPointB._triangleID >= 0 )
+    {
+        curvatureB = objectB._curvatureMesh.meanCurvature(
+                closestPointB._triangleID,
+                closestPointB._barycentricPosition );
+    }
+    else
+    {
 #if 0
-    cerr << "Object impact: No closest point found" << endl;
+        cerr << "Object impact: No closest point found" << endl;
 #endif
-    curvatureB = 0.0;
-  }
+        curvatureB = 0.0;
+    }
 
-  inverseEffectiveRadius = curvatureA + curvatureB;
+    inverseEffectiveRadius = curvatureA + curvatureB;
 
-  // Get effective masses for each of the two objects, given the impulse
-  // direction on each object
-  inverseEffectiveMassA = objectA._rigidMesh.inverseEffectiveMass(
-                                          impactData._posA, impulseDirectionA );
-  inverseEffectiveMassB = objectB._rigidMesh.inverseEffectiveMass(
-                                          impactData._posB, impulseDirectionB );
+    // Get effective masses for each of the two objects, given the impulse
+    // direction on each object
+    inverseEffectiveMassA = objectA._rigidMesh.inverseEffectiveMass(
+            impactData._posA, impulseDirectionA );
+    inverseEffectiveMassB = objectB._rigidMesh.inverseEffectiveMass(
+            impactData._posB, impulseDirectionB );
 
-  inverseEffectiveMass = inverseEffectiveMassA + inverseEffectiveMassB;
+    inverseEffectiveMass = inverseEffectiveMassA + inverseEffectiveMassB;
 
-  materialConstant = HertzMaterialConstant(
-                                  objectA._rigidMesh.youngsModulus(),
-                                  objectB._rigidMesh.youngsModulus(),
-                                  objectA._rigidMesh.poissonRatio(),
-                                  objectB._rigidMesh.poissonRatio() );
+    materialConstant = HertzMaterialConstant(
+            objectA._rigidMesh.youngsModulus(),
+            objectB._rigidMesh.youngsModulus(),
+            objectA._rigidMesh.poissonRatio(),
+            objectB._rigidMesh.poissonRatio() );
 
-  timeScale = 1.0 / inverseEffectiveMass;
-  timeScale *= timeScale;
-  timeScale *= inverseEffectiveRadius;
-  timeScale *= materialConstant * materialConstant;
-  timeScale /= -1.0 * impactData._relativeSpeed;
-  timeScale = pow( timeScale, 0.2 );
-  timeScale *= 2.87;
+    timeScale = 1.0 / inverseEffectiveMass;
+    timeScale *= timeScale;
+    timeScale *= inverseEffectiveRadius;
+    timeScale *= materialConstant * materialConstant;
+    timeScale /= -1.0 * impactData._relativeSpeed;
+    timeScale = pow( timeScale, 0.2 );
+    timeScale *= 2.87;
 
-  return timeScale;
+    return timeScale;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Hertz time scale for an impact with an ideally flat surface (eg.
 // a ground plane)
 //////////////////////////////////////////////////////////////////////
-Real AccelerationNoiseModel::HertzImpactTimeScale(
-                                        const MeshSet &objectA,
-                                        const PlaneImpact &impactData,
-                                        const VEC3F &impulseDirectionA,
-                                        Real &inverseEffectiveMass )
+REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
+                                                   const PlaneImpact &impactData,
+                                                   const Vector3d &impulseDirectionA,
+                                                   REAL &inverseEffectiveMass )
 {
-  ClosestPointMesh::MeshPoint    closestPointA;
+    ClosestPointMesh::MeshPoint    closestPointA;
 
-  Real                           curvatureA;
-  Real                           curvatureB = 0.0;
+    REAL                           curvatureA;
+    REAL                           curvatureB = 0.0;
 
-  Real                           inverseEffectiveMassA;
-  Real                           inverseEffectiveMassB = 0.0;
+    REAL                           inverseEffectiveMassA;
+    REAL                           inverseEffectiveMassB = 0.0;
 
-  Real                           inverseEffectiveRadius;
+    REAL                           inverseEffectiveRadius;
 
-  Real                           materialConstant;
+    REAL                           materialConstant;
 
-  Real                           timeScale;
+    REAL                           timeScale;
 
-  TRACE_ASSERT( impactData._relativeSpeed < 0.0 );
+    TRACE_ASSERT( impactData._relativeSpeed < 0.0 );
 
-  // For the given impact positions (which may be interior to the meshes)
-  // determine a nearby point on the object surface so that we can
-  // use this for curvature calculations
-  closestPointA = objectA._closestPointMesh.closestPoint( impactData._posA );
+    // For the given impact positions (which may be interior to the meshes)
+    // determine a nearby point on the object surface so that we can
+    // use this for curvature calculations
+    closestPointA = objectA._closestPointMesh.closestPoint( impactData._posA );
 
 #if 0
-  if ( closestPointA._triangleID < 0 ) {
-    cerr << "Plane impact: No closest point found" << endl;
-  }
+    if ( closestPointA._triangleID < 0 ) {
+        cerr << "Plane impact: No closest point found" << endl;
+    }
 #endif
 
-  curvatureA = objectA._curvatureMesh.meanCurvature(
-                                        closestPointA._triangleID,
-                                        closestPointA._barycentricPosition );
+    curvatureA = objectA._curvatureMesh.meanCurvature(
+            closestPointA._triangleID,
+            closestPointA._barycentricPosition );
 
-  inverseEffectiveRadius = curvatureA + curvatureB;
+    inverseEffectiveRadius = curvatureA + curvatureB;
 
-  // Get effective masses for each of the two objects, given the impulse
-  // direction on each object
-  inverseEffectiveMassA = objectA._rigidMesh.inverseEffectiveMass(
-                                          impactData._posA, impulseDirectionA );
+    // Get effective masses for each of the two objects, given the impulse
+    // direction on each object
+    inverseEffectiveMassA = objectA._rigidMesh.inverseEffectiveMass(
+            impactData._posA, impulseDirectionA );
 
-  inverseEffectiveMass = inverseEffectiveMassA + inverseEffectiveMassB;
+    inverseEffectiveMass = inverseEffectiveMassA + inverseEffectiveMassB;
 
-  materialConstant = HertzMaterialConstant(
-                                  objectA._rigidMesh.youngsModulus(),
-                                  impactData._planeYoungsModulus,
-                                  objectA._rigidMesh.poissonRatio(),
-                                  impactData._planePoissonRatio );
+    materialConstant = HertzMaterialConstant(
+            objectA._rigidMesh.youngsModulus(),
+            impactData._planeYoungsModulus,
+            objectA._rigidMesh.poissonRatio(),
+            impactData._planePoissonRatio );
 
-  timeScale = 1.0 / inverseEffectiveMass;
-  timeScale *= timeScale;
-  timeScale *= inverseEffectiveRadius;
-  timeScale *= materialConstant * materialConstant;
-  timeScale /= -1.0 * impactData._relativeSpeed;
-  timeScale = pow( timeScale, 0.2 );
-  timeScale *= 2.87;
+    timeScale = 1.0 / inverseEffectiveMass;
+    timeScale *= timeScale;
+    timeScale *= inverseEffectiveRadius;
+    timeScale *= materialConstant * materialConstant;
+    timeScale /= -1.0 * impactData._relativeSpeed;
+    timeScale = pow( timeScale, 0.2 );
+    timeScale *= 2.87;
 
-  return timeScale;
+    return timeScale;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Computes the 1 / E^{*} quantity from [Johnson, 1985] page 352
 //////////////////////////////////////////////////////////////////////
-Real AccelerationNoiseModel::HertzMaterialConstant( Real youngsModulusA,
-                                                    Real youngsModulusB,
-                                                    Real poissonRatioA,
-                                                    Real poissonRatioB )
+REAL AccelerationNoiseModel::HertzMaterialConstant( REAL youngsModulusA,
+                                                    REAL youngsModulusB,
+                                                    REAL poissonRatioA,
+                                                    REAL poissonRatioB )
 {
-  return ( 1.0 - poissonRatioA * poissonRatioA ) / youngsModulusA
-       + ( 1.0 - poissonRatioB * poissonRatioB ) / youngsModulusB;
+    return ( 1.0 - poissonRatioA * poissonRatioA ) / youngsModulusA
+        + ( 1.0 - poissonRatioB * poissonRatioB ) / youngsModulusB;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Adds impact noise for a single object
 //////////////////////////////////////////////////////////////////////
-bool AccelerationNoiseModel::AddObjectImpactNoise(
-                                Real startTime, Real timeScale, Real forceScale,
-                                const VEC3F &translationalAcceleration,
-                                const VEC3F &rotationalAcceleration,
-                                const VEC3F &listeningPosition,
-                                RadialApproximation::AccelerationSet &pulseData,
-                                SampledFunction &outputSignal,
-                                Real scale )
+bool AccelerationNoiseModel::AddObjectImpactNoise( REAL startTime, REAL timeScale, REAL forceScale,
+                                                   const Vector3d &translationalAcceleration,
+                                                   const Vector3d &rotationalAcceleration,
+                                                   const Point3d &listeningPosition,
+                                                   RadialApproximation::AccelerationSet &pulseData,
+                                                   SampledFunction &outputSignal,
+                                                   REAL scale )
 {
-  Real                       accelerationCoefficients[] = {
-                                  forceScale * translationalAcceleration[ 0 ],
-                                  forceScale * translationalAcceleration[ 1 ],
-                                  forceScale * translationalAcceleration[ 2 ],
-                                  forceScale * rotationalAcceleration[ 0 ],
-                                  forceScale * rotationalAcceleration[ 1 ],
-                                  forceScale * rotationalAcceleration[ 2 ] };
+    REAL                       accelerationCoefficients[] = {
+                                                    forceScale * translationalAcceleration[ 0 ],
+                                                    forceScale * translationalAcceleration[ 1 ],
+                                                    forceScale * translationalAcceleration[ 2 ],
+                                                    forceScale * rotationalAcceleration[ 0 ],
+                                                    forceScale * rotationalAcceleration[ 1 ],
+                                                    forceScale * rotationalAcceleration[ 2 ] };
 
-  return RadialApproximation::AddSinePulse( pulseData, listeningPosition,
-                                            // Pulse starting time and length
-                                            startTime, timeScale,
-                                            // Amplitude in each direction
-                                            accelerationCoefficients,
-                                            outputSignal );
+    return RadialApproximation::AddSinePulse( pulseData, listeningPosition,
+            // Pulse starting time and length
+            startTime, timeScale,
+            // Amplitude in each direction
+            accelerationCoefficients,
+            outputSignal );
 
 }
 
 //////////////////////////////////////////////////////////////////////
 // Adds impact noise for a single object
 //////////////////////////////////////////////////////////////////////
-bool AccelerationNoiseModel::AddObjectImpactNoise(
-                                Real startTime, Real timeScale, Real forceScale,
-                                const VEC3F &translationalAcceleration,
-                                const VEC3F &rotationalAcceleration,
-                                const VEC3F &listeningPosition,
-                                CompactRadialApproximation *pulseData,
-                                SampledFunction &outputSignal,
-                                Real scale )
+bool AccelerationNoiseModel::AddObjectImpactNoise( REAL startTime, REAL timeScale, REAL forceScale,
+                                                   const Vector3d &translationalAcceleration,
+                                                   const Vector3d &rotationalAcceleration,
+                                                   const Point3d &listeningPosition,
+                                                   CompactRadialApproximation *pulseData,
+                                                   SampledFunction &outputSignal,
+                                                   REAL scale )
 {
-  Real                       accelerationCoefficients[] = {
-                                  forceScale * translationalAcceleration[ 0 ],
-                                  forceScale * translationalAcceleration[ 1 ],
-                                  forceScale * translationalAcceleration[ 2 ],
-                                  forceScale * rotationalAcceleration[ 0 ],
-                                  forceScale * rotationalAcceleration[ 1 ],
-                                  forceScale * rotationalAcceleration[ 2 ] };
+    REAL                       accelerationCoefficients[] = {
+                                                    forceScale * translationalAcceleration[ 0 ],
+                                                    forceScale * translationalAcceleration[ 1 ],
+                                                    forceScale * translationalAcceleration[ 2 ],
+                                                    forceScale * rotationalAcceleration[ 0 ],
+                                                    forceScale * rotationalAcceleration[ 1 ],
+                                                    forceScale * rotationalAcceleration[ 2 ] };
 
-  if ( pulseData )
-  {
-    return pulseData->addSinePulse( listeningPosition,
-                                    // Pulse starting time and length
-                                    startTime, timeScale,
-                                    // Amplitude in each direction
-                                    accelerationCoefficients,
-                                    outputSignal,
-                                    scale );
-  }
+    if ( pulseData )
+    {
+        return pulseData->addSinePulse( listeningPosition,
+                // Pulse starting time and length
+                startTime, timeScale,
+                // Amplitude in each direction
+                accelerationCoefficients,
+                outputSignal,
+                scale );
+    }
 
-  return false;
+    return false;
 }
