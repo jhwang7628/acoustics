@@ -441,6 +441,51 @@ if ( BUILD_RUN_PULSE_SOLVE )
 endif ( BUILD_RUN_PULSE_SOLVE )
 
 # =============================================================================
+#   Builds a program which reads the output of run-pulse-solve or
+#   precompute-pan-gui and converts it in to a multi-term PAN approximation
+# =============================================================================
+if ( BUILD_MULTITERM_PAN )
+    add_executable(build-multiterm-pan
+        tools/build_pulse_approximation_system.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(build-multiterm-pan
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_MULTITERM_PAN )
+
+# =============================================================================
+#   Builds a program which reads the output of run-pulse-solve or
+#   precompute-pan-gui and converts it in to a multi-term PAN approximation
+#   with wavelet-based compression
+# =============================================================================
+if ( BUILD_COMPRESSED_PAN )
+    add_executable(build-compressed-pan
+        tools/build_compressed_pulse_approximation.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(build-compressed-pan
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_COMPRESSED_PAN )
+
+# =============================================================================
 #   Builds tools for writing rigid-body data to disk (inertia and mass)
 # =============================================================================
 if ( BUILD_INIT_RIGID_TOOLS )
