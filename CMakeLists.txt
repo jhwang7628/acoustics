@@ -23,6 +23,7 @@ option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
 option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
 option(BUILD_RIGIDSIM_GUI       "Compile rigid-body solver GUI" ON)
 option(BUILD_PAN_PRECOMPUTE_GUI "Compile GUI for PAN precomputation" OFF)
+option(BUILD_RUN_PULSE_SOLVE    "Compute command-line PAN precomputation" OFF)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 
 # Try enabling diffs here...
@@ -94,15 +95,15 @@ endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 find_package(LibConfig 1.0 REQUIRED)
 
 # Whether or not we need the GNU triangulated surface (GTS) package
-if ( BUILD_PAN_PRECOMPUTE_GUI )
+if ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE )
     option(USE_GTS    "Compile with GTS"  ON)
     option(USE_CGAL   "Compile with CGAL" ON) 
     option(USE_GSL    "Compile with GSL"  ON)
-else ( BUILD_PAN_PRECOMPUTE_GUI )
+else ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE )
     option(USE_GTS    "Compile with GTS"  OFF)
     option(USE_CGAL   "Compile with CGAL" OFF) 
     option(USE_GSL    "Compile with GSL"  OFF)
-endif ( BUILD_PAN_PRECOMPUTE_GUI )
+endif ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE )
 
 if ( USE_GTS )
     find_package(GTS REQUIRED)

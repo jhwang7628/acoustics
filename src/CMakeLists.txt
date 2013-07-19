@@ -420,6 +420,27 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 # =============================================================================
+#   Builds a command-line PAN wavesolver
+# =============================================================================
+if ( BUILD_RUN_PULSE_SOLVE )
+    add_executable(run-pulse-solve
+        tools/run_pulse_solve.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(run-pulse-solve
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_RUN_PULSE_SOLVE )
+
+# =============================================================================
 #   Builds tools for writing rigid-body data to disk (inertia and mass)
 # =============================================================================
 if ( BUILD_INIT_RIGID_TOOLS )

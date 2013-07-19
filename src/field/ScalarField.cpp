@@ -130,8 +130,7 @@ Vector3d ScalarField::cellPosition( const Tuple3i &index ) const
 //////////////////////////////////////////////////////////////////////
 // Returns this cell's neighbours
 //////////////////////////////////////////////////////////////////////
-void ScalarField::cellNeighbours( const Tuple3i &index,
-        IntArray &neighbours ) const
+void ScalarField::cellNeighbours( const Tuple3i &index, IntArray &neighbours ) const
 {
     neighbours.clear();
 

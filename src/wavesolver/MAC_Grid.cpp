@@ -263,15 +263,13 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                                    REAL t, REAL timeStep, REAL density )
 {
     const IntArray        &bulkCells = _velocityBulkCells[ dimension ];
-    const IntArray        &interfacialCells
-        = _velocityInterfacialCells[ dimension ];
+    const IntArray        &interfacialCells = _velocityInterfacialCells[ dimension ];
     const ScalarField     &field = _velocityField[ dimension ];
-    const IntArray        &interfaceBoundaryIDs
-        = _interfacialBoundaryIDs[ dimension ];
+    const IntArray        &interfaceBoundaryIDs = _interfacialBoundaryIDs[ dimension ];
     const FloatArray      &interfaceBoundaryDirections
-        = _interfacialBoundaryDirections[ dimension ];
+                                        = _interfacialBoundaryDirections[ dimension ];
     const FloatArray      &interfaceBoundaryCoefficients
-        = _interfacialBoundaryCoefficients[ dimension ];
+                                        = _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
 #ifdef USE_OPENMP
