@@ -99,6 +99,17 @@ set(CGAL_GEOMETRY_SRC
     geometry/MeshTree.h                 geometry/MeshTree.cpp
     geometry/ClosestPointMesh.h         geometry/ClosestPointMesh.cpp)
 
+set(TRANSFER_SRC
+    transfer/AccelerationNoiseModel.h   transfer/AccelerationNoiseModel.cpp
+    transfer/MultiTermApproximation.h   transfer/MultiTermApproximation.cpp
+    transfer/PulseApproximation.h       transfer/PulseApproximation.cpp
+    transfer/ProxyManager.h             transfer/ProxyManager.cpp
+    transfer/RadialApproximation.h      transfer/RadialApproximation.cpp)
+
+set(WAVELET_TRANSFER_SRC
+    transfer/CompressedMultiTermApproximation.h
+    transfer/CompressedMultiTermApproximation.cpp)
+
 # tinyXML-based Parser
 set(PARSER_SRC
     parser/Parser.cpp                   parser/Parser.h
@@ -123,6 +134,11 @@ if ( USE_CGAL )
     include_directories(
         ${CGAL_INCLUDE_DIRS})
 endif ( USE_CGAL )
+
+if ( USE_GSL )
+    include_directories(
+        ${GSL_INCLUDE_DIR})
+endif ( USE_GSL )
 
 # =============================================================================
 #   Isostuffer GUI
@@ -392,14 +408,82 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
         ${FIELD_SRC}                      ${WAVESOLVER_SRC}
         ${UTILS_SRC}                      ${PARSER_SRC}
-        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC})
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
 
     target_link_libraries(precompute-pan-gui
         ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
         ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES})
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
+
+# =============================================================================
+#   Builds a command-line PAN wavesolver
+# =============================================================================
+if ( BUILD_RUN_PULSE_SOLVE )
+    add_executable(run-pulse-solve
+        tools/run_pulse_solve.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(run-pulse-solve
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_RUN_PULSE_SOLVE )
+
+# =============================================================================
+#   Builds a program which reads the output of run-pulse-solve or
+#   precompute-pan-gui and converts it in to a multi-term PAN approximation
+# =============================================================================
+if ( BUILD_MULTITERM_PAN )
+    add_executable(build-multiterm-pan
+        tools/build_pulse_approximation_system.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(build-multiterm-pan
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_MULTITERM_PAN )
+
+# =============================================================================
+#   Builds a program which reads the output of run-pulse-solve or
+#   precompute-pan-gui and converts it in to a multi-term PAN approximation
+#   with wavelet-based compression
+# =============================================================================
+if ( BUILD_COMPRESSED_PAN )
+    add_executable(build-compressed-pan
+        tools/build_compressed_pulse_approximation.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(build-compressed-pan
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  boost_thread)
+endif ( BUILD_COMPRESSED_PAN )
 
 # =============================================================================
 #   Builds tools for writing rigid-body data to disk (inertia and mass)

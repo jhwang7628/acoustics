@@ -269,7 +269,12 @@ class IsoStuffer
          */
         inline void add_cutting_point(int vid1, int vid2, bool islongedge) 
         {
-            assert(iso_[vid1]*iso_[vid2] < 0);
+#if 0
+            if ( iso_[vid1]*iso_[vid2] >= 0 ) {
+                printf( "Error: %f, %f\n", iso_[vid1], iso_[vid2] );
+            }
+#endif
+            assert(iso_[vid1]*iso_[vid2] <= 0);
             if ( vid1 > vid2 ) std::swap(vid1, vid2);
 
             if ( cuttingPts_.count(vid1) && cuttingPts_[vid1].count(vid2) ) return;
