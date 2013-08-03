@@ -1,16 +1,13 @@
 //////////////////////////////////////////////////////////////////////
-// precompute_acceleration_pulse.cpp: Precomputes the result of a
-//                                    body accelerating over a short
-//                                    time scale where the
-//                                    acceleration pulse is modelled
-//                                    using a simple interpolation
-//                                    function
+// run_pulse_solve.cpp: Precomputes the result of a
+//                      body accelerating over a short
+//                      time scale where the
+//                      acceleration pulse is modelled
+//                      using a simple interpolation
+//                      function
 //
 //////////////////////////////////////////////////////////////////////
 
-#include <QtGui>
-
-#include <config.h>
 #include <TYPES.h>
 
 #include <distancefield/distanceField.h>
@@ -19,27 +16,21 @@
 #include <geometry/RigidMesh.h>
 #include <geometry/TriangleMesh.hpp>
 
-#include <linearalgebra/Vector3.hpp>
-
 #include <math/InterpolationFunction.h>
 
 #include <parser/Parser.h>
 
+#include <transfer/MultiTermApproximation.h>
 #include <transfer/PulseApproximation.h>
-
-#include <ui/WaveViewer.h>
 
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
+#include <utils/timer.hpp>
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
 
 #include <boost/bind.hpp>
-
-#include <QGLViewer/qglviewer.h>
-
-#include <GL/glut.h>
 
 #include <iostream>
 #include <string>
@@ -77,13 +68,16 @@ REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
 
         if ( field_id <= 2 )
         {
+#if 0
+            bcResult *= ( n * ACCELERATION_DIRECTIONS[ field_id ] );
+#endif
             bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
         }
         else
         {
 #if 0
             bcResult *= ( n * ( cross( x - CENTER_OF_MASS,
-                                ACCELERATION_DIRECTIONS[ field_id ] ) ) );
+                            ACCELERATION_DIRECTIONS[ field_id ] ) ) );
 #endif
             bcResult *= n.dotProduct(
                             ( x - CENTER_OF_MASS ).crossProduct(
@@ -104,9 +98,9 @@ REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
 // Callback for building the pulse approximation
 //////////////////////////////////////////////////////////////////////
 void buildPulseApproximation( const vector<vector<FloatArray> > &waveOutput,
-        const Parser::AccelerationPulseParms &parms,
-        const InterpolationFunction *interp,
-        Vector3d fieldCenter, REAL fieldRadius )
+                              const Parser::AccelerationPulseParms &parms,
+                              const InterpolationFunction *interp,
+                              Vector3d fieldCenter, REAL fieldRadius )
 {
 #if 0
     PulseApproximation         pulseModel( waveOutput, fieldCenter, fieldRadius,
@@ -123,13 +117,13 @@ void buildPulseApproximation( const vector<vector<FloatArray> > &waveOutput,
             accel_direction++ )
     {
         pulseModel._allFields[ accel_direction ] = new PulseApproximation(
-                                                                    waveOutput, fieldCenter,
-                                                                    fieldRadius,
-                                                                    parms._listeningResolution,
-                                                                    interp->h(),
-                                                                    interp->supportLength(),
-                                                                    parms._timeStepFrequency,
-                                                                    accel_direction );
+                                                                waveOutput, fieldCenter,
+                                                                fieldRadius,
+                                                                parms._listeningResolution,
+                                                                interp->h(),
+                                                                interp->supportLength(),
+                                                                parms._timeStepFrequency,
+                                                                accel_direction );
     }
 
     RadialApproximation::WriteAccelerationSet( parms._outputFile, pulseModel );
@@ -207,10 +201,6 @@ void buildPulseApproximation( const vector<vector<FloatArray> > &waveOutput,
 //////////////////////////////////////////////////////////////////////
 int main( int argc, char **argv )
 {
-    QApplication             app( argc, argv );
-
-    glutInit( &argc, argv );
-
     string                   fileName( "default.xml" );
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh = NULL;
@@ -235,10 +225,14 @@ int main( int argc, char **argv )
 
     Parser::AccelerationPulseParms parms;
 
-    if ( argc >= 2 )
+    if ( argc < 2 )
     {
-        endTime = atof( argv[ 1 ] );
+        cerr << "Usage: " << argv[ 0 ] << " <simulation time> [<config file>]"
+            << endl;
+        return 1;
     }
+
+    endTime = atof( argv[ 1 ] );
 
     if ( argc >= 3 )
     {
@@ -269,7 +263,7 @@ int main( int argc, char **argv )
 
 #if 0
     sdf = mesh->buildDistanceField( parms._sdfResolution,
-                                    parms._sdfFilePrefix.c_str() );
+            parms._sdfFilePrefix.c_str() );
 #endif
     sdf = DistanceFieldBuilder::BuildSignedDistanceField( parser->getMeshFileName().c_str(),
                                                           parms._sdfResolution,
@@ -286,8 +280,6 @@ int main( int argc, char **argv )
             min( fieldBBox.axislength( 1 ), fieldBBox.axislength( 2 ) ) );
     cellSize /= (REAL)cellDivisions;
 
-    cout << SDUMP( cellSize ) << endl;
-
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency * parms._subSteps );
 
     cout << SDUMP( parms._outputFile ) << endl;
@@ -295,8 +287,6 @@ int main( int argc, char **argv )
     // Build a set of listening positions
     listeningRadius = parms._listeningRadius;
     listeningRadius *= mesh->boundingSphereRadius( rigidMesh->centerOfMass() );
-
-    cout << SDUMP( rigidMesh->centerOfMass() );
 
     pointsPerShell = MathUtil::GenerateSpherePoints(
             rigidMesh->centerOfMass(), listeningRadius,
@@ -315,6 +305,25 @@ int main( int argc, char **argv )
                 parms._listeningResolution,
                 listeningPositions );
     }
+#if 0
+    newRadius *= radiusMultiplier;
+    cout << SDUMP( newRadius ) << endl;
+    MathUtil::GenerateSpherePoints( rigidMesh->centerOfMass(), newRadius,
+            parms._listeningResolution,
+            listeningPositions );
+
+    newRadius *= radiusMultiplier;
+    cout << SDUMP( newRadius ) << endl;
+    MathUtil::GenerateSpherePoints( rigidMesh->centerOfMass(), newRadius,
+            parms._listeningResolution,
+            listeningPositions );
+
+    newRadius *= radiusMultiplier;
+    cout << SDUMP( newRadius ) << endl;
+    MathUtil::GenerateSpherePoints( rigidMesh->centerOfMass(), newRadius,
+            parms._listeningResolution,
+            listeningPositions );
+#endif
 
     // If we are using a fixed cell size, override it here
     if ( parms._fixedCellSize )
@@ -358,8 +367,8 @@ int main( int argc, char **argv )
 
     // Callback for writing out the pulse approximation
     callback = boost::bind( buildPulseApproximation, _1,
-                            boost::ref( parms ), interp,
-                            rigidMesh->centerOfMass(), listeningRadius );
+            boost::ref( parms ), interp,
+            rigidMesh->centerOfMass(), listeningRadius );
 
 #if 0
     WaveSolver                 solver( timeStep, fieldBBox, cellSize,
@@ -382,9 +391,6 @@ int main( int argc, char **argv )
             &listeningPositions,
             NULL, /* No output file */
             &callback, /* Write callback */
-#if 0
-            NULL, /* No write callback for now */
-#endif
             parms._subSteps,
             6, /* acceleration directions */
             endTime );
@@ -394,13 +400,28 @@ int main( int argc, char **argv )
 
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
 
-    WaveWindow                 waveApp( solver );
+    int stepCounter = 0;
+    Timer<false> stepTimer;
+    while ( solver.currentSimTime() <= endTime )
+    {
+        REAL totalTime = stepTimer.elapsed();
+        REAL remainingTime = ( endTime - solver.currentSimTime() );
+        remainingTime /= solver.currentSimTime();
+        remainingTime *= totalTime;
 
-    waveApp.setAccelerationFunction( &boundaryCondition );
+        printf( "  %2.2f percent complete, ETR: %08d s\r",
+                100.0 * solver.currentSimTime() / endTime,
+                (int)( remainingTime / 1000.0 ) );
+        fflush( stdout );
 
-    QWidget                   *window = waveApp.createWindow();
+        stepTimer.start();
+        solver.stepSystem( boundaryCondition );
+        stepTimer.pause();
+        stepCounter++;
+    }
+    printf( "\n" );
 
-    window->show();
+    solver.writeWaveOutput();
 
-    return app.exec();
+    return 0;
 }

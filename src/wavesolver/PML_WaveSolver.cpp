@@ -134,7 +134,7 @@ void PML_WaveSolver::setPMLBoundaryWidth( REAL width, REAL strength )
 // Time steps the system in the given interval
 //////////////////////////////////////////////////////////////////////
 void PML_WaveSolver::solveSystem( REAL startTime, REAL endTime,
-        const BoundaryEvaluator &bcEvaluator )
+                                  const BoundaryEvaluator &bcEvaluator )
 {
 }
 
@@ -229,11 +229,11 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     // Update velocity in each direction
     _gradientTimer.start();
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 0 ], 0,
-            _currentTime, _timeStep );
+                              _currentTime, _timeStep );
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 1 ], 1,
-            _currentTime, _timeStep );
+                              _currentTime, _timeStep );
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2,
-            _currentTime, _timeStep );
+                              _currentTime, _timeStep );
     _gradientTimer.pause();
 
 #if 0
