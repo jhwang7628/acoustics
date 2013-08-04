@@ -171,6 +171,31 @@ static inline Vector3d get_mode_disp(int mid, int vid)
     return Vector3d(eigvec[idptr], eigvec[idptr+1], eigvec[idptr+2]);
 }
 
+// Writes a list of all frequencies
+static void write_frequencies(const char *fileName)
+{
+    ofstream fout(fileName);
+    if ( fout.fail() ) {
+        PRINT_ERROR("Failed to open file %s for writing\n", fileName);
+        SHOULD_NEVER_HAPPEN(2);
+    }
+
+    fout << setprecision(16);
+    fout << nModes << " eigenvalues are read" << endl;
+
+    for ( int i = 0; i < nModes; i++ ) {
+        double unscaled = freqs[ i ];
+        unscaled *= 2 * M_PI;
+        unscaled *= unscaled;
+        unscaled *= density;
+
+        fout << "Freq# " << i << " : " << freqs[ i ] << " Hz "
+             << unscaled << endl;
+    }
+
+    fout.close();
+}
+
 static void write_fbem_input(int mid)
 {
     char fname[128];
@@ -253,8 +278,11 @@ int main(int argc, char* argv[])
         boost::progress_display progress(nModes, cout, 
                 "Generate FastBEM input files:\n    ", 
                 "    ", "    ");
-        for(int i = 0;i < nModes;++ i, ++ progress)
+        for(int i = 0;i < nModes;++ i, ++ progress) {
             write_fbem_input(i);
+        }
+
+        write_frequencies( "freqs.txt" );
     }
 
     return 0;
