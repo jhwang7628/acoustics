@@ -43,7 +43,7 @@ namespace fs = boost::filesystem;
 
 static int          modeId    = -1;
 static double       density   = -1.;
-static double       cutFreq   = 20000.; // cutting frequency
+static double       cutFreq   = 20000.; // cut-off frequency
 static string       modesFile = "";
 static string       tetFile   = "";
 static string       outFPtn   = "";
@@ -192,14 +192,14 @@ static void write_fbem_input(int mid)
     fout << surfMsh.num_triangles() << ' ' << surfMsh.num_vertices() << " 0 0" << endl;
     // incident waves
     fout << "0 0" << endl;
-    // point sources
-    fout << 0 << endl;
-    // Speed of sound and medium density
-    fout << SOUND_SPEED_AIR << ' ' << AIR_DENSITY << " 2.d-5 1.d-12" << endl;
+    // point sources (monopole and dipole)
+    fout << "0 0" << endl;
+    // Speed of sound and medium density (the last zero is the wavenumber k ratio)
+    fout << SOUND_SPEED_AIR << ' ' << AIR_DENSITY << " 2.d-5 1.d-12 0" << endl;
     // the current frequency
     fout << freqs[mid] << ' ' << freqs[mid] << " 1 0 0" << endl;
     // the beta/nrule/ngauss currently is fixed
-    fout << "0 " << NRULE << ' ' << NGAUSS << " 0" << endl;
+    fout << "0 " << NRULE << ' ' << NGAUSS << " 0 One" << endl;
 
     // write vertices' positions
     fout << "$ Nodes:" << endl;
@@ -242,17 +242,14 @@ int main(int argc, char* argv[])
     load_mesh();
     load_modes();
 
-    if ( modeId >= 0 )
-    {
+    if ( modeId >= 0 ) {
         if ( modeId >= nModes )
         {
             PRINT_WARNING("Given mode ID(%d) is out of range\n", modeId);
             return 0;
         }
         write_fbem_input(modeId);
-    }
-    else
-    {
+    } else {
         boost::progress_display progress(nModes, cout, 
                 "Generate FastBEM input files:\n    ", 
                 "    ", "    ");
