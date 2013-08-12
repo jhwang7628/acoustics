@@ -27,6 +27,7 @@ option(BUILD_RUN_PULSE_SOLVE    "Compile command-line PAN precomputation" OFF)
 option(BUILD_MULTITERM_PAN      "Compile multi-term PAN system builder" OFF)
 option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" OFF)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
+option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases

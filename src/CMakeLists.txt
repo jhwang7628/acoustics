@@ -117,6 +117,15 @@ set(PARSER_SRC
     tinyxml/tinyxml.cpp                 tinyxml/tinyxmlerror.cpp
     tinyxml/tinyxml.h                   tinyxml/tinyxmlparser.cpp)
 
+# Sound generation sources
+set(SNDGEN_SRC
+    sndgen/FBemTransferInterp.h         sndgen/FBemTransferInterp.cpp
+    sndgen/ImpulseInterp.hpp
+    sndgen/RigidModal.h                 sndgen/RigidModal.cpp
+    sndgen/RigidSoundObj.hpp
+    sndgen/SoundBuffer.hpp
+    sndgen/SoundWriter.hpp)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -337,6 +346,14 @@ if ( BUILD_FBEM_INPUT_GEN )
 
     target_link_libraries(fbem_input_gen
         boost_program_options   boost_filesystem  boost_system  rt)
+
+    add_executable(fieldpoints_gen
+        tools/fbem_input_gen/fieldpoints_gen.cpp
+        ${UTILS_SRC}        ${IO_SRC}
+        ${GENERIC_SRC}      ${LOGGING_SRC})
+
+    target_link_libraries(fieldpoints_gen
+        boost_program_options   boost_filesystem  boost_system  rt)
 endif ( BUILD_FBEM_INPUT_GEN )
 
 # =============================================================================
@@ -497,3 +514,18 @@ if ( BUILD_INIT_RIGID_TOOLS )
         tools/init-rigid-tools/write_mass_center.cpp
         ${GENERIC_SRC}                    ${IO_SRC})
 endif ( BUILD_INIT_RIGID_TOOLS )
+
+# =============================================================================
+#   Builds a tool for generating rigid-body sound, based on existing transfer
+#   and impact data
+# =============================================================================
+if ( BUILD_RIGID_SNDGEN )
+    add_executable(sound-generator
+        tools/soundgen/RigidFBemSndGen.cpp
+        ${SNDGEN_SRC}                     ${MATH_SRC}
+        ${GENERIC_SRC}                    ${IO_SRC})
+
+    target_link_libraries(sound-generator
+        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS}
+        sndfile)
+endif ( BUILD_RIGID_SNDGEN )

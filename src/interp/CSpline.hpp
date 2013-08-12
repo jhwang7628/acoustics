@@ -4,6 +4,8 @@
 #include <vector>
 #include "BasicInterp.hpp"
 
+#include <cassert>
+
 #ifdef USE_NAMESPACE
 namespace carbine
 {

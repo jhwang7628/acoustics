@@ -10,7 +10,7 @@
 #include "utils/print_msg.h"
 #include "utils/macros.h"
 
-#include "interp/InterpolationFunction.h"
+#include <math/InterpolationFunction.h>
 
 class SoundBuffer
 {
@@ -30,7 +30,7 @@ class SoundBuffer
             m_timeSpan   = span;
             m_buffer.assign(int(sr*span) + 1, 0);
 
-            m_sampleStep = 1.0 / (Real)m_sampleRate;
+            m_sampleStep = 1.0 / (REAL)m_sampleRate;
 
             delete m_interp;
             m_interp = new InterpolationMitchellNetravali( m_sampleStep );
@@ -77,7 +77,7 @@ class SoundBuffer
           for ( int sample_idx = sampleMin; sample_idx <= sampleMax;
                 sample_idx++ )
           {
-            tSample = m_sampleStep * (Real)sample_idx;
+            tSample = m_sampleStep * (REAL)sample_idx;
 
             // Evaluate interpolation function centered at t
             m_buffer[ sample_idx ]

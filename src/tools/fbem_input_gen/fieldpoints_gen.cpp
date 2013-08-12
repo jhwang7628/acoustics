@@ -8,10 +8,11 @@
 #include <string>
 #include <stdlib.h>
 #include <vector>
-#include "config.h"
-#include "linearalgebra/Quaternion.hpp"
-#include "geometry/Point3.hpp"
-#include "logging/logging.h"
+
+#include <config.h>
+#include <linearalgebra/Quaternion.hpp>
+#include <geometry/Point3.hpp>
+#include <logging/logging.h>
 
 using namespace std;
 
