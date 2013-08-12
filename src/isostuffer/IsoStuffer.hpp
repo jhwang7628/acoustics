@@ -396,10 +396,9 @@ void IsoStuffer<DistFunc>::create_boundary_octants()
             int    sign   = M_SIGN(isoval);
             assert(sign);   // sign should not be zero
 
-            if ( v*sign >= 0 ) 
+            if ( v*sign >= 0 ) {
                 v += sign;
-            else 
-            {
+            } else {
                 // bfs all the octants cross boundary
                 bfs_boundary_octants(ix, iy, iz);
                 printf("OK\n");
@@ -449,16 +448,17 @@ void IsoStuffer<DistFunc>::bfs_boundary_octants(int ix, int iy, int iz)
 
             if ( isovalue * ivs[i] <= 0. ) 
             {   
-                // NOTE: here nowpos.x+D_COVTX[i][0], nowpos.y+D_.., nowpos.z+D_.. should NOT be out of range
-                // create three octants 
+                // NOTE: here nowpos.x+D_COVTX[i][0], nowpos.y+D_.., nowpos.z+D_.. should NOT
+                // be out of range create three octants 
                 octTree_.create_leaf(nowpos.x+D_COVTX[i][0], nowpos.y, nowpos.z);
                 octTree_.create_leaf(nowpos.x, nowpos.y+D_COVTX[i][1], nowpos.z);
                 octTree_.create_leaf(nowpos.x, nowpos.y, nowpos.z+D_COVTX[i][2]);
             }
         }
 
-        for(int i = 0;i < 12;++ i)
+        for(int i = 0;i < 12;++ i) {
             cross[i] = ivs[IDX_EDGES[i][0]] * ivs[IDX_EDGES[i][1]] < 0;
+        }
 
         for(int i = 0;i < 3;++ i)
         for(int j = 0, dir = -1;j < 2;++ j, dir *= -1)
@@ -513,8 +513,8 @@ void IsoStuffer<DistFunc>::create_background_tets()
 
             if ( nowpos[idir] >= 0 && nowpos[idir] < highestRes_[idir] )
             {
-                if ( octTree_.levels_[0][nowpos.z][nowpos.y][nowpos.x] )
-                {   // face is shared with an adjoining octant with the same size
+                if ( octTree_.levels_[0][nowpos.z][nowpos.y][nowpos.x] ) {
+                    // face is shared with an adjoining octant with the same size
                     const int cid2 = center_vtx_idx(nowpos.x, nowpos.y, nowpos.z);
                     if ( been_added(cid1, cid2) ) continue;
 
@@ -524,9 +524,13 @@ void IsoStuffer<DistFunc>::create_background_tets()
 
                     create_cross_tets_lowest(cid1, iso1, cid2, iso2, vids, fiso);
                     add_cross_pair(cid1, cid2);
-                }
-                else // face is shared with larger octant
-                {
+                } else {
+                    // TODO: Figure out what's going on here with fork.obj when
+                    // ix == 55 && iy == 46 && iz == 5
+                    //
+                    // Bug
+
+                    // face is shared with larger octant
                     // cache iso value and vertex ids
                     cache_iso_and_vtx(faceid, ix, iy, iz, fiso, vids);
 #if defined(DEBUG) | defined(_DEBUG)

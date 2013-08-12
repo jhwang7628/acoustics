@@ -253,10 +253,10 @@ void HertzImpulseSeries<TModalAnalysis>::init()
 
   for ( int i = 0; i < m_impulses.size(); i++ )
   {
-    m_startTime = min( m_startTime, m_impulses[ i ].m_impulseStartTime );
-    m_endTime = max( m_endTime,
-                     m_impulses[ i ].m_impulseStartTime
-                        + m_impulses[ i ].m_impulseLength );
+    m_startTime = std::min( m_startTime, m_impulses[ i ].m_impulseStartTime );
+    m_endTime = std::max( m_endTime,
+                          m_impulses[ i ].m_impulseStartTime
+                            + m_impulses[ i ].m_impulseLength );
 #if 0
     printf( "Impulse start time = %f, length = %f, scale = %f\n",
             m_impulses[ i ].m_impulseStartTime,
@@ -340,7 +340,7 @@ void HertzImpulseSeries<TModalAnalysis>::save( const char *filename )
   FILE                      *f = fopen( filename, "wb" );
 
   if ( !f ) {
-    std::cerr << "Failed to open " << filename << " for writing" << endl;
+    std::cerr << "Failed to open " << filename << " for writing" << std::endl;
     abort();
   }
 
@@ -360,10 +360,10 @@ bool HertzImpulseSeries<TModalAnalysis>::load( const char *filename )
   FILE                      *f = fopen( filename, "rb" );
 
   if ( !f ) {
-    std::cerr << "Couldn't read from " << filename << endl;
+    std::cerr << "Couldn't read from " << filename << std::endl;
     return false;
   }
-  std::cout << "Loading impulses from " << filename << endl;
+  std::cout << "Loading impulses from " << filename << std::endl;
 
   fread( &size, sizeof( int ), 1, f );
   m_impulses.clear();
