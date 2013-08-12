@@ -2,12 +2,15 @@
 #   define IMPULSE_INTERP_H
 
 #include <assert.h>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <libconfig.h++>
 
 #include "linearalgebra/Vector3.hpp"
 #include "interp/CSpline.hpp"
+
+#include <utils/MathUtil.h>
 
 template<class TModalAnalysis>
 class ImpulseInterp
@@ -240,34 +243,34 @@ double ImpulseInterp<TModalAnalysis>::get_impulse(double ts)
     {
 #if 0
         printf( "gaussian = %f\n",
-                gaussian(ts, m_impTs.back(), m_gaussWide) );
+                MathUtil::gaussian(ts, m_impTs.back(), m_gaussWide) );
 #endif
-        //return gaussian(ts, m_impTs.back(), m_gaussWide) * m_lastImp;
-        return gaussian_normalized(ts, m_impTs.back(), m_gaussWide) * m_lastImp;
+        //return MathUtil::gaussian(ts, m_impTs.back(), m_gaussWide) * m_lastImp;
+        return MathUtil::gaussian_normalized(ts, m_impTs.back(), m_gaussWide) * m_lastImp;
     }
     else if ( m_tsid < 0 )              // ts is before the first impuse record
     {
 #if 0
         printf( "gaussian = %f\n",
-                gaussian(ts, m_impTs[0], m_gaussWide) );
+                MathUtil::gaussian(ts, m_impTs[0], m_gaussWide) );
 #endif
-        //return gaussian(ts, m_impTs[0], m_gaussWide) * m_yyImp[0];
-        return gaussian_normalized(ts, m_impTs[0], m_gaussWide) * m_yyImp[0];
+        //return MathUtil::gaussian(ts, m_impTs[0], m_gaussWide) * m_yyImp[0];
+        return MathUtil::gaussian_normalized(ts, m_impTs[0], m_gaussWide) * m_yyImp[0];
     }
     else if ( ts <= m_impTs[m_vlo] )
     {
 #if 0
         printf( "gaussian1 = %f\n",
-                gaussian(ts, m_impTs[m_vlo], m_gaussWide) );
+                MathUtil::gaussian(ts, m_impTs[m_vlo], m_gaussWide) );
         printf( "gaussian2 = %f\n",
-                gaussian(ts, m_impTs[m_tsid], m_gaussWide) );
+                MathUtil::gaussian(ts, m_impTs[m_tsid], m_gaussWide) );
 #endif
 #if 0
-        return gaussian(ts, m_impTs[m_vlo], m_gaussWide) * m_yyImp[0]  +
-               gaussian(ts, m_impTs[m_tsid], m_gaussWide) * m_lastImp;
+        return MathUtil::gaussian(ts, m_impTs[m_vlo], m_gaussWide) * m_yyImp[0]  +
+               MathUtil::gaussian(ts, m_impTs[m_tsid], m_gaussWide) * m_lastImp;
 #endif
-        return gaussian_normalized(ts, m_impTs[m_vlo], m_gaussWide) * m_yyImp[0]
-          + gaussian_normalized(ts, m_impTs[m_tsid], m_gaussWide) * m_lastImp;
+        return MathUtil::gaussian_normalized(ts, m_impTs[m_vlo], m_gaussWide) * m_yyImp[0]
+          + MathUtil::gaussian_normalized(ts, m_impTs[m_tsid], m_gaussWide) * m_lastImp;
     }
     else
     {
