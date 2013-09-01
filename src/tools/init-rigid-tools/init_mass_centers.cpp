@@ -2,8 +2,9 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
-#include "geometry/FixVtxTetMesh.hpp"
-#include "io/TetMeshReader.hpp"
+
+#include <geometry/FixVtxTetMesh.hpp>
+#include <io/TetMeshReader.hpp>
 
 using namespace std;
 
@@ -17,7 +18,8 @@ int main(int argc, char* argv[])
     if ( argc != 5 )
     {
         cerr << "Invalid arguments!" << endl;
-        cerr << "Usage: " << argv[0] << " <tet mesh filename pattern> <start id> <end id> <output file>" << endl;
+        cerr << "Usage: " << argv[0] << " <tet mesh filename pattern> <start id> <end id>"
+                " <output file>" << endl;
         exit(1);
     }
     tetfileptn = argv[1];

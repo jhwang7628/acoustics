@@ -513,6 +513,14 @@ if ( BUILD_INIT_RIGID_TOOLS )
     add_executable(write-mass-center
         tools/init-rigid-tools/write_mass_center.cpp
         ${GENERIC_SRC}                    ${IO_SRC})
+
+    add_executable(init-mass-centers
+        tools/init-rigid-tools/init_mass_centers.cpp
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC})
+
+    target_link_libraries(init-mass-centers
+        ${BLAS_LAPACK_LIBS})
 endif ( BUILD_INIT_RIGID_TOOLS )
 
 # =============================================================================
