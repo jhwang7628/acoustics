@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<impact>
+  <scene>
+    <meshList>
+      <mesh
+        file="../plate/plate.obj"
+        id="plate"
+        rigidprefix="../plate/plateRigid"
+        distancefield="../plate/plate"
+        fieldresolution="200"
+        OLDpulsefile="../coin_mesh/old_pulsedata/pulsedata"
+        pulsefile="../plate/pulsemapdata"
+        density="2700.0"
+      />
+    </meshList>
+
+    <objectList>
+      <object id="plate" />
+    </objectList>
+  </scene>
+</impact>
