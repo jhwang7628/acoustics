@@ -133,6 +133,18 @@ class AccelerationNoiseModel {
                                     ProxyManager *proxyManager = NULL,
                                     REAL collisionTimeScale = 1.0 );
 
+        // Computes the force time scale for this collision and writes it to the
+        // given output stream
+        //
+        // Optionally rescale by the given factor
+        static REAL WriteImpactTimeScale( const MeshSet &objectA,
+                                          const MeshSet &objectB,
+                                          const TwoObjectImpact &impactData,
+                                          std::ostream &os,
+                                          REAL collisionTimeScale = 1.0 );
+
+
+
     protected:
 
     private:
@@ -144,6 +156,8 @@ class AccelerationNoiseModel {
         // Uses Hertz impact theory to compute a time scale for the
         // force pulse to be applied to the object.
         //
+        // inverseEffectiveMass will be set by this function
+        //
         // See [Johnson, 1985] page 353
         static REAL HertzImpactTimeScale( const MeshSet &objectA,
                                           const MeshSet &objectB,
@@ -154,6 +168,8 @@ class AccelerationNoiseModel {
 
         // Hertz time scale for an impact with an ideally flat surface (eg.
         // a ground plane)
+        //
+        // inverseEffectiveMass will be set by this function
         static REAL HertzImpactTimeScale( const MeshSet &objectA,
                                           const PlaneImpact &impactData,
                                           const Vector3d &impulseDirectionA,

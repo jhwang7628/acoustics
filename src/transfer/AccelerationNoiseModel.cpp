@@ -86,13 +86,13 @@ bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
     // Figure out the acceleration magnitude in each direction
     // given a unit force
     objectA._rigidMesh.accelerationCoefficients( impactData._posA,
-            impulseDirectionA,
-            translationalAccelerationA,
-            rotationalAccelerationA );
+                                                 impulseDirectionA,
+                                                 translationalAccelerationA,
+                                                 rotationalAccelerationA );
     objectB._rigidMesh.accelerationCoefficients( impactData._posB,
-            impulseDirectionB,
-            translationalAccelerationB,
-            rotationalAccelerationB );
+                                                 impulseDirectionB,
+                                                 translationalAccelerationB,
+                                                 rotationalAccelerationB );
 
     // Get listening positions for each of the objects
     listeningPositionA = ObjectListeningPosition(
@@ -350,6 +350,48 @@ bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
             rotationalAccelerationA,
             listeningPositionA, pulseDataA, outputSignal,
             scaleA );
+}
+
+//////////////////////////////////////////////////////////////////////
+// Computes the force time scale for this collision and writes it to the
+// given output stream
+//
+// Optionally rescale by the given factor
+//////////////////////////////////////////////////////////////////////
+REAL AccelerationNoiseModel::WriteImpactTimeScale( const MeshSet &objectA,
+                                                   const MeshSet &objectB,
+                                                   const TwoObjectImpact &impactData,
+                                                   std::ostream &os,
+                                                   REAL collisionTimeScale )
+{
+    REAL                       timeScale;
+    Vector3d                   impulseDirectionA;
+    Vector3d                   impulseDirectionB;
+
+    REAL                       inverseEffectiveMass;
+    REAL                       forceScale;
+
+#if 0
+    impulseDirectionA.normalize();
+    impulseDirectionB.normalize();
+#endif
+
+    // Get the Hertz timescale, and effective masses for both objects
+    // in the given collision configuration
+    impulseDirectionA
+        = impactData._inverseRotationA.rotate( impactData._impulseDirection );
+    impulseDirectionB
+        = impactData._inverseRotationB.rotate( impactData._impulseDirection );
+
+    // Figure out the impact time scale
+    timeScale = HertzImpactTimeScale( objectA, objectB, impactData,
+            impulseDirectionA, impulseDirectionB,
+            inverseEffectiveMass );
+    timeScale *= collisionTimeScale;
+
+    forceScale = ImpactForceScale( inverseEffectiveMass, timeScale, impactData._impulseMagnitude );
+
+    os << timeScale << ' ' << forceScale << endl;
 }
 
 //////////////////////////////////////////////////////////////////////
