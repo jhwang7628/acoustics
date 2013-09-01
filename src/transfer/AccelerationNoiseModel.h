@@ -133,15 +133,14 @@ class AccelerationNoiseModel {
                                     ProxyManager *proxyManager = NULL,
                                     REAL collisionTimeScale = 1.0 );
 
-        // Computes the force time scale for this collision and writes it to the
-        // given output stream
+        // Computes the force time scale and appropriate force scaling for this collision
         //
         // Optionally rescale by the given factor
-        static REAL WriteImpactTimeScale( const MeshSet &objectA,
-                                          const MeshSet &objectB,
-                                          const TwoObjectImpact &impactData,
-                                          std::ostream &os,
-                                          REAL collisionTimeScale = 1.0 );
+        typedef std::pair<REAL, REAL> ImpactDataPair;
+        static ImpactDataPair ImpactTimeScale( const MeshSet &objectA,
+                                               const MeshSet &objectB,
+                                               const TwoObjectImpact &impactData,
+                                               REAL collisionTimeScale = 1.0 );
 
 
 

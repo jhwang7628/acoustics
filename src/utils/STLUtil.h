@@ -53,6 +53,29 @@ inline void writeVector( const char *filename, const vector<T> &data )
     fclose( file );
 }
 
+//////////////////////////////////////////////////////////////////////
+// General write function for a vector.  I assume this works.
+//////////////////////////////////////////////////////////////////////
+template <class T>
+inline void writeVector( FILE *file, const vector<T> &data )
+{
+    size_t bytes_written;
+
+    if ( file == NULL )
+    {
+        printf( "** WARNING ** Invalid file handle\n" );
+        return;
+    }
+
+    int size = data.size();
+
+    // Write dimensions
+    bytes_written = fwrite( (void*)&size, sizeof( int ), 1, file );
+
+    // Write data
+    bytes_written = fwrite( (void*)data.data(), sizeof(T), size, file );
+}
+
 #if 0
 //////////////////////////////////////////////////////////////////////
 // Write a list of vectors to a file
@@ -173,6 +196,31 @@ inline void readVector( const char *filename, vector<T> &data )
     // Read data
     bytes_read = fread((void*)data.data(), sizeof(T), size, file);
     fclose(file);
+}
+
+//////////////////////////////////////////////////////////////////////
+// General vector read
+//////////////////////////////////////////////////////////////////////
+template <class T>
+inline void readVector( FILE *file, vector<T> &data )
+{
+    size_t bytes_read;
+
+    if ( file == NULL )
+    {
+        printf( "** WARNING ** Invalid file handle\n" );
+        return;
+    }
+
+    int size;
+
+    // Read size
+    bytes_read = fread((void*)&size, sizeof(int), 1, file);
+
+    data.resize( size );
+
+    // Read data
+    bytes_read = fread((void*)data.data(), sizeof(T), size, file);
 }
 
 #if 0

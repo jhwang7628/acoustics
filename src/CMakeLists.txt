@@ -37,7 +37,8 @@ set(DEFORMABLE_SRC
     deformable/stvk.cpp           deformable/StVKMesh.cpp)
 
 set(IO_SRC
-    io/MatrixIO.cpp               io/TglMeshReader.cpp)
+    io/MatrixIO.cpp               io/TglMeshReader.cpp
+    io/ImpulseIO.cpp)
 
 set(RIGID_SRC
     rigid/Simulator.cpp           rigid/Simulator_QS.cpp
