@@ -10,17 +10,12 @@
 
 #include <TYPES.h>
 
+#include <geometry/ClosestPointMesh.h>
+#include <geometry/GTS_TriMesh.h>
+#include <geometry/RigidMesh.h>
 #include <geometry/TriangleMesh.hpp>
 
-#if 0
-#include <mesh/ClosestPointMesh.h>
-#include <mesh/GTS_TriMesh.h>
-#include <mesh/RigidMesh.h>
-#endif
-
-#if 0
 #include <transfer/RadialApproximation.h>
-#endif
 
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
@@ -377,7 +372,6 @@ class Parser {
         };
 #endif
 
-#if 0
         struct SceneObjectParms {
             SceneObjectParms()
             {
@@ -393,7 +387,7 @@ class Parser {
             }
 
             // All triangle meshes in scene
-            std::vector<TriMesh *>             _meshes;
+            std::vector<TriangleMesh<REAL> *>  _meshes;
 
             // Structure built around each mesh for distance queries
             std::vector<ClosestPointMesh *>    _distanceMeshes;
@@ -450,7 +444,6 @@ class Parser {
             REAL                               _collisionTimeScale;
 
         };
-#endif
 
 #if 0
         // Fetches equivalent source parameters from the XML document
@@ -477,11 +470,10 @@ class Parser {
         ScatteringTestParms getScatteringTestParms();
 #endif
 
-#if 0
         // Fetches scene objects
-        SceneObjectParms getSceneObjectParms( bool compressedFields = false,
-                bool symmetricFields = false );
-#endif
+        SceneObjectParms getSceneObjectParms( bool loadPANData,
+                                              bool compressedFieldse,
+                                              bool symmetricFieldse );
 
         // If the attribute DNE, it will print out an error message, prompt
         // for input, and return "ERROR" for the value.
@@ -544,27 +536,23 @@ class Parser {
         void getListeningPositions( const char *inputElement,
                                     Vector3Array &positions );
 
-#if 0
         // Reads a mesh list
         //
         // Helper function for getSceneObjectParms
         void getMeshes( const char *inputElement,
-                std::vector<TriMesh *> &meshes,
-                std::vector<string> &rigidFilePrefixes,
-                std::vector<string> &sdfFileNames,
-                IntArray &sdfResolutions,
-                std::vector<string> &pulseModelFileNames,
-                FloatArray &densities,
-                std::map<std::string, int> &meshIDMap,
-                bool compressedFields );
-#endif
+                        std::vector<TriangleMesh<REAL> *> &meshes,
+                        std::vector<string> &rigidFilePrefixes,
+                        std::vector<string> &sdfFileNames,
+                        IntArray &sdfResolutions,
+                        std::vector<string> &pulseModelFileNames,
+                        FloatArray &densities,
+                        std::map<std::string, int> &meshIDMap,
+                        bool compressedFields );
 
-#if 0
         // Gets the mesh ID for each object in a scene
         void getObjectMeshIDs( const char *inputElement,
-                std::map<std::string, int> &meshIDMap,
-                IntArray &objectMeshIDs );
-#endif
+                               std::map<std::string, int> &meshIDMap,
+                               IntArray &objectMeshIDs );
 
 #if 0
         // Gets a list of scatter objects from the given input element

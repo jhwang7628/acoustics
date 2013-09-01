@@ -12,11 +12,9 @@
 #include <file/obj.h>
 #endif
 
-#if 0
 #include <transfer/CompressedMultiTermApproximation.h>
 #include <transfer/MultiTermApproximation.h>
 #include <transfer/PulseApproximation.h>
-#endif
 
 #include <iostream>
 #include <vector>
@@ -480,12 +478,12 @@ Parser::ScatteringTestParms Parser::getScatteringTestParms()
 }
 #endif
 
-#if 0
 //////////////////////////////////////////////////////////////////////
 // Fetches scene objects
 //////////////////////////////////////////////////////////////////////
-Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
-        bool symmetricFields )
+Parser::SceneObjectParms Parser::getSceneObjectParms( bool loadPANData,
+                                                      bool compressedFields,
+                                                      bool symmetricFields )
 {
     SceneObjectParms           parms;
     map<string, int>           meshIDMap;
@@ -498,38 +496,35 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
     bool                       smoothCurvatures = false;
 
     getMeshes( "scene", parms._meshes, rigidFilePrefixes,
-            sdfFileNames, sdfResolutions, pulseModelFileNames,
-            densities, meshIDMap, compressedFields );
+               sdfFileNames, sdfResolutions, pulseModelFileNames,
+               densities, meshIDMap, compressedFields );
 
     parms._matchWaveletSamplingRates = queryOptionalInt( "impact/scene",
-            "matchsamplingrate",
-            "0" ) == 1;
+                                                         "matchsamplingrate",
+                                                         "0" ) == 1;
 
     smoothCurvatures = queryOptionalInt( "impact/scene",
-            "smoothcurvatures",
-            "0" ) == 1;
+                                         "smoothcurvatures",
+                                         "0" ) == 1;
 
     // Build SDF meshes in parallel
     parms._distanceMeshes.resize( parms._meshes.size() );
 #pragma omp parallel for schedule(static) default(shared)
     for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ ) {
-        TriMesh                 *mesh = parms._meshes[ mesh_idx ];
+        TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
+#if 0
         parms._distanceMeshes[ mesh_idx ]
             = new ClosestPointMesh( *mesh, sdfResolutions[ mesh_idx ],
                     sdfFileNames[ mesh_idx ] );
+#endif
+        parms._distanceMeshes[ mesh_idx ] = new ClosestPointMesh( *mesh );
     }
 
     // Build rigid body, curvature and SDF information
     for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ )
     {
-        TriMesh                 *mesh = parms._meshes[ mesh_idx ];
-
-#if 0
-        parms._distanceMeshes.push_back(
-                new ClosestPointMesh( *mesh, sdfResolutions[ mesh_idx ],
-                    sdfFileNames[ mesh_idx ] ) );
-#endif
+        TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
         parms._curvatureMeshes.push_back( new GTS_TriMesh( *mesh ) );
         //parms._curvatureMeshes.back()->precomputeMeanCurvatures();
@@ -539,11 +534,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
                 new RigidMesh( *mesh, rigidFilePrefixes[ mesh_idx ],
                     densities[ mesh_idx ] ) );
 
-#if 0
-        PulseApproximation::ReadAccelerationSet( pulseModelFileNames[ mesh_idx ],
-                *parms._pulseModels[ mesh_idx ] );
-#endif
-        if ( pulseModelFileNames[ mesh_idx ] != "null" )
+        if ( loadPANData && pulseModelFileNames[ mesh_idx ] != "null" )
         {
             parms._pulseModels.push_back( new RadialApproximation::AccelerationSet() );
 
@@ -569,8 +560,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
         }
         else
         {
-            cout << "Setting null approximation in slot "
-                << parms._pulseModels.size() << endl;
+            cout << "Setting null approximation in slot " << parms._pulseModels.size() << endl;
             parms._pulseModels.push_back( NULL );
             parms._compactPulseModels.push_back( NULL );
         }
@@ -585,17 +575,13 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
             "0" ) == 1;
 
     if ( parms._randomizeImpulseTimes ) {
-        parms._simTimeStep = queryRequiredReal( "impact/scene",
-                "simtimestep" );
+        parms._simTimeStep = queryRequiredReal( "impact/scene", "simtimestep" );
     }
 
-    parms._collisionTimeScale = queryOptionalReal( "impact/scene",
-            "collisiontimescale",
-            "1.0" );
+    parms._collisionTimeScale = queryOptionalReal( "impact/scene", "collisiontimescale", "1.0" );
 
-    if ( parms._useProxies ) {
-        int                      measure = queryOptionalInt( "impact/scene",
-                "proxymeasure", "0" );
+    if ( loadPANData && parms._useProxies ) {
+        int                      measure = queryOptionalInt( "impact/scene", "proxymeasure", "0" );
 
         cout << SDUMP( measure ) << endl;
 
@@ -607,26 +593,21 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
             parms._proxyMeasure = MATCH_RIGID;
         }
 
-        parms._proxyPathPrefix = queryRequiredAttr( "impact/scene",
-                "proxypathprefix" );
-        parms._proxyFilePrefix = queryRequiredAttr( "impact/scene",
-                "proxyfileprefix" );
+        parms._proxyPathPrefix = queryRequiredAttr( "impact/scene", "proxypathprefix" );
+        parms._proxyFilePrefix = queryRequiredAttr( "impact/scene", "proxyfileprefix" );
         parms._proxyMinScale = queryRequiredReal( "impact/scene", "proxyminscale" );
-        parms._proxyIncrements = queryRequiredInt( "impact/scene",
-                "proxyincrements" );
+        parms._proxyIncrements = queryRequiredInt( "impact/scene", "proxyincrements" );
 
-        parms._useSymmetricProxies = queryOptionalInt( "impact/scene",
-                "symmetricproxies",
-                "0" ) == 1;
+        parms._useSymmetricProxies
+            = queryOptionalInt( "impact/scene", "symmetricproxies", "0" ) == 1;
 
         if ( parms._useSymmetricProxies ) {
             parms._symmetricProxyPrefix = queryRequiredAttr( "impact/scene",
-                    "symmetricproxyprefix" );
+                                                             "symmetricproxyprefix" );
         }
 
-        parms._useDirectionSetProxies = queryOptionalInt( "impact/scene",
-                "usedirectionsetproxies",
-                "0" ) == 1;
+        parms._useDirectionSetProxies
+            = queryOptionalInt( "impact/scene", "usedirectionsetproxies", "0" ) == 1;
 
         if ( parms._useDirectionSetProxies ) {
             parms._proxyDirectionSetFile = queryRequiredAttr(
@@ -638,7 +619,6 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool compressedFields,
 
     return parms;
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -775,19 +755,18 @@ void Parser::getListeningPositions( const char *inputElement,
     TRACE_ASSERT( positions.size() > 0 );
 }
 
-#if 0
 //////////////////////////////////////////////////////////////////////
 // Reads a mesh list
 //////////////////////////////////////////////////////////////////////
 void Parser::getMeshes( const char *inputElement,
-        vector<TriMesh *> &meshes,
-        vector<string> &rigidFilePrefixes,
-        vector<string> &sdfFileNames,
-        IntArray &sdfResolutions,
-        vector<string> &pulseModelFileNames,
-        FloatArray &densities,
-        map<std::string, int> &meshIDMap,
-        bool compressedFields )
+                        vector<TriangleMesh<REAL> *> &meshes,
+                        vector<string> &rigidFilePrefixes,
+                        vector<string> &sdfFileNames,
+                        IntArray &sdfResolutions,
+                        vector<string> &pulseModelFileNames,
+                        FloatArray &densities,
+                        map<std::string, int> &meshIDMap,
+                        bool compressedFields )
 {
     TiXmlElement              *root;
     TiXmlElement              *inputRoot;
@@ -860,7 +839,24 @@ void Parser::getMeshes( const char *inputElement,
         }
 #endif
 
-        meshes.push_back( TriMesh::buildMesh( meshFileName, scale ) );
+        // Construct the mesh and attempt to read it from the given file
+        TriangleMesh<REAL> *mesh = new TriangleMesh<REAL>();
+
+        if ( MeshObjReader::read( meshFileName.c_str(), *mesh,
+                                  false, false, scale ) == SUCC_RETURN )
+        {
+            // Prepare the mesh for rendering, etc.
+            mesh->generate_normals();
+        } else {
+            cerr << "Error reading mesh from " << meshFileName << endl;
+
+            // Unsuccessful
+            delete mesh;
+
+            abort();
+        }
+
+        meshes.push_back( mesh );
         rigidFilePrefixes.push_back( rigidFilePrefix );
         sdfFileNames.push_back( sdfFileName );
         sdfResolutions.push_back( atoi( sdfResolutionValue.c_str() ) );
@@ -870,15 +866,13 @@ void Parser::getMeshes( const char *inputElement,
         meshNode = meshNode->NextSiblingElement( "mesh" );
     }
 }
-#endif
 
-#if 0
 //////////////////////////////////////////////////////////////////////
 // Gets the mesh ID for each object in a scene
 //////////////////////////////////////////////////////////////////////
 void Parser::getObjectMeshIDs( const char *inputElement,
-        map<string, int> &meshIDMap,
-        IntArray &objectMeshIDs )
+                               map<string, int> &meshIDMap,
+                               IntArray &objectMeshIDs )
 {
     TiXmlElement              *root;
     TiXmlElement              *inputRoot;
@@ -929,7 +923,6 @@ void Parser::getObjectMeshIDs( const char *inputElement,
     }
     printf( "\n" );
 }
-#endif
 
 #if 0
 //////////////////////////////////////////////////////////////////////

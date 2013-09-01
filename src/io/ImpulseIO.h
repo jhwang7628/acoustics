@@ -128,34 +128,36 @@ class ImpulseIO {
         // read from a binary file named "filename".dat.  If the binary file
         // does not exist, we read from the text file, and write to a binary
         // format.
-        ImpulseSet ReadImpulses( const char *filename,
-                                 bool randomizeImpulses, REAL timeStep,
-                                 bool binary = true );
+        static ImpulseSet ReadImpulses( const char *filename,
+                                        bool randomizeImpulses, REAL timeStep,
+                                        REAL groundYoungsModulus = PLANE_YOUNGS_MODULUS,
+                                        REAL groundPoissonRatio = PLANE_POISSON_RATIO,
+                                        bool binary = true );
 
     private:
         // Reads impulses from a text file format
         //
         // Optionally set randomizeImpulses == true to distribute impulse
         // times uniformly randomly within each time step
-        void ReadTextImpulses( const char *filename, ImpulseSet &impulses,
-                               REAL planeYoungsModulus, REAL planePoissonRatio,
-                               bool randomizeImpulses, REAL timeStep );
+        static void ReadTextImpulses( const char *filename, ImpulseSet &impulses,
+                                      REAL planeYoungsModulus, REAL planePoissonRatio,
+                                      bool randomizeImpulses, REAL timeStep );
 
         // Reads an object-object impulse
-        void ReadImpulse( istream &input, ObjectImpulse &impulse,
-                          bool randomizeImpulses, REAL timeStep );
+        static void ReadImpulse( istream &input, ObjectImpulse &impulse,
+                                 bool randomizeImpulses, REAL timeStep );
 
         // Reads an object-plane impulse
-        void ReadImpulse( istream &input, PlaneImpulse &impulse,
-                          bool randomizeImpulses, REAL timeStep );
+        static void ReadImpulse( istream &input, PlaneImpulse &impulse,
+                                 bool randomizeImpulses, REAL timeStep );
 
         // Reads impulses from a binary file - returns true iff successful
         //
         // Uses "filename".dat as the binary file name
-        bool ReadBinaryImpulses( const char *filename, ImpulseSet &impulses );
+        static bool ReadBinaryImpulses( const char *filename, ImpulseSet &impulses );
 
         // Writes impulse data to a binary file
-        void WriteBinaryImpulses( const char *filename, const ImpulseSet &impulses );
+        static void WriteBinaryImpulses( const char *filename, const ImpulseSet &impulses );
 
     private:
         ImpulseIO() {}

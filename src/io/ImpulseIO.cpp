@@ -28,6 +28,7 @@ MERSENNETWISTER ImpulseIO::GENERATOR;
 //////////////////////////////////////////////////////////////////////
 ImpulseIO::ImpulseSet ImpulseIO::ReadImpulses( const char *filename,
                                                bool randomizeImpulses, REAL timeStep,
+                                               REAL groundYoungsModulus, REAL groundPoissonRatio,
                                                bool binary )
 {
     ImpulseSet               impulses;
@@ -39,7 +40,7 @@ ImpulseIO::ImpulseSet ImpulseIO::ReadImpulses( const char *filename,
         }
     }
 
-    ReadTextImpulses( filename, impulses, PLANE_YOUNGS_MODULUS, PLANE_POISSON_RATIO,
+    ReadTextImpulses( filename, impulses, groundYoungsModulus, groundPoissonRatio,
                       randomizeImpulses, timeStep );
 
     if ( binary ) {

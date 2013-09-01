@@ -28,6 +28,7 @@ option(BUILD_MULTITERM_PAN      "Compile multi-term PAN system builder" OFF)
 option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" OFF)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
+option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
@@ -98,15 +99,24 @@ endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 find_package(LibConfig 1.0 REQUIRED)
 
 # Whether or not we need the GNU triangulated surface (GTS) package
-if ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE OR BUILD_MULTITERM_PAN )
+if ( BUILD_PAN_PRECOMPUTE_GUI
+    OR BUILD_RUN_PULSE_SOLVE
+    OR BUILD_MULTITERM_PAN 
+    OR BUILD_ESTIMATE_TIMESCALE )
     option(USE_GTS    "Compile with GTS"  ON)
     option(USE_CGAL   "Compile with CGAL" ON) 
     option(USE_GSL    "Compile with GSL"  ON)
-else ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE OR BUILD_MULTITERM_PAN )
+else ( BUILD_PAN_PRECOMPUTE_GUI
+       OR BUILD_RUN_PULSE_SOLVE
+       OR BUILD_MULTITERM_PAN 
+       OR BUILD_ESTIMATE_TIMESCALE )
     option(USE_GTS    "Compile with GTS"  OFF)
     option(USE_CGAL   "Compile with CGAL" OFF) 
     option(USE_GSL    "Compile with GSL"  OFF)
-endif ( BUILD_PAN_PRECOMPUTE_GUI OR BUILD_RUN_PULSE_SOLVE OR BUILD_MULTITERM_PAN )
+endif ( BUILD_PAN_PRECOMPUTE_GUI
+        OR BUILD_RUN_PULSE_SOLVE
+        OR BUILD_MULTITERM_PAN 
+        OR BUILD_ESTIMATE_TIMESCALE )
 
 if ( USE_GTS )
     find_package(GTS REQUIRED)
