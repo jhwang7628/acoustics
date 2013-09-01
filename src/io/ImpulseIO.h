@@ -105,12 +105,14 @@ class ImpulseIO {
 
             void addImpulse( const ObjectImpulse &impulse )
             {
+                _objectImpulses.push_back( impulse );
                 _maxObjectImpulse = max( _maxObjectImpulse,
                                          impulse._impactData._impulseMagnitude );
             }
 
             void addImpulse( const PlaneImpulse &impulse )
             {
+                _planeImpulses.push_back( impulse );
                 _maxPlaneImpulse = max( _maxPlaneImpulse,
                                          impulse._impactData._impulseMagnitude );
             }
