@@ -538,3 +538,24 @@ if ( BUILD_RIGID_SNDGEN )
         ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS}
         sndfile)
 endif ( BUILD_RIGID_SNDGEN )
+
+# =============================================================================
+#   Builds a tool for estimating Hertz time scales for each impact in a
+#   simulation and writing this data out to a set of files which can later
+#   be used by sound-generator
+# =============================================================================
+if ( BUILD_ESTIMATE_TIMESCALE )
+    add_executable(estimate-timescales
+        tools/soundgen/estimate_timescales.cpp
+        ${IO_SRC}                         ${TRANSFER_SRC}
+        ${UTILS_SRC}                      ${GEOMETRY_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${PARSER_SRC}                     ${LINEAR_SRC}
+        ${LINEAR_BLAS_LAPACK_SRC}         ${MATH_SRC}
+        ${WAVELET_TRANSFER_SRC})
+
+    target_link_libraries(estimate-timescales
+        ${CGAL_LIBRARIES}                 ${GTS_LIBRARIES}
+        ${BLAS_LAPACK_LIBS}               ${GSL_LIBRARY}
+        boost_thread)
+endif ( BUILD_ESTIMATE_TIMESCALE )

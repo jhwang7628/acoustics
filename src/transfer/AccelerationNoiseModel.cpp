@@ -38,7 +38,7 @@ AccelerationNoiseModel::~AccelerationNoiseModel()
 //////////////////////////////////////////////////////////////////////
 bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
                                              const MeshSet &objectB,
-                                             const TwoObjectImpact &impactData,
+                                             const ImpulseIO::TwoObjectImpact &impactData,
                                              const Point3d &listeningPosition,
                                              /*
                                              RadialApproximation::AccelerationSet &pulseDataA,
@@ -235,7 +235,7 @@ bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
 // size and mass
 //////////////////////////////////////////////////////////////////////
 bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
-                                             const PlaneImpact &impactData,
+                                             const ImpulseIO::PlaneImpact &impactData,
                                              const Point3d &listeningPosition,
                                              /*
                                              RadialApproximation::AccelerationSet &pulseDataA,
@@ -353,15 +353,14 @@ bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
 }
 
 //////////////////////////////////////////////////////////////////////
-// Computes the force time scale for this collision and writes it to the
-// given output stream
+// Computes the force time scale and appropriate force scaling for this collision
 //
 // Optionally rescale by the given factor
 //////////////////////////////////////////////////////////////////////
-AccelerationNoiseModel::ImpactDataPair
+AccelerationNoiseModel::HertzImpactData
 AccelerationNoiseModel::ImpactTimeScale( const MeshSet &objectA,
                                          const MeshSet &objectB,
-                                         const TwoObjectImpact &impactData,
+                                         const ImpulseIO::TwoObjectImpact &impactData,
                                          REAL collisionTimeScale )
 {
     REAL                       timeScale;
@@ -391,7 +390,43 @@ AccelerationNoiseModel::ImpactTimeScale( const MeshSet &objectA,
 
     forceScale = ImpactForceScale( inverseEffectiveMass, timeScale, impactData._impulseMagnitude );
 
-    return ImpactDataPair( timeScale, forceScale );
+    return HertzImpactData( timeScale, forceScale );
+}
+
+//////////////////////////////////////////////////////////////////////
+// Computes the force time scale and appropriate force scaling for this collision
+//
+// Optionally rescale by the given factor
+//////////////////////////////////////////////////////////////////////
+AccelerationNoiseModel::HertzImpactData
+AccelerationNoiseModel::ImpactTimeScale( const MeshSet &objectA,
+                                         const ImpulseIO::PlaneImpact &impactData,
+                                         REAL collisionTimeScale )
+{
+    REAL                       timeScale;
+    Vector3d                   impulseDirectionA;
+
+    REAL                       inverseEffectiveMass;
+    REAL                       forceScale;
+
+#if 0
+    impulseDirectionA.normalize();
+    impulseDirectionB.normalize();
+#endif
+
+    // Get the Hertz timescale, and effective masses for both objects
+    // in the given collision configuration
+    impulseDirectionA
+        = impactData._inverseRotationA.rotate( impactData._impulseDirection );
+
+    // Figure out the impact time scale
+    timeScale = HertzImpactTimeScale( objectA, impactData,
+                                      impulseDirectionA, inverseEffectiveMass );
+    timeScale *= collisionTimeScale;
+
+    forceScale = ImpactForceScale( inverseEffectiveMass, timeScale, impactData._impulseMagnitude );
+
+    return HertzImpactData( timeScale, forceScale );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -402,7 +437,7 @@ AccelerationNoiseModel::ImpactTimeScale( const MeshSet &objectA,
 //////////////////////////////////////////////////////////////////////
 REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
                                                    const MeshSet &objectB,
-                                                   const TwoObjectImpact &impactData,
+                                                   const ImpulseIO::TwoObjectImpact &impactData,
                                                    const Vector3d &impulseDirectionA,
                                                    const Vector3d &impulseDirectionB,
                                                    REAL &inverseEffectiveMass )
@@ -491,7 +526,7 @@ REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
 // a ground plane)
 //////////////////////////////////////////////////////////////////////
 REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
-                                                   const PlaneImpact &impactData,
+                                                   const ImpulseIO::PlaneImpact &impactData,
                                                    const Vector3d &impulseDirectionA,
                                                    REAL &inverseEffectiveMass )
 {

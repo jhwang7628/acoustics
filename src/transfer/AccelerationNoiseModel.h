@@ -12,6 +12,8 @@
 #include <geometry/RigidMesh.h>
 #include <geometry/TriangleMesh.hpp>
 
+#include <io/ImpulseIO.h>
+
 #include <linearalgebra/Quaternion.hpp>
 
 #include <transfer/ProxyManager.h>
@@ -51,46 +53,6 @@ class AccelerationNoiseModel {
             bool                         _useProxy;
         };
 
-        struct TwoObjectImpact {
-            // Impact positions in each mesh, relative to the mesh's rest pose
-            Point3d                      _posA;
-            Point3d                      _posB;
-
-            // Impulse information
-            REAL                         _impulseTime;
-            Vector3d                     _impulseDirection;
-            REAL                         _impulseMagnitude;
-            REAL                         _relativeSpeed;
-
-            // Rigid state information for the two meshes
-            Point3d                      _centerOfMassA;
-            Point3d                      _centerOfMassB;
-
-            Quat4d                       _inverseRotationA;
-            Quat4d                       _inverseRotationB;
-
-        };
-
-        struct PlaneImpact {
-            // Impact position in the mesh
-            Point3d                      _posA;
-
-            // Impulse information
-            REAL                         _impulseTime;
-            Vector3d                     _impulseDirection;
-            REAL                         _impulseMagnitude;
-            REAL                         _relativeSpeed;
-
-            // Rigid state information for the mesh
-            Point3d                      _centerOfMassA;
-            Quat4d                       _inverseRotationA;
-
-            // Also store material parameters for the ground plane here
-            REAL                         _planeYoungsModulus;
-            REAL                         _planePoissonRatio;
-
-        };
-
         // For a single impact, adds the acceleration noise contribution
         // to the given output signal.
         //
@@ -102,7 +64,7 @@ class AccelerationNoiseModel {
         // and the current rotation state for each object.
         static bool AddImpactNoise( const MeshSet &objectA,
                                     const MeshSet &objectB,
-                                    const TwoObjectImpact &impactData,
+                                    const ImpulseIO::TwoObjectImpact &impactData,
                                     const Point3d &listeningPosition,
                                     /*
                                     RadialApproximation::AccelerationSet &pulseDataA,
@@ -120,7 +82,7 @@ class AccelerationNoiseModel {
         // Adds impact noise for a single impact with a plane of infinite
         // size and mass
         static bool AddImpactNoise( const MeshSet &objectA,
-                                    const PlaneImpact &impactData,
+                                    const ImpulseIO::PlaneImpact &impactData,
                                     const Point3d &listeningPosition,
                                     /*
                                     RadialApproximation::AccelerationSet &pulseDataA,
@@ -136,12 +98,18 @@ class AccelerationNoiseModel {
         // Computes the force time scale and appropriate force scaling for this collision
         //
         // Optionally rescale by the given factor
-        typedef std::pair<REAL, REAL> ImpactDataPair;
-        static ImpactDataPair ImpactTimeScale( const MeshSet &objectA,
-                                               const MeshSet &objectB,
-                                               const TwoObjectImpact &impactData,
-                                               REAL collisionTimeScale = 1.0 );
+        typedef std::pair<REAL, REAL> HertzImpactData;
+        static HertzImpactData ImpactTimeScale( const MeshSet &objectA,
+                                                const MeshSet &objectB,
+                                                const ImpulseIO::TwoObjectImpact &impactData,
+                                                REAL collisionTimeScale = 1.0 );
 
+        // Computes the force time scale and appropriate force scaling for this collision
+        //
+        // Optionally rescale by the given factor
+        static HertzImpactData ImpactTimeScale( const MeshSet &objectA,
+                                                const ImpulseIO::PlaneImpact &impactData,
+                                                REAL collisionTimeScale = 1.0 );
 
 
     protected:
@@ -160,7 +128,7 @@ class AccelerationNoiseModel {
         // See [Johnson, 1985] page 353
         static REAL HertzImpactTimeScale( const MeshSet &objectA,
                                           const MeshSet &objectB,
-                                          const TwoObjectImpact &impactData,
+                                          const ImpulseIO::TwoObjectImpact &impactData,
                                           const Vector3d &impulseDirectionA,
                                           const Vector3d &impulseDirectionB,
                                           REAL &inverseEffectiveMass );
@@ -170,7 +138,7 @@ class AccelerationNoiseModel {
         //
         // inverseEffectiveMass will be set by this function
         static REAL HertzImpactTimeScale( const MeshSet &objectA,
-                                          const PlaneImpact &impactData,
+                                          const ImpulseIO::PlaneImpact &impactData,
                                           const Vector3d &impulseDirectionA,
                                           REAL &inverseEffectiveMass );
 
