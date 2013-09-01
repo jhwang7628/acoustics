@@ -358,11 +358,11 @@ bool AccelerationNoiseModel::AddImpactNoise( const MeshSet &objectA,
 //
 // Optionally rescale by the given factor
 //////////////////////////////////////////////////////////////////////
-REAL AccelerationNoiseModel::WriteImpactTimeScale( const MeshSet &objectA,
-                                                   const MeshSet &objectB,
-                                                   const TwoObjectImpact &impactData,
-                                                   std::ostream &os,
-                                                   REAL collisionTimeScale )
+AccelerationNoiseModel::ImpactDataPair
+AccelerationNoiseModel::ImpactTimeScale( const MeshSet &objectA,
+                                         const MeshSet &objectB,
+                                         const TwoObjectImpact &impactData,
+                                         REAL collisionTimeScale )
 {
     REAL                       timeScale;
     Vector3d                   impulseDirectionA;
@@ -391,7 +391,7 @@ REAL AccelerationNoiseModel::WriteImpactTimeScale( const MeshSet &objectA,
 
     forceScale = ImpactForceScale( inverseEffectiveMass, timeScale, impactData._impulseMagnitude );
 
-    os << timeScale << ' ' << forceScale << endl;
+    return ImpactDataPair( timeScale, forceScale );
 }
 
 //////////////////////////////////////////////////////////////////////
