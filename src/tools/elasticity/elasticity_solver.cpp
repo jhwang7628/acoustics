@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>
 
 #include <boost/program_options.hpp>
 
@@ -18,6 +19,7 @@
 #include <deformable/stvk.h>
 
 #include <geometry/FixVtxTetMesh.hpp>
+#include <geometry/TriangleMesh.hpp>
 
 #include <linearalgebra/PardisoMatrix.hpp>
 
@@ -25,6 +27,12 @@
 #include <io/TetMeshReader.hpp>
 
 using namespace std;
+
+/////////////////////////////////////////////////////////////////////////
+// Writes a *.geo.txt file, storing a list of tet mesh surface triangle
+// IDs, as well as normal and area information for those triangles
+/////////////////////////////////////////////////////////////////////////
+void WriteGeoFile( const char *tetfile, const FixVtxTetMesh<REAL> &mesh );
 
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
@@ -86,6 +94,9 @@ int main(int argc, char** argv)
     sprintf( outputFile, "%s_stiffness.bcsm", outputPrefix );
     PardisoMatrixIO::write_matlab_binary( stiffness, outputFile );
 
+    // Write out the surface <==> tet mesh mapping file (which we need for some reason)
+    WriteGeoFile( argv[1], mesh );
+
 #if 0
     const StVKMesh::TStiffMat &stiffness = materialMesh.update_stiffness_matrix();
 
@@ -102,4 +113,44 @@ int main(int argc, char** argv)
 #endif
 
     return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Writes a *.geo.txt file, storing a list of tet mesh surface triangle
+// IDs, as well as normal and area information for those triangles
+/////////////////////////////////////////////////////////////////////////
+void WriteGeoFile( const char *tetfile, const FixVtxTetMesh<REAL> &mesh )
+{
+    char                     geoFileName[ 1024 ];
+ 
+    sprintf( geoFileName, "%s.geo.txt", tetfile );
+
+    ofstream                 fout( geoFileName );
+    map<int, int>            surfaceIDMap;
+
+    TriangleMesh<REAL>       surfaceMesh;
+
+    if ( fout.fail() ) {
+        cerr << "ERROR: Cannot open file: " << geoFileName << endl;
+    }
+
+    mesh.extract_surface( &surfaceMesh );
+    surfaceMesh.generate_normals();
+    surfaceMesh.update_vertex_areas();
+
+    // Get a mapping from tet mesh vertex IDs to triangle mesh vertex IDs only on the surface
+    mesh.surface_id_map( surfaceIDMap );
+
+    const valarray<REAL>    &areas = surfaceMesh.vertex_areas();
+    const vector<Vector3d>  &normals = surfaceMesh.normals();
+
+    for ( map<int, int>::iterator it = surfaceIDMap.begin(); it != surfaceIDMap.end(); it++ ) {
+        const Vector3d      &n = normals[it->second];
+        REAL                 area = areas[it->second];
+
+        fout << it->first << ' ' << it->second << ' '
+             << n.x << ' ' << n.y << ' ' << n.z << ' '
+             << area << endl;
+    }
+    fout.close();
 }
