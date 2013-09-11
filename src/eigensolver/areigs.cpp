@@ -214,7 +214,7 @@ void Arpack::set_maxitr(int maxitr_)
 }
 
 
-void Arpack::set_which(char* which_)
+void Arpack::set_which(const char* which_)
 {
     which[0] = which_[0];
     which[1] = which_[1];

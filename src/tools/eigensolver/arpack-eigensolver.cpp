@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
 
     IntArray                 ids( numEigv );
 
-    for ( int i = 0; i < ids.size(); i++ ) {
+    for ( int i = 0; i < (int)ids.size(); i++ ) {
         ids[ i ] = i;
     }
 

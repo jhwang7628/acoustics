@@ -54,7 +54,7 @@ public:
     void set_ncv(int ncv_);
     void set_rvec(int rvec_);
     void set_maxitr(int maxitr_);
-    void set_which(char* which_);
+    void set_which(const char* which_);
     void set_tol(double tol_);
 
     int    get_n()      { return n;      }

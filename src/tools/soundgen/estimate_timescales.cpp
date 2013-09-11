@@ -156,6 +156,9 @@ int main( int argc, char **argv )
 
         planeImpulseLengths[ i ] = impactData.first;
         planeImpulseScales[ i ] = impactData.second;
+
+        printf( "Impulse time scale = %e s, force scale = %e\n",
+                impactData.first, impactData.second );
     }
 
     FloatArray                 objectImpulseLengths( impulses._objectImpulses.size() );
