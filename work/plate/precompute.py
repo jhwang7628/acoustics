@@ -21,7 +21,11 @@ density = 2300.0;
 # More than enough for the plate
 numEigs = 100;
 
+
 installPath = '/home/jchadwick/research/acoustics';
+if ( len(sys.argv) >= 2 ):
+  installPath = sys.argv[1];
+
 binPath = '%s/gcc-build/src' % ( installPath );
 
 matlabPath = '%s/src/matlab' % ( installPath );
