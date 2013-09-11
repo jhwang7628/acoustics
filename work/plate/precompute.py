@@ -26,7 +26,11 @@ installPath = '/home/jchadwick/research/acoustics';
 if ( len(sys.argv) >= 2 ):
   installPath = sys.argv[1];
 
-binPath = '%s/gcc-build/src' % ( installPath );
+# Optionally specify where things are built
+if ( len(sys.argv) >= 3 ):
+  binPath = '%s/%s/src' % ( installPath, sys.argv[2] );
+else:
+  binPath = '%s/gcc-build/src' % ( installPath );
 
 matlabPath = '%s/src/matlab' % ( installPath );
 
