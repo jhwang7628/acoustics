@@ -1,0 +1,153 @@
+<?xml version="1.0" ?>
+<impact>
+	<mesh file="plate.obj" scale="1.0" />
+
+  <sphereimpact
+    distancefield="plate"
+    fieldresolution="100"
+    OLDgridresolution="400"
+    OLDgridscale="9.0"
+    gridresolution="164"
+    gridscale="2.25"
+    timestepfrequency="1728000"
+    sphereradius="0.02"
+    impactspeed="0.14286"
+    boundary_E="200000000000.0"
+    boundary_nu="0.3"
+    boundarydensity="7850"
+    listeningposition="0.05 0.05 0.05"
+    outputfile="wavetest.vector">
+    <listeningpositions>
+      <position value="0.023094   0.023094   0.023094" />
+    </listeningpositions>
+    <!--
+    <listeningpositions>
+      <position value="0.0144337567 0.0144337567 0.0144337567" />
+      <position value="0.0144337567 0.0144337567 -0.0144337567" />
+      <position value="0.0144337567 -0.0144337567 0.0144337567" />
+      <position value="0.0144337567 -0.0144337567 -0.0144337567" />
+      <position value="-0.0144337567 0.0144337567 0.0144337567" />
+      <position value="-0.0144337567 0.0144337567 -0.0144337567" />
+      <position value="-0.0144337567 -0.0144337567 0.0144337567" />
+      <position value="-0.0144337567 -0.0144337567 -0.0144337567" />
+      <position value="0.03 0.03 -0.03" />
+      <position value="0.03 0.01 -0.03" />
+      <position value="0.03 -0.01 -0.03" />
+      <position value="0.04 -0.01 -0.03" />
+    </listeningpositions>
+    -->
+    <!--
+    <listeningpositions>
+      <position value="0.023094   0.023094   0.023094" />
+      <position value="0.024537   0.024537   0.024537" />
+      <position value="0.025981   0.025981   0.025981" />
+      <position value="0.027424   0.027424   0.027424" />
+      <position value="0.028868   0.028868   0.028868" />
+      <position value="0.030311   0.030311   0.030311" />
+      <position value="0.031754   0.031754   0.031754" />
+      <position value="0.033198   0.033198   0.033198" />
+      <position value="0.034641   0.034641   0.034641" />
+      <position value="0.036084   0.036084   0.036084" />
+      <position value="0.037528   0.037528   0.037528" />
+      <position value="0.038971   0.038971   0.038971" />
+      <position value="0.040415   0.040415   0.040415" />
+      <position value="0.041858   0.041858   0.041858" />
+      <position value="0.043301   0.043301   0.043301" />
+      <position value="0.044745   0.044745   0.044745" />
+      <position value="0.046188   0.046188   0.046188" />
+      <position value="0.047631   0.047631   0.047631" />
+      <position value="0.049075   0.049075   0.049075" />
+      <position value="0.050518   0.050518   0.050518" />
+      <position value="0.051962   0.051962   0.051962" />
+      <position value="0.053405   0.053405   0.053405" />
+      <position value="0.054848   0.054848   0.054848" />
+      <position value="0.056292   0.056292   0.056292" />
+      <position value="0.057735   0.057735   0.057735" />
+      <position value="0.059178   0.059178   0.059178" />
+      <position value="0.060622   0.060622   0.060622" />
+      <position value="0.062065   0.062065   0.062065" />
+      <position value="0.063509   0.063509   0.063509" />
+      <position value="0.064952   0.064952   0.064952" />
+      <position value="0.066395   0.066395   0.066395" />
+      <position value="0.067839   0.067839   0.067839" />
+      <position value="0.069282   0.069282   0.069282" />
+      <position value="0.070725   0.070725   0.070725" />
+      <position value="0.072169   0.072169   0.072169" />
+      <position value="0.073612   0.073612   0.073612" />
+      <position value="0.075056   0.075056   0.075056" />
+      <position value="0.076499   0.076499   0.076499" />
+      <position value="0.077942   0.077942   0.077942" />
+      <position value="0.079386   0.079386   0.079386" />
+      <position value="0.080829   0.080829   0.080829" />
+      <position value="0.082272   0.082272   0.082272" />
+      <position value="0.083716   0.083716   0.083716" />
+      <position value="0.085159   0.085159   0.085159" />
+      <position value="0.086603   0.086603   0.086603" />
+      <position value="0.088046   0.088046   0.088046" />
+      <position value="0.089489   0.089489   0.089489" />
+      <position value="0.090933   0.090933   0.090933" />
+      <position value="0.092376   0.092376   0.092376" />
+      <position value="0.093819   0.093819   0.093819" />
+      <position value="0.095263   0.095263   0.095263" />
+      <position value="0.096706   0.096706   0.096706" />
+      <position value="0.09815    0.09815    0.09815" />
+      <position value="0.099593   0.099593   0.099593" />
+      <position value="0.10104    0.10104    0.10104" />
+      <position value="0.10248    0.10248    0.10248" />
+      <position value="0.10392    0.10392    0.10392" />
+      <position value="0.10537    0.10537    0.10537" />
+      <position value="0.10681    0.10681    0.10681" />
+      <position value="0.10825    0.10825    0.10825" />
+      <position value="0.1097     0.1097     0.1097" />
+      <position value="0.11114    0.11114    0.11114" />
+      <position value="0.11258    0.11258    0.11258" />
+      <position value="0.11403    0.11403    0.11403" />
+      <position value="0.11547    0.11547    0.11547" />
+      <position value="0.11691    0.11691    0.11691" />
+      <position value="0.11836    0.11836    0.11836" />
+      <position value="0.1198     0.1198     0.1198" />
+      <position value="0.12124    0.12124    0.12124" />
+      <position value="0.12269    0.12269    0.12269" />
+      <position value="0.12413    0.12413    0.12413" />
+      <position value="0.12557    0.12557    0.12557" />
+      <position value="0.12702    0.12702    0.12702" />
+      <position value="0.12846    0.12846    0.12846" />
+      <position value="0.1299     0.1299     0.1299" />
+      <position value="0.13135    0.13135    0.13135" />
+      <position value="0.13279    0.13279    0.13279" />
+      <position value="0.13423    0.13423    0.13423" />
+      <position value="0.13568    0.13568    0.13568" />
+      <position value="0.13712    0.13712    0.13712" />
+    </listeningpositions>
+    -->
+  </sphereimpact>
+
+  <acceleration_pulse
+    distancefield="plate"
+    fieldresolution="200"
+    gridresolution="300"
+    OLDgridresolution="150"
+    gridscale="2.95"
+    OLDgridscale="0.98333"
+    OLDtimestepfrequency="576000"
+    timestepfrequency="192000"
+    OLDsubsteps="3"
+    substeps="1"
+    OLDtimescale="0.000053154"
+    timescale="0.000027358"
+    OLDlisteningresolution="60"
+    listeningresolution="40"
+    listeningradius="2.0"
+    numshells="5"
+    numterms="2"
+    radiusmultiplier="1.1892"
+    rigidprefix="plateRigid"
+    rigiddensity="2300.0"
+    OLDoutputfile="pulsedata"
+    outputfile="pulsedata_clipped"
+    multitermoutputfile="pulsemapdata"
+    compressedoutputfile="pulsemapdata_comp_0.04"
+    compressiontolerance="0.04"
+  />
+
+</impact>

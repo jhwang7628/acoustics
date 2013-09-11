@@ -144,6 +144,8 @@ void WriteGeoFile( const char *tetfile, const FixVtxTetMesh<REAL> &mesh )
     const valarray<REAL>    &areas = surfaceMesh.vertex_areas();
     const vector<Vector3d>  &normals = surfaceMesh.normals();
 
+    fout << surfaceIDMap.size() << endl;
+    fout << setprecision(20);
     for ( map<int, int>::iterator it = surfaceIDMap.begin(); it != surfaceIDMap.end(); it++ ) {
         const Vector3d      &n = normals[it->second];
         REAL                 area = areas[it->second];

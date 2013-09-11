@@ -46,7 +46,7 @@ static TriangleMesh<double>*    ptglmesh  = NULL;
 static DistValProc*             dvproc    = NULL;
 static TDistFunc*               pdistfunc = NULL;
 static TIsoStuffer*             pstuffer  = NULL;
-static TetMesh<double>*         pmesh     = NULL;
+static FixVtxTetMesh<double>*   pmesh     = NULL;
 
 static void clean_up()
 {
@@ -123,9 +123,9 @@ int main(int argc, char* argv[])
     dvproc->update_mesh_params(res, nl, nmargin);
     pstuffer = new TIsoStuffer(dvproc->resolution(), nl, dvproc->grid_size(),
             dvproc->min_point(), alphaL, alphaS, *pdistfunc);
-    pmesh = new TetMesh<double>;
+    pmesh = new FixVtxTetMesh<double>;
     pstuffer->create_mesh(pmesh);
-    TetMeshWriter_Double::write_mesh(fs[1].c_str(), *pmesh);
+    FV_TetMeshWriter_Double::write_mesh(fs[1].c_str(), *pmesh);
 
     clean_up();
     return 0;

@@ -243,7 +243,7 @@ class SPARSE_MATRIX {
             {
                 size_t totalNZ = 0;
 
-                for ( int col_idx = 0; col_idx < _ncol; col_idx++ ) {
+                for ( int col_idx = 0; col_idx < (int)_ncol; col_idx++ ) {
                     for ( int row_ptr = _p[ col_idx ]; row_ptr < _p[ col_idx + 1 ];
                             row_ptr++ )
                     {
