@@ -434,7 +434,8 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  boost_thread)
+        ${GSL_LIBRARY}                  boost_thread
+        boost_system)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 # =============================================================================
@@ -455,7 +456,8 @@ if ( BUILD_RUN_PULSE_SOLVE )
     target_link_libraries(run-pulse-solve
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  boost_thread)
+        ${GSL_LIBRARY}                  boost_thread
+        boost_system)
 endif ( BUILD_RUN_PULSE_SOLVE )
 
 # =============================================================================
@@ -477,7 +479,8 @@ if ( BUILD_MULTITERM_PAN )
     target_link_libraries(build-multiterm-pan
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  boost_thread)
+        ${GSL_LIBRARY}                  boost_thread
+        boost_system)
 endif ( BUILD_MULTITERM_PAN )
 
 # =============================================================================
@@ -500,7 +503,8 @@ if ( BUILD_COMPRESSED_PAN )
     target_link_libraries(build-compressed-pan
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  boost_thread)
+        ${GSL_LIBRARY}                  boost_thread
+        boost_system)
 endif ( BUILD_COMPRESSED_PAN )
 
 # =============================================================================
@@ -557,5 +561,5 @@ if ( BUILD_ESTIMATE_TIMESCALE )
     target_link_libraries(estimate-timescales
         ${CGAL_LIBRARIES}                 ${GTS_LIBRARIES}
         ${BLAS_LAPACK_LIBS}               ${GSL_LIBRARY}
-        boost_thread)
+        boost_thread                      boost_system)
 endif ( BUILD_ESTIMATE_TIMESCALE )
