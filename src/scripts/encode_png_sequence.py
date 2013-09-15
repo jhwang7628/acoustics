@@ -4,6 +4,8 @@ import sys, os
 if (len(sys.argv) < 6):
   print "Usage: %(a0)s <prefix> <output> <yres> <xres> <frame rate>" % \
         {"a0":sys.argv[0]};
+  print "  Note: 'xres' and 'yres' should be the resolution of the input image";
+  print "        These parameters do not affect the output movie resolution";
   exit();
 
 imagePrefix = sys.argv[1];

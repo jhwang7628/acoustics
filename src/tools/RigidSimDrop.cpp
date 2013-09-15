@@ -225,7 +225,9 @@ static void load_config(const char* file)
                   animatePeriod = 0.0;
                 }
 
-                // Check to see if we want to specify an animation state
+                // Specify an animation state
+                //
+                // NOTE: I hacked this in here for the key chain example
                 RigidState     *s = new RigidState();
 
                 s->positionSignal[ 0 ] = boost::bind(
@@ -320,9 +322,11 @@ int main(int argc, char* argv[])
     load_config(argv[1]);
     while ( sim.time() < timeLen )
     {
-        cout << sim.time() << endl;
+        printf( "%03.5f\r", sim.time() );
+        //cout << sim.time() << endl;
         sim.advance(stepSize);
     }
+    printf( "\n" );
 
     cout << "Done!" << endl;
     return 0;
