@@ -312,11 +312,20 @@ void MultiViewer::load_mesh(int id)
 
 void MultiViewer::animate()
 {
+    if ( tsidx_ >= (int)pos_.size() - 1 ) {
+        toggleAnimation();
+        printf( "\n" );
+        printf( "Done (you can close this window now)\n" );
+    }
+
     //tsidx_ = std::min(tsidx_ + 1, (int)pos_.size()-1);
     tsidx_ = std::min(tsidx_ + frameRate, (int)pos_.size()-1);
     if ( tsidx_ < 0 ) return;
 
+#if 0
     cerr << "Frame#: " << tsidx_ << endl;
+#endif
+    printf( "Frame %05d\r", tsidx_ );
     memset(inUse_, false, sizeof(bool)*numObjs_);
     for(size_t i = 0;i < pos_[tsidx_].second.size();++ i)
     {
@@ -423,7 +432,9 @@ void MultiViewer::init()
 ///////////////////////////////////////////////////////////////////////////////
 static void usage(const char* cmd)
 {
-    printf("Usage: %s -d <displace file> -f <surface mesh>\n", cmd);
+    //printf("Usage: %s -d <displace file> -f <surface mesh>\n", cmd);
+    printf("Usage: %s -f <config file> -d <displace file> -r <draw frequency> -o <output prefix>\n",
+           cmd);
 }
 
 static string configFile;

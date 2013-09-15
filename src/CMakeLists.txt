@@ -358,6 +358,24 @@ if ( BUILD_FBEM_INPUT_GEN )
 endif ( BUILD_FBEM_INPUT_GEN )
 
 # =============================================================================
+#   Builds a rigid-body solver
+# =============================================================================
+if ( BUILD_RIGIDSIM )
+    add_executable(rigidsim
+        tools/RigidSimDrop.cpp
+        ${GENERIC_SRC}                    ${DEFORMABLE_SRC}
+        ${IO_SRC}                         ${RIGID_SRC}
+        ${LOGGING_SRC}                    ${LINEAR_SRC}
+        ${RIGID_IO_SRC})
+
+    # Turn on impact and displacement recording
+    add_definitions(-DUSE_RECORDER)
+
+    target_link_libraries(rigidsim
+        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
+endif ( BUILD_RIGIDSIM )
+
+# =============================================================================
 #   Builds a rigid-body solver GUI
 # =============================================================================
 if ( BUILD_RIGIDSIM_GUI )
