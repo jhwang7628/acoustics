@@ -200,10 +200,18 @@ static int load_config(const char* file, bool &foundImpulseScale)
 
 int main(int argc, char* argv[])
 {
+#if 0
     if ( argc != 3 )
     {
         PRINT_ERROR("Invalid arguments!\n");
         printf("Usage: %s <config_file> <output.wav>\n", argv[0]);
+        return 1;
+    }
+#endif
+    if ( argc != 2 )
+    {
+        PRINT_ERROR("Invalid arguments!\n");
+        printf("Usage: %s <config_file>\n", argv[0]);
         return 1;
     }
 
@@ -255,29 +263,37 @@ int main(int argc, char* argv[])
         PRINT_WARNING("Fail to normalize the sound buffer\n");
 #endif
 
+#if 0
     if ( _FAILED(tsSndBuf.normalize() ) )
         PRINT_WARNING("Fail to normalize the time step sound buffer\n");
+#endif
 
+#if 0
     char tsFile[ 1024 ];
     sprintf( tsFile, "%s", argv[ 2 ] );
 
     //// write to wav file
     printf("Writing sound into file: RATE=%d", SND_RATE);
+#endif
 #if 0
     SingleChannelWavWriter writer(argv[2], SND_RATE, 32);
 #endif
+#if 0
     printf( "Writing to %s\n", tsFile );
     SingleChannelWavWriter timeStepWriter(tsFile, SND_RATE, 32);
     //StereoWavWriter writer(argv[2], SND_RATE, 32);    // $STEREO_SND$
+#endif
 
 #if 0
     writer.set_normalized<double>(true);
     writer.write<double>(sndBuf.data(), sndBuf.num_frames());
 #endif
 
+#if 0
     printf( "Normalizing\n" );
     timeStepWriter.set_normalized<double>(true);
     timeStepWriter.write<double>(tsSndBuf.data(), tsSndBuf.num_frames());
+#endif
 
     clean();
     return 0;
