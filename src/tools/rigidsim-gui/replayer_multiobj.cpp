@@ -16,11 +16,12 @@
 
 #include "replayer_multiobj.h"
 
-#include "utils/print_msg.h"
+#include <utils/print_msg.h>
 
 #undef USE_RECORDER
 
 int frameRate = 100;
+std::string framePrefix = "frame";
 
 using namespace std;
 
@@ -377,7 +378,7 @@ void MultiViewer::init()
 
     setAnimationPeriod(0);
     setSnapshotFormat("PNG");
-    setSnapshotFileName("frame");
+    setSnapshotFileName(framePrefix.c_str());
 
     //// load the displacement
     ifstream fin(displaceFile_.c_str(), ios::binary);
@@ -431,7 +432,7 @@ static string displaceFile;
 static void parse_cmd(int argc, char* argv[])
 {
     int opt;
-    while ( (opt = getopt(argc, argv, "hd:f:r:")) != -1 )
+    while ( (opt = getopt(argc, argv, "hd:f:r:o:")) != -1 )
     {
         switch (opt)
         {
@@ -447,6 +448,10 @@ static void parse_cmd(int argc, char* argv[])
             case 'r':
                 frameRate = atoi( optarg );
                 printf( "Frame rate = %d\n", frameRate );
+                break;
+            case 'o':
+                framePrefix = optarg;
+                printf( "Frame prefix = %s\n", framePrefix.c_str() );
                 break;
         }
     }
