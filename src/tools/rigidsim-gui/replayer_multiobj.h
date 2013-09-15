@@ -4,11 +4,11 @@
 #include <QGLViewer/qglviewer.h>
 #include <map>
 
-#include "geometry/TriangleMesh.hpp"
-#include "linearalgebra/Quaternion.hpp"
-#include "rigid/LSCollisionRigidBody.hpp"
-#include "visual/RigidBodyRenderer.hpp"
-#include "io/TetMeshReader.hpp"
+#include <geometry/TriangleMesh.hpp>
+#include <linearalgebra/Quaternion.hpp>
+#include <rigid/LSCollisionRigidBody.hpp>
+#include <visual/RigidBodyRenderer.hpp>
+#include <io/TetMeshReader.hpp>
 
 class MultiViewer : public QGLViewer
 {

@@ -399,6 +399,24 @@ if ( BUILD_RIGIDSIM_GUI )
         ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
         ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
         ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
+
+    # ========================================================================
+    #   Also build a simple "replayer" that we can use to make quick OpenGL
+    #   renderings
+    # ========================================================================
+    QT4_WRAP_CPP(REPLAYER_MOC_SRC tools/rigidsim-gui/replayer_multiobj.h)
+
+    add_executable(replayer
+        tools/rigidsim-gui/replayer_multiobj.cpp
+        ${REPLAYER_MOC_SRC}               ${GENERIC_SRC}
+        ${RIGID_SRC}                      ${LOGGING_SRC}
+        ${LINEAR_SRC}                     ${IO_SRC}
+        ${RIGID_IO_SRC}                   ${DEFORMABLE_SRC})
+    target_link_libraries(replayer
+        ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
+        ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
+        ${LibConfig_LIBRARY})
+
 endif ( BUILD_RIGIDSIM_GUI )
 
 # =============================================================================
