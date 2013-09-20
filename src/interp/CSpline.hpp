@@ -84,7 +84,7 @@ void CSpline<_T, _CopyData, _Acc>::init(
         size_t n, const _T* xv, const _T* yv, _T yp1, _T ypn)
 {
     //// init data in BasicInterp
-    init_data(n, xv, yv);
+    this->init_data(n, xv, yv);
 
     std::vector<_T> u(n);    // aux vector
     m_yp2.resize(n);

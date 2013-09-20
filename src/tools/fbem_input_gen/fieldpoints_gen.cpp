@@ -8,6 +8,7 @@
 #include <string>
 #include <stdlib.h>
 #include <vector>
+#include <unistd.h>
 
 #include <config.h>
 #include <linearalgebra/Quaternion.hpp>
