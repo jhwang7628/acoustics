@@ -27,6 +27,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "io/TglMeshReader.hpp"
 #include "io/TetMeshReader.hpp"
 #include "utils/macros.h"
 #include "utils/print_msg.h"
@@ -46,6 +47,7 @@ static double       density   = -1.;
 static double       cutFreq   = 20000.; // cut-off frequency
 static string       modesFile = "";
 static string       tetFile   = "";
+static string       objFile   = "";
 static string       outFPtn   = "";
 
 static int                      nFixed;
@@ -68,7 +70,8 @@ static void parse_cmd(int argc, char* argv[])
         ("help,h", "display help message")
         ("modes,m", po::value<string>(&modesFile), "The eigen mode file (.modes file)")
         ("density,d", po::value<double>(&density), "The material density")
-        ("tet,t", po::value<string>(&tetFile), "The tet mesh file")
+        ("tet,t", po::value<string>(&tetFile), "The tet mesh file (when using tet modes)")
+        ("obj,s", po::value<string>(&objFile), "The obj mesh file (when using surface modes)")
         ("out,o", po::value<string>(&outFPtn), "The output file pattern (e.g. input-%d.txt)")
         ("cut-freq,c", po::value<double>(&cutFreq), "Cutting-off frequency (default 20KHz)")
         ("mode-id,i", po::value<int>(&modeId), "The mode ID (optional)");
@@ -86,7 +89,15 @@ static void parse_cmd(int argc, char* argv[])
         exit(0);
     }
 
-    if ( modesFile.empty() || tetFile.empty() || outFPtn.empty() )
+    // Can use tet or surface, not both
+    if (!tetFile.empty() && !objFile.empty())
+    {
+        PRINT_ERROR("Can only specify a tet or surface obj file, not both\n");
+        cerr << desc << endl;
+        exit(1);
+    }
+
+    if ( modesFile.empty() || (tetFile.empty() && objFile.empty()) || outFPtn.empty() )
     {
         PRINT_ERROR("Please specify all the required file names\n");
         cerr << desc << endl;
@@ -103,25 +114,45 @@ static void parse_cmd(int argc, char* argv[])
 
 static void load_mesh()
 {
-    PRINT_MSG("Load file: %s\n", tetFile.c_str());
-    if ( boost::iends_with(tetFile, ".tet") ) {
-        //TetMeshLoader_Double::load_mesh(tetFile.c_str(), tetMsh);
-        FV_TetMeshLoader_Double::load_mesh(tetFile.c_str(), tetMsh);
-    } else {
-        PRINT_ERROR("Unknown tet mesh format!\n");
-        SHOULD_NEVER_HAPPEN(2);
+    if (objFile.empty())
+    {
+        // Load tet mesh
+        PRINT_MSG("Load file: %s\n", tetFile.c_str());
+        if ( boost::iends_with(tetFile, ".tet") ) {
+            //TetMeshLoader_Double::load_mesh(tetFile.c_str(), tetMsh);
+            FV_TetMeshLoader_Double::load_mesh(tetFile.c_str(), tetMsh);
+        } else {
+            PRINT_ERROR("Unknown tet mesh format!\n");
+            SHOULD_NEVER_HAPPEN(2);
+        }
+
+        map<int,int> idMap;
+        tetMsh.extract_surface(&surfMsh);
+        tetMsh.surface_id_map(idMap);
+        vidS2T.resize(idMap.size());
+        const std::map<int,int>::const_iterator end = idMap.end();
+        for(std::map<int,int>::const_iterator it = idMap.begin();it != end;++ it)
+            vidS2T[it->second] = it->first;
+
+        nFixed = tetMsh.num_fixed_vertices();
+        PRINT_MSG(" %d fixed vertices are detected\n", nFixed);
     }
+    else
+    {
+        PRINT_MSG("Load file: %s\n", objFile.c_str());
+        // Load obj surface mesh
+        MeshObjReader::read(objFile.c_str(),
+                            surfMsh);
 
-    map<int,int> idMap;
-    tetMsh.extract_surface(&surfMsh);
-    tetMsh.surface_id_map(idMap);
-    vidS2T.resize(idMap.size());
-    const std::map<int,int>::const_iterator end = idMap.end();
-    for(std::map<int,int>::const_iterator it = idMap.begin();it != end;++ it)
-        vidS2T[it->second] = it->first;
+        nFixed = 0;
 
-    nFixed = tetMsh.num_fixed_vertices();
-    PRINT_MSG(" %d fixed vertices are detected\n", nFixed);
+        vidS2T.resize(surfMsh.num_vertices());
+
+        for(size_t i = 0; i < vidS2T.size(); ++i)
+        {
+            vidS2T[i] = i;
+        }
+    }
 }
 
 static void load_modes()
