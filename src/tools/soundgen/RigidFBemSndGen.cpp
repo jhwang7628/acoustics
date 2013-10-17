@@ -63,6 +63,8 @@ static bool load_mass_centers(const char* file)
 
     objectMassCenters[ objID ] = Vector3d( mX, mY, mZ );
   }
+
+  return true;
 }
 
 static int load_config(const char* file, bool &foundImpulseScale)
