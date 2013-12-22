@@ -61,6 +61,8 @@ static vector<double>   eigval;
 static vector<double>   eigvec;
 static vector<double>   freqs;
 
+static bool freqOnly = false;
+
 static void parse_cmd(int argc, char* argv[])
 {
     namespace po = boost::program_options;
@@ -74,7 +76,8 @@ static void parse_cmd(int argc, char* argv[])
         ("obj,s", po::value<string>(&objFile), "The obj mesh file (when using surface modes)")
         ("out,o", po::value<string>(&outFPtn), "The output file pattern (e.g. input-%d.txt)")
         ("cut-freq,c", po::value<double>(&cutFreq), "Cutting-off frequency (default 20KHz)")
-        ("mode-id,i", po::value<int>(&modeId), "The mode ID (optional)");
+        ("mode-id,i", po::value<int>(&modeId), "The mode ID (optional)")
+        ("freqOnly,f", "Only write the frequency file.");
 
     po::variables_map vm;
     store(po::parse_command_line(argc, argv, desc), vm);
@@ -110,6 +113,8 @@ static void parse_cmd(int argc, char* argv[])
         cerr << desc << endl;
         exit(1);
     }
+
+    freqOnly = vm.count("freqOnly") > 0 || vm.count("f") > 0;
 }
 
 static void load_mesh()
@@ -306,11 +311,14 @@ int main(int argc, char* argv[])
         }
         write_fbem_input(modeId);
     } else {
-        boost::progress_display progress(nModes, cout, 
-                "Generate FastBEM input files:\n    ", 
-                "    ", "    ");
-        for(int i = 0;i < nModes;++ i, ++ progress) {
-            write_fbem_input(i);
+        if (!freqOnly)
+        {
+            boost::progress_display progress(nModes, cout, 
+                    "Generate FastBEM input files:\n    ", 
+                    "    ", "    ");
+            for(int i = 0;i < nModes;++ i, ++ progress) {
+                write_fbem_input(i);
+            }
         }
 
         write_frequencies( "freqs.txt" );
