@@ -253,11 +253,18 @@ int main(int argc, char* argv[])
 #if 0
     sndBuf.write_to_raw( "test.vector" );
 #endif
-    if ( objectMassCenters.size() > 0 ) {
-      tsSndBuf.write_to_raw( "test_delay.vector" );
+    if (foundImpulseScale)
+    {
+        if ( objectMassCenters.size() > 0 ) {
+          tsSndBuf.write_to_raw( "test_delay.vector" );
+        }
+        else {
+          tsSndBuf.write_to_raw( "test.vector" );
+        }
     }
-    else {
-      tsSndBuf.write_to_raw( "test.vector" );
+    else
+    {
+        sndBuf.write_to_raw("test.vector");
     }
 
 #if 0
