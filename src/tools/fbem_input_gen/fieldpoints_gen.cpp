@@ -46,7 +46,7 @@ static vector< Point3d >            initPos;
 static void parse_cmd(int argc, char* argv[])
 {
     int opt;
-    while ( (opt = getopt(argc, argv, "hx:i:o:n:t:")) != -1 )
+    while ( optind + 3 < argc && (opt = getopt(argc, argv, "hx:i:o:n:t:")) != -1 )
     {
         switch (opt)
         {
