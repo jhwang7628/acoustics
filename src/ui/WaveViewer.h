@@ -7,6 +7,7 @@
 #define WAVE_VIEWER_H
 
 #include <QtGui>
+#include <QtWidgets>
 #include <QGLViewer/qglviewer.h>
 
 #include <linearalgebra/MATRIX.h>
@@ -80,7 +81,7 @@ class WaveViewer : public QGLViewer {
         // given pressure value
         Vector3d computeVertexColour( const Tuple3i &index );
 
-        // Get the current pressure associated with the given vertex 
+        // Get the current pressure associated with the given vertex
         void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
     private:

@@ -26,7 +26,7 @@ void RigidSim::demo_shaking_piggy()
     if ( file.isEmpty() ) return;
 
     demoId_ = DEMO_SHAKING_PIGGY;
-    pdemo_  = new DemoShakingPiggy(file.toAscii().data(), canvas);
+    pdemo_  = new DemoShakingPiggy(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }
@@ -39,7 +39,7 @@ void RigidSim::demo_drop_objects()
     if ( file.isEmpty() ) return;
 
     demoId_ = DEMO_DROP_OBJS;
-    pdemo_  = new DemoDropObjs(file.toAscii().data(), canvas);
+    pdemo_  = new DemoDropObjs(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }
@@ -51,7 +51,7 @@ void RigidSim::demo_drop_objs_with_fixed()
             ".", "config file (*.cfg);;All files (*)");
     if ( file.isEmpty() ) return;
     demoId_ = DEMO_DROP_OBJS_WITH_FIXED;
-    pdemo_ = new DemoDropObjsWithFixed(file.toAscii().data(), canvas);
+    pdemo_ = new DemoDropObjsWithFixed(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }

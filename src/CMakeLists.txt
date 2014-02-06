@@ -158,7 +158,8 @@ if ( BUILD_ISOSTUFFER_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    include(${QT_USE_FILE})
+    #include(${QT_USE_FILE})
+    include_directories(${QT_USE_FILE})
 
     include_directories(
         ${GLUT_INCLUDE_DIR}
@@ -167,7 +168,8 @@ if ( BUILD_ISOSTUFFER_GUI )
 
     # setup the qrc files
     set(UI_QRC_FILES ui/images.qrc)
-    QT4_ADD_RESOURCES(UI_QRC_SRCS ${UI_QRC_FILES})
+    #QT4_ADD_RESOURCES(UI_QRC_SRCS ${UI_QRC_FILES})
+    QT5_ADD_RESOURCES(UI_QRC_SRCS ${UI_QRC_FILES})
 
     # headers to be moc-ified
     set(UI_MOC_HEADERS 
@@ -180,9 +182,12 @@ if ( BUILD_ISOSTUFFER_GUI )
     # Original version of this command is:
     #       QT4_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS})
     # -Jeff Chadwick
-    QT4_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS} 
+    #QT4_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS} 
+                 #OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+    #QT4_WRAP_UI(UI_UI_SRCS ${UI_UI_FILES})
+    QT5_WRAP_CPP(UI_MOC_SRCS ${UI_MOC_HEADERS} 
                  OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
-    QT4_WRAP_UI(UI_UI_SRCS ${UI_UI_FILES})
+    QT5_WRAP_UI(UI_UI_SRCS ${UI_UI_FILES})
 
     set(GUIAPP_SRCS tools/isostuffer/GuiMain.cpp
         ui/IsoStufferFrame.h    ui/IsoStufferFrame.cpp
@@ -200,6 +205,8 @@ if ( BUILD_ISOSTUFFER_GUI )
     target_link_libraries(isostuffer-gui
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
         ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt)
+
+    qt5_use_modules(isostuffer-gui Xml OpenGL)
 
     set_target_properties(isostuffer-gui PROPERTIES LINK_FLAGS ${LINK_FLAGS})
 endif ( BUILD_ISOSTUFFER_GUI ) 
@@ -229,7 +236,8 @@ if ( BUILD_TETVIEWER )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    include(${QT_USE_FILE})
+    #include(${QT_USE_FILE})
+    include_directories(${QT_USE_FILE})
     include_directories(
         ${GLUT_INCLUDE_DIR}
         ${OPENGL_INCLUDE_DIR}
@@ -239,10 +247,15 @@ if ( BUILD_TETVIEWER )
     # =================== TETVIEWER ==================
     # the qrc files
     set(TETVIEWER_QRC_FILES tools/tetviewer/images.qrc)
-    QT4_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
+    #QT4_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
 
-    QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer/tetviewer.ui)
-    QT4_WRAP_CPP(TETVIEWER_MOC_SRC 
+    #QT4_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer/tetviewer.ui)
+    #QT4_WRAP_CPP(TETVIEWER_MOC_SRC 
+            #tools/tetviewer/TetViewerFrame.h tools/tetviewer/TetViewerCanvas.h)
+    QT5_ADD_RESOURCES(TETVIEWER_QRC_SRCS ${TETVIEWER_QRC_FILES})
+
+    QT5_WRAP_UI(TETVIEWER_UI_SRC tools/tetviewer/tetviewer.ui)
+    QT5_WRAP_CPP(TETVIEWER_MOC_SRC 
             tools/tetviewer/TetViewerFrame.h tools/tetviewer/TetViewerCanvas.h)
 
     add_executable(tetviewer
@@ -259,6 +272,8 @@ if ( BUILD_TETVIEWER )
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
         ${ICC_LIBS}             ${OPENGL_LIBRARIES}     #${BLAS_LAPACK_LIBS}
         rt)
+
+    qt5_use_modules(tetviewer Xml OpenGL)
 endif ( BUILD_TETVIEWER )
 
 # =============================================================================
@@ -383,11 +398,13 @@ if ( BUILD_RIGIDSIM_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    include(${QT_USE_FILE})
+    #include(${QT_USE_FILE})
+    include_directories(${QT_USE_FILE})
 
     # Set up the QRC files
     set(RIGIDSIM_UI_QRC_FILES tools/rigidsim-gui/images.qrc)
-    QT4_ADD_RESOURCES(RIGIDSIM_UI_QRC_SRCS ${RIGIDSIM_UI_QRC_FILES})
+    #QT4_ADD_RESOURCES(RIGIDSIM_UI_QRC_SRCS ${RIGIDSIM_UI_QRC_FILES})
+    QT5_ADD_RESOURCES(RIGIDSIM_UI_QRC_SRCS ${RIGIDSIM_UI_QRC_FILES})
 
     # Headers to be moc-ified
     set(RIGIDSIM_UI_MOC_HEADERS tools/rigidsim-gui/RigidSim.h)
@@ -396,8 +413,10 @@ if ( BUILD_RIGIDSIM_GUI )
 
     add_definitions(-DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
 
-    QT4_WRAP_CPP(RIGIDSIM_UI_MOC_SRCS ${RIGIDSIM_UI_MOC_HEADERS})
-    QT4_WRAP_UI(RIGIDSIM_UI_UI_SRCS ${RIGIDSIM_UI_UI_FILES})
+    #QT4_WRAP_CPP(RIGIDSIM_UI_MOC_SRCS ${RIGIDSIM_UI_MOC_HEADERS})
+    #QT4_WRAP_UI(RIGIDSIM_UI_UI_SRCS ${RIGIDSIM_UI_UI_FILES})
+    QT5_WRAP_CPP(RIGIDSIM_UI_MOC_SRCS ${RIGIDSIM_UI_MOC_HEADERS})
+    QT5_WRAP_UI(RIGIDSIM_UI_UI_SRCS ${RIGIDSIM_UI_UI_FILES})
 
     # Turn on impact and displacement recording
     add_definitions(-DUSE_RECORDER)
@@ -418,11 +437,14 @@ if ( BUILD_RIGIDSIM_GUI )
         ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
         ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
 
+    qt5_use_modules(rigidsim-gui Xml OpenGL)
+
     # ========================================================================
     #   Also build a simple "replayer" that we can use to make quick OpenGL
     #   renderings
     # ========================================================================
-    QT4_WRAP_CPP(REPLAYER_MOC_SRC tools/rigidsim-gui/replayer_multiobj.h)
+    #QT4_WRAP_CPP(REPLAYER_MOC_SRC tools/rigidsim-gui/replayer_multiobj.h)
+    QT5_WRAP_CPP(REPLAYER_MOC_SRC tools/rigidsim-gui/replayer_multiobj.h)
 
     add_executable(replayer
         tools/rigidsim-gui/replayer_multiobj.cpp
@@ -435,6 +457,8 @@ if ( BUILD_RIGIDSIM_GUI )
         ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
         ${LibConfig_LIBRARY})
 
+    qt5_use_modules(replayer Xml OpenGL)
+
 endif ( BUILD_RIGIDSIM_GUI )
 
 # =============================================================================
@@ -445,12 +469,14 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    include(${QT_USE_FILE})
+    #include(${QT_USE_FILE})
+    include_directories(${QT_USE_FILE})
 
     # Headers to be moc-ified
     set(PAN_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
 
-    QT4_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
+    #QT4_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
+    QT5_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
 
     add_executable(precompute-pan-gui
         tools/precompute_acceleration_pulse.cpp
@@ -472,6 +498,8 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  boost_thread
         boost_system)
+
+    qt5_use_modules(precompute-pan-gui Xml OpenGL)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
 # =============================================================================

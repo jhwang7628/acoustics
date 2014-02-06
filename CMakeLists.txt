@@ -37,6 +37,8 @@ option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
 #   We should eventually go through and resolve all of these diffs
 add_definitions(-DDIFF_DEFINE)
 
+add_definitions(-DCGAL_INTERSECTION_VERSION=1)
+
 #===================================================================
 ## Compiler
 # set compiler flags for debug/release
@@ -91,7 +93,9 @@ if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     find_package(OpenGL REQUIRED)
     find_package(GLUT REQUIRED)
 
-    find_package(Qt4 REQUIRED)
+    #find_package(Qt4 REQUIRED)
+    #find_package(Qt5 REQUIRED)
+    find_package(Qt5Widgets REQUIRED)
 
     # check the existence of libQGLViewer
     find_package(QGLViewer 1.0 REQUIRED)
