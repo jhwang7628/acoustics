@@ -120,6 +120,7 @@ void DistValProc::compute_tgl_pseudo_normals()
                     m_tglPseudoNml[i].lengthSqr());
             exit(1);
         }
+        m_tglPseudoNml[i].normalize();
     }
 }
 
