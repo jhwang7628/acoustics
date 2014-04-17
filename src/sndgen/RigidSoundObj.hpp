@@ -343,7 +343,8 @@ template<class TModalAnalysis,
         //cout << "vCoefficient = " << vCoefficient << endl;
 
         const double TSBEGIN = fmax( 0., mp_hertzImpulseSeries->startTime() );
-        const double TSEND   = mp_hertzImpulseSeries->endTime();
+        //const double TSEND   = mp_hertzImpulseSeries->endTime();
+        const double TSEND   = buf.num_frames() / buf.sample_rate();
 
         double ticktime;
         buf.begin_sound_gen(TSBEGIN);
