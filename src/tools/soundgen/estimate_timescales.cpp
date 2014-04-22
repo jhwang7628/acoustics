@@ -119,6 +119,15 @@ int main( int argc, char **argv )
     FloatArray                 planeImpulseLengths( impulses._planeImpulses.size() );
     FloatArray                 planeImpulseScales( impulses._planeImpulses.size() );
 
+    // Debugging, write out the relative speed of the impulses
+    std::ofstream of ("impulseSpeeds.txt");
+    for ( int i = 0; i < impulses._planeImpulses.size(); i++ )
+    {
+        ImpulseIO::PlaneImpulse         &hit = impulses._planeImpulses[ i ];
+        of << hit._impactData._relativeSpeed << std::endl;
+    }
+    of.close();
+
     for ( int i = 0; i < impulses._planeImpulses.size(); i++ )
     {
 
@@ -199,6 +208,14 @@ int main( int argc, char **argv )
                                                   *parms._distanceMeshes[ meshID_B ],
                                                   meshID_B, parms._useProxies );
 
+        AccelerationNoiseModel::HertzImpactData impactData
+                        = AccelerationNoiseModel::ImpactTimeScale( objectA,
+                                                                   objectB,
+                                                                   hit._impactData,
+                                                                   parms._collisionTimeScale );
+
+        objectImpulseLengths[ i ] = impactData.first;
+        objectImpulseScales[ i ] = impactData.second;
     }
 
     int truncatedImpulses = 0;
