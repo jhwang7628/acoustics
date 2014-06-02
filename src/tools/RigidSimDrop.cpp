@@ -323,6 +323,7 @@ int main(int argc, char* argv[])
     while ( sim.time() < timeLen )
     {
         printf( "%03.5f\r", sim.time() );
+        fflush(stdout);
         //cout << sim.time() << endl;
         sim.advance(stepSize);
     }
