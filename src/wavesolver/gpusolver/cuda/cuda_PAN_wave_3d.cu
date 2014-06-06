@@ -263,26 +263,30 @@ void wave_sim_step(Cuda_PAN_Wave_3d_t wave){
 }
 
 Number_t * wave_listen(Cuda_PAN_Wave_3d_t wave, int field){
-	size_t blocks_x = ceil(wave->listening_count/256.0);
-	dim3 gridDim(blocks_x, 1, 1);
-	size_t threads_x = 256;
+	if(wave->listening_count > 0){
+		size_t blocks_x = ceil(wave->listening_count/256.0);
+		dim3 gridDim(blocks_x, 1, 1);
+		size_t threads_x = 256;
 
-	dim3 blockDim(threads_x, 1, 1);
-	int stride = 4*(wave->nx)*(wave->ny)*(wave->nz)*field;
-	int linstride = wave->listening_count*field;
+		dim3 blockDim(threads_x, 1, 1);
+		int stride = 4*(wave->nx)*(wave->ny)*(wave->nz)*field;
+		int linstride = wave->listening_count*field;
 
-	cuda_pan_wave_3d_listen_kernel<<<gridDim, blockDim>>>(wave->ubuf_d+stride,
-														  wave->listeningOutput_d,
-														  wave->listening_count,
-														  wave->listening_positions_d,
-														  wave->nx,
-														  wave->ny,
-														  wave->nz);
-	cudaCheckError(cudaGetLastError());
+		cuda_pan_wave_3d_listen_kernel<<<gridDim, blockDim>>>(wave->ubuf_d+stride,
+															  wave->listeningOutput_d,
+															  wave->listening_count,
+															  wave->listening_positions_d,
+															  wave->nx,
+															  wave->ny,
+															  wave->nz);
+		cudaCheckError(cudaGetLastError());
 
-	//Copy back
-	cudaCheckError(cudaMemcpy(wave->listeningOutput+linstride, wave->listeningOutput_d, wave->listening_count*sizeof(Number_t), cudaMemcpyDeviceToHost));
-	return wave->listeningOutput+linstride;
+		//Copy back
+		cudaCheckError(cudaMemcpy(wave->listeningOutput+linstride, wave->listeningOutput_d, wave->listening_count*sizeof(Number_t), cudaMemcpyDeviceToHost));
+		return wave->listeningOutput+linstride;
+	} else{
+		return NULL;
+	}
 }
 
 void wave_sim_get_divisions(const Cuda_PAN_Wave_3d_t wave, int * nx, int * ny, int * nz){
