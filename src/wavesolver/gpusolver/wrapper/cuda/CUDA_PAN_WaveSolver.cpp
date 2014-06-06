@@ -97,6 +97,12 @@ CUDA_PAN_WaveSolver::CUDA_PAN_WaveSolver(REAL timeStep,
 	this->_callback = callback;
 	this->_endTime = endTime;
 	this->_substeps = substeps;
+	if(listeningPositions){
+		this->_waveOutput.resize(listeningPositions->size());
+		for(int i = 0; i < listeningPositions->size(); i++){
+			this->_waveOutput[i].resize(6);
+		}
+	}
 }
 
 CUDA_PAN_WaveSolver::~CUDA_PAN_WaveSolver(){
@@ -110,8 +116,20 @@ const Tuple3i & CUDA_PAN_WaveSolver::fieldDivisions() const{
 bool CUDA_PAN_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
 	wave_sim_step(this->wave);
 	REAL time = (REAL) wave_sim_get_current_time(this->wave);
+
+	//Save output
+	if(_listeningPositions && (_step % _substeps) == 0){
+		for(int field = 0; field < 6; field++){
+			Number_t * pressure = wave_listen(this->wave, field);
+			for(int i = 0; i < _listeningPositions->size(); i++){
+				_waveOutput[i][field].push_back((REAL) pressure[i]);
+			}
+		}
+	}
+
+
 	_step++;
-	if(time < 0 || time > this->_endTime){
+	if(this->_endTime > 0 && time > this->_endTime){
 		return false;
 	}
 	return true;
@@ -119,11 +137,10 @@ bool CUDA_PAN_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
 
 //TODO
 void CUDA_PAN_WaveSolver::writeWaveOutput() const{
-	return; //HUE
-	// if(!this->_callback){
-	// 	return;
-	// }
-	// (*(this->_callback))(this->_waveOutput);
+	if(!this->_callback){
+		return;
+	}
+	(*(this->_callback))(this->_waveOutput);
 }
 
 Vector3d CUDA_PAN_WaveSolver::fieldPosition(const Tuple3i & index) const{

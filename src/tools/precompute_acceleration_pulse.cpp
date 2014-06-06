@@ -32,8 +32,6 @@
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
 
-#define USE_CUDA
-
 #ifdef USE_CUDA
     #include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h>
 #else
@@ -394,7 +392,7 @@ int main( int argc, char **argv )
                                endTime,
                                parms._pulseTimeScale,
                                11,
-                               0);
+                               1000000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
             *mesh, *sdf,

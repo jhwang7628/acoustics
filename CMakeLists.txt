@@ -156,6 +156,7 @@ set(LINK_FLAGS " ")
 
 if (USE_CUDA)
     find_package(CUDA)
+    add_definitions(-DUSE_CUDA)
 endif (USE_CUDA)
 
 # check if we're using Intel's compiler
