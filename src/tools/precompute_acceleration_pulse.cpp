@@ -32,7 +32,14 @@
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
 
-#include <wavesolver/PML_WaveSolver.h>
+#define USE_CUDA
+
+#ifdef USE_CUDA
+    #include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h>
+#else
+    #include <wavesolver/PML_WaveSolver.h>
+#endif
+
 #include <wavesolver/WaveSolver.h>
 
 #include <boost/bind.hpp>
@@ -375,6 +382,20 @@ int main( int argc, char **argv )
             parms._subSteps,
             6 /* accleration directions */ );
 #endif
+ #ifdef USE_CUDA
+    CUDA_PAN_WaveSolver solver(timeStep,
+                               fieldBBox, cellSize,
+                               *mesh, CENTER_OF_MASS,
+                               *sdf,
+                               0.0,
+                               &listeningPositions,
+                               NULL,
+                               parms._subSteps,
+                               endTime,
+                               parms._pulseTimeScale,
+                               11,
+                               0);
+ #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
             *mesh, *sdf,
             0.0, /* distance tolerance */
@@ -382,15 +403,12 @@ int main( int argc, char **argv )
             &listeningPositions,
             NULL, /* No output file */
             &callback, /* Write callback */
-#if 0
-            NULL, /* No write callback for now */
-#endif
             parms._subSteps,
             6, /* acceleration directions */
             endTime );
 
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
-    //solver.setPMLBoundaryWidth( 11.0, 1.0e50 );
+ #endif
 
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
 
