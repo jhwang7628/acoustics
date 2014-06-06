@@ -10,6 +10,7 @@
 #include <utils/IO.h>
 
 #include <GL/glut.h>
+#include <ctime>
 
 //////////////////////////////////////////////////////////////////////
 // WaveViewer implementation
@@ -40,6 +41,7 @@ WaveViewer::WaveViewer( Solver &solver )
                 obj_idx, (int)_solver.meshes()[ obj_idx ]->vertices().size(),
                 (int)_solver.meshes()[ obj_idx ]->triangles().size() );
     }
+
 
     Vector3d sceneCenter = solver.sceneCenter();
     qglviewer::Vec c( sceneCenter[ 0 ], sceneCenter[ 1 ], sceneCenter[ 2 ] );
@@ -162,7 +164,12 @@ void WaveViewer::keyPressEvent( QKeyEvent *e )
 
     if ( e->key() == Qt::Key_S )
     {
+
+        clock_t t = clock();
         _solver.stepSystem( *_acceleration );
+        t = clock()-t;
+        cout << _solver.fieldDivisions();
+        printf("Step Time: %fms\n", 1000*((float)t)/CLOCKS_PER_SEC);
 
         handled = true;
 
@@ -427,6 +434,7 @@ void WaveViewer::drawReceivers()
 //////////////////////////////////////////////////////////////////////
 Vector3d WaveViewer::computeVertexColour( const Tuple3i &index )
 {
+    //printf("PRESSURE-IN %d %d %d!\n", index[0], index[1], index[2]);
     REAL                       pressure;
 
     Vector3d                   colour( 0.2, 0.2, 0.2 );
@@ -450,7 +458,6 @@ Vector3d WaveViewer::computeVertexColour( const Tuple3i &index )
     {
         colour[ 1 ] += absDiff;
     }
-
     return colour;
 }
 

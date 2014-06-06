@@ -56,6 +56,16 @@ set(WAVESOLVER_SRC
     wavesolver/PML_WaveSolver.cpp wavesolver/PML_WaveSolver.h
     wavesolver/WaveSolver.cpp     wavesolver/WaveSolver.h)
 
+set(WAVESOLVER_CUDA_WRAPPER_SRC
+    wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h
+    wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.cpp)
+
+set(WAVESOLVER_CUDA_SRC
+    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.h
+    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu
+    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d_kernel.cu
+    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d_kernel_math.cu)
+
 set(SUPERLU_INTERFACE_SRC
     superlu-interface/SuperLU_Interface.h
     superlu-interface/SuperLU_Interface.cpp)
@@ -126,6 +136,7 @@ set(SNDGEN_SRC
     sndgen/RigidSoundObj.hpp
     sndgen/SoundBuffer.hpp
     sndgen/SoundWriter.hpp)
+
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -204,7 +215,8 @@ if ( BUILD_ISOSTUFFER_GUI )
 
     target_link_libraries(isostuffer-gui
         ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         ${QGLViewer_LIBRARY}
-        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt)
+        ${ICC_LIBS}             ${OPENGL_LIBRARIES}     rt
+        ${MKL_LIBRARY})
 
     qt5_use_modules(isostuffer-gui Xml OpenGL)
 
@@ -478,27 +490,54 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
     #QT4_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
     QT5_WRAP_CPP(PAN_PRECOMPUTE_GUI_MOC_SRCS ${PAN_PRECOMPUTE_GUI_MOC_HEADERS})
 
-    add_executable(precompute-pan-gui
-        tools/precompute_acceleration_pulse.cpp
-        ui/WaveViewer.cpp
-        ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
-        ${GENERIC_SRC}                    ${IO_SRC}
-        ${LOGGING_SRC}                    ${LINEAR_SRC}
-        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
-        ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
-        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
-        ${UTILS_SRC}                      ${PARSER_SRC}
-        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
-        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+    if(USE_CUDA)
+        set(CUDA_64_BIT_DEVICE_CODE ON)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math)
+        find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
 
-    target_link_libraries(precompute-pan-gui
-        ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
-        ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
-        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  boost_thread
-        boost_system)
+        cuda_add_executable(precompute-pan-gui
+            tools/precompute_acceleration_pulse.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC} wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
 
+        target_link_libraries(precompute-pan-gui
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES})
+    else(USE_CUDA)
+        add_executable(precompute-pan-gui
+            tools/precompute_acceleration_pulse.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+
+        target_link_libraries(precompute-pan-gui
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    ${MKL_LIBRARY})
+    endif(USE_CUDA)
     qt5_use_modules(precompute-pan-gui Xml OpenGL)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
 
@@ -521,7 +560,7 @@ if ( BUILD_RUN_PULSE_SOLVE )
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  boost_thread
-        boost_system)
+        boost_system                    ${MKL_LIBRARY})
 endif ( BUILD_RUN_PULSE_SOLVE )
 
 # =============================================================================
@@ -544,7 +583,7 @@ if ( BUILD_MULTITERM_PAN )
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  boost_thread
-        boost_system)
+        boost_system                    ${MKL_LIBRARY})
 endif ( BUILD_MULTITERM_PAN )
 
 # =============================================================================
@@ -568,7 +607,7 @@ if ( BUILD_COMPRESSED_PAN )
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  boost_thread
-        boost_system)
+        boost_system                    ${MKL_LIBRARY})
 endif ( BUILD_COMPRESSED_PAN )
 
 # =============================================================================
@@ -589,7 +628,7 @@ if ( BUILD_INIT_RIGID_TOOLS )
         ${GEOMETRY_SRC}                   ${LINEAR_BLAS_LAPACK_SRC})
 
     target_link_libraries(init-mass-centers
-        ${BLAS_LAPACK_LIBS})
+        ${BLAS_LAPACK_LIBS}               ${MKL_LIBRARY})
 endif ( BUILD_INIT_RIGID_TOOLS )
 
 # =============================================================================

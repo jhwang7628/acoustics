@@ -140,13 +140,13 @@ struct ParallelMultiArrayOpt
     {
         const T* ptrIn = ain.data();
         T* ptrOut = aout.data();
-#ifndef DIFF_DEFINE
-        #pragma omp parallel for default(none) schedule(dynamic, 8000) \
-                shared(ain, ptrOut, ptrIn)
-#else /* DIFF_DEFINE */
-        #pragma omp parallel for default(none) schedule(dynamic, 8000) \
-                shared(ain, ptrOut, scale, ptrIn)
-#endif /* DIFF_DEFINE */
+// #ifndef DIFF_DEFINE
+//         #pragma omp parallel for default(none) schedule(dynamic, 8000) \
+//                 shared(ain, ptrOut, ptrIn)
+// #else  DIFF_DEFINE 
+//         #pragma omp parallel for default(none) schedule(dynamic, 8000) \
+//                 shared(ain, ptrOut, scale, ptrIn)
+// #endif /* DIFF_DEFINE */
         for(int i = 0;i < (int)ain.num_elements();++ i)
             ptrOut[i] += scale*ptrIn[i];
     }
@@ -159,13 +159,13 @@ struct ParallelMultiArrayOpt
     {
         const T* ptrIn = ain.data();
         T* ptrOut = aout.data();
-#ifndef DIFF_DEFINE
-        #pragma omp parallel for default(none) schedule(dynamic, 8000) \
-                shared(ain, ptrOut, ptrIn)
-#else /* DIFF_DEFINE */
-        #pragma omp parallel for default(none) schedule(dynamic, 8000) \
-                shared(ain, ptrOut, scale, ptrIn)
-#endif /* DIFF_DEFINE */
+// #ifndef DIFF_DEFINE
+//         #pragma omp parallel for default(none) schedule(dynamic, 8000) \
+//                 shared(ain, ptrOut, ptrIn)
+// #else  DIFF_DEFINE 
+//         #pragma omp parallel for default(none) schedule(dynamic, 8000) \
+//                 shared(ain, ptrOut, scale, ptrIn)
+// #endif /* DIFF_DEFINE */
         for(int i = 0;i < (int)ain.num_elements();++ i)
             ptrOut[i] = ptrOut[i]*scale + ptrIn[i];
     }

@@ -157,17 +157,21 @@ void PML_WaveSolver::initSystem( REAL startTime )
 //////////////////////////////////////////////////////////////////////
 // Takes a single time step
 //////////////////////////////////////////////////////////////////////
+#include <omp.h>
+
 bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
 {
     _stepTimer.start();
+    double start = omp_get_wtime();
     stepLeapfrog( bcEvaluator );
 
     _timeIndex += 1;
     _stepTimer.pause();
 
     //printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
+    printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    _stepTimer.reset();
 #if 0
-    printf( "Time step %d took %f ms\n", _timeIndex, _stepTimer.getTotalSecs() );
     printf( "Algebra took %f ms\n", _algebraTimer.getTotalSecs() );
     printf( "Memory operations took %f ms\n", _memoryTimer.getTotalSecs() );
     printf( "Writing took %f ms\n", _writeTimer.getTotalSecs() );
@@ -227,6 +231,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
 
     // Update velocity in each direction
+    double start = omp_get_wtime();
     _gradientTimer.start();
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 0 ], 0,
                               _currentTime, _timeStep );
@@ -235,7 +240,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2,
                               _currentTime, _timeStep );
     _gradientTimer.pause();
-
+    printf( "velocity %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 #if 0
     printf( "Max v_x: %f\n", _v[ 0 ].frobeniusNorm() );
     printf( "Max v_y: %f\n", _v[ 1 ].frobeniusNorm() );
@@ -243,11 +248,13 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
 
     // Use the new velocity to update pressure
+    start = omp_get_wtime();
     _divergenceTimer.start();
     _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, WAVE_SPEED );
     _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED );
     _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED );
     _divergenceTimer.pause();
+    printf( "pressure %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 
     _algebraTimer.start();
 #if 0
@@ -270,6 +277,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
 
     _writeTimer.start();
+    start = omp_get_wtime();
     if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
     {
         REAL                     listenerOutput;
@@ -303,6 +311,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     }
     _writeTimer.pause();
 
+    printf( "Writing %d took %f s\n", _timeIndex, omp_get_wtime()-start);
     if ( _zSlice >= 0 )
     {
         char                     buf[ 1024 ];

@@ -12,6 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 option(USE_DEBUG "Turn on the debug mode" OFF)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" OFF)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
+option(USE_CUDA "Use CUDA" OFF)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -152,6 +153,10 @@ if ( USE_OPENMP )
 endif ( USE_OPENMP )
 
 set(LINK_FLAGS " ")
+
+if (USE_CUDA)
+    find_package(CUDA)
+endif (USE_CUDA)
 
 # check if we're using Intel's compiler
 if ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
