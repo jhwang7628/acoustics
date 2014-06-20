@@ -210,6 +210,7 @@ void TetViewerFrame::update_mode_displacement()
     const vector<REAL> &mode = modeData_.mode( modeIndex->value() - 1 );
 
     REAL *vertexData = (REAL *)&vtx_[0];
+    printf("VS: %d Mode: %d\n", vs.size(), mode.size());
     for ( int i = 0; i < mode.size(); i++ ) {
         vertexData[i] += displacementScale * mode[i];
     }

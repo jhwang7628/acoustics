@@ -35,7 +35,10 @@ void ClosestPointField::set(int resolution, Vec3d bmin_, Vec3d bmax_,
 	memcpy(this->closestPointData, closestPointData,
 		sizeof(float)*3*(resolution+1)*(resolution+1)*(resolution+1));
 
-	delete this->closestFeatureData;
+	if(this->closestFeatureData != NULL){
+		delete this->closestFeatureData;
+		this->closestFeatureData = NULL;
+	}
 	int size = (resolution+1) * (resolution+1) * (resolution+1);
 	this->closestFeatureData = new Feature[size];
 	for (int i = 0; i < size; i++)
@@ -236,11 +239,14 @@ int ClosestPointField::save(const std::string& filename, bool doublePrecision)
 	fout.write((char*)closestFeatureData,
 		sizeof(ClosestPointField::Feature) * size);
 
+	fout.close();
+
 	// FIXME - remove this
-	Feature &f1 = closestFeatureData[0];
-	Feature &f2 = closestFeatureData[size-1];
+	Feature f1 = closestFeatureData[0];
+	Feature f2 = closestFeatureData[size-1];
 
 	cout << "Saving distance field..." << endl;
+	cout << "Testing my patience..." << endl;
 	cout << "First feature = " << f1.index1;
 	cout << ", " << f1.index2;
 	cout << ", " << f1.index3;
@@ -253,8 +259,7 @@ int ClosestPointField::save(const std::string& filename, bool doublePrecision)
 	cout << ", " << f2.alpha;
 	cout << ", " << f2.beta;
 	cout << ", " << f2.gamma << endl;;
-
-	fout.close();
+	cout << "Testing my patience AGAIN..." << endl;
 
 	return 0;
 }
