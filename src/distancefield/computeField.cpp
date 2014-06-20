@@ -156,7 +156,9 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
 #endif
 
 #ifdef COMPUTE_CLOSEST_POINT
+
     closestPointData = (float*) malloc (3*sizeof(float)*(resolution+1)*(resolution+1)*(resolution+1));
+    this->closestFeatureData = new Feature[(resolution+1)*(resolution+1)*(resolution+1)];
 #endif
 
     do
@@ -196,30 +198,35 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
 
 #ifdef COMPUTE_CLOSEST_POINT
         Vec3d closestPosition(DBL_MAX, DBL_MAX, DBL_MAX);
+        Feature da_feature;
 #endif
 
         for (unsigned int l=0; l<triangleList.size(); l++)
         {
-            int closestLocalFeature = -1;        
-
+            int closestLocalFeature = -1;
 #ifdef COMPUTE_CLOSEST_POINT
             double alpha, beta, gamma;
             double d2 = triangleList[l]->distanceToPoint2(currentPosition, &closestLocalFeature, &alpha, &beta, &gamma);        
             if (d2 < closestDistance2)
-            {          
+            {
+                // printf("%d -> (%d %d %d)\n", l,
+                //                         triangleList.at(l)->firstIndex(),
+                //                         triangleList.at(l)->secondIndex(),
+                //                         triangleList.at(l)->thirdIndex());
                 closestDistance2 = d2;
                 closestPosition = triangleList[l]->getBarycentricLocation(alpha, beta, gamma);          
                 closestFeature = closestLocalFeature; 
                 closestTriangle = l;
-                indexClosestTriangle =  triangleList[l]->index();          
+                indexClosestTriangle =  triangleList[l]->index();
+
+                //Compute the feature
+                da_feature.index1 = triangleList.at(l)->firstIndex();
+                da_feature.index2 = triangleList.at(l)->secondIndex();
+                da_feature.index3 = triangleList.at(l)->thirdIndex();
+                da_feature.alpha = alpha;
+                da_feature.beta = beta;
+                da_feature.gamma = gamma;
             }
-#if 0
-            else
-            {
-                cout << "Found d2 = " << d2 << " closestDistance2 = "
-                    << closestDistance2 << endl;
-            }
-#endif
 #else
             double d2 = triangleList[l]->distanceToPoint2(currentPosition,&closestLocalFeature);
             if (d2 < closestDistance2)
@@ -229,13 +236,6 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
                 closestTriangle = l;
                 indexClosestTriangle =  triangleList[l]->index();          
             }
-#if 0
-            else
-            {
-                cout << "Found d2 = " << d2 << " closestDistance2 = "
-                    << closestDistance2 << endl;
-            }
-#endif
 #endif
         }
 
@@ -277,6 +277,7 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
         closestPointData[dataIndex+0] = closestPosition[0];
         closestPointData[dataIndex+1] = closestPosition[1];
         closestPointData[dataIndex+2] = closestPosition[2];
+        this->closestFeatureData[(k * (resolution+1) * (resolution+1) + j * (resolution+1) + i)] = da_feature;
 #endif
 
         // store debug info to disk file

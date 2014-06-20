@@ -16,6 +16,7 @@
 #include <utils/Evaluator.h>
 
 #include <wavesolver/WaveSolver.h>
+#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
 
 #include <TYPES.h>
 

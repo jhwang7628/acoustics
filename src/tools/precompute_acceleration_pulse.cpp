@@ -295,6 +295,7 @@ int main( int argc, char **argv )
 
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency * parms._subSteps );
 
+    cout << SDUMP( timeStep ) << endl;
     cout << SDUMP( parms._outputFile ) << endl;
 
     // Build a set of listening positions

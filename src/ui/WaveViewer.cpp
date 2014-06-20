@@ -7,6 +7,8 @@
 
 #include <geometry/TriangleMesh.hpp>
 
+#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
+
 #include <utils/IO.h>
 
 #include <GL/glut.h>
@@ -231,6 +233,11 @@ void WaveViewer::keyPressEvent( QKeyEvent *e )
         _drawInterfacialCells = !_drawInterfacialCells;
 
         handled = true;
+    }
+    else if(e->key() == Qt::Key_P)
+    {
+        CUDA_PAT_WaveSolver * patsolver = dynamic_cast<CUDA_PAT_WaveSolver *>(&_solver);
+        patsolver->computeMultipoleCoefficients();
     }
     else if ( e->key() >= Qt::Key_1 && e->key() <= Qt::Key_6 )
     {

@@ -308,6 +308,71 @@ Parser::SphericalImpactParms Parser::getSphereImpactParms()
 }
 #endif
 
+Parser::AcousticTransferParms Parser::getAcousticTransferParms()
+{
+    AcousticTransferParms      transferParams;
+    string                     modeData;
+    string                     outputFile;
+    string                     multiTermOutputFile;
+
+    transferParams._c = queryOptionalReal( "impact/acoustic_transfer",
+            "c", "343.0" );
+    transferParams._density = queryOptionalReal( "impact/acoustic_transfer",
+            "density", "1.22521" );
+
+    // Get SDF parameters
+    transferParams._sdfResolution = queryRequiredInt( "impact/acoustic_transfer",
+            "fieldresolution" );
+
+    transferParams._sdfFilePrefix = queryRequiredAttr( "impact/acoustic_transfer",
+            "distancefield" );
+
+    // Get grid parameters
+    transferParams._gridResolution = queryRequiredInt( "impact/acoustic_transfer",
+            "gridresolution" );
+
+    transferParams._gridScale = queryRequiredReal( "impact/acoustic_transfer",
+            "gridscale" );
+
+    transferParams._fixedCellSize
+        = ( queryOptionalInt( "impact/acoustic_transfer", "fixedcellsize",
+                    "0" ) != 0 );
+    if ( transferParams._fixedCellSize )
+    {
+        transferParams._cellSize = queryRequiredReal( "impact/acoustic_transfer",
+                "cellsize" );
+    }
+
+    transferParams._timeStepFrequency = queryRequiredInt(
+            "impact/acoustic_transfer",
+            "timestepfrequency" );
+    transferParams._subSteps = queryRequiredInt( "impact/acoustic_transfer",
+            "substeps" );
+
+    transferParams._nbar = queryRequiredReal( "impact/acoustic_transfer",
+            "nbar" );
+
+    transferParams._radiusMultipole = queryRequiredReal( "impact/acoustic_transfer",
+            "radius_multipole" );
+
+    modeData = queryRequiredAttr("impact/acoustic_transfer", "mode_data_file");
+    transferParams._modeDataFile = modeData;
+
+    transferParams._rigidPrefix = queryRequiredAttr( "impact/acoustic_transfer",
+            "rigidprefix" );
+    transferParams._rigidDensity = queryRequiredReal( "impact/acoustic_transfer",
+            "rigiddensity" );
+
+
+    outputFile = queryRequiredAttr( "impact/acoustic_transfer", "outputfile" );
+    transferParams._outputFile = outputFile;
+
+    transferParams._multipoleOutputFile
+        = queryRequiredAttr( "impact/acoustic_transfer", "multipole_outputfile" );
+
+    return transferParams;
+}
+
 //////////////////////////////////////////////////////////////////////
 // Fetches parameters for acceleration pulse precomputation
 //////////////////////////////////////////////////////////////////////

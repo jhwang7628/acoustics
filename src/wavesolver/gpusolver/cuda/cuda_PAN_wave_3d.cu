@@ -47,7 +47,7 @@ struct Cuda_PAN_Wave_3d_sim_data_t {
 	bool updated;
 };
 
-Number_t * wave_sim_get_u(Cuda_PAN_Wave_3d_t wave){
+Number_t * pan_wave_sim_get_u(Cuda_PAN_Wave_3d_t wave){
 	if(wave->updated){
 		return wave->ubuf;
 	} else{
@@ -60,7 +60,7 @@ Number_t * wave_sim_get_u(Cuda_PAN_Wave_3d_t wave){
 	}
 }
 
-Cuda_PAN_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
+Cuda_PAN_Wave_3d_t pan_wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 								 Number_t xmax, Number_t ymax, Number_t zmax,
 								 Number_t c, Number_t dt,
 								 Number_t cellsize,
@@ -138,11 +138,11 @@ Cuda_PAN_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 	}
 
 	for(int k = 0; k < nz; k++){
-		Number_t z = wave_sim_get_z(wave, k);
+		Number_t z = pan_wave_sim_get_z(wave, k);
 		for(int j = 0; j < ny; j++){
-			Number_t y = wave_sim_get_y(wave, j);
+			Number_t y = pan_wave_sim_get_y(wave, j);
 			for(int i = 0; i < nx; i++){
-				Number_t x = wave_sim_get_x(wave, i);
+				Number_t x = pan_wave_sim_get_x(wave, i);
 				if(boundary(x, y, z)){
 					wave->isBulk[(i + nx*(j + ny*k))] = false;
 				} else{
@@ -162,11 +162,11 @@ Cuda_PAN_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 	memset(u, 0, 4*6*(wave->nx)*(wave->ny)*(wave->nz)*sizeof(Number_t));
 
 	for(int k = 0; k < nz; k++){
-		Number_t z = wave_sim_get_z(wave, k);
+		Number_t z = pan_wave_sim_get_z(wave, k);
 		for(int j = 0; j < ny; j++){
-			Number_t y = wave_sim_get_y(wave, j);
+			Number_t y = pan_wave_sim_get_y(wave, j);
 			for(int i = 0; i < nx; i++){
-				Number_t x = wave_sim_get_x(wave, i);
+				Number_t x = pan_wave_sim_get_x(wave, i);
 				Number_t val = initial(x, y, z);
 				int idx = 4*(i + nx*(j + ny*k));
 				int stride = 4*nx*ny*nz;
@@ -206,7 +206,7 @@ Cuda_PAN_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 	return wave;
 }
 
-void wave_sim_free(Cuda_PAN_Wave_3d_t wave){
+void pan_wave_sim_free(Cuda_PAN_Wave_3d_t wave){
 	cudaFreeHost(wave->ubuf);
 	cudaFreeHost(wave->isBulk);
 	cudaFreeHost(wave->gradient);
@@ -219,20 +219,20 @@ void wave_sim_free(Cuda_PAN_Wave_3d_t wave){
 	free(wave);
 }
 
-Number_t wave_sim_get_x(Cuda_PAN_Wave_3d_t wave, int i){
+Number_t pan_wave_sim_get_x(Cuda_PAN_Wave_3d_t wave, int i){
 	return ((i*wave->xmax + (wave->nx - i)*wave->xmin)/wave->nx) + wave->dx/2;
 }
 
-Number_t wave_sim_get_y(Cuda_PAN_Wave_3d_t wave, int j){
+Number_t pan_wave_sim_get_y(Cuda_PAN_Wave_3d_t wave, int j){
 	return ((j*wave->ymax + (wave->ny - j)*wave->ymin)/wave->ny) + wave->dy/2;
 }
 
-Number_t wave_sim_get_z(Cuda_PAN_Wave_3d_t wave, int k){
+Number_t pan_wave_sim_get_z(Cuda_PAN_Wave_3d_t wave, int k){
 	return ((k*wave->zmax + (wave->nz - k)*wave->zmin)/wave->nz) + wave->dz/2;
 }
 
 
-void wave_sim_step(Cuda_PAN_Wave_3d_t wave){
+void pan_wave_sim_step(Cuda_PAN_Wave_3d_t wave){
 	size_t blocks_x = ceil(wave->nx/16.0);
 	size_t blocks_y = ceil(wave->ny/16.0);
 	dim3 gridDim(blocks_x, blocks_y, 1);
@@ -262,7 +262,7 @@ void wave_sim_step(Cuda_PAN_Wave_3d_t wave){
 	wave->t += wave->dt;
 }
 
-Number_t * wave_listen(Cuda_PAN_Wave_3d_t wave, int field){
+Number_t * pan_wave_listen(Cuda_PAN_Wave_3d_t wave, int field){
 	if(wave->listening_count > 0){
 		size_t blocks_x = ceil(wave->listening_count/256.0);
 		dim3 gridDim(blocks_x, 1, 1);
@@ -289,17 +289,17 @@ Number_t * wave_listen(Cuda_PAN_Wave_3d_t wave, int field){
 	}
 }
 
-void wave_sim_get_divisions(const Cuda_PAN_Wave_3d_t wave, int * nx, int * ny, int * nz){
+void pan_wave_sim_get_divisions(const Cuda_PAN_Wave_3d_t wave, int * nx, int * ny, int * nz){
 	(*nx) = wave->nx;
 	(*ny) = wave->ny;
 	(*nz) = wave->nz;
 }
 
-Number_t wave_sim_get_current_time(const Cuda_PAN_Wave_3d_t wave){
+Number_t pan_wave_sim_get_current_time(const Cuda_PAN_Wave_3d_t wave){
 	return wave->t;
 }
 
-void wave_sim_get_bounds(const Cuda_PAN_Wave_3d_t wave,
+void pan_wave_sim_get_bounds(const Cuda_PAN_Wave_3d_t wave,
 						 Number_t * xmin, Number_t * xmax,
 						 Number_t * ymin, Number_t * ymax,
 						 Number_t * zmin, Number_t * zmax){

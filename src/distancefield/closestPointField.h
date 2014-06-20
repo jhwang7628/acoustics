@@ -77,7 +77,7 @@ public:
 		closestPointData[pos+2] = value[2];
 	}
 
-	void closestFeature(int i, int j, int k, Feature &result)
+	void closestFeature(int i, int j, int k, Feature &result) const
 	{
 		int pos = (k * (resolution+1) + j ) * (resolution+1) + i;
 		result = closestFeatureData[pos];

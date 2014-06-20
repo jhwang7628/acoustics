@@ -58,13 +58,19 @@ set(WAVESOLVER_SRC
 
 set(WAVESOLVER_CUDA_WRAPPER_SRC
     wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h
-    wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.cpp)
+    wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.cpp
+    wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h
+    wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.cpp)
 
 set(WAVESOLVER_CUDA_SRC
     wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.h
     wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu
     wavesolver/gpusolver/cuda/cuda_PAN_wave_3d_kernel.cu
-    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d_kernel_math.cu)
+    wavesolver/gpusolver/cuda/cuda_PAN_wave_3d_kernel_math.cu
+    wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.h
+    wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
+    wavesolver/gpusolver/cuda/cuda_PAT_wave_3d_kernel.cu
+    wavesolver/gpusolver/cuda/cuda_PAT_wave_3d_kernel_math.cu)
 
 set(SUPERLU_INTERFACE_SRC
     superlu-interface/SuperLU_Interface.h
@@ -286,7 +292,7 @@ if ( BUILD_ELASTICITY_SOLVER )
         ${GENERIC_SRC}        ${IO_SRC})
     target_link_libraries(elasticity_solver
         ${BLAS_LAPACK_LIBS}   boost_program_options
-        rt)
+        rt                    ${MKL_LIBRARY})
 endif ( BUILD_ELASTICITY_SOLVER )
 
 # =============================================================================
@@ -301,6 +307,8 @@ if ( BUILD_EIGENSOLVER )
     include_directories(
         ${SUPERLU_INCLUDES})
         
+    message(STATUS "YOO: " ${SUPERLU_INCLUDES})
+
     link_directories(${MKL_LIBRARY_DIR})
 
     add_executable(eigensolver
@@ -310,7 +318,7 @@ if ( BUILD_EIGENSOLVER )
         ${LINEAR_BLAS_LAPACK_SRC})
     target_link_libraries(eigensolver
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-        ${BLAS_LAPACK_LIBS}
+        ${BLAS_LAPACK_LIBS}   ${MKL_LIBRARY}
         boost_program_options rt)
 
     add_executable(arpack-eigensolver
@@ -321,7 +329,7 @@ if ( BUILD_EIGENSOLVER )
         ${LINEAR_BLAS_LAPACK_SRC})
     target_link_libraries(arpack-eigensolver
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-        ${BLAS_LAPACK_LIBS}
+        ${BLAS_LAPACK_LIBS}   ${MKL_LIBRARY}
         boost_program_options rt)
 
     add_executable(test-superlu
@@ -331,7 +339,7 @@ if ( BUILD_EIGENSOLVER )
         ${EIGENSOLVER_SRC}    ${LINEAR_BLAS_LAPACK_SRC})
     target_link_libraries(test-superlu
         ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-        ${BLAS_LAPACK_LIBS}
+        ${BLAS_LAPACK_LIBS}   ${MKL_LIBRARY}
         boost_program_options rt)
 endif ( BUILD_EIGENSOLVER )
 
@@ -384,7 +392,8 @@ if ( BUILD_RIGIDSIM )
     add_definitions(-DUSE_RECORDER)
 
     target_link_libraries(rigidsim
-        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
+        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS}
+        ${MKL_LIBRARY})
 endif ( BUILD_RIGIDSIM )
 
 # =============================================================================
@@ -428,7 +437,8 @@ if ( BUILD_RIGIDSIM_GUI )
     target_link_libraries(rigidsim-gui
         ${GLUT_LIBRARIES}                 ${QT_LIBRARIES}
         ${QGLViewer_LIBRARY}              ${OPENGL_LIBRARIES}
-        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS})
+        ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS}
+        ${MKL_LIBRARY})
 
     # ========================================================================
     #   Also build a simple "replayer" that we can use to make quick OpenGL
@@ -467,6 +477,8 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
     if(USE_CUDA)
         set(CUDA_64_BIT_DEVICE_CODE ON)
         set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math)
+        set(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
         find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
 
         cuda_add_executable(precompute-pan-gui
@@ -477,7 +489,9 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
             ${LOGGING_SRC}                    ${LINEAR_SRC}
             ${DISTANCEFIELD_SRC}              ${MATH_SRC}
             ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
-            ${FIELD_SRC}                      ${WAVESOLVER_SRC} wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
             ${UTILS_SRC}                      ${PARSER_SRC}
             ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
             ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
@@ -513,6 +527,77 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
             boost_system                    ${MKL_LIBRARY})
     endif(USE_CUDA)
 endif ( BUILD_PAN_PRECOMPUTE_GUI )
+
+# =============================================================================
+#   Builds a GUI for the PAN Wavesolver
+# =============================================================================
+if ( BUILD_PAT_PRECOMPUTE_GUI )
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    # Headers to be moc-ified
+    #set(PAT_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
+
+    # QT4_WRAP_CPP(PAT_PRECOMPUTE_GUI_MOC_SRCS ${PAT_PRECOMPUTE_GUI_MOC_HEADERS})
+
+    if(USE_CUDA)
+        set(CUDA_64_BIT_DEVICE_CODE ON)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math)
+        set(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
+        find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
+
+        cuda_add_executable(precompute-pat-gui
+            tools/precompute_acoustic_transfer.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC})
+
+        target_link_libraries(precompute-pat-gui
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES})
+    else(USE_CUDA)
+        add_executable(precompute-pat-gui
+            tools/precompute_acoustic_transfer.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC})
+
+        target_link_libraries(precompute-pat-gui
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    ${MKL_LIBRARY})
+    endif(USE_CUDA)
+endif ( BUILD_PAT_PRECOMPUTE_GUI )
 
 # =============================================================================
 #   Builds a command-line PAN wavesolver
@@ -616,7 +701,7 @@ if ( BUILD_RIGID_SNDGEN )
 
     target_link_libraries(sound-generator
         ${LibConfig_LIBRARY}              ${BLAS_LAPACK_LIBS}
-        sndfile)
+        sndfile                           ${MKL_LIBRARY})
 endif ( BUILD_RIGID_SNDGEN )
 
 # =============================================================================

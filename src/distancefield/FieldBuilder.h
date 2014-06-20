@@ -9,6 +9,7 @@
 #include <TYPES.h>
 
 #include "distanceField.h"
+#include "closestPointField.h"
 
 #include <geometry/TriangleMesh.hpp>
 
@@ -28,6 +29,10 @@ class DistanceFieldBuilder {
         static DistanceField    *BuildSignedDistanceField( const std::string &objFileName,
                                                            int resolution,
                                                            const std::string &filePrefix );
+
+        static ClosestPointField    *BuildSignedClosestPointField( const std::string &objFileName,
+	                                                           int resolution,
+	                                                           const std::string &filePrefix );
         
 };
 

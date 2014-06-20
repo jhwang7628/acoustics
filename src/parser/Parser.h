@@ -181,6 +181,60 @@ class Parser {
         /////////////////////////////////////////////////////
         // Parameters for acceleration pulse precomputation
         /////////////////////////////////////////////////////
+        struct AcousticTransferParms {
+            /////////////////////////////////////////////////////
+            // Speed of sound and density
+            /////////////////////////////////////////////////////
+            REAL                   _c;
+            REAL                   _density;
+
+            /////////////////////////////////////////////////////
+            // SDF parms
+            /////////////////////////////////////////////////////
+            int                    _sdfResolution;
+
+            std::string            _sdfFilePrefix;
+
+            /////////////////////////////////////////////////////
+            // Domain resolution and size
+            /////////////////////////////////////////////////////
+            int                    _gridResolution;
+
+            // How much to scale the bounding box of the object by
+            REAL                   _gridScale;
+
+            // Whether or not to use a fixed grid cell size
+            bool                   _fixedCellSize;
+            REAL                   _cellSize;
+
+            int                    _timeStepFrequency;
+            int                    _subSteps;
+
+            /////////////////////////////////////////////////////
+            // For computing a multi-term expansion
+            /////////////////////////////////////////////////////
+            int                    _nbar;
+            REAL                   _radiusMultipole;
+            std::string            _modeDataFile;
+
+            /////////////////////////////////////////////////////
+            // Rigid mesh information
+            /////////////////////////////////////////////////////
+            std::string            _rigidPrefix;
+            REAL                   _rigidDensity;
+
+            /////////////////////////////////////////////////////
+            // Output parameters
+            /////////////////////////////////////////////////////
+            std::string            _outputFile;
+
+            std::string            _multipoleOutputFile;
+
+        };
+
+        /////////////////////////////////////////////////////
+        // Parameters for acceleration pulse precomputation
+        /////////////////////////////////////////////////////
         struct AccelerationPulseParms {
             /////////////////////////////////////////////////////
             // Speed of sound and density
@@ -462,6 +516,7 @@ class Parser {
 #endif
 
         // Fetches parameters for acceleration pulse precomputation
+        AcousticTransferParms getAcousticTransferParms();
         AccelerationPulseParms getAccelerationPulseParms();
 
 #if 0
