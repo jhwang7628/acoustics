@@ -152,9 +152,6 @@ int main( int argc, char **argv )
     cout << SDUMP(cellSize) << endl;
     cellSize /= (REAL)cellDivisions;
 
-    //Lets ignore it:
-    cellSize = 343.0/(3*10000.0);
-
     cout << SDUMP( cellSize ) << endl;
 
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency * parms._subSteps );
@@ -168,39 +165,38 @@ int main( int argc, char **argv )
 
     cout << SDUMP( radius ) << endl;
  #ifdef USE_CUDA
-    //Modes are cooler
-    CUDA_PAT_WaveSolver solver(timeStep,
-                   fieldBBox, cellSize,
-                   *mesh, CENTER_OF_MASS,
-                   *sdf,
-                   0.0,
-                   &listeningPositions, //listeningPositions
-                   NULL,
-                   parms._subSteps,
-                   endTime,
-                   2*acos(-1)*10000,
-                   parms._nbar,
-                   radius,
-                   11,
-                   1000000);
-    // ModeData modedata;
-    // modedata.read(parms._modeDataFile.c_str());
-    // REAL density = parms._rigidDensity;
+    // Modes are cooler
     // CUDA_PAT_WaveSolver solver(timeStep,
     //                fieldBBox, cellSize,
     //                *mesh, CENTER_OF_MASS,
     //                *sdf,
     //                0.0,
-    //                17, //Mode
-    //                modedata,
-    //                density,
     //                &listeningPositions, //listeningPositions
     //                NULL,
     //                parms._subSteps,
     //                endTime,
+    //                2*acos(-1)*10000,
     //                parms._nbar,
-    //                11,
-    //                1000000);
+    //                radius);
+    ModeData modedata;
+    modedata.read(parms._modeDataFile.c_str());
+    REAL density = parms._rigidDensity;
+    CUDA_PAT_WaveSolver solver(timeStep,
+                   fieldBBox, cellSize,
+                   *mesh, CENTER_OF_MASS,
+                   *sdf,
+                   0.0,
+                   parms._mode, //Mode
+                   modedata,
+                   density,
+                   &listeningPositions, //listeningPositions
+                   NULL,
+                   parms._subSteps,
+                   endTime,
+                   parms._nbar,
+                   radius,
+                   11,
+                   1000000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
             *mesh, *sdf),

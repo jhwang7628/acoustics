@@ -216,6 +216,7 @@ class Parser {
             int                    _nbar;
             REAL                   _radiusMultipole;
             std::string            _modeDataFile;
+            int                    _mode;
 
             /////////////////////////////////////////////////////
             // Rigid mesh information
