@@ -567,7 +567,7 @@ void wave_test_multipole(Cuda_PAT_Wave_3d_t wave){
 
 	for(int k = 0; k < wave->nz; k++){
 		printf("k: %d\n", k);
-		for(int j = 149; j < 152; j++){
+		for(int j = wave->ny/2-1; j < wave->ny/2+2; j++){
 			for(int i = 0; i < wave->nx; i++){
 				Number_t bx = wave_sim_get_x(wave, i);
 				Number_t by = wave_sim_get_y(wave, j);
@@ -601,10 +601,6 @@ void wave_test_multipole(Cuda_PAT_Wave_3d_t wave){
     				for(int m = -l; m <= l; m++){
     					std::complex<double> spher = spherical_harmonic_mine(m, l, theta, phi);
     					std::complex<Number_t> spherical(spher.real(), spher.imag());
-    					if(j == 85){
-    						printf("HANK(%d, %d, %d): %lf %lf\n", i, l, m, hank.real(), hank.imag());
-    						printf("spherical(%d, %d, %d): %lf %lf\n", i, l, m, spherical.real(), spherical.imag());
-    					}
     					Number_t re = coef[2*(l*(l+1) + m)];
     					Number_t im = coef[2*(l*(l+1) + m)+1];
     					std::complex<Number_t> multipole(re, im);

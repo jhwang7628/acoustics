@@ -84,6 +84,11 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	Number_t ycenter = (Number_t) centerOfMass[1];
 	Number_t zcenter = (Number_t) centerOfMass[2];
 
+	printf("frequency: %f\n", frequency/(2*acos(-1)));
+
+	printf("%f <? %f\n", wave_speed*timeStep, cellSize);
+
+
 	Number_t * posi = (Number_t *) malloc(3*listeningPositions->size()*sizeof(Number_t));
 
 	for(int i = 0; i < listeningPositions->size(); i++){
@@ -165,9 +170,19 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	Number_t xcenter = (Number_t) centerOfMass[0];
 	Number_t ycenter = (Number_t) centerOfMass[1];
 	Number_t zcenter = (Number_t) centerOfMass[2];
-	Number_t frequency = sqrt(modedata.omegaSquared(mode)/density);
+	Number_t frequency = sqrt(modedata.omegaSquared(mode)/density)/(2*acos(-1));
 
-	printf("frequency: %f\n", frequency/(2*acos(-1)));
+	// //Just to debug
+	// while(frequency > 20000){
+	// 	frequency /= 10;
+	// }
+
+
+
+	printf("frequency: %f\n", frequency);
+
+	frequency *= 2*acos(-1);
+
 
 	Number_t * posi = (Number_t *) malloc(3*listeningPositions->size()*sizeof(Number_t));
 

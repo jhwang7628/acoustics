@@ -348,6 +348,8 @@ Parser::AcousticTransferParms Parser::getAcousticTransferParms()
             "timestepfrequency" );
     transferParams._subSteps = queryRequiredInt( "impact/acoustic_transfer",
             "substeps" );
+    transferParams._mode = queryOptionalInt( "impact/acoustic_transfer",
+            "mode", "0");
 
     transferParams._nbar = queryRequiredReal( "impact/acoustic_transfer",
             "nbar" );

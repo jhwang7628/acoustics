@@ -182,6 +182,13 @@ __global__ void cuda_pat_wave_3d_velocity_kernel(Number_t * __restrict__ u,
 	}
 }
 
+__device__ Number_t normalize_angle(Number_t ang){
+	const Number_t PI = acos(-1.0);
+	ang = fmod(ang+PI, 2*PI);
+	if(ang < 0) ang += 2*PI;
+	return ang-PI;
+}
+
 
 __global__ void cuda_pat_wave_3d_pressure_kernel(Number_t * __restrict__ u,
 												 Number_t * __restrict__ amplitude,
@@ -324,6 +331,13 @@ __global__ void cuda_pat_wave_3d_pressure_kernel(Number_t * __restrict__ u,
 					Number_t kk = pamp*pamp*2;
 					Number_t amp = sqrt((kk+((local_new*local_new - kk)/steps))/2);
 					amplitude[base] = amp;
+					//const Number_t pha = pat_phase(cache[tx][ty][0], local_new, t-dt, t, frequency);
+					const Number_t df = (amp >= 0 ? (local_new > amp ? 1
+												 	     			 : (local_new < -amp ? -1
+												 	     			   					 :  local_new/amp
+												 	     			   					 )
+												 	     			 )
+												  : 0);
 					if(abs(sint) > 0.2 && abs(sint) < 0.8){
 						const Number_t pha = pat_phase(cache[tx][ty][0], local_new, t-dt, t, frequency);
 						phase[base] = pha;
