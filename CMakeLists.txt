@@ -5,6 +5,8 @@ project(isostuffer)
 
 cmake_minimum_required(VERSION 2.6)
 
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
+
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -33,7 +35,7 @@ option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" ON)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
-
+option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    ON)
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
 #   We should eventually go through and resolve all of these diffs
@@ -107,6 +109,9 @@ endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 find_package(LibConfig 1.0 REQUIRED)
 
 # Whether or not we need the GNU triangulated surface (GTS) package
+
+find_package(Portaudio REQUIRED)
+
 if ( BUILD_PAN_PRECOMPUTE_GUI
     OR BUILD_RUN_PULSE_SOLVE
     OR BUILD_MULTITERM_PAN 

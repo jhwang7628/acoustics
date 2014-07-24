@@ -25,6 +25,27 @@ bool testWithDistanceField(const Number_t x, const Number_t y, const Number_t z,
 	}
 }
 
+bool sphere(const Number_t x, const Number_t y, const Number_t z){
+	Number_t dist = sqrt(x*x + y*y + z*z);
+	if(dist < 0.01){
+		return true;
+	} else{
+		return false;
+	}
+}
+
+Number_t sphereNormal(const Number_t x, const Number_t y, const Number_t z, int dim){
+	Number_t dist = sqrt(x*x + y*y + z*z);
+	if(dim == 0){
+		return x/dist;
+	} else if(dim == 1){
+		return y/dist;
+	} else{
+		return z/dist;
+	}
+}
+
+
 Number_t gradientWithDistanceField(const Number_t x, const Number_t y, const Number_t z, int dim, const DistanceField & distanceField){
 	Vector3d v((REAL) x, (REAL) y, (REAL) z);
 	Vector3d grad = distanceField.gradient(v);
@@ -37,6 +58,8 @@ Number_t modeWithClosestPointField(const Number_t x, const Number_t y, const Num
 	Vec3d vec((REAL) x, (REAL) y, (REAL) z);
 	Number_t res = 0;
 	if(field.insideBox(vec)){
+		Vector3d grad = field.gradient(v);
+		grad.normalize();
 		Number_t t = 0;
 		int i, j, k;
 		field.voxelIndices(vec, &i, &j, &k);
@@ -47,45 +70,50 @@ Number_t modeWithClosestPointField(const Number_t x, const Number_t y, const Num
 
 		res += modedata.mode(mode)[3*f.index3 + dim]*f.gamma; t += f.gamma;
 		if(t == 0) t = 1;
-		res = res/t;
+		res = res*grad[dim]/t;
 	}
 	return res;
 }
 
 CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
-			        						   const BoundingBox & bbox, REAL cellSize,
-			        						   const TriMesh & mesh,
-			        						   const Vector3d & centerOfMass,
-			        						   const DistanceField & distanceField,
-			        						   REAL distanceTolerance,
-			        						   const Vector3Array * listeningPositions,
-			        						   WriteCallback * callback,
-			        						   int substeps,
-			        						   REAL endTime,
-			        						   REAL frequency,
-			        						   int num_multipole_coef,
-			        						   REAL multipole_radius,
-			        						   REAL pmlWidth,
-			        						   REAL pmlStrength,
-			        						   REAL wave_speed
-			        						   ):_meshes(){
+											   const BoundingBox & bbox, REAL cellSize,
+											   const TriMesh & mesh,
+											   const Vector3d & centerOfMass,
+											   const DistanceField & distanceField,
+											   REAL distanceTolerance,
+											   const Vector3Array * listeningPositions,
+											   WriteCallback * callback,
+											   int substeps,
+											   REAL endTime,
+											   REAL frequency,
+											   int num_multipole_coef,
+											   REAL multipole_radius,
+											   REAL pmlWidth,
+											   REAL pmlStrength,
+											   REAL wave_speed
+											   ):_meshes(){
 
 	_step = 0;
 	cache_pressure = NULL;
-    cache_amplitude = NULL;
-    cache_phase = NULL;
-	Number_t xmin = (Number_t) bbox.xmin();
-	Number_t xmax = (Number_t) bbox.xmax();
-	Number_t ymin = (Number_t) bbox.ymin();
-	Number_t ymax = (Number_t) bbox.ymax();
-	Number_t zmin = (Number_t) bbox.zmin();
-	Number_t zmax = (Number_t) bbox.zmax();
-	Number_t xcenter = (Number_t) centerOfMass[0];
-	Number_t ycenter = (Number_t) centerOfMass[1];
-	Number_t zcenter = (Number_t) centerOfMass[2];
-
+	cache_amplitude = NULL;
+	cache_phase = NULL;
+	Number_t xmin = -0.25;
+	Number_t xmax = 0.25;
+	Number_t ymin = -0.25;
+	Number_t ymax = 0.25;
+	Number_t zmin = -0.25;
+	Number_t zmax = 0.25;
+	Number_t xcenter = 0.0;
+	Number_t ycenter = 0.0;
+	Number_t zcenter = 0.0;
+	this->_frequency = frequency/(2*acos(-1));
+	_multipole_radius = multipole_radius;
 	printf("frequency: %f\n", frequency/(2*acos(-1)));
-
+	
+	_multipoleModeData._mode = -1;
+	_multipoleModeData._frequency = frequency/(2*acos(-1));
+	_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
+	
 	printf("%f <? %f\n", wave_speed*timeStep, cellSize);
 
 
@@ -98,8 +126,8 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 		posi[3*i+2] = (Number_t) ((*listeningPositions)[i][2]);
 	}
 
-	Wave_BoundaryEvaluator3D boundary = boost::bind(testWithDistanceField, _1, _2, _3, distanceTolerance, boost::ref(distanceField));
-	Wave_GradientEvaluator3D gradient = boost::bind(gradientWithDistanceField, _1, _2, _3, _4, boost::ref(distanceField));
+	Wave_BoundaryEvaluator3D boundary = boost::bind(sphere, _1, _2, _3);
+	Wave_GradientEvaluator3D gradient = boost::bind(sphereNormal, _1, _2, _3, _4);
 
 	this->wave = wave_sim_init(xmin, ymin, zmin,
 							   xmax, ymax, zmax,
@@ -138,29 +166,29 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 }
 
 CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
-				                          const BoundingBox & bbox, REAL cellSize,
-				                          const TriMesh & mesh,
-				                          const Vector3d & centerOfMass,
-				                          const ClosestPointField & distanceField,
-				                          REAL distanceTolerance,
-				                          int mode,
-				                          const ModeData & modedata,
-				                          REAL density,
-				                          const Vector3Array * listeningPositions,
-				                          WriteCallback * callback,
-				                          int substeps,
-				                          REAL endTime,
-				                          int num_multipole_coef,
-				                          REAL multipole_radius,
-				                          REAL pmlWidth,
-				                          REAL pmlStrength,
-				                          REAL wave_speed
-				                          ):_meshes(){
+										  const BoundingBox & bbox, REAL cellSize,
+										  const TriMesh & mesh,
+										  const Vector3d & centerOfMass,
+										  const ClosestPointField & distanceField,
+										  REAL distanceTolerance,
+										  int mode,
+										  const ModeData & modedata,
+										  REAL density,
+										  const Vector3Array * listeningPositions,
+										  WriteCallback * callback,
+										  int substeps,
+										  REAL endTime,
+										  int num_multipole_coef,
+										  REAL multipole_radius,
+										  REAL pmlWidth,
+										  REAL pmlStrength,
+										  REAL wave_speed
+										  ):_meshes(){
 
 	_step = 0;
 	cache_pressure = NULL;
-    cache_amplitude = NULL;
-    cache_phase = NULL;
+	cache_amplitude = NULL;
+	cache_phase = NULL;
 	Number_t xmin = (Number_t) bbox.xmin();
 	Number_t xmax = (Number_t) bbox.xmax();
 	Number_t ymin = (Number_t) bbox.ymin();
@@ -171,18 +199,28 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	Number_t ycenter = (Number_t) centerOfMass[1];
 	Number_t zcenter = (Number_t) centerOfMass[2];
 	Number_t frequency = sqrt(modedata.omegaSquared(mode)/density)/(2*acos(-1));
+	_multipole_radius = multipole_radius;
 
-	// //Just to debug
-	// while(frequency > 20000){
-	// 	frequency /= 10;
-	// }
+	REAL k = frequency/wave_speed;
+	float hihi = k*multipole_radius/2;
+	int hoho = int(floor(hihi));
+	int sugnbar = max(4, hoho);
+	printf("Suggested nbar: %d %d %f\n", sugnbar, hoho, hihi);
+	//num_multipole_coef = sugnbar;
 
+	_multipoleModeData._mode = mode;
+	_multipoleModeData._frequency = frequency;
+	_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
 
-
+	this->_frequency = frequency;
 	printf("frequency: %f\n", frequency);
 
+	cellSize = min(cellSize, wave_speed/(10*frequency));
+	printf("cellSize: %f\n", cellSize);
+	timeStep = max(timeStep, cellSize/(2*wave_speed));
+	printf("timeStep: %f\n", timeStep);
+	printf("%f <? %f\n", wave_speed*timeStep, cellSize);
 	frequency *= 2*acos(-1);
-
 
 	Number_t * posi = (Number_t *) malloc(3*listeningPositions->size()*sizeof(Number_t));
 
@@ -243,8 +281,6 @@ const Tuple3i & CUDA_PAT_WaveSolver::fieldDivisions() const{
 bool CUDA_PAT_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
 	wave_sim_step(this->wave);
 	REAL time = (REAL) wave_sim_get_current_time(this->wave);
-
-	
 	//Save output
 	// if(_listeningPositions && (_step % _substeps) == 0){
 	// 	for(int field = 0; field < 6; field++){
@@ -322,10 +358,16 @@ void CUDA_PAT_WaveSolver::vertexPressure(const Tuple3i & index,
 
 	int nx, ny, nz;
 	wave_sim_get_divisions(this->wave, &nx, &ny, &nz);
+	Number_t x = wave_sim_get_x(wave, index[0]);
+	Number_t y = wave_sim_get_x(wave, index[1]);
+	Number_t z = wave_sim_get_x(wave, index[2]);
+	Number_t r = sqrt(x*x + y*y + z*z);
 	int pos = 4*(index[0] + nx*(index[1] + ny*index[2]));
 	pressure[0] = (REAL) cache_pressure[pos];
 	pos = index[0] + nx*(index[1] + ny*index[2]);
 	pressure[1] = (REAL) cache_amplitude[pos];
+	// Number_t k = 2*acos(-1)*4000/343.0;
+	// pressure[2] = (0.01*0.01*1)/(r*sqrt(1+k*k*0.01*0.01))*cos(k*(r-0.01));
 	pressure[2] = (REAL) cache_phase[pos];
 	pressure[3] = (REAL) (cache_amplitude[pos]*cos(cache_phase[pos]));
 }
@@ -357,6 +399,41 @@ Vector3d CUDA_PAT_WaveSolver::sceneCenter() const{
 	return Vector3d((REAL)((xmax+xmin)/2), (REAL)((ymax+ymin)/2), (REAL)((zmax+zmin)/2));
 }
 
-void CUDA_PAT_WaveSolver::computeMultipoleCoefficients(){
-	wave_test_multipole(this->wave);
+MultipoleData::MultipoleModeData & CUDA_PAT_WaveSolver::computeMultipoleCoefficients(){
+	Number_t * coef = wave_compute_multipole(this->wave, _multipole_radius);
+	for(int i = 0; i < _multipoleModeData._coefficients.size(); i++){
+		_multipoleModeData._coefficients[i] = REAL(coef[i]);
+	}
+	//wave_test_multipole(this->wave);
+	return _multipoleModeData;
+}
+
+REAL CUDA_PAT_WaveSolver::computeSound(const Vector3d & v, REAL t,  REAL * amplitude, REAL * freq,  REAL * phase){
+	int i, j, k;
+	wave_estimate_ijk(this->wave, v.x, v.y, v.z, &i, &j, &k);
+	VECTOR p;
+	Tuple3i tuple(i, j, k);
+	this->vertexPressure(tuple, p);
+	*amplitude = p[1];
+	*freq = this->_frequency;
+	*phase = p[2];
+	return p[1]*cos(this->_frequency*t + p[2]);
+}
+
+REAL CUDA_PAT_WaveSolver::estimateSound(const Vector3d & v, REAL t,  REAL * amplitude, REAL * freq,  REAL * phase){
+	Number_t aamplitude;
+	Number_t aphase;
+	wave_estimate_with_multipole(this->wave, v.x, v.y, v.z, &aamplitude, &aphase);
+	*amplitude = aamplitude;
+	*freq = this->_frequency;
+	*phase = aphase;
+	return aamplitude*cos(this->_frequency*t + aphase);
+}
+
+#include <multipole/MultipoleUtil.h>
+
+void CUDA_PAT_WaveSolver::saveMultipoleCoefficients(const std::string & filename){
+	computeMultipoleCoefficients();
+	std::cout << _multipoleModeData.numCoefficients();
+	Multipole::saveToFile(filename, _multipoleModeData);
 }

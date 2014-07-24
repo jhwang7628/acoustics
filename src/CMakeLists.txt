@@ -143,6 +143,17 @@ set(SNDGEN_SRC
     sndgen/SoundBuffer.hpp
     sndgen/SoundWriter.hpp)
 
+set(SNDPLAYER_SRC
+    sndgen/player/SoundPlayer.h         sndgen/player/SoundPlayer.cpp
+    sndgen/player/SineWavePlayer.h
+    )
+
+set(MULTIPOLE_SRC
+    multipole/MultipoleData.h           multipole/MultipoleData.cpp
+    multipole/MultipoleUtil.h           multipole/MultipoleUtil.cpp
+    multipole/MultipoleMath.h           multipole/MultipoleMath.cpp
+    multipole/MultipolePlayer.h         multipole/MultipolePlayer.cpp)
+
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -502,7 +513,7 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
 
     if(USE_CUDA)
         set(CUDA_64_BIT_DEVICE_CODE ON)
-        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math -Xptxas -dlcm=ca)
         set(CUDA_NVCC_FLAGS
       "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
         find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
@@ -572,10 +583,14 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
 
     if(USE_CUDA)
         set(CUDA_64_BIT_DEVICE_CODE ON)
-        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math -Xptxas -dlcm=ca)
         set(CUDA_NVCC_FLAGS
       "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
         find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
+
+            message(STATUS "YOO1: " ${PORTAUDIO_INCLUDE_DIRS})
+     message(STATUS "YOO2: " ${PORTAUDIO_LIBRARIES})
+   message(STATUS "YOO3: " ${PORTAUDIO_LIBRARY_DIRS})
 
         cuda_add_executable(precompute-pat-gui
             tools/precompute_acoustic_transfer.cpp
@@ -591,7 +606,8 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
             ${UTILS_SRC}                      ${PARSER_SRC}
             ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
             ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
-            ${DEFORMABLE_SRC})
+            ${DEFORMABLE_SRC}                 ${SNDPLAYER_SRC}
+            ${MULTIPOLE_SRC})
 
         target_link_libraries(precompute-pat-gui
             ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
@@ -599,8 +615,9 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
             ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
             ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
             ${GSL_LIBRARY}                  boost_thread
-            boost_system                    ${MKL_LIBRARY}
-            ${CUDA_LIBRARIES})
+            boost_system                    boost_serialization
+            ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY})
     else(USE_CUDA)
         add_executable(precompute-pat-gui
             tools/precompute_acoustic_transfer.cpp
@@ -751,3 +768,92 @@ if ( BUILD_ESTIMATE_TIMESCALE )
         ${BLAS_LAPACK_LIBS}               ${GSL_LIBRARY}
         boost_thread                      boost_system)
 endif ( BUILD_ESTIMATE_TIMESCALE )
+
+if (BUILD_PYTHON_EXTENSIONS)
+    find_package(PythonLibs REQUIRED)
+    FIND_PACKAGE(Boost 1.45.0 COMPONENTS python)
+    add_custom_target(acoustic_python)
+
+    # Multipole
+        #MultipoleMath
+            INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+            ADD_LIBRARY(multipole_math SHARED multipole/python/math.cpp
+                            multipole/MultipoleMath.h multipole/MultipoleMath.cpp)
+
+            set_target_properties(multipole_math PROPERTIES PREFIX "_" OUTPUT_NAME math)
+            TARGET_LINK_LIBRARIES(multipole_math ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
+                ${GSL_LIBRARIES} boost_serialization)
+            install(TARGETS multipole_math DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/math)
+            add_dependencies(acoustic_python multipole_math)
+        #MultipoleData
+            INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+            ADD_LIBRARY(multipole_data SHARED multipole/python/data.cpp
+                            multipole/MultipoleMath.h multipole/MultipoleMath.cpp
+                            multipole/MultipoleData.h multipole/MultipoleData.cpp)
+
+            set_target_properties(multipole_data PROPERTIES PREFIX "_" OUTPUT_NAME data)
+            TARGET_LINK_LIBRARIES(multipole_data ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
+                ${GSL_LIBRARIES} boost_serialization)
+            install(TARGETS multipole_data DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/)
+            add_dependencies(acoustic_python multipole_data)
+
+        #MultipoleUtil
+            INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+            ADD_LIBRARY(multipole_util SHARED multipole/python/util.cpp
+                            multipole/MultipoleUtil.h multipole/MultipoleUtil.cpp
+                            multipole/MultipoleMath.h multipole/MultipoleMath.cpp
+                            multipole/MultipoleData.h multipole/MultipoleData.cpp)
+
+            set_target_properties(multipole_util PROPERTIES PREFIX "_" OUTPUT_NAME util)
+            TARGET_LINK_LIBRARIES(multipole_util ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
+                ${GSL_LIBRARIES} boost_serialization)
+            install(TARGETS multipole_util DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/)
+            add_dependencies(acoustic_python multipole_util)
+    # Mode
+        #MultipoleMath
+            INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+            ADD_LIBRARY(mode_data SHARED deformable/python/data.cpp
+                            deformable/ModeData.h deformable/ModeData.cpp
+                            ${CONFIG_SOURCES})
+
+            set_target_properties(mode_data PROPERTIES PREFIX "_" OUTPUT_NAME data)
+            TARGET_LINK_LIBRARIES(mode_data ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
+                ${GSL_LIBRARIES} boost_serialization)
+            install(TARGETS mode_data DESTINATION ${PROJECT_BINARY_DIR}/lib/mode/)
+            add_dependencies(acoustic_python mode_data)
+
+    # Solver
+        INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
+
+        cuda_add_library(pat_solver SHARED
+                tools/precompute-pat/python/pat_wrapper.cpp
+                ui/WaveViewer.cpp
+                ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+                ${GENERIC_SRC}                    ${IO_SRC}
+                ${LOGGING_SRC}                    ${LINEAR_SRC}
+                ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+                ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+                ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+                wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+                wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
+                ${UTILS_SRC}                      ${PARSER_SRC}
+                ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+                ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+                ${DEFORMABLE_SRC}                 ${SNDPLAYER_SRC}
+                ${MULTIPOLE_SRC})
+
+        set_target_properties(pat_solver PROPERTIES PREFIX "_" OUTPUT_NAME solver)
+        target_link_libraries(pat_solver
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    boost_serialization
+            ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY}
+            ${PYTHON_LIBRARIES}             ${Boost_LIBRARIES})
+
+        install(TARGETS pat_solver DESTINATION ${PROJECT_BINARY_DIR}/lib/solver/)
+        add_dependencies(acoustic_python pat_solver)
+endif (BUILD_PYTHON_EXTENSIONS)

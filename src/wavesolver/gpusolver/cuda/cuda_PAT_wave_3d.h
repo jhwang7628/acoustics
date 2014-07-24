@@ -42,6 +42,9 @@ Number_t wave_sim_get_x(const Cuda_PAT_Wave_3d_t wave, int j);
 Number_t wave_sim_get_y(const Cuda_PAT_Wave_3d_t wave, int i);
 Number_t wave_sim_get_z(const Cuda_PAT_Wave_3d_t wave, int k);
 
+void wave_estimate_ijk(const Cuda_PAT_Wave_3d_t wave, Number_t x, Number_t y, Number_t z, int * i, int * j, int * k);
+void wave_estimate_with_multipole(Cuda_PAT_Wave_3d_t wave, Number_t x, Number_t y, Number_t z, Number_t * amplitude, Number_t * phase);
+
 Number_t * wave_sim_get_u(Cuda_PAT_Wave_3d_t wave);
 Number_t * wave_sim_get_amplitudes(Cuda_PAT_Wave_3d_t wave);
 Number_t * wave_sim_get_phases(Cuda_PAT_Wave_3d_t wave);
