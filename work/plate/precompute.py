@@ -22,15 +22,17 @@ density = 2300.0;
 numEigs = 100;
 
 
-installPath = '/home/jchadwick/research/acoustics';
-if ( len(sys.argv) >= 2 ):
-  installPath = sys.argv[1];
+# installPath = '/home/jchadwick/research/acoustics';
+# if ( len(sys.argv) >= 2 ):
+#   installPath = sys.argv[1];
 
-# Optionally specify where things are built
-if ( len(sys.argv) >= 3 ):
-  binPath = '%s/%s/src' % ( installPath, sys.argv[2] );
-else:
-  binPath = '%s/gcc-build/src' % ( installPath );
+# # Optionally specify where things are built
+# if ( len(sys.argv) >= 3 ):
+#   binPath = '%s/%s/src' % ( installPath, sys.argv[2] );
+# else:
+#   binPath = '%s/gcc-build/src' % ( installPath );
+
+binPath = '../..'
 
 matlabPath = '%s/src/matlab' % ( installPath );
 
@@ -65,11 +67,11 @@ print cmd;
 os.system( '%s > %s' % ( cmd, redirect ) );
 
 # Step four - generate input files for the Helmholtz radiation problems
-os.system( 'mkdir -p fbem_in' );
-cmd = '%s/fbem_input_gen -m %s.modes -d %f -t %s -o fbem_in/input-%%d.txt' \
-       % ( binPath, objName, density, tetFile );
-print cmd;
-os.system( '%s > %s' % ( cmd, redirect ) );
+# os.system( 'mkdir -p fbem_in' );
+# cmd = '%s/fbem_input_gen -m %s.modes -d %f -t %s -o fbem_in/input-%%d.txt' \
+#        % ( binPath, objName, density, tetFile );
+# print cmd;
+# os.system( '%s > %s' % ( cmd, redirect ) );
 
 # Step five - write the object center of mass, rigid inertia matrix, and
 # material parameters to files that will be needed in other parts of the
@@ -82,25 +84,25 @@ cmd = '%s/write-inertia %s %s' % ( binPath, tetFile, dataPrefix );
 print cmd;
 os.system( '%s > %s' % ( cmd, redirect ) );
 
-# This part assumes that octave is installed.  This command could be
-# changed somewhat to work with Matlab
-cmd = ("octave --eval \"addpath('%s'); "
-       "make_material_parameters(%f, %f, '%s_materialProperties.vector');\"") \
-       % ( matlabPath, youngsModulus, poissonRatio, dataPrefix );
-print cmd;
-os.system( '%s > %s' % ( cmd, redirect ) );
+# # This part assumes that octave is installed.  This command could be
+# # changed somewhat to work with Matlab
+# cmd = ("octave --eval \"addpath('%s'); "
+#        "make_material_parameters(%f, %f, '%s_materialProperties.vector');\"") \
+#        % ( matlabPath, youngsModulus, poissonRatio, dataPrefix );
+# print cmd;
+# os.system( '%s > %s' % ( cmd, redirect ) );
 
-# Step six - wrap everything up in a tarball so that it can be conveniently
-# moved to the hydra cluster.
-#
-# As a final step, move this file to /hydra/S1/impact_snd/fastbem/models and
-# untar it there (e.g., tar xzvf plate.tar.gz).  This should create a 'plate'
-# directory.  Inside this directory, you can run the following command:
-#     ./../../scripts/fbem_solve.pl . <modeID>
-# This will solve the boundary element problem for the given mode ID, placing
-# the results in fbem_ret
-# 
-cmd = ("tar --transform 's,^,%s/,' -czvf %s.tar.gz fbem_in/ "
-       "freqs.txt %s.geo.txt") % ( objName, objName, objName );
-print cmd;
-os.system( '%s > %s' % ( cmd, redirect ) );
+# # Step six - wrap everything up in a tarball so that it can be conveniently
+# # moved to the hydra cluster.
+# #
+# # As a final step, move this file to /hydra/S1/impact_snd/fastbem/models and
+# # untar it there (e.g., tar xzvf plate.tar.gz).  This should create a 'plate'
+# # directory.  Inside this directory, you can run the following command:
+# #     ./../../scripts/fbem_solve.pl . <modeID>
+# # This will solve the boundary element problem for the given mode ID, placing
+# # the results in fbem_ret
+# # 
+# cmd = ("tar --transform 's,^,%s/,' -czvf %s.tar.gz fbem_in/ "
+#        "freqs.txt %s.geo.txt") % ( objName, objName, objName );
+# print cmd;
+# os.system( '%s > %s' % ( cmd, redirect ) );
