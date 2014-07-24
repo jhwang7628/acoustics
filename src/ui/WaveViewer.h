@@ -20,6 +20,9 @@
 
 #include <TYPES.h>
 
+#include <sndgen/player/SineWavePlayer.h>
+#include <multipole/MultipolePlayer.h>
+
 //////////////////////////////////////////////////////////////////////
 // WaveViewer class
 //
@@ -83,7 +86,7 @@ class WaveViewer : public QGLViewer {
 
         // Get the current pressure associated with the given vertex 
         void vertexPressure( const Tuple3i &index, VECTOR &pressure );
-
+        virtual void postSelection(const QPoint& point);
     private:
         Solver                  &_solver;
 
@@ -104,6 +107,15 @@ class WaveViewer : public QGLViewer {
 
         int                      _drawField;
         VECTOR                   _drawPressure;
+
+        qglviewer::Vec orig, dir, selectedPoint;
+        SineWavePlayer * player;
+        MultipolePlayer * mplayer;
+        REAL _amplitude;
+        REAL _frequency;
+        REAL _phase;
+        REAL _estAmplitude;
+        REAL _estPhase;
 
 };
 

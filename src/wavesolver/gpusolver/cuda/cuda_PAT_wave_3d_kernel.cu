@@ -33,7 +33,7 @@ __global__ void cuda_pat_wave_3d_velocity_kernel(Number_t * __restrict__ u,
 	const Number_t density = kernel_constants[12];
 	const Number_t frequency = kernel_constants[16];
 	const Number_t dz = kernel_constants[17];
-	const Number_t sint = sin(frequency*t);
+	const Number_t sint = frequency*cos(frequency*t);
 
 
 	Number_t local_z[4];
@@ -182,11 +182,13 @@ __global__ void cuda_pat_wave_3d_velocity_kernel(Number_t * __restrict__ u,
 	}
 }
 
-__device__ Number_t normalize_angle(Number_t ang){
-	const Number_t PI = acos(-1.0);
-	ang = fmod(ang+PI, 2*PI);
-	if(ang < 0) ang += 2*PI;
-	return ang-PI;
+__device__ Number_t my_asin(Number_t x){
+	x = ((x > 1) ? 1
+				 : ((x < -1) ? -1
+				 	         :  x
+				 	         )
+				 );
+	return asin(x);
 }
 
 
@@ -331,16 +333,10 @@ __global__ void cuda_pat_wave_3d_pressure_kernel(Number_t * __restrict__ u,
 					Number_t kk = pamp*pamp*2;
 					Number_t amp = sqrt((kk+((local_new*local_new - kk)/steps))/2);
 					amplitude[base] = amp;
-					//const Number_t pha = pat_phase(cache[tx][ty][0], local_new, t-dt, t, frequency);
-					const Number_t df = (amp >= 0 ? (local_new > amp ? 1
-												 	     			 : (local_new < -amp ? -1
-												 	     			   					 :  local_new/amp
-												 	     			   					 )
-												 	     			 )
-												  : 0);
-					if(abs(sint) > 0.2 && abs(sint) < 0.8){
+					if(abs(sint) > 0.2f && abs(sint) < 0.8f){
+						const Number_t oldPha = phase[base]; 
 						const Number_t pha = pat_phase(cache[tx][ty][0], local_new, t-dt, t, frequency);
-						phase[base] = pha;
+						phase[base] = interpolate_angles(oldPha, pha, 0.9);
 					}
 				}
 			}
@@ -412,7 +408,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 											   	const int num_multipole,
 											   	int nx, int ny, int nz,
 											   	Number_t x, Number_t y, Number_t z,
-											   	Number_t * legendre_base,
+											   	Number_t * __restrict__ legendre_base,
 											   	Number_t p[2],
 											   	Number_t dp_dn[2]){
 	
@@ -424,7 +420,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 	const Number_t zmax = kernel_constants[9];
 	const Number_t c = kernel_constants[0];
 	const Number_t frequency = kernel_constants[16];
-	const Number_t k = frequency/c;
+	const Number_t ko = frequency/c;
 	const Number_t dx = kernel_constants[2];
 	const Number_t dy = kernel_constants[3];
 	const Number_t dz = kernel_constants[17];
@@ -434,7 +430,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 	const Number_t r = sqrt(cx*cx + cy*cy + cz*cz);
 	const Number_t theta = acos(cz / r);
     const Number_t phi  = atan2(cy, cx);
-    const Number_t PI = acos(-1.0);
+    const Number_t PI = acos(-1.0f);
     const Number_t area = (abs(dx*dy*cz) + abs(dx*cy*dz) + abs(cx*dy*dz))/r;
 
     const int idt = threadIdx.x;
@@ -481,7 +477,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 		legendre_base[1] = sqrt(1/(4*PI));
 
 		for(int m = 0; m <= num_multipole; m++){
-			legendre_base[m+2] = -legendre_base[m+1]*sqrt((2*m+3.0)/(2*m+2.0))*somx2;
+			legendre_base[m+2] = -legendre_base[m+1]*sqrt((2*m+3.0f)/(2*m+2.0f))*somx2;
 		}
 	}
 	__syncthreads();
@@ -492,7 +488,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 	//[m][l]
 	legendre[0][0] = 0;
 	legendre[0][1] = legendre_base[m];
-	legendre[0][2] = legendre_base[m]*sqrt(2*m+1.0)*xx;
+	legendre[0][2] = legendre_base[m]*sqrt(2*m+1.0f)*xx;
 
 	legendre[1][0] = legendre[1][1] = 0;
 	legendre[1][2] = legendre_base[m+1];
@@ -506,16 +502,16 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 
 		if(l == m){
 			legendre[2][2] = legendre_base[m+2];
-			legendre[1][2] = legendre[1][1]*sqrt(2*m+3.0)*xx;
-			legendre[0][2] = (m > 0 ? (xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+2.0)*(l+m+0.0)))*legendre[0][1] - sqrt(((2*l+3.0)*(l-m+1.0)*(l+m-1.0))/((2*l-1.0)*(l-m+2.0)*(l+m+0.0)))*legendre[0][0]) : 0.0);
+			legendre[1][2] = legendre[1][1]*sqrt(2*m+3.0f)*xx;
+			legendre[0][2] = (m > 0 ? (xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+2.0f)*(l+m+0.0f)))*legendre[0][1] - sqrt(((2*l+3.0f)*(l-m+1.0f)*(l+m-1.0f))/((2*l-1.0f)*(l-m+2.0f)*(l+m+0.0f)))*legendre[0][0]) : 0.0f);
 		} else if(l == m+1){
-			legendre[2][2] = legendre[2][1]*sqrt(2*m+5.0)*xx;
-			legendre[1][2] = xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+1.0)*(l+m+1.0)))*legendre[1][1] - sqrt(((2*l+3.0)*(l-m)*(l+m))/((2*l-1.0)*(l-m+1.0)*(l+m+1.0)))*legendre[1][0];
-			legendre[0][2] = xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+2.0)*(l+m+0.0)))*legendre[0][1] - sqrt(((2*l+3.0)*(l-m+1.0)*(l+m-1.0))/((2*l-1.0)*(l-m+2.0)*(l+m+0.0)))*legendre[0][0];
+			legendre[2][2] = legendre[2][1]*sqrt(2*m+5.0f)*xx;
+			legendre[1][2] = xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+1.0f)*(l+m+1.0f)))*legendre[1][1] - sqrt(((2*l+3.0f)*(l-m)*(l+m))/((2*l-1.0f)*(l-m+1.0f)*(l+m+1.0f)))*legendre[1][0];
+			legendre[0][2] = xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+2.0f)*(l+m+0.0f)))*legendre[0][1] - sqrt(((2*l+3.0f)*(l-m+1.0f)*(l+m-1.0f))/((2*l-1.0f)*(l-m+2.0f)*(l+m+0.0f)))*legendre[0][0];
 		} else{
-			legendre[2][2] = xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+0.0)*(l+m+2.0)))*legendre[2][1] - sqrt(((2*l+3.0)*(l-m-1.0)*(l+m+1.0))/((2*l-1.0)*(l-m+0.0)*(l+m+2.0)))*legendre[2][0];
-			legendre[1][2] = xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+1.0)*(l+m+1.0)))*legendre[1][1] - sqrt(((2*l+3.0)*(l-m+0.0)*(l+m+0.0))/((2*l-1.0)*(l-m+1.0)*(l+m+1.0)))*legendre[1][0];
-			legendre[0][2] = xx*sqrt(((2*l+1.0)*(2*l+3.0))/((l-m+2.0)*(l+m+0.0)))*legendre[0][1] - sqrt(((2*l+3.0)*(l-m+1.0)*(l+m-1.0))/((2*l-1.0)*(l-m+2.0)*(l+m+0.0)))*legendre[0][0];
+			legendre[2][2] = xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+0.0f)*(l+m+2.0f)))*legendre[2][1] - sqrt(((2*l+3.0f)*(l-m-1.0f)*(l+m+1.0f))/((2*l-1.0f)*(l-m+0.0f)*(l+m+2.0f)))*legendre[2][0];
+			legendre[1][2] = xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+1.0f)*(l+m+1.0f)))*legendre[1][1] - sqrt(((2*l+3.0f)*(l-m+0.0f)*(l+m+0.0f))/((2*l-1.0f)*(l-m+1.0f)*(l+m+1.0f)))*legendre[1][0];
+			legendre[0][2] = xx*sqrt(((2*l+1.0f)*(2*l+3.0f))/((l-m+2.0f)*(l+m+0.0f)))*legendre[0][1] - sqrt(((2*l+3.0f)*(l-m+1.0f)*(l+m-1.0f))/((2*l-1.0f)*(l-m+2.0f)*(l+m+0.0f)))*legendre[0][0];
 		}
 
 		//Compute multipole l, +m -> Use R l, -m
@@ -533,7 +529,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 				Number_t A[2] = {0, 0};
 				Number_t temp[2] = {0, 0};
 				regular_basis(mm+1, l+1, phi, 2, 2, temp, legendre); complexScaleAdd(Bmn(-mm-1, l+1), temp, A);
-				regular_basis(mm+1, l-1, phi, 2, 0, temp, legendre); complexScaleAdd(-Bmn(m, l), temp, A);
+				regular_basis(mm+1, l-1, phi, 2, 0, temp, legendre); complexScaleAdd(-Bmn(mm, l), temp, A);
 
 				Number_t B[2] = {0, 0};
 				regular_basis(mm-1, l+1, phi, 0, 2, temp, legendre); complexScaleAdd(Bmn(mm-1, l+1), temp, B);
@@ -541,23 +537,25 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 
 				//rx
 				temp[0] = temp[1] = 0;
-				complexScaleAdd(0.5, A, temp); complexScaleAdd(0.5, B, temp);
+				complexScaleAdd(0.5f, A, temp); complexScaleAdd(0.5f, B, temp);
 				complexScaleAdd(cx/r, temp, dR_dn);
 
 				//ry
-				temp[0] = (A[1]-B[1])*0.5; temp[1] = (B[0] - A[0])*0.5;
+				temp[0] = (A[1]-B[1])*0.5f; temp[1] = (B[0] - A[0])*0.5f;
 				complexScaleAdd(cy/r, temp, dR_dn);
 
 				//Use A as rz
 				A[0] = 0; A[1] = 0;
 				regular_basis(mm, l-1, phi, 1, 0, temp, legendre); complexScaleAdd(Amn(mm, l-1), temp, A);
 				regular_basis(mm, l+1, phi, 1, 2, temp, legendre); complexScaleAdd(-Amn(mm, l), temp, A);
-				complexScaleAdd(cz/r, temp, dR_dn);
+				complexScaleAdd(cz/r, A, dR_dn);
 				
-				dR_dn[0] *= -k; dR_dn[1] *= -k;
+				dR_dn[0] *= -ko; dR_dn[1] *= -ko;
 			}
 			complexMultAdd(p, dR_dn, contrib);
 			contrib[0] *= area; contrib[1] *= area;
+			// regular_basis(mm, l, phi, 1, 1, contrib, legendre);
+			//contrib[0] = dR_dn[0]; contrib[1] = dR_dn[1]; 
 			//Sum to the correspondent multipole coefficient (l*(l+1)+m)
 			multipole[base + 2*(l*(l+1) + m)] += contrib[0];
 			multipole[base + 2*(l*(l+1) + m)+1] += contrib[1];
@@ -578,7 +576,7 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 				Number_t A[2] = {0, 0};
 				Number_t temp[2] = {0, 0};
 				regular_basis(mm+1, l+1, phi, 2, 2, temp, legendre); complexScaleAdd(Bmn(-mm-1, l+1), temp, A);
-				regular_basis(mm+1, l-1, phi, 2, 0, temp, legendre); complexScaleAdd(-Bmn(m, l), temp, A);
+				regular_basis(mm+1, l-1, phi, 2, 0, temp, legendre); complexScaleAdd(-Bmn(mm, l), temp, A);
 
 				Number_t B[2] = {0, 0};
 				regular_basis(mm-1, l+1, phi, 0, 2, temp, legendre); complexScaleAdd(Bmn(mm-1, l+1), temp, B);
@@ -586,10 +584,10 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 
 				//rx
 				temp[0] = temp[1] = 0;
-				complexScaleAdd(0.5, A, temp); complexScaleAdd(0.5, B, temp);
+				complexScaleAdd(0.5f, A, temp); complexScaleAdd(0.5f, B, temp);
 				complexScaleAdd(cx/r, temp, dR_dn);
 
-				temp[0] = (A[1]-B[1])*0.5; temp[1] = (B[0] - A[0])*0.5;
+				temp[0] = (A[1]-B[1])*0.5f; temp[1] = (B[0] - A[0])*0.5f;
 				complexScaleAdd(cy/r, temp, dR_dn);
 
 				//Use A as rz
@@ -597,11 +595,13 @@ __device__ void cuda_pat_compute_multipole_term(Number_t * __restrict__ multipol
 				regular_basis(mm, l-1, phi, 1, 0, temp, legendre); complexScaleAdd(Amn(mm, l-1), temp, A);
 				regular_basis(mm, l+1, phi, 1, 2, temp, legendre); complexScaleAdd(-Amn(mm, l), temp, A);
 
-				complexScaleAdd(cz/r, temp, dR_dn);
-				dR_dn[0] *= -k; dR_dn[1] *= -k;
+				complexScaleAdd(cz/r, A, dR_dn);
+				dR_dn[0] *= -ko; dR_dn[1] *= -ko;
 			}
 			complexMultAdd(p, dR_dn, contrib);
 			contrib[0] *= area; contrib[1] *= area;
+			// regular_basis(mm, l, phi, 1, 1, contrib, legendre);
+			// contrib[0] = dR_dn[0]; contrib[1] = dR_dn[1]; 
 			//Sum to the correspondent multipole coefficient (l*(l+1)-m)
 			multipole[base + 2*(l*(l+1) - m)] += contrib[0];
 			multipole[base + 2*(l*(l+1) - m)+1] += contrib[1];

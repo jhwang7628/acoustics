@@ -154,18 +154,23 @@ int main( int argc, char **argv )
 
     cout << SDUMP( cellSize ) << endl;
 
-    timeStep = 1.0 / (REAL)( parms._timeStepFrequency * parms._subSteps );
+    timeStep = 1.0 / (REAL)( parms._timeStepFrequency);
 
     cout << SDUMP( timeStep ) << endl;
     cout << SDUMP( parms._outputFile ) << endl;
 
     //listeningRadius *= mesh->boundingSphereRadius( rigidMesh->centerOfMass() );
     REAL radius = mesh->boundingSphereRadius( rigidMesh->centerOfMass() );
-    radius *= parms._radiusMultipole;
+
 
     cout << SDUMP( radius ) << endl;
+    cout << SDUMP( CENTER_OF_MASS ) << endl;
+
+    radius *= parms._radiusMultipole;
  #ifdef USE_CUDA
     // Modes are cooler
+    // cellSize = 0.5/(REAL)cellDivisions;
+    // cout << SDUMP( cellSize ) << endl;
     // CUDA_PAT_WaveSolver solver(timeStep,
     //                fieldBBox, cellSize,
     //                *mesh, CENTER_OF_MASS,
@@ -175,9 +180,9 @@ int main( int argc, char **argv )
     //                NULL,
     //                parms._subSteps,
     //                endTime,
-    //                2*acos(-1)*10000,
+    //                2*acos(-1)*4000,
     //                parms._nbar,
-    //                radius);
+    //                parms._radiusMultipole*0.05);
     ModeData modedata;
     modedata.read(parms._modeDataFile.c_str());
     REAL density = parms._rigidDensity;
@@ -196,7 +201,7 @@ int main( int argc, char **argv )
                    parms._nbar,
                    radius,
                    11,
-                   1000000);
+                   100000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
             *mesh, *sdf),

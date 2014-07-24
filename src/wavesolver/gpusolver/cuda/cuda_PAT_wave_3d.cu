@@ -147,6 +147,7 @@ Cuda_PAT_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 	int nx = wave->nx;
 	int ny = wave->ny;
 	int nz = wave->nz;
+	printf(">> %d %d %d %lf\n", nx, ny, nz, cellsize);
 
 	wave->dx = (xmax-xmin)/wave->nx;
 	wave->dy = (ymax-ymin)/wave->ny;
@@ -284,6 +285,9 @@ void wave_sim_free(Cuda_PAT_Wave_3d_t wave){
 	cudaFree(wave->listening_positions_d);
 	cudaFree(wave->amplitude_d);
 	cudaFree(wave->phase_d);
+		cudaFreeHost(wave->multipole_coef);
+		cudaFree(wave->multipole_coef_d);
+		cudaFree(wave->integral_multipole_d);
 	free(wave);
 }
 
@@ -332,6 +336,29 @@ void wave_sim_step(Cuda_PAT_Wave_3d_t wave){
 	wave->t += wave->dt;
 }
 
+void wave_set_listening_positions(Cuda_PAT_Wave_3d_t wave, int listening_count, Number_t * listening_positions){
+	if(wave->listening_positions_d != NULL){
+		cudaFree(wave->listening_positions_d);
+		wave->listening_positions_d = NULL;
+	}
+	if(wave->listeningOutput_d != NULL){
+		cudaFree(wave->listeningOutput_d);
+		wave->listeningOutput_d = NULL;
+	}
+	if(wave->listeningOutput != NULL){
+		cudaFreeHost(wave->listeningOutput);
+		wave->listeningOutput = NULL;
+	}
+
+	wave->listening_count = listening_count;
+	if(listening_count > 0){
+		cudaCheckError(cudaMalloc((void**)&wave->listening_positions_d, 3*listening_count*sizeof(Number_t)));
+		cudaCheckError(cudaMallocHost((void**)&wave->listeningOutput, listening_count*sizeof(Number_t)));
+		cudaCheckError(cudaMalloc((void**)&wave->listeningOutput_d, listening_count*sizeof(Number_t)));
+		cudaCheckError(cudaMemcpy(wave->listening_positions_d, listening_positions, 3*listening_count*sizeof(Number_t), cudaMemcpyHostToDevice));
+	}
+}
+
 Number_t * wave_listen(Cuda_PAT_Wave_3d_t wave){
 	if(wave->listening_count > 0){
 		size_t blocks_x = ceil(wave->listening_count/256.0);
@@ -367,13 +394,27 @@ Number_t wave_sim_get_current_time(const Cuda_PAT_Wave_3d_t wave){
 	return wave->t;
 }
 
+#include <multipole/MultipoleMath.h>
+
+using Multipole::spherical_harmonics;
+using Multipole::hankel_1st;
+using Multipole::hankel_2nd;
+using Multipole::spherical_bessel;
+using Multipole::regular_basis;
+using Multipole::regular_basis_dir_deriv;
+
 Number_t * wave_compute_multipole(Cuda_PAT_Wave_3d_t wave, Number_t radius){
 	radius = wave->multipole_radius;
 	//Compute the spherical bessel function here
+	Number_t r = radius;
+	Number_t ko = wave->frequency/wave->c;
+
 	Number_t bessel_h[200];
-	for(int i = 0; i < 160; i++){
-		bessel_h[i] = boost::math::sph_bessel(i, wave->frequency*radius/wave->c);
+
+	for(int l = 0; l < 160; l++){
+		bessel_h[l] = spherical_bessel(l, r*ko);
 	}
+
 	cudaMemcpyToSymbol(bessel, bessel_h, 160*sizeof(Number_t));
 
 	size_t blocks_x = ceil(wave->nx);
@@ -413,104 +454,72 @@ Number_t * wave_compute_multipole(Cuda_PAT_Wave_3d_t wave, Number_t radius){
 	return wave->multipole_coef;
 }
 
-#include <boost/math/special_functions/hankel.hpp>
-#include <boost/math/special_functions/spherical_harmonic.hpp>
-
-Number_t Amnd(int m, int n)
-{
-	int mm = abs(m);
-    return n < mm ? 0 : (sqrt(Number_t((mm+n+1)*(n-mm+1)) / Number_t((2*n+1)*(2*n+3))));
-}
-
-Number_t Bmnd(int m, int n)
-{
-    return n < abs(m) ? 0 :
-        (m >= 0 ? (sqrt(Number_t((n-m-1)*(n-m)) / Number_t((2*n-1)*(2*n+1)))) : 
-                 -(sqrt(Number_t((n-m-1)*(n-m)) / Number_t((2*n-1)*(2*n+1)))));
-}
-
-std::complex<Number_t> spherical_harmonic_mine(int m, int n, Number_t theta, Number_t phi){
-	return ((m & 1) ? -boost::math::spherical_harmonic(n, m, theta, phi)
-					:  boost::math::spherical_harmonic(n, m, theta, phi));
-}
-
-std::complex<Number_t> regular_basis(int m, int n, Number_t k, Number_t r, Number_t theta, Number_t phi)
-{
-    if ( n < abs(m) ) return std::complex<Number_t>(0, 0);
-    return boost::math::sph_bessel(n, k*r) * spherical_harmonic_mine(m, n, theta, phi);
-}
-
-std::complex<Number_t> regular_basis_dir_deriv(int m, int n, Number_t k, 
-        Number_t r, Number_t theta, Number_t phi, Number_t dx, Number_t dy, Number_t dz)
-{
-    using namespace std;
-    const complex<Number_t> A = Bmnd(-m-1, n+1) * regular_basis(m+1, n+1, k, r, theta, phi) - 
-                         Bmnd(m,    n)   * regular_basis(m+1, n-1, k, r, theta, phi);
-    const complex<Number_t> B = Bmnd(m-1, n+1)  * regular_basis(m-1, n+1, k, r, theta, phi) -
-                         Bmnd(-m,  n)    * regular_basis(m-1, n-1, k, r, theta, phi);
-    complex<Number_t> rx = (0.5f*A + 0.5f*B);
-    complex<Number_t> ry = complex<Number_t>((A.imag() - B.imag()) * 0.5, (B.real() - A.real()) * 0.5);
-    complex<Number_t> rz = Amnd(m, n-1) * regular_basis(m, n-1, k, r, theta, phi) -
-                    Amnd(m, n)   * regular_basis(m, n+1, k, r, theta, phi);
-    return (rx*dx + ry*dy + rz*dz)*k;
-}
-
 void wave_compute_contrib_slow(Cuda_PAT_Wave_3d_t wave, Number_t radius, Number_t x, Number_t y, Number_t z, int multipole_to_use){
-	Number_t cx = x - wave->xcenter;
-	Number_t cy = y - wave->ycenter;
-	Number_t cz = z - wave->zcenter;
+	double cx = x - wave->xcenter;
+	double cy = y - wave->ycenter;
+	double cz = z - wave->zcenter;
 
-	Number_t r = sqrt(cx*cx + cy*cy + cz*cz);
-	Number_t theta = acos(cz/r);
-	Number_t phi = atan2(cy, cz);
+	double r = sqrt(cx*cx + cy*cy + cz*cz);
+	double theta = acos(cz/r);
+	double phi = atan2(cy, cx);
 
-	Number_t ko = wave->frequency/wave->c;
+	double ko = wave->frequency/wave->c;
 
 	const int i = (int) floor((x - wave->dx/2 - wave->xmin)/wave->dx);
 	const int j = (int) floor((y - wave->dy/2 - wave->ymin)/wave->dy);
 	const int k = (int) floor((z - wave->dz/2 - wave->zmin)/wave->dz);
 
-	Number_t amp;
-	Number_t phase;
-	std::complex<Number_t> p;
-	std::complex<Number_t> dp_dn(0, 0);
-	std::complex<Number_t> temp;
+	double amp;
+	double phase;
+	std::complex<double> p;
+	std::complex<double> dp_dn(0, 0);
+	std::complex<double> temp;
 
 	Number_t * amplitudes = wave_sim_get_amplitudes(wave);
 	Number_t * phases = wave_sim_get_phases(wave);
 	{
 		amp = amplitudes[i + wave->nx*(j + wave->ny*k)];
 		phase = phases[i + wave->nx*(j + wave->ny*k)];
-		p = std::complex<Number_t>(amp*cos(phase), amp*sin(phase));
+		p = std::complex<double>(amp*cos(phase), amp*sin(phase));
 	}
 
 	{
 		amp = amplitudes[i+1 + wave->nx*(j + wave->ny*k)];
 		phase = phases[i+1 + wave->nx*(j + wave->ny*k)];
-		temp = std::complex<Number_t>(amp*cos(phase), amp*sin(phase));
+		temp = std::complex<double>(amp*cos(phase), amp*sin(phase));
 		dp_dn += ((temp - p)*cx)/(r*wave->dx);
 	}
 
 	{
 		amp = amplitudes[i + wave->nx*(j+1 + wave->ny*k)];
 		phase = phases[i + wave->nx*(j+1 + wave->ny*k)];
-		temp = std::complex<Number_t>(amp*cos(phase), amp*sin(phase));
+		temp = std::complex<double>(amp*cos(phase), amp*sin(phase));
 		dp_dn += ((temp - p)*cy)/(r*wave->dy);
 	}
 
 	{
 		amp = amplitudes[i + wave->nx*(j + wave->ny*(k+1))];
 		phase = phases[i + wave->nx*(j + wave->ny*(k+1))];
-		temp = std::complex<Number_t>(amp*cos(phase), amp*sin(phase));
+		temp = std::complex<double>(amp*cos(phase), amp*sin(phase));
 		dp_dn += ((temp - p)*cz)/(r*wave->dz);
 	}
-	const Number_t area = (abs(wave->dx * wave->dy * cz) + abs(wave->dx * cy *wave->dz) + abs(cx * wave->dy *wave->dz))/r;
+	const double area = (abs(wave->dx * wave->dy * cz) + abs(wave->dx * cy *wave->dz) + abs(cx * wave->dy *wave->dz))/r;
 	for(int l = 0; l <= multipole_to_use; l++){
 		for(int m = -l; m <= l; m++){
-			std::complex<Number_t> contrib
+			std::complex<double> contrib
 			= ko*area*(
 				regular_basis(-m, l, ko, r, theta, phi) * dp_dn
 				- regular_basis_dir_deriv(-m, l, ko, r, theta, phi, cx/r, cy/r, cz/r)*p);
+			// int mm = -m;
+			
+			// std::complex<double> contrib
+			// = ko*(
+			// 	regular_basis(-m, l, ko, r, theta, phi));
+			
+
+			// std::complex<double> contrib
+			// = -ko*(regular_basis_dir_deriv(-m, l, ko, r, theta, phi, cx/r, cy/r, cz/r));
+		
 
 			wave->multipole_coef[2*(l*(l+1) + m)] += -contrib.imag();
 			wave->multipole_coef[2*(l*(l+1) + m) + 1] += contrib.real();
@@ -545,12 +554,58 @@ Number_t * wave_compute_multipole_slow(Cuda_PAT_Wave_3d_t wave, Number_t radius,
 	return wave->multipole_coef;
 }
 
+void wave_estimate_ijk(const Cuda_PAT_Wave_3d_t wave, Number_t x, Number_t y, Number_t z, int * i, int * j, int * k){
+	*i = max(0, min((int) floor((x - wave->dx/2 - wave->xmin)/wave->dx), wave->nx));
+	*j = max(0, min((int) floor((y - wave->dy/2 - wave->ymin)/wave->dy), wave->ny));
+	*k = max(0, min((int) floor((z - wave->dz/2 - wave->zmin)/wave->dz), wave->nz));
+}
+
+void wave_estimate_with_multipole(Cuda_PAT_Wave_3d_t wave, Number_t x, Number_t y, Number_t z, Number_t * amplitude, Number_t * phase){
+	double radius = wave->multipole_radius;
+	Number_t * coef = wave_compute_multipole(wave, radius);
+	int multipole_to_use = wave->num_multipole_coef;
+	double cx = x - wave->xcenter;
+	double cy = y - wave->ycenter;
+	double cz = z - wave->zcenter;
+
+	double ko = wave->frequency/wave->c;
+
+	double r = sqrt(cx*cx + cy*cy + cz*cz);
+	double theta = acos(cz / r);
+	double phi  = atan2(cy, cx);
+
+	std::complex<double> res(0, 0);
+	for(int l = 0; l <= multipole_to_use; l++){
+		std::complex<double> hank = hankel_2nd(l, r*ko);
+		for(int m = -l; m <= l; m++){
+			std::complex<double> spher = spherical_harmonics(m, l, theta, phi);
+			std::complex<double> spherical(spher.real(), spher.imag());
+			double re = coef[2*(l*(l+1) + m)];
+			double im = coef[2*(l*(l+1) + m)+1];
+			std::complex<double> multipole(re, im);
+			res += hank*spherical*multipole;
+		}
+	}
+
+	*amplitude = abs(res);
+	*phase = arg(res);
+}
+
+
 void wave_test_multipole(Cuda_PAT_Wave_3d_t wave){
 	Number_t radius = wave->multipole_radius;
 	Number_t ko = wave->frequency/wave->c;
 	int multipole_to_use = wave->num_multipole_coef;
 	printf("Computing coefficients with radius %f and k %f\n", radius, ko);
-	Number_t * coef = wave_compute_multipole(wave, radius);
+	
+	Number_t * coef;
+	static bool use_gpu = true;
+	if(use_gpu){
+		coef = wave_compute_multipole(wave, radius);
+	} else{
+		coef = wave_compute_multipole_slow(wave, radius, multipole_to_use);
+	}
+	use_gpu = !use_gpu;
 	printf("Evaluating multipole_coef\n");
 	//Compute the spherical bessel function here
 	for(int l = 0; l <= multipole_to_use; l++){
@@ -566,52 +621,54 @@ void wave_test_multipole(Cuda_PAT_Wave_3d_t wave){
 	printf("USING %d\n", multipole_to_use);
 
 	for(int k = 0; k < wave->nz; k++){
-		printf("k: %d\n", k);
+		if(k%50 == 0)printf("k: %d\n", k);
 		for(int j = wave->ny/2-1; j < wave->ny/2+2; j++){
 			for(int i = 0; i < wave->nx; i++){
-				Number_t bx = wave_sim_get_x(wave, i);
-				Number_t by = wave_sim_get_y(wave, j);
-				Number_t bz = wave_sim_get_z(wave, k);
+				double bx = wave_sim_get_x(wave, i);
+				double by = wave_sim_get_y(wave, j);
+				double bz = wave_sim_get_z(wave, k);
 
-				Number_t cx = bx - wave->xcenter;
-				Number_t cy = by - wave->ycenter;
-				Number_t cz = bz - wave->zcenter;
+				double cx = bx - wave->xcenter;
+				double cy = by - wave->ycenter;
+				double cz = bz - wave->zcenter;
 
-				Number_t r = sqrt(cx*cx + cy*cy + cz*cz);
-				Number_t theta = acos(cz / r);
-    			Number_t phi  = atan2(cy, cx);
-
-    			std::complex<Number_t> res(0, 0);
-    			std::complex<Number_t> hanke[3];
-    			hanke[0] = std::complex<Number_t>(0, 0);
-    			hanke[1] = std::complex<Number_t>(0, 0);
-    			hanke[2] = (std::complex<Number_t>(0, 1)*std::complex<Number_t>(cos(r*ko), -sin(r*ko)))/(r*ko);
-    			for(int l = 0; l <= multipole_to_use; l++){
-    				hanke[0] = hanke[1]; hanke[1] = hanke[2];
-    				if(l == 0){
-    					hanke[2] = -(std::complex<Number_t>(cos(r*ko), -sin(r*ko)) * std::complex<Number_t>(r*ko, -1))/(r*r*ko*ko);
-    				} else{
-    					hanke[2] = ((2*l + 1.0f)/(r*ko))*hanke[1] - hanke[0];
-    				}
-    				//printf("r = %f and k = %f\n", r, ko);
-    				//printf("std::complex<double> hhank = boost::math::sph_hankel_2(%f, %f);\n", l, r*ko);
-    				std::complex<double> hhank = boost::math::sph_hankel_2(l, r*ko);
-    				std::complex<Number_t> hank(hanke[1].real(), -hanke[1].imag());
-//    				hank = hanke[1];
-    				for(int m = -l; m <= l; m++){
-    					std::complex<double> spher = spherical_harmonic_mine(m, l, theta, phi);
-    					std::complex<Number_t> spherical(spher.real(), spher.imag());
-    					Number_t re = coef[2*(l*(l+1) + m)];
-    					Number_t im = coef[2*(l*(l+1) + m)+1];
-    					std::complex<Number_t> multipole(re, im);
-    					res += hank*spherical*multipole;
-    				}
-    			}
-    			wave->ubuf[4*(i + wave->nx*(j + wave->ny*k))] = res.real();
+				double r = sqrt(cx*cx + cy*cy + cz*cz);
+				double theta = acos(cz / r);
+    			double phi  = atan2(cy, cx);
+    			if(r > wave->multipole_radius){
+	    			std::complex<double> res(0, 0);
+	    			for(int l = 0; l <= multipole_to_use; l++){
+	    				//std::complex<double> hank(boost::math::sph_bessel(l, r*ko), boost::math::sph_neumann(l, r*ko));
+	    				std::complex<double> hank = hankel_2nd(l, r*ko);
+	    				for(int m = -l; m <= l; m++){
+	    					std::complex<double> spher = spherical_harmonics(m, l, theta, phi);
+	    					std::complex<double> spherical(spher.real(), spher.imag());
+	    					double re = coef[2*(l*(l+1) + m)];
+	    					double im = coef[2*(l*(l+1) + m)+1];
+	    					std::complex<double> multipole(re, im);
+	    					res += hank*spherical*multipole;
+	    				}
+	    			}
+	    			wave->ubuf[4*(i + wave->nx*(j + wave->ny*k))] = res.real();
+	    		} else if(r > 0.1*wave->multipole_radius){
+	    			std::complex<double> res(0, 0);
+	    			for(int l = 0; l <= multipole_to_use; l++){
+	    				//std::complex<double> hank(boost::math::sph_bessel(l, r*ko), boost::math::sph_neumann(l, r*ko));
+	    				std::complex<double> hank = hankel_2nd(l, r*ko);
+	    				for(int m = -l; m <= l; m++){
+	    					std::complex<double> spher = spherical_harmonics(m, l, theta, phi);
+	    					std::complex<double> spherical(spher.real(), spher.imag());
+	    					double re = coef[2*(l*(l+1) + m)];
+	    					double im = coef[2*(l*(l+1) + m)+1];
+	    					std::complex<double> multipole(re, im);
+	    					res += hank*spherical*multipole;
+	    				}
+	    			}
+	    			wave->ubuf[4*(i + wave->nx*(j + wave->ny*k))] = res.real();	    			
+	    		}
 			}
 		}
 	}
-	//multipole_to_use++;
 }
 
 void wave_sim_get_bounds(const Cuda_PAT_Wave_3d_t wave,
