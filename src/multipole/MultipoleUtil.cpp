@@ -2,13 +2,13 @@
 
 #include <iostream>
 #include <fstream>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
 namespace Multipole{
 	MultipoleData loadMultipoleDataFromFile(const std::string & filename){
 		std::ifstream ifs(filename.c_str());
-		boost::archive::text_iarchive ia(ifs);
+		boost::archive::binary_iarchive ia(ifs);
 		MultipoleData data;
 		ia >> data;
 		return data;
@@ -16,13 +16,13 @@ namespace Multipole{
 
 	void saveToFile(const std::string & filename, const MultipoleData &  data){
 		std::ofstream ofs(filename.c_str());
-		boost::archive::text_oarchive oa(ofs);
+		boost::archive::binary_oarchive oa(ofs);
 		oa << data;
 	}
 
 	MultipoleData::MultipoleModeData loadMultipoleModeDataFromFile(const std::string & filename){
 		std::ifstream ifs(filename.c_str());
-		boost::archive::text_iarchive ia(ifs);
+		boost::archive::binary_iarchive ia(ifs);
 		MultipoleData::MultipoleModeData data;
 		ia >> data;
 		return data;
@@ -30,7 +30,7 @@ namespace Multipole{
 
 	void saveToFile(const std::string & filename, const MultipoleData::MultipoleModeData & data){
 		std::ofstream ofs(filename.c_str());
-		boost::archive::text_oarchive oa(ofs);
+		boost::archive::binary_oarchive oa(ofs);
 		oa << data;		
 	}
 

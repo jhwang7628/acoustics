@@ -316,6 +316,8 @@ double HertzImpulseSeries<TModalAnalysis>::getForce( double t )
     impulseScale = t - rec.m_impulseStartTime;
     impulseScale *= M_PI / rec.m_impulseLength;
     impulseScale = sin( impulseScale );
+    //printf("Scale: %lf\n", rec.m_impulseLength);
+    //impulseScale = 1;
     impulseScale *= rec.m_impulseScale;
     impulseScale *= m_rigidModal->inv_density();
 

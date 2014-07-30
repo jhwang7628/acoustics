@@ -3,7 +3,7 @@
 
 #include "../ModeData.h"
 
-BOOST_PYTHON_MODULE(_data)
+BOOST_PYTHON_MODULE(_mode_data)
 {
 	using namespace boost::python;
 	typedef std::vector<REAL> RealVector;

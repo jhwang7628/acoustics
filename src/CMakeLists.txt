@@ -505,7 +505,9 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
             wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
             ${UTILS_SRC}                      ${PARSER_SRC}
             ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
-            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC}                 ${SNDPLAYER_SRC}
+            ${MULTIPOLE_SRC})
 
         target_link_libraries(precompute-pan-gui
             ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
@@ -513,8 +515,9 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
             ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
             ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
             ${GSL_LIBRARY}                  boost_thread
-            boost_system                    ${MKL_LIBRARY}
-            ${CUDA_LIBRARIES})
+            boost_system                    boost_serialization
+            ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY})
     else(USE_CUDA)
         add_executable(precompute-pan-gui
             tools/precompute_acceleration_pulse.cpp
@@ -527,7 +530,8 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
             ${FIELD_SRC}                      ${WAVESOLVER_SRC}
             ${UTILS_SRC}                      ${PARSER_SRC}
             ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
-            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC})
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            )
 
         target_link_libraries(precompute-pan-gui
             ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
@@ -739,7 +743,8 @@ if ( BUILD_ESTIMATE_TIMESCALE )
     target_link_libraries(estimate-timescales
         ${CGAL_LIBRARIES}                 ${GTS_LIBRARIES}
         ${BLAS_LAPACK_LIBS}               ${GSL_LIBRARY}
-        boost_thread                      boost_system)
+        boost_thread                      boost_system
+        ${MKL_LIBRARY})
 endif ( BUILD_ESTIMATE_TIMESCALE )
 
 if (BUILD_PYTHON_EXTENSIONS)
@@ -753,7 +758,7 @@ if (BUILD_PYTHON_EXTENSIONS)
             ADD_LIBRARY(multipole_math SHARED multipole/python/math.cpp
                             multipole/MultipoleMath.h multipole/MultipoleMath.cpp)
 
-            set_target_properties(multipole_math PROPERTIES PREFIX "_" OUTPUT_NAME math)
+            set_target_properties(multipole_math PROPERTIES PREFIX "_" OUTPUT_NAME multipole_math)
             TARGET_LINK_LIBRARIES(multipole_math ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
                 ${GSL_LIBRARIES} boost_serialization)
             install(TARGETS multipole_math DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/math)
@@ -764,7 +769,7 @@ if (BUILD_PYTHON_EXTENSIONS)
                             multipole/MultipoleMath.h multipole/MultipoleMath.cpp
                             multipole/MultipoleData.h multipole/MultipoleData.cpp)
 
-            set_target_properties(multipole_data PROPERTIES PREFIX "_" OUTPUT_NAME data)
+            set_target_properties(multipole_data PROPERTIES PREFIX "_" OUTPUT_NAME multipole_data)
             TARGET_LINK_LIBRARIES(multipole_data ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
                 ${GSL_LIBRARIES} boost_serialization)
             install(TARGETS multipole_data DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/)
@@ -777,7 +782,7 @@ if (BUILD_PYTHON_EXTENSIONS)
                             multipole/MultipoleMath.h multipole/MultipoleMath.cpp
                             multipole/MultipoleData.h multipole/MultipoleData.cpp)
 
-            set_target_properties(multipole_util PROPERTIES PREFIX "_" OUTPUT_NAME util)
+            set_target_properties(multipole_util PROPERTIES PREFIX "_" OUTPUT_NAME multipole_util)
             TARGET_LINK_LIBRARIES(multipole_util ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
                 ${GSL_LIBRARIES} boost_serialization)
             install(TARGETS multipole_util DESTINATION ${PROJECT_BINARY_DIR}/lib/multipole/)
@@ -789,7 +794,7 @@ if (BUILD_PYTHON_EXTENSIONS)
                             deformable/ModeData.h deformable/ModeData.cpp
                             ${CONFIG_SOURCES})
 
-            set_target_properties(mode_data PROPERTIES PREFIX "_" OUTPUT_NAME data)
+            set_target_properties(mode_data PROPERTIES PREFIX "_" OUTPUT_NAME mode_data)
             TARGET_LINK_LIBRARIES(mode_data ${PYTHON_LIBRARIES} ${Boost_LIBRARIES}
                 ${GSL_LIBRARIES} boost_serialization)
             install(TARGETS mode_data DESTINATION ${PROJECT_BINARY_DIR}/lib/mode/)

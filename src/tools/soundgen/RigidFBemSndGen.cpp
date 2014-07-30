@@ -237,6 +237,7 @@ int main(int argc, char* argv[])
         {
           printf( "Generating hertz sound\n" );
           sndObjs[i]->timestep_hertz_sound(tsSndBuf, useDelay);
+          //sndObjs[i]->generate_hertz_sound(tsSndBuf);
           //abort();
 #if 0
           sndObjs[i]->generate_hertz_sound(sndBuf);
@@ -256,7 +257,7 @@ int main(int argc, char* argv[])
     if (foundImpulseScale)
     {
         if ( objectMassCenters.size() > 0 ) {
-          tsSndBuf.write_to_raw( "test_delay.vector" );
+          tsSndBuf.write_to_raw( "test.vector" );
         }
         else {
           tsSndBuf.write_to_raw( "test.vector" );

@@ -202,20 +202,14 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	_multipole_radius = multipole_radius;
 
 	REAL k = frequency/wave_speed;
-	float hihi = k*multipole_radius/2;
-	int hoho = int(floor(hihi));
-	int sugnbar = max(4, hoho);
-	printf("Suggested nbar: %d %d %f\n", sugnbar, hoho, hihi);
-	//num_multipole_coef = sugnbar;
 
 	_multipoleModeData._mode = mode;
 	_multipoleModeData._frequency = frequency;
 	_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
 
 	this->_frequency = frequency;
-	printf("frequency: %f\n", frequency);
 
-	cellSize = min(cellSize, wave_speed/(10*frequency));
+	cellSize = min(cellSize, wave_speed/(8*frequency));
 	printf("cellSize: %f\n", cellSize);
 	timeStep = max(timeStep, cellSize/(2*wave_speed));
 	printf("timeStep: %f\n", timeStep);
@@ -434,6 +428,5 @@ REAL CUDA_PAT_WaveSolver::estimateSound(const Vector3d & v, REAL t,  REAL * ampl
 
 void CUDA_PAT_WaveSolver::saveMultipoleCoefficients(const std::string & filename){
 	computeMultipoleCoefficients();
-	std::cout << _multipoleModeData.numCoefficients();
 	Multipole::saveToFile(filename, _multipoleModeData);
 }

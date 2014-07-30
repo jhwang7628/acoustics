@@ -5,7 +5,7 @@
 
 #include <map>
 
-BOOST_PYTHON_MODULE(_data)
+BOOST_PYTHON_MODULE(_multipole_data)
 {
 
 	typedef std::map<int, MultipoleData::MultipoleModeData> MultipoleModeDataMap;
