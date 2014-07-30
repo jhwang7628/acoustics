@@ -2,7 +2,7 @@
 
 #include "../MultipoleMath.h"
 
-BOOST_PYTHON_MODULE(_math)
+BOOST_PYTHON_MODULE(_multipole_math)
 {
 	using namespace boost::python;
 	def("spherical_harmonics", Multipole::spherical_harmonics);

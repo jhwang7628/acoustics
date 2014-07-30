@@ -311,7 +311,7 @@ void wave_sim_step(Cuda_PAT_Wave_3d_t wave){
 	size_t threads_x = 16;
 	size_t threads_y = 16;
 
-	printf("%lf -> %lf\n", sin(wave->t*wave->frequency), (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
+	// printf("%lf -> %lf\n", sin(wave->t*wave->frequency), (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
 	dim3 blockDim(threads_x, threads_y, 1);
 	cuda_pat_wave_3d_velocity_kernel<<< gridDim, blockDim >>>(wave->ubuf_d,
 															  wave->gradient_d,

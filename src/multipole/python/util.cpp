@@ -16,7 +16,7 @@ namespace gambi{
 	}
 }
 
-BOOST_PYTHON_MODULE(_util)
+BOOST_PYTHON_MODULE(_multipole_util)
 {
 	using namespace boost::python;
 	typedef std::vector<std::string> StringVector;
