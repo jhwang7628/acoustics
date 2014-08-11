@@ -7,7 +7,7 @@ import time
 import acoustic_templates
 from material_parameters import materials
 
-def null_wave_strategy(sim_params, obj, mode, frequency):
+def null_wave_strategy(solv, sim_params, obj, mode, frequency):
 	print "<WARNING>: Null Wave Strategy is being used!"
 
 def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_wave_strategy, wave_strategy_pre_init=null_wave_strategy):
@@ -23,8 +23,8 @@ def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_w
 		conffile.write(acoustic_templates.wave_config(sim_params, obj))
 
 
-	modefile = obj['objName']+".modes"
-	material = materials()[objct['material']]
+	modefile = obj['objPath']+"/"+obj['objName']+".modes"
+	material = materials()[obj['material']]
 
 	modeData = mode.ModeData()
 	modeData.read(modefile)
@@ -46,18 +46,19 @@ def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_w
 		solv = solver.PAT_Solver(configfile)
 		solv.mode = mod
 		# Someone has to define a strategy
-		wave_strategy_pre_sdf(sim_params, obj, mod, frequency)
+		wave_strategy_pre_sdf(solv, sim_params, obj, mod, frequency)
 		solv.initSDF()
 		# Someone has to define a strategy
-		wave_strategy_pre_init(sim_params, obj, mode, frequency)
+		wave_strategy_pre_init(solv, sim_params, obj, mode, frequency)
 		solv.initSolver()
 		solv.runSolver()
-		fil = "%s-mode-%d.multipole"%(objName[objName], mod)
+		fil = "%s-mode-%d.multipole"%(obj['objName'], mod)
 		solv.saveToFile(fil)
 		files.append(fil)
 
 		del solv
 
+		toc = time.time() - tic
 		print toc
 		timing["total"] += toc
 		timing["min"] = min(timing["min"], toc)

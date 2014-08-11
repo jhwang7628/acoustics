@@ -6,6 +6,7 @@ import sys
 import os
 import config_path
 import shutil
+import acoustic_templates
 
 def generate_sound(sim_params, objectDict, objects):
 	with open(sim_params['soundConfigFile'], 'w+') as sFile:

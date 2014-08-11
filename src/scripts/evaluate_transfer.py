@@ -1,4 +1,4 @@
-import sys
+import os, sys
 import multipole
 
 def evaluate_transfer(sim_params, objectDict, objects):
@@ -9,8 +9,8 @@ def evaluate_transfer(sim_params, objectDict, objects):
 		inputMultipoleFile = obj['object']+".multipoleAll"
 		multipoleData = multipole.loadMultipoleDataFromFile(inputMultipoleFile)
 		numModes = len(multipoleData.modes)
-		tModes = max(numModes, minimumModes)
-		for mode in range(0, tmodes):
+		tModes = max(numModes, sim_params['minModes'])
+		for mode in range(0, tModes):
 			outData = []
 			if mode in multipoleData.modes:
 				frequency = multipoleData.modes[mode].frequency()
@@ -30,6 +30,9 @@ def evaluate_transfer(sim_params, objectDict, objects):
 						if frequency >= sim_params['minFreq'] and frequency <= sim_params['maxFreq']:
 							val = multipoleData.estimateModeAt(mode, x, y, z)
 					
+					# if frequency > 8000:
+					# 	val = val*1000
+
 					outData.append(val)
 
 			fname = sim_params['transferFilePattern']%(i, mode)

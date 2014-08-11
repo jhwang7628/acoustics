@@ -21,7 +21,7 @@ def prep_transfer_eval(sim_params, objectDict, objects):
 	tempfile = "_temp_mc_.txt"
 	for objectType in objectDict:
 		os.system( 'rm -f %s' % tempfile );
-		cmd = '%s/init-mass-centers %s 0 0 %s' % (	config_path().binPath() \
+		cmd = '%s/init-mass-centers %s 0 0 %s' % (	config_path.binPath(), \
 													objectDict[objectType]['tetFile'],\
 													tempfile );
 		os.system(cmd);
@@ -48,7 +48,7 @@ def prep_transfer_eval(sim_params, objectDict, objects):
 	# Build obj_model_map.txt (used by transfer scripts on the hydras)
 	os.system( 'rm -rf %s' % ( sim_params['mapFile'] ) );
 
-	with open(sim_params['mapFile']) as mapFile:
+	with open(sim_params['mapFile'], 'w+') as mapFile:
 		for i in range(0, len(objects)):
 			obje = objects[i]
 			mapFile.write("%d %s\n"%(i, obje['object']))
@@ -59,7 +59,7 @@ def prep_transfer_eval(sim_params, objectDict, objects):
 	print( "=== Setting up field points" );
 	os.system( 'mkdir -p field_pts' );
 	cmd = '%s/fieldpoints_gen -i %s -x %s -o %s -n %d -t %f %f %f %f' \
-	       % ( 	config_path().binPath(), sim_params['displaceFile'], \
+	       % ( 	config_path.binPath(), sim_params['displaceFile'], \
 	       		sim_params['massCenterFile'], sim_params['outputFilePattern'], \
 	          	nObjects, transferEvalTimestep, \
 	           	listenPosition[0], listenPosition[1], listenPosition[2] );

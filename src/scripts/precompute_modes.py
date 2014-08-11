@@ -4,7 +4,7 @@
 
 import sys
 import os
-import material_parameters
+from material_parameters import materials
 import config_path
 
 def precompute_modes(object_param):
@@ -17,7 +17,7 @@ def precompute_modes(object_param):
 	binPath = config_path.binPath()
 	matlabPath = config_path.matlabPath()
 
-	material = materials_parameters.materials()[object_param['material']]
+	material = materials()[object_param['material']]
 
 	print("=== Running the isostuffer ===")
 	cmd = '%s/isostuffer -R %d -L %d -M %d -a %f -b %f %s %s' \
@@ -30,7 +30,7 @@ def precompute_modes(object_param):
 	# Step two - generate the mass and stiffness matrix
 	print("=== Generating the mass and stiffness matrix ===")
 	cmd = '%s/elasticity_solver %s %f %f' \
-	       % ( binPath, object_param['tetFile'], material['youngsModulus'], material['poissonRatio'] );
+	       % ( binPath, object_param['tetFile'], material['youngModulus'], material['poissonRatio'] );
 	print cmd;
 	os.system( '%s > %s' % ( cmd, redirect ) );
 	print("=== Done ===")
@@ -72,7 +72,7 @@ def precompute_modes(object_param):
 	# changed somewhat to work with Matlab
 	cmd = ("octave --eval \"addpath('%s'); "
 	       "make_material_parameters(%f, %f, '%s_materialProperties.vector');\"") \
-	       % ( matlabPath, material['youngsModulus'], material['poissonRatio'], object_param['dataPrefix'] );
+	       % ( matlabPath, material['youngModulus'], material['poissonRatio'], object_param['dataPrefix'] );
 	print cmd;
 	os.system( '%s > %s' % ( cmd, redirect ) );
 	print("=== Done ===")
