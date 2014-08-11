@@ -4,7 +4,7 @@ def materials():
 			'youngModulus': 7.4e10,
 			'poissonRatio': 0.19,
 			'density': 2300.0,
-			'alpha': 6.0,
+			'alpha': 40.0,
 			'beta': 1e-7,
 			'gamma': 3e-2,
 			'restitution_coeff': 0.4,
@@ -27,8 +27,8 @@ def materials():
 			'alpha': 5.0,
 			'beta': 3e-8,
 			'gamma': 9e-3,
-			'restitution_coeff': 0.4,
-			'friction_coeff': 0.2
+			'restitution_coeff': 0.8,
+			'friction_coeff': 0.3
 		},
 		'mdf': {
 			'youngModulus': 4e9,
