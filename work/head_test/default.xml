@@ -1,0 +1,52 @@
+
+        <?xml version="1.0" ?>
+        <impact>
+        	<mesh file="/home/rf356/Desktop/Code/acoustics/work/meshes/head/head.obj" scale="1.0" />
+
+          <acoustic_transfer
+            distancefield="/home/rf356/Desktop/Code/acoustics/work/meshes/head/head"
+            fieldresolution="150"
+            gridresolution="200"
+            gridscale="3.200000"
+            timestepfrequency="250000"
+            substeps="8"
+            nbar="5"
+            mode="0"
+            radius_multipole="1.200000"
+            mode_data_file="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.modes"
+            rigidprefix="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plateRigid"
+            rigiddensity="2300.000000"
+            outputfile="pulsedata_clipped"
+            multipole_outputfile="head.multipole"
+          />
+
+          <acceleration_pulse
+            distancefield="plate"
+            fieldresolution="100"
+            gridresolution="300"
+            OLDgridresolution="150"
+            gridscale="2.95"
+            OLDgridscale="0.98333"
+            OLDtimestepfrequency="576000"
+            timestepfrequency="440000"
+            OLDsubsteps="3"
+            substeps="1"
+            OLDtimescale="0.000053154"
+            timescale="0.000027358"
+            OLDlisteningresolution="60"
+            listeningresolution="40"
+            listeningradius="2.0"
+            numshells="5"
+            numterms="2"
+            radiusmultiplier="1.1892"
+            rigidprefix="plateRigid"
+            rigiddensity="2300.0"
+            OLDoutputfile="pulsedata"
+            outputfile="pulsedata_clipped"
+            multitermoutputfile="pulsemapdata"
+            compressedoutputfile="pulsemapdata_comp_0.04"
+            compressiontolerance="0.04"
+          />
+
+        </impact>
+        
