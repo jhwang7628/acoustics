@@ -430,7 +430,6 @@ if ( BUILD_RIGIDSIM_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    #include(${QT_USE_FILE})
     include_directories(${QT_USE_FILE})
 
     # Set up the QRC files
@@ -502,7 +501,6 @@ if ( BUILD_PAN_PRECOMPUTE_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    #include(${QT_USE_FILE})
     include_directories(${QT_USE_FILE})
 
     # Headers to be moc-ified
@@ -578,7 +576,7 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
     set(QT_USE_QTXML 1)
     set(QT_USE_QTOPENGL 1)
 
-    include(${QT_USE_FILE})
+    include_directories(${QT_USE_FILE})
 
     # Headers to be moc-ified
     #set(PAT_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
@@ -645,6 +643,7 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
             ${GSL_LIBRARY}                  boost_thread
             boost_system                    ${MKL_LIBRARY})
     endif(USE_CUDA)
+    qt5_use_modules(precompute-pat-gui Xml OpenGL)
 endif ( BUILD_PAT_PRECOMPUTE_GUI )
 
 # =============================================================================
@@ -859,6 +858,7 @@ if (BUILD_PYTHON_EXTENSIONS)
             ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY}
             ${PYTHON_LIBRARIES}             ${Boost_LIBRARIES})
 
+        qt5_use_modules(pat_solver Xml OpenGL)
         install(TARGETS pat_solver DESTINATION ${PROJECT_BINARY_DIR}/lib/solver/)
         add_dependencies(acoustic_python pat_solver)
 endif (BUILD_PYTHON_EXTENSIONS)
