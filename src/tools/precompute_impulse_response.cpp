@@ -72,6 +72,26 @@ static REAL                  PULSE_HALF_PERIOD = 0.0;
 
 bool                         ZERO_BC = true;
 
+void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listeningPositions, char * pattern, Vector3d & sound_source){
+    FILE * fp;
+    fp = fopen(filename, "r+");
+    if(fp == NULL){
+        printf("Config file does not exist\n");
+        exit(1);
+    }
+    fscanf(fp, "%s", pattern);
+    fscanf(fp, "%lf", endTime);
+    fscanf(fp, "%lf %lf %lf", &(sound_source[0]), &(sound_source[1]), &(sound_source[2]));
+    int n;
+    fscanf(fp, "%d", &n);
+    for(int i = 0; i < n; i++){
+        double x, y, z;
+        fscanf(fp, "%lf %lf %lf", &x, &y, &z);
+        listeningPositions->push_back(Vector3d(x*-1, y, z*-1));
+    }
+    // printf("SIZE_LSIT: %d\n", listeningPositions->size());
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 int main( int argc, char **argv )
@@ -90,7 +110,7 @@ int main( int argc, char **argv )
     int                      cellDivisions;
 
     REAL                     endTime = -1.0;
-
+    Vector3d                 sound_source;
     REAL                     listeningRadius;
     Vector3Array             listeningPositions;
 
@@ -104,15 +124,19 @@ int main( int argc, char **argv )
 
     Parser::AcousticTransferParms parms;
 
-    if ( argc >= 2 )
-    {
-        endTime = atof( argv[ 1 ] );
-    }
+    char pattern[100];
 
-    if ( argc >= 3 )
-    {
-        fileName = argv[ 2 ];
+    if (argc < 3){
+        printf("Not enough arguments!\n");
+        exit(1);
     }
+    printf("%s\n", argv[1]);
+    printf("%s\n", argv[2]);
+
+    fileName = argv[1];
+    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
+
+    printf("%s\n", pattern);
 
     parser = Parser::buildParser( fileName );
 
@@ -141,6 +165,7 @@ int main( int argc, char **argv )
                                                               parms._sdfFilePrefix.c_str() );
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
+    // cout << "[[[ " << fieldBBox. << endl;
 
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;
@@ -165,12 +190,14 @@ int main( int argc, char **argv )
     cout << SDUMP( radius ) << endl;
     cout << SDUMP( CENTER_OF_MASS ) << endl;
 
+
     radius *= parms._radiusMultipole;
  #ifdef USE_CUDA
     // Modes are cooler
     // cellSize = 0.5/(REAL)cellDivisions;
     // cout << SDUMP( cellSize ) << endl;
     CUDA_PAT_WaveSolver solver(timeStep,
+                               sound_source,
                    fieldBBox, cellSize,
                    *mesh, CENTER_OF_MASS,
                    *sdf,

@@ -286,7 +286,7 @@ static void write_fbem_input(int mid)
                 vtx[tgl[i][0]], vtx[tgl[i][1]], vtx[tgl[i][2]]);
         nml.normalize();
         // output the normal velocity    (disp*freq => velocity)
-        fout << "(0, " << (nml.dotProduct(vsum)*freqs[mid]) << ')' << endl;
+        fout << "(0, " << (nml.dotProduct(vsum)*freqs[mid]*2*acos(-1)) << ')' << endl;
     }
 
     fout << "$ Field Points:" << endl;

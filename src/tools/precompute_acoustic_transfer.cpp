@@ -200,7 +200,7 @@ int main( int argc, char **argv )
                    endTime,
                    parms._nbar,
                    radius,
-                   11,
+                   50,
                    100000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,

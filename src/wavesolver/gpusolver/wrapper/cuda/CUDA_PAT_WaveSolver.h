@@ -29,7 +29,10 @@ class CUDA_PAT_WaveSolver : public Solver {
 			typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
 
 		public:
+
+			//Needs refactor
 			CUDA_PAT_WaveSolver(REAL timeStep,
+								const Vector3d & sound_source,
 								const BoundingBox & bbox, REAL cellSize,
 								const TriMesh & mesh,
 								const Vector3d & centerOfMass,
@@ -46,6 +49,8 @@ class CUDA_PAT_WaveSolver : public Solver {
 								REAL pmlStrength=1000000.0,
 								REAL wave_speed=343.0
 								);
+
+			//Needs refactor
 			CUDA_PAT_WaveSolver(REAL timeStep,
 								const BoundingBox & bbox, REAL cellSize,
 								const TriMesh & mesh,
@@ -95,6 +100,8 @@ class CUDA_PAT_WaveSolver : public Solver {
 			virtual REAL computeSound(const Vector3d & v, REAL t,  REAL * amplitude, REAL * freq,  REAL * phase);
 			virtual REAL estimateSound(const Vector3d & v, REAL t,  REAL * amplitude, REAL * freq,  REAL * phase);
 			virtual void saveMultipoleCoefficients(const std::string & filename);
+			void vertexData(int x, int y, int z, REAL * pressure, REAL * amplitude, REAL * phase, bool * bulk);
+			void gradientAt(int i, int j, int k, REAL * x, REAL * y, REAL * z);
 		private:
 			Cuda_PAT_Wave_3d_t wave;
 

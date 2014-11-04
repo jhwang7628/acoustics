@@ -407,7 +407,7 @@ template<class TModalAnalysis,
             if ( useDelay ) {
                 if ( !buf.add_sound_sample(
                             // Sample value
-                            displacement,
+                            displacement*mp_transfer->transfer_norm(ticktime),
                             // Sample time
                             ticktime + delay ) )
                 {
@@ -417,7 +417,7 @@ template<class TModalAnalysis,
             }
             else {
                 if ( !buf.add_sound_sample(
-                            displacement ) )
+                            displacement*mp_transfer->transfer_norm(ticktime) ) )
                     //mp_transfer->transfer_norm( ticktime ) * velocity / f ) )
                 {
                     printf( "Breaking at time %f\n", ticktime );

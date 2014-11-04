@@ -33,7 +33,7 @@ __global__ void cuda_pat_wave_3d_velocity_kernel(Number_t * __restrict__ u,
 	const Number_t density = kernel_constants[12];
 	const Number_t frequency = kernel_constants[16];
 	const Number_t dz = kernel_constants[17];
-	const Number_t sint = frequency*cos(frequency*t);
+	const Number_t sint = frequency*cos(frequency*t)/(2*acos(-1.0));
 
 
 	Number_t local_z[4];
@@ -330,13 +330,13 @@ __global__ void cuda_pat_wave_3d_pressure_kernel(Number_t * __restrict__ u,
 				if(steps > 0){
 					Number_t pamp = amplitude[base];
 					
-					Number_t kk = pamp*pamp*2;
-					Number_t amp = sqrt((kk+((local_new*local_new - kk)/steps))/2);
+					Number_t kk = pamp*pamp/2;
+					Number_t amp = sqrt((kk+((local_new*local_new - kk)/steps))*2);
 					amplitude[base] = amp;
 					if(abs(sint) > 0.2f && abs(sint) < 0.8f){
-						const Number_t oldPha = phase[base]; 
+						const Number_t oldPha = phase[base];
 						const Number_t pha = pat_phase(cache[tx][ty][0], local_new, t-dt, t, frequency);
-						phase[base] = interpolate_angles(oldPha, pha, 0.9);
+						phase[base] = interpolate_angles(oldPha, pha, 0.93);
 					}
 				}
 			}

@@ -54,26 +54,6 @@ WaveViewer::WaveViewer( Solver &solver )
 
 	glEnable( GL_COLOR_MATERIAL );
 	this->player = new SineWavePlayer(1000, 1000, 0);
-	std::vector<std::string> files;
-	files.push_back("plate0.multipole");
-	files.push_back("plate1.multipole");
-	files.push_back("plate2.multipole");
-	files.push_back("plate3.multipole");
-	files.push_back("plate4.multipole");
-	files.push_back("plate5.multipole");
-	files.push_back("plate6.multipole");
-	files.push_back("plate7.multipole");
-	files.push_back("plate8.multipole");
-	files.push_back("plate9.multipole");
-	files.push_back("plate10.multipole");
-	files.push_back("plate11.multipole");
-	files.push_back("plate12.multipole");
-	files.push_back("plate13.multipole");
-	files.push_back("plate14.multipole");
-	files.push_back("plate15.multipole");
-	files.push_back("plate16.multipole");
-	MultipoleData data = Multipole::mergeMultipoleModeDataFiles(files, 343, 1.50815e-06,6.22438e-08,-0.000902798);
-	this->mplayer = new MultipolePlayer(data);
 }
 
 //////////////////////////////////////////////////////////////////////

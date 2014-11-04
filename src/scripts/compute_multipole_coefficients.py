@@ -10,7 +10,7 @@ from material_parameters import materials
 def null_wave_strategy(solv, sim_params, obj, mode, frequency):
 	print "<WARNING>: Null Wave Strategy is being used!"
 
-def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_wave_strategy, wave_strategy_pre_init=null_wave_strategy):
+def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_wave_strategy, wave_strategy_pre_init=null_wave_strategy, wave_strategy_post_simulation=null_wave_strategy):
 	timing = {}
 	timing["average"] = 0
 	timing["min"] = 100000
@@ -51,10 +51,13 @@ def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_w
 		# Someone has to define a strategy
 		wave_strategy_pre_init(solv, sim_params, obj, mode, frequency)
 		solv.initSolver()
+		# solv.stepSolver()
 		solv.runSolver()
 		fil = "%s-mode-%d.multipole"%(obj['objName'], mod)
 		solv.saveToFile(fil)
 		files.append(fil)
+
+		wave_strategy_post_simulation(solv, sim_params, obj, mod, frequency)
 
 		del solv
 

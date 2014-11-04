@@ -154,6 +154,14 @@ set(MULTIPOLE_SRC
     multipole/MultipoleMath.h           multipole/MultipoleMath.cpp
     multipole/MultipolePlayer.h         multipole/MultipolePlayer.cpp)
 
+set(SCRIPTS_SRC
+    scripts/acoustic_templates.py       scripts/compute_multipole_coefficients.py
+    scripts/config_path.py              scripts/encode_frames.py
+    scripts/estimate_timescales.py      scripts/evaluate_transfer.py
+    scripts/generate_sound.py           scripts/make_frames.py
+    scripts/material_parameters.py      scripts/mix_video.py
+    scripts/precompute_modes.py         scripts/prep_transfer_eval.py 
+    scripts/run_sim.py                  scripts/templates.py)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -620,6 +628,134 @@ if ( BUILD_PAT_PRECOMPUTE_GUI )
     endif(USE_CUDA)
 endif ( BUILD_PAT_PRECOMPUTE_GUI )
 
+if (BUILD_PAT_PRECOMPUTE_GUI)
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    # Headers to be moc-ified
+    #set(PAT_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
+
+    # QT4_WRAP_CPP(PAT_PRECOMPUTE_GUI_MOC_SRCS ${PAT_PRECOMPUTE_GUI_MOC_HEADERS})
+
+    if(USE_CUDA)
+        set(CUDA_64_BIT_DEVICE_CODE ON)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math -Xptxas -dlcm=ca)
+        set(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
+        find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
+
+            message(STATUS "YOO1: " ${PORTAUDIO_INCLUDE_DIRS})
+     message(STATUS "YOO2: " ${PORTAUDIO_LIBRARIES})
+   message(STATUS "YOO3: " ${PORTAUDIO_LIBRARY_DIRS})
+
+        cuda_add_executable(precompute-impulse-response
+            tools/precompute_impulse_response.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC}                 ${SNDPLAYER_SRC}
+            ${MULTIPOLE_SRC})
+
+        target_link_libraries(precompute-impulse-response
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    boost_serialization
+            ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY})
+    else(USE_CUDA)
+        add_executable(precompute-impulse-response
+            tools/precompute_impulse_response.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC})
+
+        target_link_libraries(precompute-impulse-response
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    ${MKL_LIBRARY})
+    endif(USE_CUDA)
+endif (BUILD_PAT_PRECOMPUTE_GUI)
+
+if (BUILD_PAT_PRECOMPUTE_GUI)
+    # turn on the features of Qt for libQGLViewer
+    set(QT_USE_QTXML 1)
+    set(QT_USE_QTOPENGL 1)
+
+    include(${QT_USE_FILE})
+
+    # Headers to be moc-ified
+    #set(PAT_PRECOMPUTE_GUI_MOC_HEADERS ui/WaveViewer.h)
+
+    # QT4_WRAP_CPP(PAT_PRECOMPUTE_GUI_MOC_SRCS ${PAT_PRECOMPUTE_GUI_MOC_HEADERS})
+
+    if(USE_CUDA)
+        set(CUDA_64_BIT_DEVICE_CODE ON)
+        set(CUDA_NVCC_FLAGS -arch=sm_12 --maxrregcount=32 -O4 -use_fast_math -Xptxas -dlcm=ca)
+        set(CUDA_NVCC_FLAGS
+      "${CUDA_NVCC_FLAGS} \"-DBOOST_NOINLINE=__attribute__((noinline))\" ")
+        find_library(CUDA_CUDART_LIBRARY cudart PATHS /usr/local/cuda/lib64/)
+
+            message(STATUS "YOO1: " ${PORTAUDIO_INCLUDE_DIRS})
+     message(STATUS "YOO2: " ${PORTAUDIO_LIBRARIES})
+   message(STATUS "YOO3: " ${PORTAUDIO_LIBRARY_DIRS})
+
+        cuda_add_executable(precompute-impulse-response-text
+            tools/precompute_impulse_response_text.cpp
+            ui/WaveViewer.cpp
+            ${PAN_PRECOMPUTE_GUI_MOC_SRCS}
+            ${GENERIC_SRC}                    ${IO_SRC}
+            ${LOGGING_SRC}                    ${LINEAR_SRC}
+            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+            ${LINEAR_BLAS_LAPACK_SRC}         ${GEOMETRY_SRC}
+            ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAN_wave_3d.cu ${WAVESOLVER_CUDA_WRAPPER_SRC}
+            wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu
+            ${UTILS_SRC}                      ${PARSER_SRC}
+            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+            ${DEFORMABLE_SRC}                 ${SNDPLAYER_SRC}
+            ${MULTIPOLE_SRC})
+
+        target_link_libraries(precompute-impulse-response-text
+            ${GLUT_LIBRARIES}               ${QT_LIBRARIES}
+            ${QGLViewer_LIBRARY}            ${OPENGL_LIBRARIES}
+            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  boost_thread
+            boost_system                    boost_serialization
+            ${MKL_LIBRARY}
+            ${CUDA_LIBRARIES}               ${PORTAUDIO_LIBRARY})
+    else(USE_CUDA)
+        
+    endif(USE_CUDA)
+endif (BUILD_PAT_PRECOMPUTE_GUI)
+
 # =============================================================================
 #   Builds a command-line PAN wavesolver
 # =============================================================================
@@ -834,4 +970,7 @@ if (BUILD_PYTHON_EXTENSIONS)
 
         install(TARGETS pat_solver DESTINATION ${PROJECT_BINARY_DIR}/lib/solver/)
         add_dependencies(acoustic_python pat_solver)
+
+    # Scripts
+        install(FILES ${SCRIPTS_SRC} DESTINATION ${PROJECT_BINARY_DIR}/lib/pipeline/)
 endif (BUILD_PYTHON_EXTENSIONS)

@@ -3,13 +3,12 @@
 
 #include <iostream>
 
-Number_t gaussian_3d(const Number_t x, const Number_t y, const Number_t z){
-	Number_t stddev = 0.01*0.0568973;
-	Number_t mean = -0.02275892;
-	Number_t var2 = stddev*stddev*2;
-	Number_t term = sqrt((x-mean)*(x-mean) + (y-mean)*(y-mean) + (z-0)*(z-0));
+Number_t gaussian_3d(const Number_t x, const Number_t y, const Number_t z, const Number_t b_x, const Number_t b_y, const Number_t b_z){
+	Number_t stddev = 0.001;
+	Number_t term = sqrt((x-b_x)*(x-b_x) + (y-b_y)*(y-b_y) + (z-b_z)*(z-b_z))/stddev;
+	
 	// Number_t term = x-mean;
-	return stddev*exp(-term*term/var2)/sqrt(acos(-1)*var2);
+	return exp(-term*term);
 }
 
 Number_t zeros(const Number_t x, const Number_t y, const Number_t z){
@@ -70,12 +69,63 @@ Number_t modeWithClosestPointField(const Number_t x, const Number_t y, const Num
 
 		res += modedata.mode(mode)[3*f.index3 + dim]*f.gamma; t += f.gamma;
 		if(t == 0) t = 1;
-		res = res*grad[dim]/t;
+		res = res;
+	}
+	return res;
+}
+
+struct gambi_param{
+	int nx;
+	int ny;
+	int nz;
+	double dx;
+	double dy;
+	double dz;
+	double xmin;
+	double ymin;
+	double zmin;
+};
+
+Number_t modeWithGambi(const Number_t x, const Number_t y, const Number_t z, int dim, const ClosestPointField & field, const std::vector<double> & dadata, const std::vector<int> & dacont, const gambi_param & params
+						){
+	int nx = params.nx;
+	int ny = params.ny;
+	int nz = params.nz;
+	double dx = params.dx;
+	double dy = params.dy;
+	double dz = params.dz;
+	double xmin = params.xmin;
+	double ymin = params.ymin;
+	double zmin = params.zmin;
+
+	Vector3d v((REAL) x, (REAL) y, (REAL) z);
+	Vec3d vec((REAL) x, (REAL) y, (REAL) z);
+	Number_t res = 0;
+	if(field.insideBox(vec)){
+		Vector3d grad = field.gradient(v);
+		grad.normalize();
+		
+		int xx = (int) floor((x - dx/2 - xmin)/dx);
+		int yy = (int) floor((y - dy/2 - ymin)/dy);
+		int zz = (int) floor((z - dz/2 - zmin)/dz);
+		int pos = xx + nx*(yy + ny*zz);
+
+		double prod = 0;
+		int a = dacont[pos];
+		if(a != 0){
+			double xd = dadata[3*pos + 0]/a;
+			double yd = dadata[3*pos + 1]/a;
+			double zd = dadata[3*pos + 2]/a;
+			prod = xd*grad[0] + yd*grad[1] + zd*grad[2];
+		}
+
+		res = grad[dim]*prod;
 	}
 	return res;
 }
 
 CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
+										 const Vector3d & sound_source,
 											   const BoundingBox & bbox, REAL cellSize,
 											   const TriMesh & mesh,
 											   const Vector3d & centerOfMass,
@@ -97,17 +147,18 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	cache_pressure = NULL;
 	cache_amplitude = NULL;
 	cache_phase = NULL;
-	Number_t xmin = -0.25;
-	Number_t xmax = 0.25;
-	Number_t ymin = -0.25;
-	Number_t ymax = 0.25;
-	Number_t zmin = -0.25;
-	Number_t zmax = 0.25;
-	Number_t xcenter = 0.0;
-	Number_t ycenter = 0.0;
-	Number_t zcenter = 0.0;
+	Number_t xmin = (Number_t) bbox.xmin();
+	Number_t xmax = (Number_t) bbox.xmax();
+	Number_t ymin = (Number_t) bbox.ymin();
+	Number_t ymax = (Number_t) bbox.ymax();
+	Number_t zmin = (Number_t) bbox.zmin();
+	Number_t zmax = (Number_t) bbox.zmax();
+	Number_t xcenter = (Number_t) centerOfMass[0];
+	Number_t ycenter = (Number_t) centerOfMass[1];
+	Number_t zcenter = (Number_t) centerOfMass[2];
 	this->_frequency = frequency/(2*acos(-1));
 	_multipole_radius = multipole_radius;
+	printf("<%lf, %lf, %lf>\n", xmax-xmin, ymax-ymin, zmax-zmin);
 	printf("frequency: %f\n", frequency/(2*acos(-1)));
 	
 	_multipoleModeData._mode = -1;
@@ -126,8 +177,14 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 		posi[3*i+2] = (Number_t) ((*listeningPositions)[i][2]);
 	}
 
-	Wave_BoundaryEvaluator3D boundary = boost::bind(sphere, _1, _2, _3);
-	Wave_GradientEvaluator3D gradient = boost::bind(sphereNormal, _1, _2, _3, _4);
+	// Wave_BoundaryEvaluator3D boundary = boost::bind(sphere, _1, _2, _3);
+	// Wave_GradientEvaluator3D gradient = boost::bind(sphereNormal, _1, _2, _3, _4);
+	Wave_InitialCondition3D initial = boost::bind(gaussian_3d, _1, _2, _3, sound_source[0], sound_source[1], sound_source[2]);
+	// Wave_InitialCondition3D initial = boost::bind(gaussian_3d, _1, _2, _3, -0.0763, 0.003, -0.002);
+	
+	Wave_BoundaryEvaluator3D boundary = boost::bind(testWithDistanceField, _1, _2, _3, distanceTolerance, boost::ref(distanceField));
+	Wave_GradientEvaluator3D gradient = boost::bind(gradientWithDistanceField, _1, _2, _3, _4, boost::ref(distanceField));
+	
 
 	this->wave = wave_sim_init(xmin, ymin, zmin,
 							   xmax, ymax, zmax,
@@ -135,13 +192,13 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 							   (Number_t) cellSize,
 							   listeningPositions->size(),
 							   posi,
-							   zeros,
+							   initial,
 							   boundary,
 							   xcenter, ycenter, zcenter,
 							   gradient,
 							   (Number_t) pmlWidth*cellSize,
 							   (Number_t) pmlStrength,
-							   frequency,
+							   0,
 							   num_multipole_coef,
 							   multipole_radius
 							   );
@@ -164,6 +221,10 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 		}
 	}
 }
+
+#include "io/TetMeshReader.hpp"
+#include <geometry/FixVtxTetMesh.hpp>
+typedef FixVtxTetMesh<double>     TMesh;
 
 CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 										  const BoundingBox & bbox, REAL cellSize,
@@ -201,8 +262,6 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	Number_t frequency = sqrt(modedata.omegaSquared(mode)/density)/(2*acos(-1));
 	_multipole_radius = multipole_radius;
 
-	REAL k = frequency/wave_speed;
-
 	_multipoleModeData._mode = mode;
 	_multipoleModeData._frequency = frequency;
 	_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
@@ -210,11 +269,11 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	this->_frequency = frequency;
 
 	cellSize = min(cellSize, wave_speed/(8*frequency));
+	printf("frequency: %f\n", frequency);
 	printf("cellSize: %f\n", cellSize);
 	timeStep = max(timeStep, cellSize/(2*wave_speed));
 	printf("timeStep: %f\n", timeStep);
 	printf("%f <? %f\n", wave_speed*timeStep, cellSize);
-	frequency *= 2*acos(-1);
 
 	Number_t * posi = (Number_t *) malloc(3*listeningPositions->size()*sizeof(Number_t));
 
@@ -226,7 +285,64 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	}
 
 	Wave_BoundaryEvaluator3D boundary = boost::bind(testWithDistanceField, _1, _2, _3, distanceTolerance, boost::ref(distanceField));
-	Wave_GradientEvaluator3D gradient = boost::bind(modeWithClosestPointField, _1, _2, _3, _4, boost::ref(distanceField), mode, boost::ref(modedata));
+	
+	/**
+	 * HACK VIOLENTO
+	 */
+	const char * tmeshpath= "/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.tet";
+
+	TMesh * tmesh = new TMesh();
+	FV_TetMeshLoader_Double::load_mesh(tmeshpath, *tmesh);
+	tmesh->init();
+	tmesh->update_surface();
+
+	int nx = ceil((xmax-xmin)/cellSize);
+	int ny = ceil((ymax-ymin)/cellSize);
+	int nz = ceil((zmax-zmin)/cellSize);
+	double dx = (xmax-xmin)/nx;
+	double dy = (ymax-ymin)/ny;
+	double dz = (zmax-zmin)/nz;
+	std::vector<double> modes(3*nx*ny*nz, 0.0);
+	std::vector<int> cont(nx*ny*nz, 0.0);
+
+	const std::vector<Point3d>& vs = tmesh->vertices();
+	const std::vector<double> &damode = modedata.mode(mode);
+
+	for(int i = 0; i < damode.size()/3; i++){
+		int pos;
+		int xx = (int) floor((vs[i].x - dx/2 - xmin)/dx);
+		int yy = (int) floor((vs[i].y - dy/2 - ymin)/dy);
+		int zz = (int) floor((vs[i].z - dz/2 - zmin)/dz);
+		pos = xx + nx*(yy + ny*zz);
+		modes[3*pos + 0] += damode[3*i + 0];
+		modes[3*pos + 1] += damode[3*i + 1];
+		modes[3*pos + 2] += damode[3*i + 2];
+		cont[pos]++;
+	}
+
+	delete tmesh;
+
+	gambi_param params;
+	params.nx = nx;
+	params.ny = ny;
+	params.nz = nz;
+	params.dx = dx;
+	params.dy = dy;
+	params.dz = dz;
+	params.xmin = xmin;
+	params.ymin = ymin;
+	params.zmin = zmin;
+
+
+	Wave_GradientEvaluator3D gradient = boost::bind(modeWithGambi, _1, _2, _3, _4, boost::ref(distanceField), boost::ref(modes), boost::ref(cont), boost::ref(params));
+	// (const ClosestPointField & field, std::vector<double> & dadata, std::vector<int> & dacont,
+	// 					int nx, int ny, int nz, double dx, double dy, double dz, double xmin, double ymin, double zmin)
+
+	// Wave_GradientEvaluator3D gradient = boost::bind(modeWithClosestPointField, _1, _2, _3, _4, boost::ref(distanceField), mode, boost::ref(modedata));
+	/*
+	 * FIM DO HACK VIOLENTO	
+	 */
+
 
 	this->wave = wave_sim_init(xmin, ymin, zmin,
 							   xmax, ymax, zmax,
@@ -240,16 +356,19 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 							   gradient,
 							   (Number_t) pmlWidth*cellSize,
 							   (Number_t) pmlStrength,
-							   frequency,
+							   frequency*2*acos(-1),
 							   num_multipole_coef,
 							   multipole_radius
 							   );
 
 	free(posi);
 
-	int nx, ny, nz;
+	// int nx, ny, nz;
 	wave_sim_get_divisions(this->wave, &nx, &ny, &nz);
-
+	printf("BOX: <%f - %f, %f - %f, %f - %f>\n", xmin, xmax, ymin, ymax, zmin, zmax);
+	printf("BALL: (%f - %f, %f - %f, %f - %f)\n", xcenter-multipole_radius, xcenter+multipole_radius,
+											ycenter-multipole_radius, ycenter+multipole_radius,
+											zcenter-multipole_radius, zcenter+multipole_radius);
 	this->_fieldDivisions = Vector3i(nx, ny, nz);
 	this->_listeningPositions = listeningPositions;
 	this->_meshes.push_back(&mesh);
@@ -260,6 +379,7 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 		this->_waveOutput.resize(listeningPositions->size());
 		for(int i = 0; i < listeningPositions->size(); i++){
 			this->_waveOutput[i].resize(1);
+			this->_waveOutput[i][0].clear();
 		}
 	}
 }
@@ -276,14 +396,12 @@ bool CUDA_PAT_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
 	wave_sim_step(this->wave);
 	REAL time = (REAL) wave_sim_get_current_time(this->wave);
 	//Save output
-	// if(_listeningPositions && (_step % _substeps) == 0){
-	// 	for(int field = 0; field < 6; field++){
-	// 		Number_t * pressure = wave_listen(this->wave, field);
-	// 		for(int i = 0; i < _listeningPositions->size(); i++){
-	// 			_waveOutput[i][field].push_back((REAL) pressure[i]);
-	// 		}
-	// 	}
-	// }
+	if(_listeningPositions && (_step %     _substeps) == 0){
+		Number_t * pressure = wave_listen(this->wave);
+		for(int i = 0; i < _listeningPositions->size(); i++){
+			_waveOutput[i][0].push_back((REAL) pressure[i]);
+		}
+	}
 
 
 	_step++;
@@ -353,8 +471,8 @@ void CUDA_PAT_WaveSolver::vertexPressure(const Tuple3i & index,
 	int nx, ny, nz;
 	wave_sim_get_divisions(this->wave, &nx, &ny, &nz);
 	Number_t x = wave_sim_get_x(wave, index[0]);
-	Number_t y = wave_sim_get_x(wave, index[1]);
-	Number_t z = wave_sim_get_x(wave, index[2]);
+	Number_t y = wave_sim_get_y(wave, index[1]);
+	Number_t z = wave_sim_get_z(wave, index[2]);
 	Number_t r = sqrt(x*x + y*y + z*z);
 	int pos = 4*(index[0] + nx*(index[1] + ny*index[2]));
 	pressure[0] = (REAL) cache_pressure[pos];
@@ -364,6 +482,15 @@ void CUDA_PAT_WaveSolver::vertexPressure(const Tuple3i & index,
 	// pressure[2] = (0.01*0.01*1)/(r*sqrt(1+k*k*0.01*0.01))*cos(k*(r-0.01));
 	pressure[2] = (REAL) cache_phase[pos];
 	pressure[3] = (REAL) (cache_amplitude[pos]*cos(cache_phase[pos]));
+}
+
+void CUDA_PAT_WaveSolver::vertexData(int x, int y, int z, REAL * pressure, REAL * amplitude, REAL * phase, bool * bulk){
+	VECTOR t(4);
+	vertexPressure(Tuple3i(x, y, z), t);
+	*pressure = t[0];
+	*amplitude = t[1];
+	*phase = t[2];
+	*bulk = checkIsBulk(this->wave, x, y, z);
 }
 
 int CUDA_PAT_WaveSolver::numCells() const{
@@ -429,4 +556,10 @@ REAL CUDA_PAT_WaveSolver::estimateSound(const Vector3d & v, REAL t,  REAL * ampl
 void CUDA_PAT_WaveSolver::saveMultipoleCoefficients(const std::string & filename){
 	computeMultipoleCoefficients();
 	Multipole::saveToFile(filename, _multipoleModeData);
+}
+
+void CUDA_PAT_WaveSolver::gradientAt(int i, int j, int k, REAL * x, REAL * y, REAL * z){
+	Number_t xx, yy, zz;
+	wave_gradientAt(this->wave, i, j, k, &xx, &yy, &zz);
+	*x = xx; *y = yy; *z = zz;
 }

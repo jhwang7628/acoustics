@@ -50,11 +50,11 @@ def precompute_modes(object_param):
 	print("=== Done ===")
 
 	# Step four - generate input files for the Helmholtz radiation problems
-	# os.system( 'mkdir -p fbem_in' );
-	# cmd = '%s/fbem_input_gen -m %s.modes -d %f -t %s -o fbem_in/input-%%d.txt' \
-	#        % ( binPath, objName, density, tetFile );
-	# print cmd;
-	# os.system( '%s > %s' % ( cmd, redirect ) );
+	os.system( 'mkdir -p fbem_in' );
+	cmd = '%s/fbem_input_gen -m %s.modes -d %f -t %s -o fbem_in/input-%s_please_d.txt' \
+	       % ( binPath, object_param['objName'], material['density'], object_param['tetFile'], r"%d");
+	print cmd;
+	os.system( '%s > %s' % ( cmd, redirect ) );
 
 	# Step five - write the object center of mass, rigid inertia matrix, and
 	# material parameters to files that will be needed in other parts of the

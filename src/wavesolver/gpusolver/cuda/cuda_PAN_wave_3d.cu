@@ -93,7 +93,7 @@ Cuda_PAN_Wave_3d_t pan_wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin
 	wave->dt = dt;
 
 	wave->t = 0;
-	wave->density = 1;
+	wave->density = 1.184;
 
 	wave->nx = ceil((xmax-xmin)/cellsize);
 	wave->ny = ceil((ymax-ymin)/cellsize);

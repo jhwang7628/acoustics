@@ -1,15 +1,15 @@
 
         <?xml version="1.0" ?>
         <impact>
-        	<mesh file="/home/rf356/Desktop/Code/acoustics/work/meshes/head/head.obj" scale="1.0" />
+        	<mesh file="/home/rf356/Desktop/Code/acoustics/work/meshes/lee_head/lee_head_4.obj" scale="1.0" />
 
           <acoustic_transfer
-            distancefield="/home/rf356/Desktop/Code/acoustics/work/meshes/head/head"
+            distancefield="/home/rf356/Desktop/Code/acoustics/work/meshes/lee_head/lee_head_4"
             fieldresolution="150"
-            gridresolution="200"
-            gridscale="3.200000"
-            timestepfrequency="250000"
-            substeps="8"
+            gridresolution="400"
+            gridscale="1.400000"
+            timestepfrequency="264000"
+            substeps="6"
             nbar="5"
             mode="0"
             radius_multipole="1.200000"

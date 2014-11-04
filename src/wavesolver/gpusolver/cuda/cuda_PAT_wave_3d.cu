@@ -139,7 +139,7 @@ Cuda_PAT_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 	wave->dt = dt;
 
 	wave->t = 0;
-	wave->density = 1.22521;
+	wave->density = 1.184;
 
 	wave->nx = ceil((xmax-xmin)/cellsize);
 	wave->ny = ceil((ymax-ymin)/cellsize);
@@ -238,7 +238,12 @@ Cuda_PAT_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 				Number_t x = wave_sim_get_x(wave, i);
 				Number_t val = initial(x, y, z);
 				int idx = 4*(i + nx*(j + ny*k));
-				u[idx] = val;
+				bool bulk = wave->isBulk[(i + nx*(j + ny*k))];
+				if(bulk){
+					u[idx] = val;
+				} else{
+					u[idx] = 0;
+				}
 			}
 		}
 	}
@@ -311,7 +316,7 @@ void wave_sim_step(Cuda_PAT_Wave_3d_t wave){
 	size_t threads_x = 16;
 	size_t threads_y = 16;
 
-	// printf("%lf -> %lf\n", sin(wave->t*wave->frequency), (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
+	printf("%lf -> %lf\n", sin(wave->t*wave->frequency), (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
 	dim3 blockDim(threads_x, threads_y, 1);
 	cuda_pat_wave_3d_velocity_kernel<<< gridDim, blockDim >>>(wave->ubuf_d,
 															  wave->gradient_d,
@@ -681,4 +686,21 @@ void wave_sim_get_bounds(const Cuda_PAT_Wave_3d_t wave,
 	(*ymax) = wave->ymax;
 	(*zmin) = wave->zmin;
 	(*zmax) = wave->zmax;
+}
+
+void wave_gradientAt(const Cuda_PAT_Wave_3d_t wave, int i, int j, int k, Number_t * x, Number_t * y, Number_t * z){
+	int nx = wave->nx;
+	int ny = wave->ny;
+	int nz = wave->nz;
+	int idx = 3*(i + nx*(j + ny*k));
+	*x = wave->gradient[idx];
+	*y = wave->gradient[idx+1];
+	*z = wave->gradient[idx+2];
+}
+
+bool checkIsBulk(const Cuda_PAT_Wave_3d_t wave, int i, int j, int k){
+	int nx = wave->nx;
+	int ny = wave->ny;
+	int nz = wave->nz;
+	return wave->isBulk[(i + nx*(j + ny*k))];
 }

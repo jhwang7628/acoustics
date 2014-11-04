@@ -6,7 +6,7 @@ import sys
 import os
 
 
-installPath = '/home/jchadwick/research/acoustics';
+installPath = '/home/rf356/Desktop/Code/acoustics';
 if ( len(sys.argv) >= 2 ):
   installPath = sys.argv[1];
 

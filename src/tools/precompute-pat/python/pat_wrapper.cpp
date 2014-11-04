@@ -56,6 +56,9 @@ using namespace std;
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+#include <boost/python.hpp>
+
+using namespace boost::python;
 
 class PAT_Wrapper{
 
@@ -178,7 +181,7 @@ public:
 				   endTime,
 				   nbar,
 				   radius*scaleRadius,
-				   11,
+				   50,
 				   100000);
 	}
 
@@ -200,14 +203,35 @@ public:
 	void saveToFile(const std::string & file){
 		solver->saveMultipoleCoefficients(file);
 	}
-};
 
-#include <boost/python.hpp>
+	tuple cellPosition(int x, int y, int z){
+		Vector3d pos = solver->fieldPosition(Tuple3i(x, y, z));
+		return make_tuple(pos.x, pos.y, pos.z);
+	}
+
+	tuple cellData(int x, int y, int z){
+		double pressure, amplitude, phase;
+		bool bulk;
+		solver->vertexData(x, y, z, &pressure, &amplitude, &phase, &bulk);
+		return make_tuple(pressure, std::complex<double>(amplitude*cos(phase), amplitude*sin(phase)), bulk);
+	}
+
+	tuple cellDivisions(){
+		Tuple3i t = solver->fieldDivisions();
+		return make_tuple(t[0], t[1], t[2]);
+	}
+
+	tuple gradientAt(int x, int y, int z){
+		double xx, yy, zz;
+		solver->gradientAt(x, y, z, &xx, &yy, &zz);
+		return make_tuple(xx, yy, zz);
+	}
+
+};
 
 BOOST_PYTHON_MODULE(_solver)
 {
 
-	using namespace boost::python;
 	class_<PAT_Wrapper>("PAT_Solver", init<std::string>())
 		.def_readwrite("radius", &PAT_Wrapper::radius)
 		.def_readwrite("density", &PAT_Wrapper::density)
@@ -228,5 +252,9 @@ BOOST_PYTHON_MODULE(_solver)
 		.def("setEndTime", &PAT_Wrapper::setEndTime)
 		.def("stepSolver", &PAT_Wrapper::stepSolver)
 		.def("runSolver", &PAT_Wrapper::runSolver)
-		.def("saveToFile", &PAT_Wrapper::saveToFile);
+		.def("saveToFile", &PAT_Wrapper::saveToFile)
+		.def("cellPosition", &PAT_Wrapper::cellPosition)
+		.def("cellData", &PAT_Wrapper::cellData)
+		.def("cellDivisions", &PAT_Wrapper::cellDivisions)
+		.def("gradientAt", &PAT_Wrapper::gradientAt);
 }
