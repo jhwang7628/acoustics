@@ -4,6 +4,8 @@ def templ(k):
 	t = """Parameters for fast multipole method:
 100 	10      %d	1.E-4	800000000    3500 ! maxl     levmx    nexp  tolerance  nstk   iteration
 60000	50000	100	1	%d                ! ncellmx  nleafmx  maxk  ifmm       nexpf
+60000	50000	100	0	10                ! ncellmx  nleafmx  maxk  ifmm       nexpf
+>>>>>>> tim-gpu
 
 
 -----------------------------------------------------------------------------------------

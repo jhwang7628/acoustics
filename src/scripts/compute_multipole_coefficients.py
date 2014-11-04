@@ -51,7 +51,7 @@ def compute_multipole_coefficients(sim_params, obj, wave_strategy_pre_sdf=null_w
 		# Someone has to define a strategy
 		wave_strategy_pre_init(solv, sim_params, obj, mode, frequency)
 		solv.initSolver()
-		# solv.stepSolver()
+
 		solv.runSolver()
 		fil = "%s-mode-%d.multipole"%(obj['objName'], mod)
 		solv.saveToFile(fil)

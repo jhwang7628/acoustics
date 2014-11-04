@@ -56,6 +56,7 @@ def precompute_modes(object_param):
 	print cmd;
 	os.system( '%s > %s' % ( cmd, redirect ) );
 
+
 	# Step five - write the object center of mass, rigid inertia matrix, and
 	# material parameters to files that will be needed in other parts of the
 	# pipeline

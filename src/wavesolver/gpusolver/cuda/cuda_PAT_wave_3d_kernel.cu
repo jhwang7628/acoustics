@@ -33,6 +33,7 @@ __global__ void cuda_pat_wave_3d_velocity_kernel(Number_t * __restrict__ u,
 	const Number_t density = kernel_constants[12];
 	const Number_t frequency = kernel_constants[16];
 	const Number_t dz = kernel_constants[17];
+
 	const Number_t sint = frequency*cos(frequency*t)/(2*acos(-1.0));
 
 

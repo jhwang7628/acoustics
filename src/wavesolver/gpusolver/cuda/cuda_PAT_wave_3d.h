@@ -41,6 +41,7 @@ void wave_sim_free(Cuda_PAT_Wave_3d_t wave);
 Number_t wave_sim_get_x(const Cuda_PAT_Wave_3d_t wave, int j);
 Number_t wave_sim_get_y(const Cuda_PAT_Wave_3d_t wave, int i);
 Number_t wave_sim_get_z(const Cuda_PAT_Wave_3d_t wave, int k);
+
 bool checkIsBulk(const Cuda_PAT_Wave_3d_t wave, int i, int j, int k);
 void wave_gradientAt(const Cuda_PAT_Wave_3d_t wave, int i, int j, int k, Number_t * x, Number_t * y, Number_t * z);
 

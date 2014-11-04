@@ -149,7 +149,7 @@ void IsoStufferFrame::load_mesh()
     if ( file.isEmpty() ) return;
 
     curFile_ = file;
-    load_tgl_mesh(curFile_.toAscii().data());
+    load_tgl_mesh(curFile_.toStdString().data());
 }
 
 void IsoStufferFrame::load_tgl_mesh(const char* file)
@@ -215,8 +215,8 @@ void IsoStufferFrame::save_mesh()
             "Saved tetrahedron file", ".", "Text file (*.tet);;All file (*)");
     if ( file.isEmpty() ) return;
 
-    printf("INFO: write to mesh: %s ...", file.toAscii().data());
-    FV_TetMeshWriter_Double::write_mesh(file.toAscii().data(), *pmesh_);
+    printf("INFO: write to mesh: %s ...", file.toStdString().data());
+    FV_TetMeshWriter_Double::write_mesh(file.toStdString().data(), *pmesh_);
     printf(" OK\n");
 }
 
@@ -227,8 +227,8 @@ void IsoStufferFrame::export_to_stellar()
             "Saved tetrahedron file", ".", "All file (*)");
     if ( file.isEmpty() ) return;
 
-    printf("INFO: export to stellar mesh: %s ...", file.toAscii().data());
-    StellarMeshWriter::write_mesh(file.toAscii().data(), *pmesh_);
+    printf("INFO: export to stellar mesh: %s ...", file.toStdString().data());
+    StellarMeshWriter::write_mesh(file.toStdString().data(), *pmesh_);
     printf(" OK\n");
     */
 }

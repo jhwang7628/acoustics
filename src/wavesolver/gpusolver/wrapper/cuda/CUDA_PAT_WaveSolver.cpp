@@ -147,6 +147,7 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	cache_pressure = NULL;
 	cache_amplitude = NULL;
 	cache_phase = NULL;
+
 	Number_t xmin = (Number_t) bbox.xmin();
 	Number_t xmax = (Number_t) bbox.xmax();
 	Number_t ymin = (Number_t) bbox.ymin();
@@ -269,7 +270,9 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	this->_frequency = frequency;
 
 	cellSize = min(cellSize, wave_speed/(8*frequency));
+
 	printf("frequency: %f\n", frequency);
+
 	printf("cellSize: %f\n", cellSize);
 	timeStep = max(timeStep, cellSize/(2*wave_speed));
 	printf("timeStep: %f\n", timeStep);

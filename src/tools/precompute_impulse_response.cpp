@@ -110,7 +110,9 @@ int main( int argc, char **argv )
     int                      cellDivisions;
 
     REAL                     endTime = -1.0;
+
     Vector3d                 sound_source;
+
     REAL                     listeningRadius;
     Vector3Array             listeningPositions;
 
@@ -165,7 +167,6 @@ int main( int argc, char **argv )
                                                               parms._sdfFilePrefix.c_str() );
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
-    // cout << "[[[ " << fieldBBox. << endl;
 
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;
@@ -190,9 +191,6 @@ int main( int argc, char **argv )
     cout << SDUMP( radius ) << endl;
     cout << SDUMP( CENTER_OF_MASS ) << endl;
 
-
-    radius *= parms._radiusMultipole;
- #ifdef USE_CUDA
     // Modes are cooler
     // cellSize = 0.5/(REAL)cellDivisions;
     // cout << SDUMP( cellSize ) << endl;

@@ -20,9 +20,8 @@ std::complex<REAL> MultipoleData::estimateModeAt(int mode, REAL x, REAL y, REAL 
 
 	MultipoleModeData & data = this->modes[mode];
 	int nL = data.numCoefficients();
+	
 	REAL k = 2*acos(-1.0)*data.frequency()/this->c;
-
-	// printf("frequency: %lf c: %lf\n", data.frequency(), this->c);
 
 	std::complex<REAL> estimate(0, 0);
 	for(int l = 0; l <= nL; l++){

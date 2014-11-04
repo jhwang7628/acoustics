@@ -33,11 +33,11 @@ void TetViewerFrame::open()
     
     TMesh* msh = new TMesh;
     if ( file.endsWith(".tet", Qt::CaseInsensitive) )
-        FV_TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
-        //TetMeshLoader_Double::load_mesh(file.toAscii().data(), *msh);
+        FV_TetMeshLoader_Double::load_mesh(file.toStdString().data(), *msh);
+        //TetMeshLoader_Double::load_mesh(file.toStdString().data(), *msh);
     else if ( file.endsWith(".node", Qt::CaseInsensitive) )
     {
-        StellarTetMeshLoader::load_mesh(file.left(file.length()-5).toAscii().data(), msh);
+        StellarTetMeshLoader::load_mesh(file.left(file.length()-5).toStdString().data(), msh);
     }
     msh->init();
     msh->update_surface();
@@ -62,7 +62,7 @@ void TetViewerFrame::load_modes()
             "mode data binary file (*.modes)");
     if ( file.isEmpty() ) return;
 
-    modeData_.read( file.toAscii().data() );
+    modeData_.read( file.toStdString().data() );
 
     if ( modeData_.numDOF() != (int)vtx_.size() * 3 ) {
         QMessageBox msgBox;
@@ -95,8 +95,8 @@ void TetViewerFrame::export_bin_tet()
     QString file = QFileDialog::getSaveFileName(this,
             "Binary Mesh file name", ".", "bin tet file (*.tet);;All (*)");
     if ( file.isEmpty() ) return;
-    FV_TetMeshWriter_Double::write_mesh(file.toAscii().data(), *mesh_);
-    //TetMeshWriter_Double::write_mesh(file.toAscii().data(), *mesh_);
+    FV_TetMeshWriter_Double::write_mesh(file.toStdString().data(), *mesh_);
+    //TetMeshWriter_Double::write_mesh(file.toStdString().data(), *mesh_);
 }
 
 void TetViewerFrame::export_abaqus_tet()
@@ -105,7 +105,7 @@ void TetViewerFrame::export_abaqus_tet()
     QString file = QFileDialog::getSaveFileName(this,
             "Abaqus Mesh file name", ".", "abaqus tet file (*.aba);;All (*)");
     if ( file.isEmpty() ) return;
-    FV_AbaqusMeshWriter::write_mesh(file.toAscii().data(), *mesh_);
+    FV_AbaqusMeshWriter::write_mesh(file.toStdString().data(), *mesh_);
 }
 
 void TetViewerFrame::update_mesh(TMesh* msh)

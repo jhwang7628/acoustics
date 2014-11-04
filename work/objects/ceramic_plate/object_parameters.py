@@ -18,6 +18,7 @@ def object_parameters():
 				'wave_params':	{
 									"field_resolution": 150,
 									"grid_resolution": 300,
+
 									"grid_scale": 3.2,
 									"time_step_freq": 192000,
 									"substeps": 8,

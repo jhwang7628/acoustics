@@ -231,7 +231,6 @@ public:
 
 BOOST_PYTHON_MODULE(_solver)
 {
-
 	class_<PAT_Wrapper>("PAT_Solver", init<std::string>())
 		.def_readwrite("radius", &PAT_Wrapper::radius)
 		.def_readwrite("density", &PAT_Wrapper::density)
