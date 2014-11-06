@@ -8,7 +8,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include <QtGui>
+//#include <QtGui>
 
 #include <config.h>
 #include <TYPES.h>
@@ -29,7 +29,7 @@
 
 #include <transfer/PulseApproximation.h>
 
-#include <ui/WaveViewer.h>
+//#include <ui/WaveViewer.h>
 
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
@@ -45,9 +45,9 @@
 
 #include <boost/bind.hpp>
 
-#include <QGLViewer/qglviewer.h>
+//#include <QGLViewer/qglviewer.h>
 
-#include <GL/glut.h>
+//#include <GL/glut.h>
 
 #include <iostream>
 #include <string>
