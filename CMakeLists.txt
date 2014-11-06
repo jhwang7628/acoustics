@@ -3,7 +3,7 @@
 # Copyright @ Jan 2009
 project(isostuffer)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0.2)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
@@ -11,10 +11,11 @@ set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # compile option
+option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
 option(USE_DEBUG "Turn on the debug mode" OFF)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" OFF)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
-option(USE_CUDA "Use CUDA" OFF)
+option(USE_CUDA "Use CUDA" ON)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -36,6 +37,9 @@ option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
 option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    ON)
+
+option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE "Compiles the impulse response wavesolver" ON)
+option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
 #   We should eventually go through and resolve all of these diffs
@@ -92,25 +96,10 @@ find_package(ARPACK REQUIRED)
 #   -DSUPERLU_INCLUDES=<SuperLU include directory>
 find_package(SuperLU REQUIRED)
 
-if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
-    # package for opengl and glut
-    find_package(OpenGL REQUIRED)
-    find_package(GLUT REQUIRED)
-
-    #find_package(Qt4 REQUIRED)
-    #find_package(Qt5 REQUIRED)
-    find_package(Qt5Widgets REQUIRED)
-
-    # check the existence of libQGLViewer
-    find_package(QGLViewer 1.0 REQUIRED)
-endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
-
 # LibConfig needed for configuration files in certain projects
 find_package(LibConfig 1.0 REQUIRED)
 
 # Whether or not we need the GNU triangulated surface (GTS) package
-
-find_package(Portaudio REQUIRED)
 
 if ( BUILD_PAN_PRECOMPUTE_GUI
     OR BUILD_RUN_PULSE_SOLVE
@@ -188,6 +177,10 @@ else ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
 
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
+
+
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 add_subdirectory(src)
 

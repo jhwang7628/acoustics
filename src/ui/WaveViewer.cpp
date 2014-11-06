@@ -7,8 +7,6 @@
 
 #include <geometry/TriangleMesh.hpp>
 
-#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
-
 #include <utils/IO.h>
 
 #include <GL/glut.h>
@@ -53,7 +51,6 @@ WaveViewer::WaveViewer( Solver &solver )
 	setSceneRadius( solver.fieldDiameter() );
 
 	glEnable( GL_COLOR_MATERIAL );
-	this->player = new SineWavePlayer(1000, 1000, 0);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -61,8 +58,7 @@ WaveViewer::WaveViewer( Solver &solver )
 //////////////////////////////////////////////////////////////////////
 WaveViewer::~WaveViewer()
 {
-	delete this->player;
-	delete this->mplayer;
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -257,34 +253,24 @@ void WaveViewer::keyPressEvent( QKeyEvent *e )
 
 		handled = true;
 	}
-	else if(e->key() == Qt::Key_P)
-	{
-		CUDA_PAT_WaveSolver * patsolver = dynamic_cast<CUDA_PAT_WaveSolver *>(&_solver);
-		patsolver->computeMultipoleCoefficients();
-	}
-	else if(e->key() == Qt::Key_B)
-	{
-		CUDA_PAT_WaveSolver * patsolver = dynamic_cast<CUDA_PAT_WaveSolver *>(&_solver);
-		patsolver->saveMultipoleCoefficients("test.multipole");
-	}
-	else if(e->key() == Qt::Key_K)
-	{
-		this->player->setFrequency(this->_frequency);
-		this->player->setAmplitude(this->_amplitude);
-		this->player->setPhase(this->_phase);
-		this->mplayer->start();
-	}
-	else if(e->key() == Qt::Key_M)
-	{
-		this->player->setFrequency(this->_frequency);
-		this->player->setAmplitude(this->_estAmplitude);
-		this->player->setPhase(this->_estPhase);
-		this->mplayer->start();
-	}
-	else if(e->key() == Qt::Key_J)
-	{
-		this->mplayer->stop();
-	}
+	// else if(e->key() == Qt::Key_K)
+	// {
+	// 	this->player->setFrequency(this->_frequency);
+	// 	this->player->setAmplitude(this->_amplitude);
+	// 	this->player->setPhase(this->_phase);
+	// 	this->mplayer->start();
+	// }
+	// else if(e->key() == Qt::Key_M)
+	// {
+	// 	this->player->setFrequency(this->_frequency);
+	// 	this->player->setAmplitude(this->_estAmplitude);
+	// 	this->player->setPhase(this->_estPhase);
+	// 	this->mplayer->start();
+	// }
+	// else if(e->key() == Qt::Key_J)
+	// {
+	// 	this->mplayer->stop();
+	// }
 	else if ( e->key() >= Qt::Key_1 && e->key() <= Qt::Key_6 )
 	{
 		_drawField = e->key() - Qt::Key_1;
@@ -531,19 +517,19 @@ void WaveViewer::postSelection(const QPoint& point)
 	bool found;
 	selectedPoint = camera()->pointUnderPixel(point, found);
 
-	CUDA_PAT_WaveSolver * patsolver = dynamic_cast<CUDA_PAT_WaveSolver *>(&_solver);
-	patsolver->estimateSound(Vector3d(selectedPoint.x, selectedPoint.y, selectedPoint.z),
-							0,
-							&_estAmplitude,
-							&_frequency,
-							&_estPhase);
-	patsolver->computeSound(Vector3d(selectedPoint.x, selectedPoint.y, selectedPoint.z),
-							0,
-							&_amplitude,
-							&_frequency,
-							&_phase);
+	// CUDA_PAT_WaveSolver * patsolver = dynamic_cast<CUDA_PAT_WaveSolver *>(&_solver);
+	// patsolver->estimateSound(Vector3d(selectedPoint.x, selectedPoint.y, selectedPoint.z),
+	// 						0,
+	// 						&_estAmplitude,
+	// 						&_frequency,
+	// 						&_estPhase);
+	// patsolver->computeSound(Vector3d(selectedPoint.x, selectedPoint.y, selectedPoint.z),
+	// 						0,
+	// 						&_amplitude,
+	// 						&_frequency,
+	// 						&_phase);
 
-	mplayer->listenAt(selectedPoint.x, selectedPoint.y, selectedPoint.z);
+	// mplayer->listenAt(selectedPoint.x, selectedPoint.y, selectedPoint.z);
 
 	selectedPoint -= 0.01f*dir; // Small offset to make point clearly visible.
 

@@ -7,7 +7,11 @@
 #define WAVE_VIEWER_H
 
 #include <QtGui>
-#include <QtWidgets>
+
+#if QT_VERSION >= 0x050000
+    #include <QtWidgets>
+#endif
+
 #include <QGLViewer/qglviewer.h>
 
 #include <linearalgebra/MATRIX.h>
@@ -17,7 +21,6 @@
 #include <utils/Evaluator.h>
 
 #include <wavesolver/WaveSolver.h>
-#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
 
 #include <TYPES.h>
 
@@ -110,8 +113,6 @@ class WaveViewer : public QGLViewer {
         VECTOR                   _drawPressure;
 
         qglviewer::Vec orig, dir, selectedPoint;
-        SineWavePlayer * player;
-        MultipolePlayer * mplayer;
         REAL _amplitude;
         REAL _frequency;
         REAL _phase;

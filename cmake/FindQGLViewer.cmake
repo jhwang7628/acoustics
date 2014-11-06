@@ -1,27 +1,27 @@
-# - Find library libQGLViewer
-IF (QGLViewer_DIR)
-    FIND_PATH(QGLViewer_INCLUDE_DIR QGLViewer/qglviewer.h
-            PATHS ${QGLViewer_DIR}/include)
-    FIND_LIBRARY(QGLViewer_LIBRARY QGLViewer
-            PATHS ${QGLViewer_DIR}
-            PATHS ${QGLViewer_DIR}/lib
-            PATHS ${QGLViewer_DIR}/Release)
-ELSE (QGLViewer_DIR)
-    FIND_PATH(QGLViewer_INCLUDE_DIR QGLViewer/qglviewer.h
-        PATHS ${SYSTEM_INC_PATH}
-        PATHS $ENV{INCLUDE})
-    FIND_LIBRARY(QGLViewer_LIBRARY QGLViewer
-        PATHS ${SYSTEM_LIB_PATH}
-        PATHS $ENV{LD_LIBRARY_PATH})
-ENDIF (QGLViewer_DIR)
+# # Need to find both Qt4 and QGLViewer if the QQL support is to be built
+# FIND_PACKAGE(Qt4 COMPONENTS QtCore QtXml QtOpenGL QtGui REQUIRED)
 
-IF (QGLViewer_INCLUDE_DIR AND QGLViewer_LIBRARY)
-    IF (NOT QGLViewer_FIND_QUIETLY)
-        MESSAGE(STATUS "Found libQGLViewer: ${QGLViewer_LIBRARY}")
-    ENDIF (NOT QGLViewer_FIND_QUIETLY)
-ELSE (QGLViewer_INCLUDE_DIR AND QGLViewer_LIBRARY)
-    IF (QGLViewer_FIND_REQUIRED)
-        MESSAGE(FATAL_ERROR "Could not find libQGLViewer in Path:${SYSTEM_LIB_PATH}")
-    ENDIF(QGLViewer_FIND_REQUIRED)
-ENDIF (QGLViewer_INCLUDE_DIR AND QGLViewer_LIBRARY)
+if(APPLE)
+    find_library(QGLViewer_LIBRARY QGLViewer DOC "QGLViewer lib for OSX")
+    find_path(QGLViewer_INCLUDE_DIR QGLViewer/qglviewer.h DOC "Include for QGLViewer on OSX")
+else()
+    find_path(QGLViewer_INCLUDE_DIR qglviewer.h
+            /usr/include/QGLViewer
+            /opt/local/include/QGLViewer
+            /usr/local/include/QGLViewer
+            /sw/include/QGLViewer
+        )
 
+    find_library(QGLViewer_LIBRARY NAMES qglviewer-qt4 QGLViewer
+        PATHS
+        /usr/lib
+        /usr/local/lib
+        /opt/local/lib
+        /sw/lib
+        )
+endif()
+
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(QGLVIEWER DEFAULT_MSG
+    QGLViewer_INCLUDE_DIR QGLViewer_LIBRARY)

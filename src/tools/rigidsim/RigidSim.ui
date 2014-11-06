@@ -160,7 +160,7 @@
   <customwidget>
    <class>RigidCanvas</class>
    <extends></extends>
-   <header>tools/rigidsim-gui/RigidCanvas.h</header>
+   <header>tools/rigidsim/RigidCanvas.h</header>
   </customwidget>
  </customwidgets>
  <resources>

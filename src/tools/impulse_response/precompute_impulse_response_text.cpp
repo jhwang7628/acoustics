@@ -8,7 +8,6 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include <QtGui>
 
 #include <config.h>
 #include <TYPES.h>
@@ -29,7 +28,6 @@
 
 #include <transfer/PulseApproximation.h>
 
-#include <ui/WaveViewer.h>
 
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
@@ -45,9 +43,6 @@
 
 #include <boost/bind.hpp>
 
-#include <QGLViewer/qglviewer.h>
-
-#include <GL/glut.h>
 
 #include <iostream>
 #include <string>
@@ -89,16 +84,45 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
         fscanf(fp, "%lf %lf %lf", &x, &y, &z);
         listeningPositions->push_back(Vector3d(x*-1, y, z*-1));
     }
-    // printf("SIZE_LSIT: %d\n", listeningPositions->size());
+}
+
+void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTime, int n){
+    int samples = w[0][0].size();
+    char buffer[80];
+    char fname[100];
+    REAL timestep = 0;
+
+    if(samples > 1){
+        timestep = endTime/(samples-1);
+    }
+
+    REAL dtime = 0;
+
+    double mabs = 0;
+
+    for(int s = 0; s < samples; s++){
+        for(int i = 0; i < n; i++){
+            mabs = max(mabs, abs(w[i][0][s]));
+        }
+    }
+
+    for(int s = 0; s < samples; s++){
+        sprintf(buffer, "%05d", s);
+        sprintf(fname, pattern, buffer);
+        FILE * fp = fopen(fname, "w+");
+        fprintf(fp, "%d %.6lf\n", n, dtime);
+        for(int i = 0; i < n; i++){
+            fprintf(fp, "%.10lf\n", w[i][0][s]/mabs);
+        }
+        fclose(fp);
+        dtime = dtime + timestep;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 int main( int argc, char **argv )
 {
-    QApplication             app( argc, argv );
-
-    glutInit( &argc, argv );
 
     string                   fileName( "default.xml" );
     Parser                  *parser = NULL;
@@ -111,11 +135,9 @@ int main( int argc, char **argv )
 
     REAL                     endTime = -1.0;
 
-    Vector3d                 sound_source;
-
     REAL                     listeningRadius;
     Vector3Array             listeningPositions;
-
+    Vector3d                 sound_source;
     BoundaryEvaluator        boundaryCondition;
 
     REAL                     timeStep;
@@ -132,13 +154,10 @@ int main( int argc, char **argv )
         printf("Not enough arguments!\n");
         exit(1);
     }
-    printf("%s\n", argv[1]);
-    printf("%s\n", argv[2]);
 
     fileName = argv[1];
     readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
-
-    printf("%s\n", pattern);
+    printf("%lf\n", endTime);
 
     parser = Parser::buildParser( fileName );
 
@@ -191,65 +210,42 @@ int main( int argc, char **argv )
     cout << SDUMP( radius ) << endl;
     cout << SDUMP( CENTER_OF_MASS ) << endl;
 
+    radius *= parms._radiusMultipole;
+
+    WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
+
+ #ifdef USE_CUDA
     // Modes are cooler
     // cellSize = 0.5/(REAL)cellDivisions;
     // cout << SDUMP( cellSize ) << endl;
     CUDA_PAT_WaveSolver solver(timeStep,
-                               sound_source,
+                                sound_source,
                    fieldBBox, cellSize,
                    *mesh, CENTER_OF_MASS,
                    *sdf,
                    0.0,
                    &listeningPositions, //listeningPositions
-                   NULL,
+                   &dacallback,
                    parms._subSteps,
                    endTime,
                    2*acos(-1)*4000,
                    parms._nbar,
                    radius,
-                   20,
+                   40,
                    100000);
-    // ModeData modedata;
-    // modedata.read(parms._modeDataFile.c_str());
-    // REAL density = parms._rigidDensity;
-    // CUDA_PAT_WaveSolver solver(timeStep,
-    //                fieldBBox, cellSize,
-    //                *mesh, CENTER_OF_MASS,
-    //                *sdf,
-    //                0.0,
-    //                parms._mode, //Mode
-    //                modedata,
-    //                density,
-    //                &listeningPositions, //listeningPositions
-    //                NULL,
-    //                parms._subSteps,
-    //                endTime,
-    //                parms._nbar,
-    //                radius,
-    //                50,
-    //                100000);
- #else
-    PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-            *mesh, *sdf),
-            0.0, /* distance tolerance */
-            true, /* use boundary */
-            &listeningPositions,
-            NULL, /* No output file */
-            &callback, /* Write callback */
-            parms._subSteps,
-            6, /* acceleration directions */
-            endTime );
 
-    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
- #endif
+    bool ended = false;
+    while(!ended){
+        ended = !solver.stepSystem(NULL);
+        REAL time = solver.currentSimTime();
+        printf("%lf out of %lf (%lf %%)\n", time, endTime, time/endTime);
+    }
 
-    WaveWindow                 waveApp( solver );
+    solver.writeWaveOutput();
+#else
+    printf("ERROR: Not using CUDA\n");
+    exit(1)
+#endif
 
-    waveApp.setAccelerationFunction( NULL );
-
-    QWidget                   *window = waveApp.createWindow();
-
-    window->show();
-
-    return app.exec();
+    return 0;
 }
