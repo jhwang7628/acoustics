@@ -5,6 +5,12 @@ project(isostuffer)
 
 cmake_minimum_required(VERSION 3.0.2)
 
+# set(CMAKE_C_COMPILER "/usr/bin/gcc-4.6")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++-4.6")
+
+# set(CMAKE_C_COMPILER "/usr/bin/gcc")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
 # General Configuration: find all the required libraries.
