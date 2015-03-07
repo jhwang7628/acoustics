@@ -1,0 +1,14 @@
+<!DOCTYPE MeshLabDocument>
+<MeshLabProject>
+ <MeshGroup>
+  <MLMesh label="lee_head_5.obj" filename="lee_head_5_5.obj">
+   <MLMatrix44>
+0.999742 -0.003255 0.0224867 -0.000318449 
+0.00325942 0.999995 -0.000159609 -0.00057867 
+-0.022486 0.000232861 0.999747 -0.00280546 
+0 0 0 1 
+</MLMatrix44>
+  </MLMesh>
+ </MeshGroup>
+ <RasterGroup/>
+</MeshLabProject>

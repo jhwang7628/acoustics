@@ -132,10 +132,10 @@ src/preinstall: src/tools/preinstall
 # Target rules for target src/CMakeFiles/acoustic_python.dir
 
 # All Build rule for target.
-src/CMakeFiles/acoustic_python.dir/all: src/multipole/python/CMakeFiles/multipole_util.dir/all
-src/CMakeFiles/acoustic_python.dir/all: src/deformable/python/CMakeFiles/mode_data.dir/all
-src/CMakeFiles/acoustic_python.dir/all: src/multipole/python/CMakeFiles/multipole_math.dir/all
 src/CMakeFiles/acoustic_python.dir/all: src/multipole/python/CMakeFiles/multipole_data.dir/all
+src/CMakeFiles/acoustic_python.dir/all: src/deformable/python/CMakeFiles/mode_data.dir/all
+src/CMakeFiles/acoustic_python.dir/all: src/multipole/python/CMakeFiles/multipole_util.dir/all
+src/CMakeFiles/acoustic_python.dir/all: src/multipole/python/CMakeFiles/multipole_math.dir/all
 	$(MAKE) -f src/CMakeFiles/acoustic_python.dir/build.make src/CMakeFiles/acoustic_python.dir/depend
 	$(MAKE) -f src/CMakeFiles/acoustic_python.dir/build.make src/CMakeFiles/acoustic_python.dir/build
 	$(CMAKE_COMMAND) -E cmake_progress_report /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build/CMakeFiles 

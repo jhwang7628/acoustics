@@ -31,18 +31,18 @@ def main(args):
 	if args.visual_ear:
 		if args.visual_ear == "left":
 			efile = convert_to_earfile(args.listener_file, 0)
-			os.system("../../gcc-build/src/precompute-impulse-response %s %s"%(args.wave_file, efile))
+			os.system("../../gcc-build2/bin/precompute-impulse-response %s %s"%(args.wave_file, efile))
 		elif args.visual_ear == "right":
 			efile = convert_to_earfile(args.listener_file, 1)
-			os.system("../../gcc-build/src/precompute-impulse-response %s %s"%(args.wave_file, efile))
+			os.system("../../gcc-build2/bin/precompute-impulse-response %s %s"%(args.wave_file, efile))
 	else:
 		print "Left Ear"
 		efile = convert_to_earfile(args.listener_file, 0)
-		os.system("../../gcc-build/src/precompute-impulse-response-text %s %s"%(args.wave_file, efile))
+		os.system("../../gcc-build2/bin/precompute-impulse-response-text %s %s"%(args.wave_file, efile))
 
-		print "Right Ear"
-		efile = convert_to_earfile(args.listener_file, 0)
-		os.system("../../gcc-build/src/precompute-impulse-response-text %s %s"%(args.wave_file, efile))
+		# print "Right Ear"
+		# efile = convert_to_earfile(args.listener_file, 0)
+		# os.system("../../gcc-build/bin/precompute-impulse-response-text %s %s"%(args.wave_file, efile))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()

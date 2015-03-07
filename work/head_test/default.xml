@@ -1,10 +1,10 @@
 
         <?xml version="1.0" ?>
         <impact>
-        	<mesh file="/home/rf356/Desktop/Code/acoustics/work/meshes/lee_head/lee_head_4.obj" scale="1.0" />
+            <mesh file="/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/work/meshes/lee_head/lee_head_4.obj" scale="1.0" />
 
           <acoustic_transfer
-            distancefield="/home/rf356/Desktop/Code/acoustics/work/meshes/lee_head/lee_head_4"
+              distancefield="/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/work/meshes/lee_head/lee_head_4"
             fieldresolution="150"
             gridresolution="400"
             gridscale="1.400000"

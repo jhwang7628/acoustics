@@ -82,7 +82,7 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
     for(int i = 0; i < n; i++){
         double x, y, z;
         fscanf(fp, "%lf %lf %lf", &x, &y, &z);
-        listeningPositions->push_back(Vector3d(x*-1, y, z*-1));
+        listeningPositions->push_back(Vector3d(x, y, z));
     }
 }
 
@@ -106,12 +106,12 @@ void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTi
         }
     }
 
-    for(int s = 0; s < samples; s++){
+    for(int s = 0; s < samples; s++){ // Nts?
         sprintf(buffer, "%05d", s);
         sprintf(fname, pattern, buffer);
         FILE * fp = fopen(fname, "w+");
         fprintf(fp, "%d %.6lf\n", n, dtime);
-        for(int i = 0; i < n; i++){
+        for(int i = 0; i < n; i++){ // NCell
             fprintf(fp, "%.10lf\n", w[i][0][s]/mabs);
         }
         fclose(fp);
@@ -219,20 +219,20 @@ int main( int argc, char **argv )
     // cellSize = 0.5/(REAL)cellDivisions;
     // cout << SDUMP( cellSize ) << endl;
     CUDA_PAT_WaveSolver solver(timeStep,
-                                sound_source,
-                   fieldBBox, cellSize,
-                   *mesh, CENTER_OF_MASS,
-                   *sdf,
-                   0.0,
-                   &listeningPositions, //listeningPositions
-                   &dacallback,
-                   parms._subSteps,
-                   endTime,
-                   2*acos(-1)*4000,
-                   parms._nbar,
-                   radius,
-                   40,
-                   100000);
+                               sound_source,
+                               fieldBBox, cellSize,
+                               *mesh, CENTER_OF_MASS,
+                               *sdf,
+                               0.0,
+                               &listeningPositions, //listeningPositions
+                               &dacallback,
+                               parms._subSteps,
+                               endTime,
+                               2*acos(-1)*4000,
+                               parms._nbar,
+                               radius,
+                               40,
+                               100000);
 
     bool ended = false;
     while(!ended){

@@ -143,6 +143,7 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 											   REAL wave_speed
 											   ):_meshes(){
 
+
 	_step = 0;
 	cache_pressure = NULL;
 	cache_amplitude = NULL;
