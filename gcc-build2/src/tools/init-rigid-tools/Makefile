@@ -43,18 +43,18 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/local/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -73,14 +73,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/init-rigid-tools/CMakeFiles/progress.marks
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/init-rigid-tools/CMakeFiles/progress.marks
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/clean
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/clean
 .PHONY : clean
 
 # The main clean target
@@ -89,22 +89,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/rule:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/rule
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/rule
 .PHONY : src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/rule
 
 # Convenience name for target.
@@ -113,12 +113,12 @@ init-mass-centers: src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/r
 
 # fast build rule for target.
 init-mass-centers/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build
 .PHONY : init-mass-centers/fast
 
 # Convenience name for target.
 src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/rule:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/rule
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/rule
 .PHONY : src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/rule
 
 # Convenience name for target.
@@ -127,12 +127,12 @@ write-inertia: src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/rule
 
 # fast build rule for target.
 write-inertia/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build
 .PHONY : write-inertia/fast
 
 # Convenience name for target.
 src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/rule:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/rule
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/rule
 .PHONY : src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/rule
 
 # Convenience name for target.
@@ -141,231 +141,231 @@ write-mass-center: src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/r
 
 # fast build rule for target.
 write-mass-center/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build
 .PHONY : write-mass-center/fast
 
-__/__/generic/precision_type.o: __/__/generic/precision_type.cpp.o
-.PHONY : __/__/generic/precision_type.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.o
 
 # target to build an object file
-__/__/generic/precision_type.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/generic/precision_type.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/generic/precision_type.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/generic/precision_type.cpp.o
-.PHONY : __/__/generic/precision_type.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o
 
-__/__/generic/precision_type.i: __/__/generic/precision_type.cpp.i
-.PHONY : __/__/generic/precision_type.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.i
 
 # target to preprocess a source file
-__/__/generic/precision_type.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/generic/precision_type.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/generic/precision_type.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/generic/precision_type.cpp.i
-.PHONY : __/__/generic/precision_type.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.i
 
-__/__/generic/precision_type.s: __/__/generic/precision_type.cpp.s
-.PHONY : __/__/generic/precision_type.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.s
 
 # target to generate assembly for a file
-__/__/generic/precision_type.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/generic/precision_type.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/generic/precision_type.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/generic/precision_type.cpp.s
-.PHONY : __/__/generic/precision_type.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.s
 
-__/__/geometry/RigidMesh.o: __/__/geometry/RigidMesh.cpp.o
-.PHONY : __/__/geometry/RigidMesh.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.o
 
 # target to build an object file
-__/__/geometry/RigidMesh.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/geometry/RigidMesh.cpp.o
-.PHONY : __/__/geometry/RigidMesh.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.o
 
-__/__/geometry/RigidMesh.i: __/__/geometry/RigidMesh.cpp.i
-.PHONY : __/__/geometry/RigidMesh.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.i
 
 # target to preprocess a source file
-__/__/geometry/RigidMesh.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/geometry/RigidMesh.cpp.i
-.PHONY : __/__/geometry/RigidMesh.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.i
 
-__/__/geometry/RigidMesh.s: __/__/geometry/RigidMesh.cpp.s
-.PHONY : __/__/geometry/RigidMesh.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.s
 
 # target to generate assembly for a file
-__/__/geometry/RigidMesh.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/geometry/RigidMesh.cpp.s
-.PHONY : __/__/geometry/RigidMesh.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.cpp.s
 
-__/__/io/ImpulseIO.o: __/__/io/ImpulseIO.cpp.o
-.PHONY : __/__/io/ImpulseIO.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.o
 
 # target to build an object file
-__/__/io/ImpulseIO.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/ImpulseIO.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/ImpulseIO.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/ImpulseIO.cpp.o
-.PHONY : __/__/io/ImpulseIO.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o
 
-__/__/io/ImpulseIO.i: __/__/io/ImpulseIO.cpp.i
-.PHONY : __/__/io/ImpulseIO.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.i
 
 # target to preprocess a source file
-__/__/io/ImpulseIO.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/ImpulseIO.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/ImpulseIO.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/ImpulseIO.cpp.i
-.PHONY : __/__/io/ImpulseIO.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.i
 
-__/__/io/ImpulseIO.s: __/__/io/ImpulseIO.cpp.s
-.PHONY : __/__/io/ImpulseIO.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.s
 
 # target to generate assembly for a file
-__/__/io/ImpulseIO.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/ImpulseIO.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/ImpulseIO.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/ImpulseIO.cpp.s
-.PHONY : __/__/io/ImpulseIO.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.s
 
-__/__/io/MatrixIO.o: __/__/io/MatrixIO.cpp.o
-.PHONY : __/__/io/MatrixIO.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.o
 
 # target to build an object file
-__/__/io/MatrixIO.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/MatrixIO.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/MatrixIO.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/MatrixIO.cpp.o
-.PHONY : __/__/io/MatrixIO.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o
 
-__/__/io/MatrixIO.i: __/__/io/MatrixIO.cpp.i
-.PHONY : __/__/io/MatrixIO.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.i
 
 # target to preprocess a source file
-__/__/io/MatrixIO.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/MatrixIO.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/MatrixIO.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/MatrixIO.cpp.i
-.PHONY : __/__/io/MatrixIO.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.i
 
-__/__/io/MatrixIO.s: __/__/io/MatrixIO.cpp.s
-.PHONY : __/__/io/MatrixIO.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.s
 
 # target to generate assembly for a file
-__/__/io/MatrixIO.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/MatrixIO.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/MatrixIO.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/MatrixIO.cpp.s
-.PHONY : __/__/io/MatrixIO.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.s
 
-__/__/io/TglMeshReader.o: __/__/io/TglMeshReader.cpp.o
-.PHONY : __/__/io/TglMeshReader.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.o
 
 # target to build an object file
-__/__/io/TglMeshReader.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/TglMeshReader.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/TglMeshReader.cpp.o
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/TglMeshReader.cpp.o
-.PHONY : __/__/io/TglMeshReader.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o
 
-__/__/io/TglMeshReader.i: __/__/io/TglMeshReader.cpp.i
-.PHONY : __/__/io/TglMeshReader.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.i
 
 # target to preprocess a source file
-__/__/io/TglMeshReader.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/TglMeshReader.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/TglMeshReader.cpp.i
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/TglMeshReader.cpp.i
-.PHONY : __/__/io/TglMeshReader.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.i
 
-__/__/io/TglMeshReader.s: __/__/io/TglMeshReader.cpp.s
-.PHONY : __/__/io/TglMeshReader.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.s
 
 # target to generate assembly for a file
-__/__/io/TglMeshReader.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/io/TglMeshReader.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/__/__/io/TglMeshReader.cpp.s
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/__/__/io/TglMeshReader.cpp.s
-.PHONY : __/__/io/TglMeshReader.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.s
 
-__/__/linearalgebra/MATRIX_FAST.o: __/__/linearalgebra/MATRIX_FAST.cpp.o
-.PHONY : __/__/linearalgebra/MATRIX_FAST.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.o
 
 # target to build an object file
-__/__/linearalgebra/MATRIX_FAST.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/MATRIX_FAST.cpp.o
-.PHONY : __/__/linearalgebra/MATRIX_FAST.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.o
 
-__/__/linearalgebra/MATRIX_FAST.i: __/__/linearalgebra/MATRIX_FAST.cpp.i
-.PHONY : __/__/linearalgebra/MATRIX_FAST.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.i
 
 # target to preprocess a source file
-__/__/linearalgebra/MATRIX_FAST.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/MATRIX_FAST.cpp.i
-.PHONY : __/__/linearalgebra/MATRIX_FAST.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.i
 
-__/__/linearalgebra/MATRIX_FAST.s: __/__/linearalgebra/MATRIX_FAST.cpp.s
-.PHONY : __/__/linearalgebra/MATRIX_FAST.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.s
 
 # target to generate assembly for a file
-__/__/linearalgebra/MATRIX_FAST.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/MATRIX_FAST.cpp.s
-.PHONY : __/__/linearalgebra/MATRIX_FAST.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.cpp.s
 
-__/__/linearalgebra/SPARSE_MATRIX.o: __/__/linearalgebra/SPARSE_MATRIX.cpp.o
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.o
 
 # target to build an object file
-__/__/linearalgebra/SPARSE_MATRIX.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/SPARSE_MATRIX.cpp.o
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.o
 
-__/__/linearalgebra/SPARSE_MATRIX.i: __/__/linearalgebra/SPARSE_MATRIX.cpp.i
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.i
 
 # target to preprocess a source file
-__/__/linearalgebra/SPARSE_MATRIX.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/SPARSE_MATRIX.cpp.i
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.i
 
-__/__/linearalgebra/SPARSE_MATRIX.s: __/__/linearalgebra/SPARSE_MATRIX.cpp.s
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.s
 
 # target to generate assembly for a file
-__/__/linearalgebra/SPARSE_MATRIX.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/SPARSE_MATRIX.cpp.s
-.PHONY : __/__/linearalgebra/SPARSE_MATRIX.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.cpp.s
 
-__/__/linearalgebra/VECTOR_FAST.o: __/__/linearalgebra/VECTOR_FAST.cpp.o
-.PHONY : __/__/linearalgebra/VECTOR_FAST.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.o
 
 # target to build an object file
-__/__/linearalgebra/VECTOR_FAST.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/VECTOR_FAST.cpp.o
-.PHONY : __/__/linearalgebra/VECTOR_FAST.cpp.o
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.o
 
-__/__/linearalgebra/VECTOR_FAST.i: __/__/linearalgebra/VECTOR_FAST.cpp.i
-.PHONY : __/__/linearalgebra/VECTOR_FAST.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.i
 
 # target to preprocess a source file
-__/__/linearalgebra/VECTOR_FAST.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/VECTOR_FAST.cpp.i
-.PHONY : __/__/linearalgebra/VECTOR_FAST.cpp.i
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.i
 
-__/__/linearalgebra/VECTOR_FAST.s: __/__/linearalgebra/VECTOR_FAST.cpp.s
-.PHONY : __/__/linearalgebra/VECTOR_FAST.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.s
 
 # target to generate assembly for a file
-__/__/linearalgebra/VECTOR_FAST.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/__/__/linearalgebra/VECTOR_FAST.cpp.s
-.PHONY : __/__/linearalgebra/VECTOR_FAST.cpp.s
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.cpp.s
 
 init_mass_centers.o: init_mass_centers.cpp.o
 .PHONY : init_mass_centers.o
 
 # target to build an object file
 init_mass_centers.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.o
 .PHONY : init_mass_centers.cpp.o
 
 init_mass_centers.i: init_mass_centers.cpp.i
@@ -373,7 +373,7 @@ init_mass_centers.i: init_mass_centers.cpp.i
 
 # target to preprocess a source file
 init_mass_centers.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.i
 .PHONY : init_mass_centers.cpp.i
 
 init_mass_centers.s: init_mass_centers.cpp.s
@@ -381,7 +381,7 @@ init_mass_centers.s: init_mass_centers.cpp.s
 
 # target to generate assembly for a file
 init_mass_centers.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/build.make src/tools/init-rigid-tools/CMakeFiles/init-mass-centers.dir/init_mass_centers.cpp.s
 .PHONY : init_mass_centers.cpp.s
 
 write_inertia.o: write_inertia.cpp.o
@@ -389,7 +389,7 @@ write_inertia.o: write_inertia.cpp.o
 
 # target to build an object file
 write_inertia.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.o
 .PHONY : write_inertia.cpp.o
 
 write_inertia.i: write_inertia.cpp.i
@@ -397,7 +397,7 @@ write_inertia.i: write_inertia.cpp.i
 
 # target to preprocess a source file
 write_inertia.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.i
 .PHONY : write_inertia.cpp.i
 
 write_inertia.s: write_inertia.cpp.s
@@ -405,7 +405,7 @@ write_inertia.s: write_inertia.cpp.s
 
 # target to generate assembly for a file
 write_inertia.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-inertia.dir/write_inertia.cpp.s
 .PHONY : write_inertia.cpp.s
 
 write_mass_center.o: write_mass_center.cpp.o
@@ -413,7 +413,7 @@ write_mass_center.o: write_mass_center.cpp.o
 
 # target to build an object file
 write_mass_center.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.o
 .PHONY : write_mass_center.cpp.o
 
 write_mass_center.i: write_mass_center.cpp.i
@@ -421,7 +421,7 @@ write_mass_center.i: write_mass_center.cpp.i
 
 # target to preprocess a source file
 write_mass_center.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.i
 .PHONY : write_mass_center.cpp.i
 
 write_mass_center.s: write_mass_center.cpp.s
@@ -429,7 +429,7 @@ write_mass_center.s: write_mass_center.cpp.s
 
 # target to generate assembly for a file
 write_mass_center.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/build.make src/tools/init-rigid-tools/CMakeFiles/write-mass-center.dir/write_mass_center.cpp.s
 .PHONY : write_mass_center.cpp.s
 
 # Help Target
@@ -443,30 +443,30 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... write-inertia"
 	@echo "... write-mass-center"
-	@echo "... __/__/generic/precision_type.o"
-	@echo "... __/__/generic/precision_type.i"
-	@echo "... __/__/generic/precision_type.s"
-	@echo "... __/__/geometry/RigidMesh.o"
-	@echo "... __/__/geometry/RigidMesh.i"
-	@echo "... __/__/geometry/RigidMesh.s"
-	@echo "... __/__/io/ImpulseIO.o"
-	@echo "... __/__/io/ImpulseIO.i"
-	@echo "... __/__/io/ImpulseIO.s"
-	@echo "... __/__/io/MatrixIO.o"
-	@echo "... __/__/io/MatrixIO.i"
-	@echo "... __/__/io/MatrixIO.s"
-	@echo "... __/__/io/TglMeshReader.o"
-	@echo "... __/__/io/TglMeshReader.i"
-	@echo "... __/__/io/TglMeshReader.s"
-	@echo "... __/__/linearalgebra/MATRIX_FAST.o"
-	@echo "... __/__/linearalgebra/MATRIX_FAST.i"
-	@echo "... __/__/linearalgebra/MATRIX_FAST.s"
-	@echo "... __/__/linearalgebra/SPARSE_MATRIX.o"
-	@echo "... __/__/linearalgebra/SPARSE_MATRIX.i"
-	@echo "... __/__/linearalgebra/SPARSE_MATRIX.s"
-	@echo "... __/__/linearalgebra/VECTOR_FAST.o"
-	@echo "... __/__/linearalgebra/VECTOR_FAST.i"
-	@echo "... __/__/linearalgebra/VECTOR_FAST.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/geometry/RigidMesh.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/MATRIX_FAST.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/SPARSE_MATRIX.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/VECTOR_FAST.s"
 	@echo "... init_mass_centers.o"
 	@echo "... init_mass_centers.i"
 	@echo "... init_mass_centers.s"
@@ -487,6 +487,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

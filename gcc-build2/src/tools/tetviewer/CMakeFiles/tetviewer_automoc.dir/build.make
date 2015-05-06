@@ -35,10 +35,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 # Utility rule file for tetviewer_automoc.
 
@@ -46,9 +46,9 @@ CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-bu
 include src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/progress.make
 
 src/tools/tetviewer/CMakeFiles/tetviewer_automoc:
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Automatic moc, uic and rcc for target tetviewer"
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer && /usr/local/bin/cmake -E cmake_autogen /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/ Release
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer && /usr/local/bin/cmake -E cmake_autogen /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/ Release
 
 tetviewer_automoc: src/tools/tetviewer/CMakeFiles/tetviewer_automoc
 tetviewer_automoc: src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/build.make
@@ -59,10 +59,10 @@ src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/build: tetviewer_automoc
 .PHONY : src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/build
 
 src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer && $(CMAKE_COMMAND) -P CMakeFiles/tetviewer_automoc.dir/cmake_clean.cmake
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer && $(CMAKE_COMMAND) -P CMakeFiles/tetviewer_automoc.dir/cmake_clean.cmake
 .PHONY : src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/clean
 
 src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/tetviewer /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/DependInfo.cmake --color=$(COLOR)
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/tetviewer /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/tools/tetviewer/CMakeFiles/tetviewer_automoc.dir/depend
 

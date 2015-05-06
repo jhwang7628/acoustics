@@ -43,18 +43,18 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/local/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -73,14 +73,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/deformable/python/CMakeFiles/progress.marks
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/deformable/python/CMakeFiles/progress.marks
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/clean
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/clean
 .PHONY : clean
 
 # The main clean target
@@ -89,22 +89,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/deformable/python/CMakeFiles/mode_data.dir/rule:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/CMakeFiles/mode_data.dir/rule
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/deformable/python/CMakeFiles/mode_data.dir/rule
 .PHONY : src/deformable/python/CMakeFiles/mode_data.dir/rule
 
 # Convenience name for target.
@@ -113,111 +113,15 @@ mode_data: src/deformable/python/CMakeFiles/mode_data.dir/rule
 
 # fast build rule for target.
 mode_data/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/build
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/build
 .PHONY : mode_data/fast
-
-__/ModeData.o: __/ModeData.cpp.o
-.PHONY : __/ModeData.o
-
-# target to build an object file
-__/ModeData.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/ModeData.cpp.o
-.PHONY : __/ModeData.cpp.o
-
-__/ModeData.i: __/ModeData.cpp.i
-.PHONY : __/ModeData.i
-
-# target to preprocess a source file
-__/ModeData.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/ModeData.cpp.i
-.PHONY : __/ModeData.cpp.i
-
-__/ModeData.s: __/ModeData.cpp.s
-.PHONY : __/ModeData.s
-
-# target to generate assembly for a file
-__/ModeData.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/ModeData.cpp.s
-.PHONY : __/ModeData.cpp.s
-
-__/StVKMesh.o: __/StVKMesh.cpp.o
-.PHONY : __/StVKMesh.o
-
-# target to build an object file
-__/StVKMesh.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/StVKMesh.cpp.o
-.PHONY : __/StVKMesh.cpp.o
-
-__/StVKMesh.i: __/StVKMesh.cpp.i
-.PHONY : __/StVKMesh.i
-
-# target to preprocess a source file
-__/StVKMesh.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/StVKMesh.cpp.i
-.PHONY : __/StVKMesh.cpp.i
-
-__/StVKMesh.s: __/StVKMesh.cpp.s
-.PHONY : __/StVKMesh.s
-
-# target to generate assembly for a file
-__/StVKMesh.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/StVKMesh.cpp.s
-.PHONY : __/StVKMesh.cpp.s
-
-__/linear.o: __/linear.cpp.o
-.PHONY : __/linear.o
-
-# target to build an object file
-__/linear.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/linear.cpp.o
-.PHONY : __/linear.cpp.o
-
-__/linear.i: __/linear.cpp.i
-.PHONY : __/linear.i
-
-# target to preprocess a source file
-__/linear.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/linear.cpp.i
-.PHONY : __/linear.cpp.i
-
-__/linear.s: __/linear.cpp.s
-.PHONY : __/linear.s
-
-# target to generate assembly for a file
-__/linear.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/linear.cpp.s
-.PHONY : __/linear.cpp.s
-
-__/stvk.o: __/stvk.cpp.o
-.PHONY : __/stvk.o
-
-# target to build an object file
-__/stvk.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/stvk.cpp.o
-.PHONY : __/stvk.cpp.o
-
-__/stvk.i: __/stvk.cpp.i
-.PHONY : __/stvk.i
-
-# target to preprocess a source file
-__/stvk.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/stvk.cpp.i
-.PHONY : __/stvk.cpp.i
-
-__/stvk.s: __/stvk.cpp.s
-.PHONY : __/stvk.s
-
-# target to generate assembly for a file
-__/stvk.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/__/stvk.cpp.s
-.PHONY : __/stvk.cpp.s
 
 data.o: data.cpp.o
 .PHONY : data.o
 
 # target to build an object file
 data.cpp.o:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.o
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.o
 .PHONY : data.cpp.o
 
 data.i: data.cpp.i
@@ -225,7 +129,7 @@ data.i: data.cpp.i
 
 # target to preprocess a source file
 data.cpp.i:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.i
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.i
 .PHONY : data.cpp.i
 
 data.s: data.cpp.s
@@ -233,8 +137,104 @@ data.s: data.cpp.s
 
 # target to generate assembly for a file
 data.cpp.s:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.s
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/data.cpp.s
 .PHONY : data.cpp.s
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.o
+
+# target to build an object file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.o
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.i
+
+# target to preprocess a source file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.i
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.s
+
+# target to generate assembly for a file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.cpp.s
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.o
+
+# target to build an object file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.o
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.i
+
+# target to preprocess a source file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.i
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.s
+
+# target to generate assembly for a file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.cpp.s
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.o
+
+# target to build an object file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.o
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.i
+
+# target to preprocess a source file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.i
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.s
+
+# target to generate assembly for a file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.cpp.s
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.o: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.o
+
+# target to build an object file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.o:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.o
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.o
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.i: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.i
+
+# target to preprocess a source file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.i:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.i
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.i
+
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.s: home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.s
+
+# target to generate assembly for a file
+home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.s:
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/deformable/python/CMakeFiles/mode_data.dir/build.make src/deformable/python/CMakeFiles/mode_data.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.s
+.PHONY : home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp.s
 
 # Help Target
 help:
@@ -245,21 +245,21 @@ help:
 	@echo "... edit_cache"
 	@echo "... mode_data"
 	@echo "... rebuild_cache"
-	@echo "... __/ModeData.o"
-	@echo "... __/ModeData.i"
-	@echo "... __/ModeData.s"
-	@echo "... __/StVKMesh.o"
-	@echo "... __/StVKMesh.i"
-	@echo "... __/StVKMesh.s"
-	@echo "... __/linear.o"
-	@echo "... __/linear.i"
-	@echo "... __/linear.s"
-	@echo "... __/stvk.o"
-	@echo "... __/stvk.i"
-	@echo "... __/stvk.s"
 	@echo "... data.o"
 	@echo "... data.i"
 	@echo "... data.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/StVKMesh.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linear.s"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.o"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.i"
+	@echo "... home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.s"
 .PHONY : help
 
 
@@ -271,6 +271,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

@@ -28909,3 +28909,5 @@ src/tools/impulse_response/CMakeFiles/precompute-impulse-response-text.dir/preco
  /usr/local/include/boost/version.hpp
  /usr/local/include/boost/visit_each.hpp
  /usr/local/include/boost/weak_ptr.hpp
+ /usr/local/include/gmp.h
+ /usr/local/include/mpfr.h

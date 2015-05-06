@@ -1,4 +1,4 @@
-# Install script for directory: /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils
+# Install script for directory: /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/utils
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -66,6 +66,7 @@ WaveSolver::WaveSolver( REAL timeStep,
 
     if ( _listeningPositions )
     {
+        // NCell 
         _waveOutput.resize( _listeningPositions->size() );
 
         for ( int i = 0; i < _waveOutput.size(); i++ )

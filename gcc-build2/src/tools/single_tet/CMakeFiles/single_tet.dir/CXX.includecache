@@ -486,14 +486,6 @@ mat4inv.h
 
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/linearalgebra/mat4inv.h
 
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/single_tet/single_tet.cpp
-geometry/FixVtxTetMesh.hpp
--
-io/TetMeshWriter.hpp
--
-iostream
--
-
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils/MERSENNETWISTER.h
 iostream
 -
@@ -532,6 +524,14 @@ timer.hpp
 nano_timer.h
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils/nano_timer.h
 string
+-
+
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/single_tet/single_tet.cpp
+geometry/FixVtxTetMesh.hpp
+-
+io/TetMeshWriter.hpp
+-
+iostream
 -
 
 /usr/local/include/boost/aligned_storage.hpp

@@ -35,10 +35,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 # Utility rule file for precompute-pat-gui_automoc.
 
@@ -46,9 +46,9 @@ CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-bu
 include src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/progress.make
 
 src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc:
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Automatic moc, uic and rcc for target precompute-pat-gui"
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer && /usr/local/bin/cmake -E cmake_autogen /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/ Release
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer && /usr/local/bin/cmake -E cmake_autogen /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/ Release
 
 precompute-pat-gui_automoc: src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc
 precompute-pat-gui_automoc: src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/build.make
@@ -59,10 +59,10 @@ src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/build: pre
 .PHONY : src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/build
 
 src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer && $(CMAKE_COMMAND) -P CMakeFiles/precompute-pat-gui_automoc.dir/cmake_clean.cmake
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer && $(CMAKE_COMMAND) -P CMakeFiles/precompute-pat-gui_automoc.dir/cmake_clean.cmake
 .PHONY : src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/clean
 
 src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/acoustic_transfer /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/DependInfo.cmake --color=$(COLOR)
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/acoustic_transfer /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/tools/acoustic_transfer/CMakeFiles/precompute-pat-gui_automoc.dir/depend
 

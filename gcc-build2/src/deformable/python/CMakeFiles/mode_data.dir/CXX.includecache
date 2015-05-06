@@ -238,14 +238,6 @@ geometry/Tet.hpp
 linearalgebra/Matrix.hpp
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linearalgebra/Matrix.hpp
 
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/python/data.cpp
-boost/python.hpp
--
-boost/python/suite/indexing/vector_indexing_suite.hpp
--
-../ModeData.h
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.h
-
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.cpp
 stvk.h
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/stvk.h
@@ -265,6 +257,20 @@ linearalgebra/Matrix.hpp
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/tensor.hpp
 linearalgebra/Matrix3.hpp
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/deformable/linearalgebra/Matrix3.hpp
+
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.h
+config.h
+-
+vector
+-
+
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/deformable/python/data.cpp
+boost/python.hpp
+-
+boost/python/suite/indexing/vector_indexing_suite.hpp
+-
+../ModeData.h
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/deformable/ModeData.h
 
 /usr/include/python3.4m/Python.h
 patchlevel.h

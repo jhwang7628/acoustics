@@ -76,7 +76,7 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
     FILE * fp;
     fp = fopen(filename, "r+");
     if(fp == NULL){
-        printf("Config file does not exist\n");
+        printf("Config file %s does not exist\n", filename);
         exit(1);
     }
     fscanf(fp, "%s", pattern);
@@ -96,6 +96,8 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
 //////////////////////////////////////////////////////////////////////
 int main( int argc, char **argv )
 {
+
+    cout << "hello?? " << endl; 
     QApplication             app( argc, argv );
 
     glutInit( &argc, argv );
@@ -136,6 +138,8 @@ int main( int argc, char **argv )
     printf("%s\n", argv[2]);
 
     fileName = argv[1];
+    cout << "argv[2] = " << argv[2] << endl;
+        
     readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
 
     printf("%s\n", pattern);

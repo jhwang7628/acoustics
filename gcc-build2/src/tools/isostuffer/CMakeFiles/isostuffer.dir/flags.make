@@ -3,11 +3,11 @@
 
 # compile C with /usr/bin/cc
 # compile CXX with /usr/bin/c++
-C_FLAGS = -O3 -DNDEBUG -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/isostuffer -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src -I/usr/local/include -I/opt/intel/composer_xe_2015.0.090/mkl/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include    -frounding-math
+C_FLAGS = -O3 -DNDEBUG -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/isostuffer -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src -I/usr/local/include -I/opt/intel/composer_xe_2015.0.090/mkl/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include    -frounding-math
 
 C_DEFINES = -DCGAL_INTERSECTION_VERSION=1 -DDIFF_DEFINE -DUSE_CGAL -DUSE_CUDA -DUSE_LAPACKE -DUSE_MKL
 
-CXX_FLAGS = -O3 -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/isostuffer -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src -I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src -I/usr/local/include -I/opt/intel/composer_xe_2015.0.090/mkl/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include    -frounding-math
+CXX_FLAGS = -O3 -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/isostuffer -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src -I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src -I/usr/local/include -I/opt/intel/composer_xe_2015.0.090/mkl/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include    -frounding-math
 
 CXX_DEFINES = -DCGAL_INTERSECTION_VERSION=1 -DDIFF_DEFINE -DUSE_CGAL -DUSE_CUDA -DUSE_LAPACKE -DUSE_MKL
 

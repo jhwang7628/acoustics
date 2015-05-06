@@ -1,8 +1,8 @@
 import os, sys
 
-installPath = '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics';
-libpath = '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/lib'
-workpath = '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/work/'
+installPath = '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics';
+libpath = '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/lib'
+workpath = '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/work/'
 
 sys.path.append(libpath)
 sys.path.append(workpath)

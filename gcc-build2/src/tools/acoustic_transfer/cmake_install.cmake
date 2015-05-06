@@ -1,4 +1,4 @@
-# Install script for directory: /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/acoustic_transfer
+# Install script for directory: /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/acoustic_transfer
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,7 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/cmake_install.cmake")
 
 endif()
 

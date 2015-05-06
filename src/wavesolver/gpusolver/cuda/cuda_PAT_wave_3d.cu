@@ -319,6 +319,13 @@ void wave_sim_step(Cuda_PAT_Wave_3d_t wave){
 
 	printf("%lf -> %lf\n", sin(wave->t*wave->frequency), (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
 	dim3 blockDim(threads_x, threads_y, 1);
+    
+    //printf("DEBUG: %lu %lu %lu %lf %i %i %i\n", *(wave->ubuf_d), 
+    //                                            *(wave->gradient_d), 
+    //                                            *(wave->isBulk_d), 
+    //                                            wave->t, wave->nx, wave->ny, wave->nz);
+
+
 	cuda_pat_wave_3d_velocity_kernel<<< gridDim, blockDim >>>(wave->ubuf_d,
 															  wave->gradient_d,
 															  wave->isBulk_d,
@@ -337,6 +344,30 @@ void wave_sim_step(Cuda_PAT_Wave_3d_t wave){
 															  wave->t,
 															  (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)));
 	cudaCheckError(cudaGetLastError());
+
+
+    //std::cout << "ubuf_d = " << *(wave->ubuf_d) << std::endl;
+    //std::cout << wave->ubuf_d << " " <<
+    //             wave->amplitude_d << " " <<
+    //             wave->phase_d<< " " <<
+    //             wave->isBulk_d<< " " <<
+    //             wave->nx<< " " <<
+    //             wave->ny<< " " <<
+    //             wave->nz<< " " <<
+    //             wave->t<< " " <<
+    //             (wave->t/wave->dt) - (wave->multipole_radius/(wave->dt*wave->c)) << std::endl;
+
+
+
+
+
+
+
+
+    //printf("DEBUG: %lu %lu %lu %lf %i %i %i\n", *(wave->ubuf_d), 
+    //                                            *(wave->gradient_d), 
+    //                                            *(wave->isBulk_d), 
+    //                                            wave->t, wave->nx, wave->ny, wave->nz);
 
 	wave->updated = false;
 	wave->t += wave->dt;

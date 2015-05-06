@@ -1,4 +1,4 @@
-# Install script for directory: /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools
+# Install script for directory: /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,19 +34,19 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/elasticity/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/eigensolver/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/single_tet/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/fbem_input_gen/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/rigidsim/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/pulse/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/init-rigid-tools/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/soundgen/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acceleration_noise/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/cmake_install.cmake")
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/impulse_response/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/isostuffer/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/tetviewer/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/elasticity/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/eigensolver/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/single_tet/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/fbem_input_gen/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/rigidsim/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/pulse/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/init-rigid-tools/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/soundgen/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acceleration_noise/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/impulse_response/cmake_install.cmake")
 
 endif()
 

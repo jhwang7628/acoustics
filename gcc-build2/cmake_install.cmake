@@ -1,4 +1,4 @@
-# Install script for directory: /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+# Install script for directory: /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,7 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/cmake_install.cmake")
+  include("/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/cmake_install.cmake")
 
 endif()
 
@@ -44,7 +44,7 @@ else()
   set(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 endif()
 
-file(WRITE "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/${CMAKE_INSTALL_MANIFEST}" "")
+file(WRITE "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/${CMAKE_INSTALL_MANIFEST}" "")
 foreach(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  file(APPEND "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  file(APPEND "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 endforeach()

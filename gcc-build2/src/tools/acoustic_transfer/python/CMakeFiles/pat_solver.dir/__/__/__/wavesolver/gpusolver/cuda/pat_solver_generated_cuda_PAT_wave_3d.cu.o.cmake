@@ -56,18 +56,18 @@ endif()
 
 # Set these up as variables to make reading the generated file easier
 set(CMAKE_COMMAND "/usr/local/bin/cmake") # path
-set(source_file "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu") # path
-set(NVCC_generated_dependency_file "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/pat_solver_generated_cuda_PAT_wave_3d.cu.o.NVCC-depend") # path
-set(cmake_dependency_file "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/pat_solver_generated_cuda_PAT_wave_3d.cu.o.depend") # path
+set(source_file "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/wavesolver/gpusolver/cuda/cuda_PAT_wave_3d.cu") # path
+set(NVCC_generated_dependency_file "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/pat_solver_generated_cuda_PAT_wave_3d.cu.o.NVCC-depend") # path
+set(cmake_dependency_file "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/pat_solver_generated_cuda_PAT_wave_3d.cu.o.depend") # path
 set(CUDA_make2cmake "/usr/local/share/cmake-3.0/Modules/FindCUDA/make2cmake.cmake") # path
 set(CUDA_parse_cubin "/usr/local/share/cmake-3.0/Modules/FindCUDA/parse_cubin.cmake") # path
 set(build_cubin OFF) # bool
 set(CUDA_HOST_COMPILER "/usr/bin/cc") # bool
 # We won't actually use these variables for now, but we need to set this, in
 # order to force this file to be run again if it changes.
-set(generated_file_path "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/.") # path
-set(generated_file_internal "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/./pat_solver_generated_cuda_PAT_wave_3d.cu.o") # path
-set(generated_cubin_file_internal "/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/./pat_solver_generated_cuda_PAT_wave_3d.cu.o.cubin.txt") # path
+set(generated_file_path "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/.") # path
+set(generated_file_internal "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/./pat_solver_generated_cuda_PAT_wave_3d.cu.o") # path
+set(generated_cubin_file_internal "/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/tools/acoustic_transfer/python/CMakeFiles/pat_solver.dir/__/__/__/wavesolver/gpusolver/cuda/./pat_solver_generated_cuda_PAT_wave_3d.cu.o.cubin.txt") # path
 
 set(CUDA_NVCC_EXECUTABLE "/usr/local/cuda-6.5/bin/nvcc") # path
 set(CUDA_NVCC_FLAGS -arch=sm_12;--maxrregcount=32;-O4;-use_fast_math;-Xptxas;-dlcm=ca "-DBOOST_NOINLINE=__attribute__((noinline))"  ;; ) # list
@@ -77,7 +77,7 @@ set(CUDA_NVCC_FLAGS_DEBUG  ; )
 set(CUDA_NVCC_FLAGS_MINSIZEREL  ; )
 set(CUDA_NVCC_FLAGS_RELWITHDEBINFO  ; )
 set(nvcc_flags -m64;-DDIFF_DEFINE;-DCGAL_INTERSECTION_VERSION=1;-DUSE_MKL;-DUSE_LAPACKE;-DUSE_CGAL;-DUSE_CUDA;-DUSE_CUDA;-Dpat_solver_EXPORTS) # list
-set(CUDA_NVCC_INCLUDE_ARGS "-I/usr/local/cuda-6.5/include;-I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src;-I/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src;-I/usr/local/include;-I/opt/intel/composer_xe_2015.0.090/mkl/include;-I/usr/include;-I/usr/include/glib-2.0;-I/usr/lib/x86_64-linux-gnu/glib-2.0/include;-I/usr/local/cuda-6.5/include;-I/usr/include/python3.4m") # list (needs to be in quotes to handle spaces properly).
+set(CUDA_NVCC_INCLUDE_ARGS "-I/usr/local/cuda-6.5/include;-I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src;-I/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src;-I/usr/local/include;-I/opt/intel/composer_xe_2015.0.090/mkl/include;-I/usr/include;-I/usr/include/glib-2.0;-I/usr/lib/x86_64-linux-gnu/glib-2.0/include;-I/usr/local/cuda-6.5/include;-I/usr/include/python3.4m") # list (needs to be in quotes to handle spaces properly).
 set(format_flag "-c") # string
 
 if(build_cubin AND NOT generated_cubin_file)

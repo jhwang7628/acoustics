@@ -6,15 +6,3 @@
 
 #IncludeRegexTransform: 
 
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils/nano_timer.c
-nano_timer.h
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils/nano_timer.h
-time.h
--
-sys/time.h
--
-assert.h
--
-
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/utils/nano_timer.h
-

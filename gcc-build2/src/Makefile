@@ -43,18 +43,18 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/local/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -73,14 +73,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/CMakeFiles/progress.marks
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/CMakeFiles/progress.marks
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/clean
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -89,22 +89,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: cmake_check_build_system
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/CMakeFiles/acoustic_python.dir/rule:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/acoustic_python.dir/rule
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/acoustic_python.dir/rule
 .PHONY : src/CMakeFiles/acoustic_python.dir/rule
 
 # Convenience name for target.
@@ -113,7 +113,7 @@ acoustic_python: src/CMakeFiles/acoustic_python.dir/rule
 
 # fast build rule for target.
 acoustic_python/fast:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/CMakeFiles/acoustic_python.dir/build.make src/CMakeFiles/acoustic_python.dir/build
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(MAKE) -f src/CMakeFiles/acoustic_python.dir/build.make src/CMakeFiles/acoustic_python.dir/build
 .PHONY : acoustic_python/fast
 
 # Help Target
@@ -136,6 +136,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

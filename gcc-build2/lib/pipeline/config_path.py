@@ -1,11 +1,11 @@
 def installPath():
-	return '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics'
+	return '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics'
 
 def binPath():
-	return '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/bin/bin'
+	return '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/bin/bin'
 
 def matlabPath():
-	return '/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/matlab'
+	return '/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/matlab'
 
 def redirect():
 	return '/dev/null'

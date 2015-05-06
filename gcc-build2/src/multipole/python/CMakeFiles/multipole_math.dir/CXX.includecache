@@ -62,11 +62,17 @@ MultipoleData.h
 string
 -
 
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/multipole/python/math.cpp
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/multipole/MultipoleMath.h
+config.h
+-
+complex
+-
+
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/multipole/python/math.cpp
 boost/python.hpp
 -
 ../MultipoleMath.h
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/multipole/MultipoleMath.h
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/multipole/MultipoleMath.h
 
 /usr/include/python3.4m/Python.h
 patchlevel.h

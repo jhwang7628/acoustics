@@ -35,10 +35,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics
+CMAKE_SOURCE_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2
+CMAKE_BINARY_DIR = /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2
 
 # Utility rule file for acoustic_python.
 
@@ -56,10 +56,10 @@ src/CMakeFiles/acoustic_python.dir/build: acoustic_python
 .PHONY : src/CMakeFiles/acoustic_python.dir/build
 
 src/CMakeFiles/acoustic_python.dir/clean:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src && $(CMAKE_COMMAND) -P CMakeFiles/acoustic_python.dir/cmake_clean.cmake
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src && $(CMAKE_COMMAND) -P CMakeFiles/acoustic_python.dir/cmake_clean.cmake
 .PHONY : src/CMakeFiles/acoustic_python.dir/clean
 
 src/CMakeFiles/acoustic_python.dir/depend:
-	cd /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/CMakeFiles/acoustic_python.dir/DependInfo.cmake --color=$(COLOR)
+	cd /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2 /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src /media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/gcc-build2/src/CMakeFiles/acoustic_python.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/CMakeFiles/acoustic_python.dir/depend
 

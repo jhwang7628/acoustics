@@ -47,6 +47,19 @@
 #include <iostream>
 #include <string>
 
+
+
+#if 1  
+    #define _GNU_SOURCE 1  
+    #include <fenv.h>
+    static void __attribute__ ((constructor))
+    trapfpe ()
+      {
+        /* Enable some exceptions.  At startup all exceptions are
+         * masked.  */
+        feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);  
+      }
+#endif  
 using namespace std;
 
 // FIXME
@@ -104,7 +117,9 @@ void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTi
         for(int i = 0; i < n; i++){
             mabs = max(mabs, abs(w[i][0][s]));
         }
+        cout << "max value is : " << mabs << endl; 
     }
+
 
     for(int s = 0; s < samples; s++){ // Nts?
         sprintf(buffer, "%05d", s);
@@ -186,6 +201,8 @@ int main( int argc, char **argv )
                                                               parms._sdfFilePrefix.c_str() );
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
+
+    cout << "max, min = " << sdf->bmin() <<  ", " << sdf->bmax() << endl;
 
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;

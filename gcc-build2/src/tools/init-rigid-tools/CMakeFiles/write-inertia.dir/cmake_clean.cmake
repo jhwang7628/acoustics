@@ -1,9 +1,9 @@
 file(REMOVE_RECURSE
   "CMakeFiles/write-inertia.dir/write_inertia.cpp.o"
-  "CMakeFiles/write-inertia.dir/__/__/generic/precision_type.cpp.o"
-  "CMakeFiles/write-inertia.dir/__/__/io/MatrixIO.cpp.o"
-  "CMakeFiles/write-inertia.dir/__/__/io/TglMeshReader.cpp.o"
-  "CMakeFiles/write-inertia.dir/__/__/io/ImpulseIO.cpp.o"
+  "CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/generic/precision_type.cpp.o"
+  "CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/MatrixIO.cpp.o"
+  "CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/TglMeshReader.cpp.o"
+  "CMakeFiles/write-inertia.dir/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/io/ImpulseIO.cpp.o"
   "../../../bin/write-inertia.pdb"
   "../../../bin/write-inertia"
 )

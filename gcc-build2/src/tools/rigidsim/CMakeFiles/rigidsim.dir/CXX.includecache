@@ -958,17 +958,17 @@ Simulator.h
 utils/print_msg.h
 /home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/rigid/utils/print_msg.h
 
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/RigidSimDrop.cpp
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/RigidSimDrop.cpp
 iostream
 -
 libconfig.h++
 -
 utils/print_msg.h
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/utils/print_msg.h
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/utils/print_msg.h
 io/TetMeshReader.hpp
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/io/TetMeshReader.hpp
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/io/TetMeshReader.hpp
 rigid/Simulator.h
-/home/jui-hsien/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/rigid/Simulator.h
+/media/jui-hsien/General/Research/gpu-wavesolver-repo/acoustics/src/tools/rigidsim/rigid/Simulator.h
 boost/bind.hpp
 -
 

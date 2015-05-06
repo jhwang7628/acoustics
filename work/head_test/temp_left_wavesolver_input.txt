@@ -1,4 +1,4 @@
-data_head/head_left_%s
+debug/head_left_%s
 0.01
 -0.076300 0.003000 -0.005000
 38831

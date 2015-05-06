@@ -1,0 +1,3 @@
+#!/bin/bash 
+
+python compute_hrtf.py default.xml wavesolver_input.txt
