@@ -7,3 +7,5 @@ gcc-build3
 
 *.swp 
 *.swo 
+.*.swp 
+.*.swo 
