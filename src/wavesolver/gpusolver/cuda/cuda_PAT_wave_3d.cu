@@ -237,7 +237,7 @@ Cuda_PAT_Wave_3d_t wave_sim_init(Number_t xmin, Number_t ymin, Number_t zmin,
 			Number_t y = wave_sim_get_y(wave, j);
 			for(int i = 0; i < nx; i++){
 				Number_t x = wave_sim_get_x(wave, i);
-				Number_t val = initial(x, y, z);
+				Number_t val = initial(x, y, z); // boost::bind(gaussian_3d, _1, _2, _3, sound_source[0-2]); 
 				int idx = 4*(i + nx*(j + ny*k));
 				bool bulk = wave->isBulk[(i + nx*(j + ny*k))];
 				if(bulk){

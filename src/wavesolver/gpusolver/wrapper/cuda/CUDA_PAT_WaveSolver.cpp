@@ -401,6 +401,7 @@ bool CUDA_PAT_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
 	REAL time = (REAL) wave_sim_get_current_time(this->wave);
 	//Save output
 	if(_listeningPositions && (_step %     _substeps) == 0){
+        printf("_step = %u\n"); 
 		Number_t * pressure = wave_listen(this->wave);
 		for(int i = 0; i < _listeningPositions->size(); i++){
 			_waveOutput[i][0].push_back((REAL) pressure[i]);

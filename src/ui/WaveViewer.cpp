@@ -34,6 +34,7 @@ WaveViewer::WaveViewer( Solver &solver )
 	  _drawReceivers( false ),
 	  _drawGhostCells( false ),
 	  _drawInterfacialCells( false ),
+      _drawExtraGLData( 0 ),
 	  _drawField( 0 ),
 	  _drawPressure( _solver.N() )
 {
@@ -52,6 +53,41 @@ WaveViewer::WaveViewer( Solver &solver )
 
 	glEnable( GL_COLOR_MATERIAL );
 }
+
+WaveViewer::WaveViewer( Solver &solver, ExtraGLData * extraGLData)
+	: _solver( solver ),
+	  _acceleration( NULL ),
+	  _minDrawBound( 0, 0, 0 ),
+	  _maxDrawBound( solver.fieldDivisions()[ 0 ],
+					 solver.fieldDivisions()[ 1 ],
+					 solver.fieldDivisions()[ 2 ] ),
+	  _drawColourMax( 1.0 ),
+	  _wireframe( false ),
+	  _drawMesh( false ),
+	  _drawReceivers( false ),
+	  _drawGhostCells( false ),
+	  _drawInterfacialCells( false ),
+      _drawExtraGLData( 0 ),
+	  _drawField( 0 ),
+	  _drawPressure( _solver.N() ), 
+      _extraGLData(extraGLData) 
+{
+	for ( int obj_idx = 0; obj_idx < _solver.meshes().size(); obj_idx++ )
+	{
+		printf( "(WaveViewer) Solver mesh %d has %d vertices and %d triangles\n",
+				obj_idx, (int)_solver.meshes()[ obj_idx ]->vertices().size(),
+				(int)_solver.meshes()[ obj_idx ]->triangles().size() );
+	}
+
+
+	Vector3d sceneCenter = solver.sceneCenter();
+	qglviewer::Vec c( sceneCenter[ 0 ], sceneCenter[ 1 ], sceneCenter[ 2 ] );
+	setSceneCenter( c );
+	setSceneRadius( solver.fieldDiameter() );
+
+	glEnable( GL_COLOR_MATERIAL );
+}
+
 
 //////////////////////////////////////////////////////////////////////
 // Destructor
@@ -135,6 +171,11 @@ void WaveViewer::draw()
 				_estAmplitude).arg(_estPhase));
 	  }
 	}
+
+    if ( _drawExtraGLData != 0 ) 
+    {
+        drawExtraGLData(); 
+    }
 
 #if 0
 	if ( _drawGhostCells )
@@ -225,6 +266,18 @@ void WaveViewer::keyPressEvent( QKeyEvent *e )
 
 		updateGL();
 	}
+    else if ( e->key() == Qt::Key_E ) 
+    {
+        //_drawExtraGLData = !_drawExtraGLData; 
+        _drawExtraGLData ++; 
+        _drawExtraGLData = _drawExtraGLData % 4;
+
+        cout << "drawExtraGLData = " << _drawExtraGLData << endl;
+
+        handled = true; 
+
+        updateGL(); 
+    }
 	else if ( e->key() == Qt::Key_L )
 	{
 		_drawReceivers = !_drawReceivers;
@@ -437,6 +490,56 @@ void WaveViewer::drawMesh()
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+void WaveViewer::drawExtraGLData()
+{
+    //cout << _extraGLData->test << endl;
+    if (NULL != _extraGLData)
+    {
+
+        PointSet p  = _extraGLData->pointset1; 
+        PointSet p2 = _extraGLData->pointset2; 
+
+        if (NULL != p && (_drawExtraGLData == 1 || _drawExtraGLData == 3))
+        {
+            glPointSize(2.0f);
+            glDisable(GL_LIGHTING);
+            glColor3f(1.0f,1.0f,1.0f); 
+            glBegin(GL_POINTS); 
+            for (int ii=0; ii<p->vlist.size(); ii++) 
+            {
+                vector<double> pos; 
+                p->vlist[ii].getPosition(pos);
+                glVertex3f((float)pos[0], (float)pos[1], (float)pos[2]); 
+            }
+            glEnd(); 
+            glEnable(GL_LIGHTING);
+        }
+
+        if (NULL != p2 && (_drawExtraGLData == 2 || _drawExtraGLData == 3))
+        {
+            glPointSize(2.0f);
+            glDisable(GL_LIGHTING);
+            glColor3f(1.0f,1.0f,0.0f); 
+            glBegin(GL_POINTS); 
+            for (int ii=0; ii<p2->vlist.size(); ii++) 
+            {
+                vector<double> pos; 
+                p2->vlist[ii].getPosition(pos);
+                glVertex3f((float)pos[0], (float)pos[1], (float)pos[2]); 
+            }
+            glEnd(); 
+            glEnable(GL_LIGHTING);
+        }
+
+
+
+
+    }
+
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 void WaveViewer::drawReceivers()
 {
 	const Vector3Array        *receivers = _solver.listeningPositions();
@@ -551,6 +654,17 @@ WaveWindow::WaveWindow( Solver &solver )
 	  _viewer( solver )
 {
 }
+
+WaveWindow::WaveWindow( Solver &solver, ExtraGLData* extraGLData)
+	: _xLabel( QApplication::translate( "xlabel", "Grid range (x):" ) ),
+	  _yLabel( QApplication::translate( "xlabel", "Grid range (y):" ) ),
+	  _zLabel( QApplication::translate( "xlabel", "Grid range (z):" ) ),
+	  _absMaxLabel( QApplication::translate( "maxlabel", "Drawing maximum" ) ),
+	  _viewer( solver, extraGLData )
+{
+}
+
+    
 
 //////////////////////////////////////////////////////////////////////
 // Destructor

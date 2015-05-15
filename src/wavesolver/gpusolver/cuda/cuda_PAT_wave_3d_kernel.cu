@@ -365,9 +365,12 @@ __global__ void cuda_pat_wave_3d_listen_kernel(const Number_t * __restrict__ u,
 
 	int ii = blockIdx.x*blockDim.x + threadIdx.x;
 
-	if(ii < num_listening){
+	if(ii < num_listening)
+    {
+
 		Number_t data[2][2][2];
-		Number_t x = listening_positions[3*ii];
+
+		Number_t x = listening_positions[3*ii    ];
 		Number_t y = listening_positions[3*ii + 1];
 		Number_t z = listening_positions[3*ii + 2];
 
@@ -375,17 +378,18 @@ __global__ void cuda_pat_wave_3d_listen_kernel(const Number_t * __restrict__ u,
 		const int j = (int) floor((y - dy/2 - ymin)/dy);
 		const int k = (int) floor((z - dz/2 - zmin)/dz);
 
+        /* weights for trilinear interpolation */ 
 		x = (x - w_get_pos(i, nx, xmin, xmax, dx))/dx;
 		y = (y - w_get_pos(j, ny, ymin, ymax, dy))/dy;
 		z = (z - w_get_pos(k, nz, zmin, zmax, dz))/dz;
 	
-		data[0][0][0] = u[4*(i + nx*(j + ny*k))];
-		data[0][0][1] = u[4*((i+1) + nx*(j + ny*k))];
-		data[0][1][0] = u[4*(i + nx*((j+1) + ny*k))];
-		data[0][1][1] = u[4*((i+1) + nx*((j+1) + ny*k))];
-		data[1][0][0] = u[4*(i + nx*(j + ny*(k+1)))];
-		data[1][0][1] = u[4*((i+1) + nx*(j + ny*(k+1)))];
-		data[1][1][0] = u[4*(i + nx*((j+1) + ny*(k+1)))];
+		data[0][0][0] = u[4*( i    + nx*( j    + ny* k  ))];
+		data[0][0][1] = u[4*((i+1) + nx*( j    + ny* k  ))];
+		data[0][1][0] = u[4*( i    + nx*((j+1) + ny* k  ))];
+		data[0][1][1] = u[4*((i+1) + nx*((j+1) + ny* k  ))];
+		data[1][0][0] = u[4*( i    + nx*( j    + ny*(k+1)))];
+		data[1][0][1] = u[4*((i+1) + nx*( j    + ny*(k+1)))];
+		data[1][1][0] = u[4*( i    + nx*((j+1) + ny*(k+1)))];
 		data[1][1][1] = u[4*((i+1) + nx*((j+1) + ny*(k+1)))];
 
 		data[0][0][0] = (1-x)*data[0][0][0] + x*data[0][0][1];

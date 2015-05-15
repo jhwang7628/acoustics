@@ -117,7 +117,7 @@ void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTi
         for(int i = 0; i < n; i++){
             mabs = max(mabs, abs(w[i][0][s]));
         }
-        cout << "max value is : " << mabs << endl; 
+        //cout << "max value is : " << mabs << endl; 
     }
 
 

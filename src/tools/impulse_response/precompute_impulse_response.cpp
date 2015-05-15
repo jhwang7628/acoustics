@@ -18,6 +18,7 @@
 
 #include <geometry/RigidMesh.h>
 #include <geometry/TriangleMesh.hpp>
+#include <geometry/SimplePointSet.hpp> 
 
 #include <deformable/ModeData.h>
 
@@ -48,6 +49,7 @@
 #include <QGLViewer/qglviewer.h>
 
 #include <GL/glut.h>
+
 
 #include <iostream>
 #include <string>
@@ -96,8 +98,6 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
 //////////////////////////////////////////////////////////////////////
 int main( int argc, char **argv )
 {
-
-    cout << "hello?? " << endl; 
     QApplication             app( argc, argv );
 
     glutInit( &argc, argv );
@@ -128,14 +128,20 @@ int main( int argc, char **argv )
 
     Parser::AcousticTransferParms parms;
 
+
+    // Extra GL data // 
+    ExtraGLData extraGLData; 
+    SimplePointSet<REAL> * fluidMshCentroids; 
+    SimplePointSet<REAL> * fluidMshCentroids2;
+
+
+
     char pattern[100];
 
-    if (argc < 3){
-        printf("Not enough arguments!\n");
+    if (argc != 5){
+        printf("Usage: %s wavesetup listenpos fluidmshcentroid fluidmshcentroid2\n", argv[0]);
         exit(1);
     }
-    printf("%s\n", argv[1]);
-    printf("%s\n", argv[2]);
 
     fileName = argv[1];
     cout << "argv[2] = " << argv[2] << endl;
@@ -195,6 +201,11 @@ int main( int argc, char **argv )
     cout << SDUMP( radius ) << endl;
     cout << SDUMP( CENTER_OF_MASS ) << endl;
 
+    fluidMshCentroids  = new SimplePointSet<REAL>(argv[3]); 
+    fluidMshCentroids2 = new SimplePointSet<REAL>(argv[4]); 
+    extraGLData.pointset1 = fluidMshCentroids; 
+    extraGLData.pointset2 = fluidMshCentroids2; 
+
  #ifdef USE_CUDA
     // Modes are cooler
     // cellSize = 0.5/(REAL)cellDivisions;
@@ -248,7 +259,7 @@ int main( int argc, char **argv )
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
  #endif
 
-    WaveWindow                 waveApp( solver );
+    WaveWindow                 waveApp( solver , &extraGLData);
 
     waveApp.setAccelerationFunction( NULL );
 

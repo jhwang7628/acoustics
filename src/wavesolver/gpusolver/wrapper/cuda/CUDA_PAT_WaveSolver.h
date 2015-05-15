@@ -31,7 +31,7 @@ class CUDA_PAT_WaveSolver : public Solver {
 		public:
 
 			//Needs refactor
-			CUDA_PAT_WaveSolver(REAL timeStep,
+			CUDA_PAT_WaveSolver(REAL timeStep, // this is used in precompute_impulse_response_text
 								const Vector3d & sound_source,
 								const BoundingBox & bbox, REAL cellSize,
 								const TriMesh & mesh,

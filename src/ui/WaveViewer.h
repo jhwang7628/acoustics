@@ -18,14 +18,24 @@
 #include <linearalgebra/VECTOR.h>
 #include <linearalgebra/Vector3.hpp>
 
+#include <geometry/SimplePointSet.hpp>
+
 #include <utils/Evaluator.h>
 
 #include <wavesolver/WaveSolver.h>
 
 #include <TYPES.h>
+#include <string>
 
 #include <sndgen/player/SineWavePlayer.h>
 #include <multipole/MultipolePlayer.h>
+
+typedef struct ExtraGLData
+{
+    std::string test; 
+    SimplePointSet<REAL> * pointset1;
+    SimplePointSet<REAL> * pointset2;
+} ExtraGLData; 
 
 //////////////////////////////////////////////////////////////////////
 // WaveViewer class
@@ -37,9 +47,12 @@ class WaveViewer : public QGLViewer {
     private:
         // Convenience definition
         typedef TriangleMesh<REAL>  TriMesh;
+        typedef SimplePointSet<REAL> * PointSet; 
 
     public:
         WaveViewer( Solver &solver );
+
+        WaveViewer( Solver &solver, ExtraGLData * extraGLData ); 
 
         // Destructor
         virtual ~WaveViewer();
@@ -77,6 +90,7 @@ class WaveViewer : public QGLViewer {
                         int planeIndex, const Vector3d &normal );
 
         void drawMesh();
+        void drawExtraGLData(); 
         void drawReceivers();
 
 #if 0
@@ -93,6 +107,7 @@ class WaveViewer : public QGLViewer {
         virtual void postSelection(const QPoint& point);
     private:
         Solver                  &_solver;
+        ExtraGLData             *_extraGLData; 
 
         BoundaryEvaluator       *_acceleration;
 
@@ -109,6 +124,8 @@ class WaveViewer : public QGLViewer {
         bool                     _drawGhostCells;
         bool                     _drawInterfacialCells;
 
+        int                      _drawExtraGLData; 
+
         int                      _drawField;
         VECTOR                   _drawPressure;
 
@@ -118,6 +135,7 @@ class WaveViewer : public QGLViewer {
         REAL _phase;
         REAL _estAmplitude;
         REAL _estPhase;
+
 
 };
 
@@ -131,6 +149,7 @@ class WaveWindow : public QObject {
 
     public:
         WaveWindow( Solver &solver );
+        WaveWindow( Solver &solver , ExtraGLData* extraGLData); 
 
         // Destructor
         virtual ~WaveWindow();

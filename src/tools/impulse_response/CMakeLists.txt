@@ -45,6 +45,8 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI)
             include(${QT_USE_FILE})
         endif(USE_QT5)
 
+        include_directories("/home/jui-hsien/Research/code/TurbulentHead/tools")
+
         set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
         if(USE_CUDA)
@@ -63,7 +65,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI)
 	            ${UTILS_SRC}                      ${PARSER_SRC}
 	            ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
 	            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
-	            ${DEFORMABLE_SRC}                 
+                ${DEFORMABLE_SRC}                 ${EIGENIO_SRC}
 	            ${MULTIPOLE_SRC})
 
 	        target_link_libraries(precompute-impulse-response

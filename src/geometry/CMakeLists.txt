@@ -10,3 +10,7 @@ set(CGAL_GEOMETRY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/MeshTree.h                 ${CMAKE_CURRENT_SOURCE_DIR}/MeshTree.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ClosestPointMesh.h         ${CMAKE_CURRENT_SOURCE_DIR}/ClosestPointMesh.cpp
     CACHE FILE "CGAL Geometry sources")
+
+set(EIGENIO_SRC
+    /home/jui-hsien/Research/code/TurbulentHead/tools/IO/IO.h
+    CACHE FILE "Eigen IO sources")

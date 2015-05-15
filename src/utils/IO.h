@@ -25,6 +25,11 @@
 #include <stdio.h>
 #include <sstream>
 
+#include <Eigen/Dense> 
+#include <assert.h> 
+#include <dirent.h>
+
+
 #if defined(__unix__) || defined (__LINUX__)
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -39,6 +44,13 @@
 using namespace std;
 
 #define SDUMP(x)	" " << #x << "=[ " << x << " ] "
+
+typedef enum {
+    BINARY, 
+    BINARY_V2,
+    BINARY_V3, // only implemented for reading
+    ASCII
+} IOFileType;
 
 class IO {
 	public:
@@ -127,6 +139,198 @@ class IO {
 
 			return splat;
 		}
+
+        static void readMatrixXd( Eigen::MatrixXd &matout2D, const char *filename, IOFileType x ) 
+        {
+            switch (x) {
+
+                case BINARY :
+                    {
+
+                        cout << "Read BINARY 2D data : " << filename << endl;
+
+                        ifstream file(filename, ios::in | ios::binary | ios::ate); 
+
+                        if (!file)  
+                        {
+                            cerr << "** Cannot find file " << filename << "." << endl; 
+                        }
+
+
+                        streampos size = file.tellg(); 
+                        cout << " - Queried file size : " << size << endl; 
+
+                        int Nrow, Ncol;  
+
+                        file.seekg (0, ios::beg); 
+                        file.read((char*)&Nrow, sizeof(int)); 
+                        file.read((char*)&Ncol, sizeof(int)); 
+
+                        // streampos size_left = (int)size - 2*sizeof(int); 
+
+                        matout2D.resize(Nrow, Ncol); 
+
+                        cout << " - progress: " << endl; 
+                        cout << "     0 %";
+                        for (int ii=0; ii<Nrow; ii++)
+                        {
+                            if ( ii % 50 == 0 )
+                            {
+                                cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+                                     << "     " << (double)ii/(double)Nrow*100 << " % ";
+                            }
+                            for (int jj=0; jj<Ncol; jj++) 
+                                file.read((char*)&matout2D(ii,jj), sizeof(double)); 
+                        }
+                        cout << endl; 
+
+                        file.close(); 
+                        cout << " - Data read in has dimension = (" << Nrow << ", " << Ncol << ")" << endl;
+
+                        break; 
+                    }
+
+                case BINARY_V3 : 
+                    {
+                        cout << "Read BINARY Vector3 data : " << filename << endl;
+
+                        ifstream file(filename, ios::in | ios::binary | ios::ate); 
+
+                        if (!file)  
+                        {
+                            cerr << "cannot find file " << filename << "." << endl; 
+                        }
+
+
+                        streampos size = file.tellg(); 
+                        cout << " - Queried file size : " << size << endl; 
+
+                        int Nrow, Ncol;  
+
+                        file.seekg (0, ios::beg); 
+                        file.read((char*)&Nrow, sizeof(int)); 
+                        file.read((char*)&Ncol, sizeof(int)); 
+
+                        // streampos size_left = (int)size - 2*sizeof(int); 
+
+                        matout2D.resize(Nrow, Ncol*3); 
+
+                        cout << " - progress: " << endl; 
+                        cout << "     0 %";
+                        for (int ii=0; ii<Nrow; ii++)
+                        {
+                            if ( ii % 50 == 0 )
+                            {
+                                cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+                                     << "     " << (double)ii/(double)Nrow*100 << " % ";
+                            }
+                            for (int jj=0; jj<Ncol*3; jj++) 
+                                file.read((char*)&matout2D(ii,jj), sizeof(double)); 
+                        }
+                        cout << endl; 
+
+                        file.close(); 
+                        cout << " - Data read in has dimension = (" << Nrow << ", " << Ncol << "*3)" << endl;
+
+                        break; 
+                    }
+
+                case BINARY_V2 : 
+                    {
+                        cout << "Read BINARY Vector2 data : " << filename << endl;
+
+                        ifstream file(filename, ios::in | ios::binary | ios::ate); 
+
+                        if (!file)  
+                        {
+                            cerr << "cannot find file " << filename << "." << endl; 
+                        }
+
+
+                        streampos size = file.tellg(); 
+                        cout << " - Queried file size : " << size << endl; 
+
+                        int Nrow, Ncol;  
+
+                        file.seekg (0, ios::beg); 
+                        file.read((char*)&Nrow, sizeof(int)); 
+                        file.read((char*)&Ncol, sizeof(int)); 
+
+                        // streampos size_left = (int)size - 2*sizeof(int); 
+
+                        matout2D.resize(Nrow, Ncol*2); 
+
+                        cout << " - progress: " << endl; 
+                        cout << "     0 %";
+                        for (int ii=0; ii<Nrow; ii++)
+                        {
+                            if ( ii % 50 == 0 )
+                            {
+                                cout << "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" 
+                                     << "     " << (double)ii/(double)Nrow*100 << " % ";
+                            }
+                            for (int jj=0; jj<Ncol*2; jj++) 
+                                file.read((char*)&matout2D(ii,jj), sizeof(double)); 
+                        }
+                        cout << endl; 
+
+                        file.close(); 
+                        cout << " - Data read in has dimension = (" << Nrow << ", " << Ncol << "*2)" << endl;
+
+                        break; 
+                    }
+                case ASCII :
+                    {
+                        cout << "Read ASCII data : " << filename << endl; 
+
+                        ifstream ifs(filename); 
+
+                        if (!ifs) 
+                        {
+                            cerr << "Cannot open file " << filename << ". Returning. " << endl; 
+                            return; 
+                        }
+
+                        string line; 
+                        int Nrow=0, Ncol; 
+                        while (getline(ifs, line))
+                        {
+                            if (Nrow % 500 == 0) { cout << Nrow << " lines read. "<< endl;}
+                            Nrow ++; 
+
+                            istringstream iss(line); 
+
+                            vector<double> tmp; 
+                            double buffer; 
+
+                            Ncol = 0; 
+                            while (iss >> buffer)
+                            {
+                                Ncol ++; 
+                                tmp.push_back(buffer); 
+                            }
+
+                            // resize and push the vector content into eigen
+                            // matrices
+                            matout2D.conservativeResize(Nrow, Ncol); 
+                            for (unsigned int ii=0; ii<tmp.size(); ii++) 
+                            {
+                                matout2D(Nrow-1, ii) = tmp[ii]; 
+                            }
+
+                        }
+
+                        ifs.close(); 
+
+                        break; 
+
+
+                    }
+            }
+
+            cout << "Read complete." << endl; 
+
+        }
 
 		//----------------------------------------
 		//  Tries to create a directory of the given path.
