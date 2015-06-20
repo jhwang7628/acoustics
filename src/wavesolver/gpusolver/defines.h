@@ -7,8 +7,10 @@
 
 	typedef boost::function<Number_t (const Number_t x, const Number_t y, const Number_t z)>
 		Wave_InitialCondition3D;
+
 	typedef boost::function<bool (const Number_t x, const Number_t y, const Number_t z)>
 		Wave_BoundaryEvaluator3D;
+
 	typedef boost::function<Number_t (const Number_t x, const Number_t y, const Number_t z, int dim)>
 		Wave_GradientEvaluator3D;
 

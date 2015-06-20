@@ -3,7 +3,11 @@
 
 #include <iostream>
 
-Number_t gaussian_3d(const Number_t x, const Number_t y, const Number_t z, const Number_t b_x, const Number_t b_y, const Number_t b_z){
+/* 
+ * 3D gaussian implementation for initial condition. 
+ */
+Number_t gaussian_3d(const Number_t x, const Number_t y, const Number_t z, const Number_t b_x, const Number_t b_y, const Number_t b_z)
+{
 	Number_t stddev = 0.001;
 	Number_t term = sqrt((x-b_x)*(x-b_x) + (y-b_y)*(y-b_y) + (z-b_z)*(z-b_z))/stddev;
 	
@@ -15,7 +19,11 @@ Number_t zeros(const Number_t x, const Number_t y, const Number_t z){
 	return 0;
 }
 
-bool testWithDistanceField(const Number_t x, const Number_t y, const Number_t z, const REAL tolerance, const DistanceField & distanceField){
+/* 
+ * Test if given point (x,y,z) is inside the distance field. 
+ */
+bool testWithDistanceField(const Number_t x, const Number_t y, const Number_t z, const REAL tolerance, const DistanceField & distanceField)
+{
 	Vector3d v((REAL) x, (REAL) y, (REAL) z);
 	if(distanceField.distance(v) <= tolerance){
 		return true;
@@ -45,8 +53,12 @@ Number_t sphereNormal(const Number_t x, const Number_t y, const Number_t z, int 
 }
 
 
-Number_t gradientWithDistanceField(const Number_t x, const Number_t y, const Number_t z, int dim, const DistanceField & distanceField){
-	Vector3d v((REAL) x, (REAL) y, (REAL) z);
+/* 
+ * Compute the gradient of the distance field. 
+ */
+Number_t gradientWithDistanceField(const Number_t x, const Number_t y, const Number_t z, int dim, const DistanceField & distanceField)
+{
+	Vector3d v( (REAL) x, (REAL) y, (REAL) z );
 	Vector3d grad = distanceField.gradient(v);
 	grad.normalize();
 	return (Number_t) grad[dim];
@@ -158,22 +170,33 @@ CUDA_PAT_WaveSolver::CUDA_PAT_WaveSolver(REAL timeStep,
 	Number_t xcenter = (Number_t) centerOfMass[0];
 	Number_t ycenter = (Number_t) centerOfMass[1];
 	Number_t zcenter = (Number_t) centerOfMass[2];
-	this->_frequency = frequency/(2*acos(-1));
-	_multipole_radius = multipole_radius;
-	printf("<%lf, %lf, %lf>\n", xmax-xmin, ymax-ymin, zmax-zmin);
-	printf("frequency: %f\n", frequency/(2*acos(-1)));
+
+	printf("Domain size = (%lf, %lf, %lf)\n", xmax-xmin, ymax-ymin, zmax-zmin);
+
+	//this->_frequency = frequency/(2*acos(-1));
+	//_multipole_radius = multipole_radius;
+	//printf("frequency: %f\n", this->_frequency);
+	//
+	//_multipoleModeData._mode = -1;
+	//_multipoleModeData._frequency = frequency/(2*acos(-1));
+	//_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
 	
-	_multipoleModeData._mode = -1;
-	_multipoleModeData._frequency = frequency/(2*acos(-1));
-	_multipoleModeData._coefficients.resize(2*(num_multipole_coef+1)*(num_multipole_coef+1));
-	
-	printf("%f <? %f\n", wave_speed*timeStep, cellSize);
+    const REAL CFL = wave_speed*timeStep/cellSize;
+
+	printf("CFL number = %f\n", CFL);
+
+    if (CFL >= 1.0) 
+    {
+        printf("*Warning: CFL number exceeds 1. Consider refining time steps. Press [ENTER] to continue.\n"); 
+        char buf[100]; 
+        cin >> buf; 
+    }
 
 
 	Number_t * posi = (Number_t *) malloc(3*listeningPositions->size()*sizeof(Number_t));
 
-	for(int i = 0; i < listeningPositions->size(); i++){
-
+	for(int i = 0; i < listeningPositions->size(); i++)
+    {
 		posi[3*i] = (Number_t) ((*listeningPositions)[i][0]);
 		posi[3*i+1] = (Number_t) ((*listeningPositions)[i][1]);
 		posi[3*i+2] = (Number_t) ((*listeningPositions)[i][2]);
@@ -396,7 +419,8 @@ const Tuple3i & CUDA_PAT_WaveSolver::fieldDivisions() const{
 	return this->_fieldDivisions;
 }
 
-bool CUDA_PAT_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator){
+bool CUDA_PAT_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
+{
 	wave_sim_step(this->wave);
 	REAL time = (REAL) wave_sim_get_current_time(this->wave);
 	//Save output

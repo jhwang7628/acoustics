@@ -57,19 +57,24 @@ Parser::~Parser()
     delete document;
 }
 
+/* legacy support */
+TriangleMesh<REAL> *Parser::getMesh()
+{
+    return getMesh("impact");
+}
 //////////////////////////////////////////////////////////////////////
 // Construct a triangle mesh from data stored in the XML document
 //////////////////////////////////////////////////////////////////////
-TriangleMesh<REAL> *Parser::getMesh()
+TriangleMesh<REAL> *Parser::getMesh(const char * rootTag)
 {
     const char              *fileName;
     REAL                     scale = 1.0;
     TriangleMesh<REAL>      *mesh = NULL;
 
-    TiXmlElement *root = document->FirstChildElement("impact");
+    TiXmlElement *root = document->FirstChildElement(rootTag);
     if (!root)
     {
-        cerr << "No impact tag in input file" << endl;
+        cerr << "No " << rootTag << " tag in input file" << endl;
         return NULL;
     }
 
@@ -308,6 +313,7 @@ Parser::SphericalImpactParms Parser::getSphereImpactParms()
 }
 #endif
 
+
 Parser::AcousticTransferParms Parser::getAcousticTransferParms()
 {
     AcousticTransferParms      transferParams;
@@ -482,6 +488,101 @@ Parser::AccelerationPulseParms Parser::getAccelerationPulseParms()
         = queryRequiredAttr( "impact/acceleration_pulse", "multitermoutputfile" );
 
     return pulseParms;
+}
+
+vector<REAL*> Parser::ImpulseResponseParms::getSoundSources(const TiXmlNode * document, const char * rootTag) const 
+{
+    vector<REAL*> ph; 
+
+    const TiXmlElement *root = document->FirstChildElement(rootTag); 
+    if (!root)
+    {
+        cerr << "No " << rootTag << " tag in input file" << endl;
+        return ph; 
+    }
+
+    const TiXmlElement *pos_L = root->FirstChildElement("source_position_L");
+    if (!pos_L) 
+    {
+        cerr << "No source_pos_Lition tag in xml" << endl; 
+        return ph; 
+    }
+
+    REAL posx, posy, posz; 
+
+    if (pos_L->QueryRealAttribute("x", &posx) != TIXML_SUCCESS ||
+        pos_L->QueryRealAttribute("y", &posy) != TIXML_SUCCESS ||
+        pos_L->QueryRealAttribute("z", &posz) != TIXML_SUCCESS)
+    {
+        cerr << "Cannot read source_position component in xml." << endl; 
+        return ph; 
+    }
+
+
+
+    REAL sound_source_L[3] = {posx, posy, posz}; 
+    ph.push_back(sound_source_L); 
+
+    printf("Queried sound source position L = {%f %f %f}\n", posx, posy, posz); 
+
+    const TiXmlElement *pos_R = root->FirstChildElement("source_position_R");
+    if (!pos_R) 
+    {
+        cerr << "No source_position tag in xml" << endl; 
+        return ph; 
+    }
+
+    if (pos_R->QueryRealAttribute("x", &posx) != TIXML_SUCCESS ||
+        pos_R->QueryRealAttribute("y", &posy) != TIXML_SUCCESS ||
+        pos_R->QueryRealAttribute("z", &posz) != TIXML_SUCCESS)
+    {
+        cerr << "Cannot read source_position component in xml." << endl; 
+        return ph; 
+    }
+
+
+
+    REAL sound_source_R[3] = {posx, posy, posz}; 
+    ph.push_back(sound_source_R); 
+
+    printf("Queried sound source position R= {%f %f %f}\n", posx, posy, posz); 
+
+
+    return ph;
+
+
+
+
+}
+
+
+/* Fetch parameters for impulse response computation. */
+Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
+{
+    ImpulseResponseParms       irParams;
+
+    vector<REAL*> tmp = irParams.getSoundSources(document, "impulse_response"); 
+
+    //ifParams._
+
+    irParams._stdevGaussian = queryRequiredReal( "impulse_response/acoustic_transfer", "stdevGaussian" ); 
+    //irParams._sourcePositions = queryRequiredRealMultiple( "impulse_response/acoustic_transfer", "sourcePosition" );
+
+    irParams._c = queryOptionalReal( "impulse_response/acoustic_transfer", "c", "343.0" );
+    irParams._density = queryOptionalReal( "impulse_response/acoustic_transfer", "density", "1.0" );
+
+    /* Get SDF parameters */
+    irParams._sdfFilePrefix = queryRequiredAttr( "impulse_response/acoustic_transfer", "distancefield" );
+    irParams._sdfResolution = queryRequiredInt( "impulse_response/acoustic_transfer", "fieldresolution" );
+
+    /* Get grid parameters */
+    irParams._gridResolution = queryRequiredInt( "impulse_response/acoustic_transfer", "gridresolution" );
+    irParams._gridScale = queryRequiredReal( "impulse_response/acoustic_transfer", "gridscale" );
+
+    irParams._timeStepFrequency = queryRequiredInt( "impulse_response/acoustic_transfer", "timestepfrequency" );
+    irParams._subSteps = queryRequiredInt( "impulse_response/acoustic_transfer", "substeps" ); 
+
+    return irParams;
 }
 
 #if 0
@@ -773,6 +874,33 @@ string Parser::queryRequiredAttr( std::string path, std::string attr )
     cout << "Queried " << attr << "=\"" << val << "\"" << endl;
     return val;
 }
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+std::vector<std::string> Parser::queryRequiredAttrMultiple( std::string path, std::string attr )
+{
+    std::vector<std::string> allval; 
+    while (true) 
+    {
+
+        TiXmlNode* node = getNodeByPath( path );
+        if (node != NULL) 
+        {
+            TiXmlElement* elm = node->ToElement();
+            string val = queryRequiredAttr( elm, attr );
+            cout << "Queried " << attr << "=\"" << val << "\"" << endl;
+            allval.push_back(val); 
+        }
+        else 
+        {
+            break; 
+        }
+    }
+
+    return allval;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////
 // Gets a list of listening positions from the 

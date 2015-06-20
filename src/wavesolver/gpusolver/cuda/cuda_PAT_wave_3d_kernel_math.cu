@@ -1,10 +1,16 @@
+/* 
+ * Compute PML absorbtion. 
+ */
 __device__ __forceinline__ Number_t pat_wave_3d_absortion(const Number_t pos, const Number_t dmin, const Number_t dmax, const Number_t strength, const Number_t width){
 	Number_t d;
 	Number_t pd = min(pos-dmin, dmax-pos);
-	if(pd < width){
+	if (pd < width)
+    {
 		d = (width-pd)/width;
-		return strength*d*d;
-	} else{
+		return strength*d*d; 
+	} 
+    else
+    {
 		return 0;
 	}
 }

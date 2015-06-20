@@ -24,9 +24,29 @@
 
 #include <multipole/MultipoleUtil.h>
 
-class CUDA_PAT_WaveSolver : public Solver {
+class CUDA_PAT_WaveSolver : public Solver 
+{
 		public:
 			typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
+
+		private:
+			Cuda_PAT_Wave_3d_t wave;
+
+			const Vector3Array * _listeningPositions;
+			REAL _frequency;
+			std::vector<const TriMesh *> _meshes;
+			std::vector<std::vector<FloatArray> > _waveOutput;
+			MultipoleData::MultipoleModeData _multipoleModeData;
+			WriteCallback * _callback;
+			REAL _endTime;
+			REAL _multipole_radius;
+			int _substeps;
+			int _step;
+			Vector3i _fieldDivisions;
+			Number_t * cache_pressure;
+			Number_t * cache_amplitude;
+			Number_t * cache_phase;
+
 
 		public:
 
@@ -72,7 +92,8 @@ class CUDA_PAT_WaveSolver : public Solver {
 
 			virtual ~CUDA_PAT_WaveSolver();
 
-			virtual int N() const{
+			virtual int N() const
+            {
 					//For debug only
 					//0 - pressure
 					//1 - Amplitude
@@ -82,9 +103,7 @@ class CUDA_PAT_WaveSolver : public Solver {
 			}
 
 			virtual const Tuple3i &fieldDivisions() const;
-			virtual const std::vector<const TriMesh *> &meshes() const{
-					return this->_meshes;
-			}
+			virtual const std::vector<const TriMesh *> &meshes() const { return this->_meshes; }
 			virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
 			virtual void writeWaveOutput() const;
 			virtual Vector3d fieldPosition( const Tuple3i &index ) const;
@@ -103,23 +122,6 @@ class CUDA_PAT_WaveSolver : public Solver {
 			void vertexData(int x, int y, int z, REAL * pressure, REAL * amplitude, REAL * phase, bool * bulk);
 			void gradientAt(int i, int j, int k, REAL * x, REAL * y, REAL * z);
 
-		private:
-			Cuda_PAT_Wave_3d_t wave;
-
-			const Vector3Array * _listeningPositions;
-			REAL _frequency;
-			std::vector<const TriMesh *> _meshes;
-			std::vector<std::vector<FloatArray> > _waveOutput;
-			MultipoleData::MultipoleModeData _multipoleModeData;
-			WriteCallback * _callback;
-			REAL _endTime;
-			REAL _multipole_radius;
-			int _substeps;
-			int _step;
-			Vector3i _fieldDivisions;
-			Number_t * cache_pressure;
-			Number_t * cache_amplitude;
-			Number_t * cache_phase;
 };
 
 #endif

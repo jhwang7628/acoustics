@@ -43,6 +43,7 @@ class Parser {
 
         // Construct a triangle mesh from information stored
         // in this document
+        TriangleMesh<REAL> *getMesh(const char * rootTag);
         TriangleMesh<REAL> *getMesh();
 
         // Mesh file name
@@ -177,6 +178,37 @@ class Parser {
 
         };
 #endif
+
+        /* 
+         * Parameters for impulse response precomputation. 
+         * Support 3d gaussian for now.
+         * */
+        struct ImpulseResponseParms 
+        {
+            /* Physical properties of the medium */
+            REAL                   _c; 
+            REAL                   _density; 
+
+            /* SDF parms */
+            int                    _sdfResolution;
+            std::string            _sdfFilePrefix;
+
+            /* Domain resolution and scale. */ 
+            int                    _gridResolution;
+            REAL                   _gridScale;
+
+            /* Time stepping information. */
+            int                    _timeStepFrequency;
+            int                    _subSteps;
+
+
+            /* Inpulse response information */
+            std::vector<REAL*>   _sourcePositions; 
+            REAL                 _stdevGaussian;
+
+            vector<REAL*> getSoundSources(const TiXmlNode * document, const char * rootTag) const;
+
+        };
 
         /////////////////////////////////////////////////////
         // Parameters for acceleration pulse precomputation
@@ -520,6 +552,9 @@ class Parser {
         AcousticTransferParms getAcousticTransferParms();
         AccelerationPulseParms getAccelerationPulseParms();
 
+        /* Fetch parameters for impulse response computation. */
+        ImpulseResponseParms getImpulseResponseParms(); 
+
 #if 0
         // Fetches parameters for setting up the input to an acoustic
         // scattering calculation due to rigid body acceleration
@@ -581,6 +616,10 @@ class Parser {
         {
             return atoi( queryRequiredAttr( path, attr ).c_str() );
         }
+
+
+        /* Multiple queries on same attributes */
+        std::vector<std::string> queryRequiredAttrMultiple( std::string path, std::string attr ); 
 
         // If you want to walk the DOM on your own, use this
         TiXmlDocument* getDocument() { return document; }
