@@ -28,14 +28,19 @@
 
 #include <parser/Parser.h>
 
-// #include <transfer/PulseApproximation.h>
+#include <transfer/PulseApproximation.h>
 
 #include <ui/WaveViewer.h>
 
 #include <utils/IO.h>
 #include <utils/MathUtil.h>
 
-#include <wavesolver/PML_WaveSolver.h>
+#ifdef USE_CUDA
+    #include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h>
+    #include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
+#else
+    #include <wavesolver/PML_WaveSolver.h>
+#endif
 
 #include <wavesolver/WaveSolver.h>
 
@@ -51,21 +56,29 @@
 
 using namespace std;
 
+// FIXME
+static REAL radiusMultiplier = 1.1892;
+static int pointsPerShell;
+static int numShells = 9;
+
+static Vector3d              ACCELERATION_DIRECTIONS[] = { Vector3d( 1.0, 0.0, 0.0 ),
+                                                           Vector3d( 0.0, 1.0, 0.0 ),
+                                                           Vector3d( 0.0, 0.0, 1.0 ),
+                                                           Vector3d( 1.0, 0.0, 0.0 ),
+                                                           Vector3d( 0.0, 1.0, 0.0 ),
+                                                           Vector3d( 0.0, 0.0, 1.0 ) };
 
 static Vector3d              CENTER_OF_MASS( 0.0, 0.0, 0.0 );
 
+static REAL                  PULSE_HALF_PERIOD = 0.0;
+
 bool                         ZERO_BC = true;
 
-/* 
- * Read the configuration files for listening positions. 
- */
-void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listeningPositions, char * pattern, Vector3d & sound_source)
-{
+void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listeningPositions, char * pattern, Vector3d & sound_source){
     FILE * fp;
     fp = fopen(filename, "r+");
-    if(fp == NULL)
-    {
-        printf("Error: Config file %s does not exist\n", filename);
+    if(fp == NULL){
+        printf("Config file %s does not exist\n", filename);
         exit(1);
     }
     fscanf(fp, "%s", pattern);
@@ -73,8 +86,7 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
     fscanf(fp, "%lf %lf %lf", &(sound_source[0]), &(sound_source[1]), &(sound_source[2]));
     int n;
     fscanf(fp, "%d", &n);
-    for(int i = 0; i < n; i++)
-    {
+    for(int i = 0; i < n; i++){
         double x, y, z;
         fscanf(fp, "%lf %lf %lf", &x, &y, &z);
         listeningPositions->push_back(Vector3d(x*-1, y, z*-1));
@@ -94,7 +106,7 @@ int main( int argc, char **argv )
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh = NULL;
     RigidMesh               *rigidMesh = NULL;
-    ClosestPointField       *sdf = NULL;
+    ClosestPointField     *sdf = NULL;
     BoundingBox              fieldBBox;
     REAL                     cellSize;
     int                      cellDivisions;
@@ -117,7 +129,7 @@ int main( int argc, char **argv )
     Parser::AcousticTransferParms parms;
 
 
-    // Extra GL data for visualization // 
+    // Extra GL data // 
     ExtraGLData extraGLData; 
     SimplePointSet<REAL> * fluidMshCentroids; 
     SimplePointSet<REAL> * fluidMshCentroids2;
@@ -132,6 +144,7 @@ int main( int argc, char **argv )
     }
 
     fileName = argv[1];
+    cout << "argv[2] = " << argv[2] << endl;
         
     readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
 
@@ -170,7 +183,8 @@ int main( int argc, char **argv )
 
     cellDivisions = parms._gridResolution;
 
-    cellSize = min( fieldBBox.axislength( 0 ), min( fieldBBox.axislength( 1 ), fieldBBox.axislength( 2 ) ) );
+    cellSize = min( fieldBBox.axislength( 0 ),
+            min( fieldBBox.axislength( 1 ), fieldBBox.axislength( 2 ) ) );
     cout << SDUMP(cellSize) << endl;
     cellSize /= (REAL)cellDivisions;
 
@@ -232,15 +246,15 @@ int main( int argc, char **argv )
     //                100000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-                                  *mesh, *sdf,
-                                  0.0, /* distance tolerance */
-                                  true, /* use boundary */
-                                  &listeningPositions,
-                                  NULL, /* No output file */
-                                  &callback, /* Write callback */
-                                  parms._subSteps,
-                                  6, /* acceleration directions */
-                                  endTime );
+            *mesh, *sdf),
+            0.0, /* distance tolerance */
+            true, /* use boundary */
+            &listeningPositions,
+            NULL, /* No output file */
+            &callback, /* Write callback */
+            parms._subSteps,
+            6, /* acceleration directions */
+            endTime );
 
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
  #endif

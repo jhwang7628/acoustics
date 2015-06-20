@@ -37,6 +37,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _endTime( endTime ),
     _zSlice( -1 )
 {
+    cout << "CPU PML wavesolver starting (config 1)... " << endl;
     _pFull.resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), N );
@@ -89,6 +90,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _endTime( endTime ),
     _zSlice( -1 )
 {
+    cout << "CPU PML wavesolver starting (config 2)... " << endl;
     _pFull.resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), N );

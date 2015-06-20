@@ -18,10 +18,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # compile option
 option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
-option(USE_DEBUG "Turn on the debug mode" OFF)
-option(USE_OPENMP "Turn on the OpenMP feature when compiling" OFF)
+option(USE_DEBUG "Turn on the debug mode" ON)
+option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
-option(USE_CUDA "Use CUDA" ON)
+option(USE_CUDA "Use CUDA" OFF)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -42,7 +42,7 @@ option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" ON)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
-option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    ON)
+option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
 
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE "Compiles the impulse response wavesolver" ON)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)

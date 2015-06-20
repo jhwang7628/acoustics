@@ -6,8 +6,6 @@
 #include <config.h>
 #include <TYPES.h>
 
-#include <math/InterpolationFunction.h>
-
 #include <distancefield/closestPointField.h>
 #include <distancefield/FieldBuilder.h>
 
@@ -28,9 +26,8 @@
 //#include <utils/Evaluator.h>
 
 //#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h>
-//#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
+#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
 
-#include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
 
 #include <boost/bind.hpp>
@@ -60,38 +57,6 @@ void readConfigFile(const char * filename, REAL * endTime,
 
 void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTime, int n); 
 
-REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
-                   int field_id, InterpolationFunction *interp )
-{
-    REAL                       bcResult = 0.0;
-
-    TRACE_ASSERT( obj_id == 0 );
-
-    //if ( t <= 2.0 * interp->supportLength() )
-    //{
-    //    bcResult = interp->evaluate( t, interp->supportLength() );
-
-    //    if ( field_id <= 2 )
-    //    {
-    //        bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
-    //    }
-    //    else
-    //    {
-    //        bcResult *= n.dotProduct(
-    //                        ( x - CENTER_OF_MASS ).crossProduct(
-    //                                                    ACCELERATION_DIRECTIONS[ field_id ] ) );
-    //    }
-
-    //    if ( ZERO_BC )
-    //    {
-    //        ZERO_BC = false;
-    //        cout << "Non-zero boundary condition!" << endl;
-    //    }
-    //}
-
-    return bcResult;
-}
-
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////
@@ -99,6 +64,10 @@ using namespace std;
 int main( int argc, char **argv )
 {
 
+#ifndef USE_CUDA
+    printf("** ERROR: Not using CUDA\n");
+    exit(1)
+#endif
 
 
 #if 0 //complete refactor configuration reader
@@ -117,7 +86,7 @@ int main( int argc, char **argv )
 #else
 
     if (argc != 3){
-        printf("**Usage: %s solver_configuration_XML listening_configuration_file", argv[0]);
+        printf("**Usage: %s solver_configuration_XML listening_configuration_file");
         exit(1);
     }
 
@@ -135,7 +104,7 @@ int main( int argc, char **argv )
     //REAL                     listeningRadius;
     Vector3Array             listeningPositions;
     Vector3d                 sound_source;
-    BoundaryEvaluator        boundaryCondition;
+    //BoundaryEvaluator        boundaryCondition;
 
     REAL                     timeStep;
 
@@ -199,7 +168,7 @@ int main( int argc, char **argv )
     boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
-    PML_WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
+    WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
 
     //CUDA_PAT_WaveSolver solver(timeStep,
     //                           sound_source,
@@ -218,64 +187,38 @@ int main( int argc, char **argv )
     //                           40,
     //                           100000);
 
-    PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-                                  *mesh, *sdf,
-                                  0.0, /* distance tolerance */
-                                  true, /* use boundary */
-                                  &listeningPositions,
-                                  NULL, /* No output file */
-                                  NULL, /* Write callback */
-                                  parms._subSteps,
-                                  6, /* acceleration directions */
-                                  endTime );
 
-    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
-
-    // CUDA_PAT_WaveSolver solver(timeStep,
-    //                            sound_source,
-    //                            fieldBBox, cellSize,
-    //                            *mesh, 
-    //                            CENTER_OF_MASS,
-    //                            *sdf,
-    //                            0.0, // distance tolerance
-    //                            &listeningPositions,
-    //                            &dacallback,
-    //                            parms._subSteps,
-    //                            endTime,
-    //                            QNAN_R, 
-    //                            QNAN_I,
-    //                            QNAN_R, 
-    //                            40,
-    //                            100000);
+    CUDA_PAT_WaveSolver solver(timeStep,
+                               sound_source,
+                               fieldBBox, cellSize,
+                               *mesh, 
+                               CENTER_OF_MASS,
+                               *sdf,
+                               0.0, // distance tolerance
+                               &listeningPositions,
+                               &dacallback,
+                               parms._subSteps,
+                               endTime,
+                               QNAN_R, 
+                               QNAN_I,
+                               QNAN_R, 
+                               40,
+                               100000);
 
 
 
-    // bool ended = false;
+    bool ended = false;
 
-    // while(!ended){
-    //     ended = !solver.stepSystem(NULL);
-    //     REAL time = solver.currentSimTime();
-    //     printf("%lf out of %lf (%lf %%)\n", time, endTime, time/endTime);
-    // }
+    while(!ended){
+        ended = !solver.stepSystem(NULL);
+        REAL time = solver.currentSimTime();
+        printf("%lf out of %lf (%lf %%)\n", time, endTime, time/endTime);
+    }
 
-    // solver.writeWaveOutput();
+    solver.writeWaveOutput();
 
 
 #endif
-
-
-
-    InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
-    boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
-
-    for (int ii=0; ii<100; ii++) 
-    {
-
-        solver.stepSystem(boundaryCondition); 
-    }
-
-
-    cout << "End of program. " << endl;
 
     return 0;
 
@@ -351,6 +294,3 @@ void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTi
         dtime = dtime + timestep;
     }
 }
-
-
-

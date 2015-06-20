@@ -4,6 +4,7 @@ work/sphericalhead_test
 gcc-build
 gcc-build2
 gcc-build3
+gcc-build4
 
 *.swp 
 *.swo 
