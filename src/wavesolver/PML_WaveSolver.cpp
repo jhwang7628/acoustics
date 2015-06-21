@@ -285,6 +285,66 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
         REAL                     listenerOutput;
         const ScalarField       &field = _grid.pressureField();
 
+        // MY IMPLEMENTATION //
+        // FIXME FIXME need verification //
+
+        if ( _outputFile ) 
+        {
+            vector<REAL> MyWaveOutput; 
+
+            MyWaveOutput.resize( _listeningPositions->size() ); 
+
+            char buf[ 1024 ]; 
+
+            sprintf( buf, "test/%s_%.5u", _outputFile,  ( _timeIndex / _subSteps ) ); 
+            cout << "buf = " << buf << endl;
+
+            ofstream of(buf); 
+            of.precision(12); 
+
+
+            if (!buf) 
+            {
+                cerr << "*Warning: Cannot open file " << buf << " for writing" << endl; 
+                exit(1);
+            }
+
+            for ( int ii=0; ii<_listeningPositions->size(); ii++) 
+            {
+                field.interpolateVectorField( _listeningPositions->at( ii ), 
+                                              _pFull, _listenerOutput );  // output is _listenerOutput and is scalar.
+
+                //printf("at (%f, %f, %f), _listenerOutput = %f\n", _listeningPositions->at( ii )[ 0 ], 
+                //                                                  _listeningPositions->at( ii )[ 1 ], 
+                //                                                  _listeningPositions->at( ii )[ 2 ], 
+                //                                                  _listenerOutput(0) ); 
+                  
+                  
+                if ( _N != 1 ) 
+                {
+                    cerr << "** Error: should have only one field. " << endl; 
+                    exit(1); 
+                }
+
+                MyWaveOutput[ii] = _listenerOutput( 0 ); 
+
+                of << std::fixed << _listenerOutput( 0 ) << endl;
+
+
+
+                //listenerOutput = _listenerOutput( 0 ); 
+                //_waveOutput[ ii ][ 0 ].push_back( listenerOutput ); 
+
+            }
+
+            of.close(); 
+        }
+
+
+        // END MY IMPLEMENTATION //
+
+
+        /* 
         for ( int i = 0; i < _listeningPositions->size(); i++ )
         {
             field.interpolateVectorField( _listeningPositions->at( i ),
@@ -310,6 +370,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
                 }
             }
         }
+        */
     }
     _writeTimer.pause();
 

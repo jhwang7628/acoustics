@@ -199,7 +199,7 @@ int main( int argc, char **argv )
     boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
-    PML_WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
+    WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
 
     //CUDA_PAT_WaveSolver solver(timeStep,
     //                           sound_source,
@@ -223,10 +223,10 @@ int main( int argc, char **argv )
                                   0.0, /* distance tolerance */
                                   true, /* use boundary */
                                   &listeningPositions,
-                                  NULL, /* No output file */
-                                  NULL, /* Write callback */
+                                  "tmp", /* No output file */
+                                  &dacallback, /* Write callback */
                                   parms._subSteps,
-                                  6, /* acceleration directions */
+                                  1, /* acceleration directions */
                                   endTime );
 
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
@@ -268,7 +268,7 @@ int main( int argc, char **argv )
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
-    for (int ii=0; ii<100; ii++) 
+    for (int ii=0; ii<440*5; ii++) 
     {
 
         solver.stepSystem(boundaryCondition); 
