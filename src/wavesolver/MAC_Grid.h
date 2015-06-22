@@ -85,6 +85,7 @@ class MAC_Grid {
         // puts it in to a matrix
         void sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData );
 
+
         inline int               numPressureCells() const
         {
             return _pressureField.numCells();
@@ -120,11 +121,10 @@ class MAC_Grid {
             return _pressureField.cellPosition( index );
         }
 
-        inline int               pressureFieldVertexIndex( const Tuple3i &index )
-            const
-            {
-                return _pressureField.cellIndex( index );
-            }
+        inline int               pressureFieldVertexIndex( const Tuple3i &index ) const
+        {
+            return _pressureField.cellIndex( index );
+        }
 
         inline Tuple3i           pressureFieldVertexIndex( int index ) const
         {

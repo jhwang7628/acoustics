@@ -46,4 +46,12 @@ typedef boost::function<REAL (const Vector3d &x, const Vector3d &n,
                               int obj_id, REAL t, int field_id)>
                                                 BoundaryEvaluator;
 
+/* Given a structure grid, initialize the solution. */
+//typedef boost::function<REAL (const REAL &x, const REAL &y, const REAL &z, const IC_TYPE ic_type)> 
+//                                                InitialConditionEvaluator; 
+//typedef boost::function<REAL (const Vector3d & evaluatePosition, const Vector3d & sourcePosition )> 
+//                                                InitialConditionEvaluator; 
+typedef boost::function<REAL (const Vector3d & evaluatePosition)> InitialConditionEvaluator; 
+
+
 #endif

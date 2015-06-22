@@ -54,6 +54,7 @@ class PML_WaveSolver : public Solver {
                         int N = 1,
                         REAL endTime = -1.0 );
 
+
         // Provide the size of the domain (bbox), finite difference division
         // size, and a list of SDFs for the interior boundary
         PML_WaveSolver( REAL timeStep,
@@ -80,6 +81,8 @@ class PML_WaveSolver : public Solver {
 
         void initSystem( REAL startTime );
 
+        void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
+
         // Takes a single time step
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
 
@@ -91,6 +94,11 @@ class PML_WaveSolver : public Solver {
         {
             return _grid.pressureFieldDivisions();
         }
+
+        // Test the max CFL condition based on particle velocity in the grid. 
+        virtual REAL GetMaxCFL();
+        
+
 
         virtual Vector3d         fieldPosition( const Tuple3i &index ) const
         {
@@ -178,6 +186,7 @@ class PML_WaveSolver : public Solver {
 
         REAL                     _endTime;
 
+        const REAL               _cellSize; 
         const Vector3Array      *_listeningPositions;
         const char              *_outputFile;
 

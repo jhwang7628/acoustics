@@ -459,6 +459,7 @@ void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
         }
 }
 
+
 //////////////////////////////////////////////////////////////////////
 // Classifies cells as either a bulk cell, ghost cell, or
 // interfacial cell

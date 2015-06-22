@@ -3,6 +3,12 @@
  * using GPU enabled wavesolver
  */
 
+
+#include <QtGui> 
+#include <ui/WaveViewer.h>
+#include <QGLViewer/qglviewer.h>
+#include <GL/glut.h>
+
 #include <config.h>
 #include <TYPES.h>
 
@@ -52,6 +58,24 @@
       }
 #endif  
 
+/* Gaussian */
+REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePosition, const REAL stddev )
+{
+    //cout << "Initializing the field with Gaussian" << endl; 
+
+	//REAL stddev = 0.001;
+    REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
+                      +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
+                      +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
+    value = - value / ( 2.0 * stddev * stddev ); 
+    value = exp( value ); 
+    value /= pow( stddev * sqrt(2.0*3.14159265359) , 3 );  // normalization
+    //value *= 1E-12;
+
+    return value; 
+	
+}
+
 
 void readConfigFile(const char * filename, REAL * endTime, 
                     Vector3Array * listeningPositions, 
@@ -99,6 +123,9 @@ using namespace std;
 int main( int argc, char **argv )
 {
 
+    QApplication             app( argc, argv );
+
+    glutInit( &argc, argv );
 
 
 #if 0 //complete refactor configuration reader
@@ -218,6 +245,17 @@ int main( int argc, char **argv )
     //                           40,
     //                           100000);
 
+
+
+    // TODO bind ic_eval
+
+
+    const REAL ic_stddev = 0.1; 
+    const Vector3d sourcePosition(0.1,0.1,0.1); 
+    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
+    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
+   
+
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
                                   *mesh, *sdf,
                                   0.0, /* distance tolerance */
@@ -229,6 +267,7 @@ int main( int argc, char **argv )
                                   1, /* acceleration directions */
                                   endTime );
 
+    solver.initSystemNontrivial( 0.0, &initial ); 
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
 
     // CUDA_PAT_WaveSolver solver(timeStep,
@@ -268,16 +307,31 @@ int main( int argc, char **argv )
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
-    for (int ii=0; ii<440*5; ii++) 
-    {
+    //for (int ii=0; ii<440*5; ii++) 
+    //{
 
-        solver.stepSystem(boundaryCondition); 
-    }
+    //    solver.stepSystem(boundaryCondition); 
+    //}
+
+    // Extra GL data // 
+    ExtraGLData extraGLData; 
+    SimplePointSet<REAL> * fluidMshCentroids; 
+    SimplePointSet<REAL> * fluidMshCentroids2;
+
+    WaveWindow                 waveApp( solver , &extraGLData);
+
+    waveApp.setAccelerationFunction( NULL );
+
+    QWidget                   *window = waveApp.createWindow();
+
+    window->show();
+
+    return app.exec();
 
 
-    cout << "End of program. " << endl;
+    //cout << "End of program. " << endl;
 
-    return 0;
+    //return 0;
 
 }
 

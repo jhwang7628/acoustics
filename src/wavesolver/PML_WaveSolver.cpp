@@ -4,9 +4,11 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "PML_WaveSolver.h"
+#include "utils/Evaluator.h"
 
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
+
 
 //////////////////////////////////////////////////////////////////////
 // Constructor
@@ -29,6 +31,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
 : _timeStep( timeStep ),
     _timeIndex( 0 ),
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+    _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
@@ -65,6 +68,8 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _listenerOutput.resizeAndWipe( _N );
 }
 
+
+
 //////////////////////////////////////////////////////////////////////
 // Provide the size of the domain (bbox), finite difference division
 // size, and a list of SDFs for the interior boundary
@@ -83,6 +88,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
 : _timeStep( timeStep ),
     _timeIndex( 0 ),
     _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
+    _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
@@ -156,6 +162,57 @@ void PML_WaveSolver::initSystem( REAL startTime )
     _v[ 2 ].clear();
 }
 
+/* 
+ * Initialize the field data using non-trivial initial conditions. 
+ */
+void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval )
+{
+
+    if ( NULL == ic_eval ) 
+    {
+        cout << "** Warning ** Initial condition evaluator not set! " << endl; 
+        return; 
+    }
+
+    Timer<false> initTimer; 
+    initTimer.start();
+
+    _currentTime = startTime;
+    _timeIndex = 0;
+
+    initSystem( startTime ); 
+
+    const int N_pcell = _grid.numPressureCells(); 
+
+    for (int ii=0; ii<N_pcell; ii++) 
+    {
+        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+        _pFull(ii, 0) = ( *ic_eval )( fieldPosition ); 
+       
+        //if (_pFull(ii, 0) > 1E-8)
+        //{
+        //    cout << "fieldPosition = " << fieldPosition << endl; 
+        //    cout << "_pFull = " << _pFull(ii,0) << endl; 
+        //}
+
+    }
+
+    initTimer.pause(); 
+    printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
+
+
+
+
+
+
+
+    
+
+
+
+}
+
 //////////////////////////////////////////////////////////////////////
 // Takes a single time step
 //////////////////////////////////////////////////////////////////////
@@ -219,6 +276,49 @@ void PML_WaveSolver::writeWaveOutput() const
     ( *_callback )( _waveOutput );
 }
 
+REAL PML_WaveSolver::GetMaxCFL()
+{
+
+    const int N_vcellx = _grid.numVelocityCellsX(); 
+    const int N_vcelly = _grid.numVelocityCellsY(); 
+    const int N_vcellz = _grid.numVelocityCellsZ(); 
+
+    if ( N_vcellx != N_vcelly || N_vcellx != N_vcellz ) 
+    {
+        cout << "** Warning ** number of velocity cells not equal" << endl; 
+        return numeric_limits<REAL>::quiet_NaN(); 
+    }
+
+    const int N = N_vcellx; 
+
+    REAL vmax = -1;  // should be positive
+
+    for (int ii=0; ii<N; ii++) 
+    {
+        REAL vx, vy, vz, v; 
+
+        vx = _v[0](ii, 0); 
+        vy = _v[1](ii, 0); 
+        vz = _v[2](ii, 0); 
+        
+        v = sqrt( vx*vx + vy*vy + vz*vz ); 
+
+        vmax = max(v, vmax); 
+
+    }
+
+    //cout << "vmax = " << vmax << endl;
+
+    REAL CFL = vmax * _timeStep / _cellSize; 
+    //cout << SDUMP(CFL) << endl;
+
+
+    return CFL; 
+    
+
+}
+
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
@@ -273,6 +373,11 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _algebraTimer.pause();
 
     _currentTime += _timeStep;
+
+
+    REAL MaxCFL = GetMaxCFL();
+    cout << SDUMP( MaxCFL ) << endl; 
+    
 
 #if 0
     printf( "Max pressure: %f\n", _pFull.frobeniusNorm() );
