@@ -52,6 +52,7 @@ typedef boost::function<REAL (const Vector3d &x, const Vector3d &n,
 //typedef boost::function<REAL (const Vector3d & evaluatePosition, const Vector3d & sourcePosition )> 
 //                                                InitialConditionEvaluator; 
 typedef boost::function<REAL (const Vector3d & evaluatePosition)> InitialConditionEvaluator; 
+typedef boost::function<REAL (const REAL & t, const Vector3d & sPosition)> HarmonicSourceEvaluator;
 
 
 #endif

@@ -4,13 +4,10 @@
  */
 
 
-#include <QtGui> 
-#include <ui/WaveViewer.h>
-#include <QGLViewer/qglviewer.h>
-#include <GL/glut.h>
-
 #include <config.h>
 #include <TYPES.h>
+
+#include <limits>
 
 #include <math/InterpolationFunction.h>
 
@@ -44,6 +41,8 @@
 #include <iostream>
 #include <string>
 
+#define PI 3.14159265359
+
 
 
 #if 1  
@@ -67,13 +66,41 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
     REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
                       +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
                       +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
-    value = - value / ( 2.0 * stddev * stddev ); 
+//value = - value / ( 2.0 * stddev * stddev ); 
+    value = -value / (0.001*0.001); 
     value = exp( value ); 
-    value /= pow( stddev * sqrt(2.0*3.14159265359) , 3 );  // normalization
+    //value /= pow( stddev * sqrt(2.0*3.14159265359) , 3 );  // normalization
     //value *= 1E-12;
 
     return value; 
 	
+}
+
+/* 
+ * Harmonic Source with frequency w and velocity strength Sw, 
+ * the pressure source strength will then be
+ *
+ * p = (-i*w) * rho * a^2/r * Sw * exp(-i*w*t)
+ *
+ * Modeled by a small ball radius given. (should be much smaller compared to
+ * any length scale in the system)
+ *
+ */ 
+
+REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &tPosition, const REAL w, const REAL Sw, const REAL ballRadius, const REAL rho_0, const REAL phase)  
+{
+
+    const REAL r = (sPosition - tPosition).norm();  
+    const REAL EPS = 1E-10;
+
+    if ( r <= ballRadius && r > EPS)  // prevent singularity
+    { 
+        return -rho_0 * / 4.0 / PI / r * Sw * w * cos(w*t + phase);
+    }
+    else 
+    {
+        return numeric_limits<REAL>::quiet_NaN();
+    }
 }
 
 
@@ -123,9 +150,6 @@ using namespace std;
 int main( int argc, char **argv )
 {
 
-    QApplication             app( argc, argv );
-
-    glutInit( &argc, argv );
 
 
 #if 0 //complete refactor configuration reader
@@ -199,15 +223,14 @@ int main( int argc, char **argv )
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
 
-    cout << "max, min = " << sdf->bmin() <<  ", " << sdf->bmax() << endl;
 
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;
+    cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
 
     cellDivisions = parms._gridResolution;
 
     cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
-    cout << SDUMP(cellSize) << endl;
     cellSize /= (REAL)cellDivisions;
 
     cout << SDUMP( cellSize ) << endl;
@@ -222,6 +245,10 @@ int main( int argc, char **argv )
     cout << SDUMP( boundRadius ) << endl;
     cout << SDUMP( CENTER_OF_MASS ) << endl;
     cout << SDUMP( cellSize ) << endl; 
+
+
+    REAL CFL = parms._c * timeStep / cellSize; 
+    cout << SDUMP( CFL ) << endl;
 
     boundRadius *= parms._radiusMultipole;
 
@@ -250,10 +277,20 @@ int main( int argc, char **argv )
     // TODO bind ic_eval
 
 
-    const REAL ic_stddev = 0.1; 
+    const REAL ic_stddev = 0.001; 
     const Vector3d sourcePosition(0.1,0.1,0.1); 
+    cout << "Source position is set at " << sourcePosition << endl;
     //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
     InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
+   
+    const REAL w = 2.0*3.1415926*2000; // 500 Hz test
+    const REAL Sw = 1.0; // source strength
+    const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
+    cout << SDUMP(ballRadius) << endl;
+    const REAL phase = 0;
+    HarmonicSourceEvaluator sourceFunction = boost::bind( Harmonic_Source, _1, sourcePosition, _2, w, Sw, ballRadius, parms._density, phase ); 
+
+
    
 
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
@@ -268,7 +305,9 @@ int main( int argc, char **argv )
                                   endTime );
 
     solver.initSystemNontrivial( 0.0, &initial ); 
-    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    //solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    solver.setPMLBoundaryWidth( 20.0, 100000.0 );
+    solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
 
     // CUDA_PAT_WaveSolver solver(timeStep,
     //                            sound_source,
@@ -302,36 +341,19 @@ int main( int argc, char **argv )
 
 #endif
 
-
-
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
-    //for (int ii=0; ii<440*5; ii++) 
-    //{
+    bool continueStepping = true; 
+    while ( continueStepping )
+    {
 
-    //    solver.stepSystem(boundaryCondition); 
-    //}
+        continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
+    }
 
-    // Extra GL data // 
-    ExtraGLData extraGLData; 
-    SimplePointSet<REAL> * fluidMshCentroids; 
-    SimplePointSet<REAL> * fluidMshCentroids2;
+    cout << "End of program. " << endl;
 
-    WaveWindow                 waveApp( solver , &extraGLData);
-
-    waveApp.setAccelerationFunction( NULL );
-
-    QWidget                   *window = waveApp.createWindow();
-
-    window->show();
-
-    return app.exec();
-
-
-    //cout << "End of program. " << endl;
-
-    //return 0;
+    return 0;
 
 }
 

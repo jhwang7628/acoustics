@@ -74,6 +74,7 @@ class PML_WaveSolver : public Solver {
         virtual ~PML_WaveSolver();
 
         void setPMLBoundaryWidth( REAL width, REAL strength );
+        void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
 
         // Time steps the system in the given interval
         void solveSystem( REAL startTime, REAL endTime,
@@ -85,6 +86,8 @@ class PML_WaveSolver : public Solver {
 
         // Takes a single time step
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
+        // Takes a single time step with source function
+        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
@@ -159,8 +162,8 @@ class PML_WaveSolver : public Solver {
     protected:
 
     private:
-        void                     stepLeapfrog(
-                const BoundaryEvaluator &bcEvaluator );
+        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
+        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
     private:
         static const REAL        WAVE_SPEED = 343.0;
@@ -192,6 +195,9 @@ class PML_WaveSolver : public Solver {
 
         std::vector<std::vector<FloatArray> >
             _waveOutput;
+
+        // cells indexed by hsIndex is source cell that emits harmonic waves 
+        std::vector<int> hsIndex; 
 
         VECTOR                   _listenerOutput;
 

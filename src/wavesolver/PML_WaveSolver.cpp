@@ -6,6 +6,8 @@
 #include "PML_WaveSolver.h"
 #include "utils/Evaluator.h"
 
+#include "math.h"
+
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
 
@@ -138,6 +140,60 @@ void PML_WaveSolver::setPMLBoundaryWidth( REAL width, REAL strength )
     _grid.setPMLBoundaryWidth( width, strength );
 }
 
+
+//////////////////////////////////////////////////////////////////////
+// set the harmonic source distribution for the wavesolver
+//////////////////////////////////////////////////////////////////////
+void PML_WaveSolver::setHarmonicSource( const HarmonicSourceEvaluator * hs_eval)
+{
+
+    // FIXME hack to initialize out the initial condition 
+    initSystem( 0.0 );
+
+
+    Timer<false> initHSTimer; 
+    initHSTimer.start(); 
+
+
+    if ( NULL == hs_eval ) 
+    {
+        cout << "** Warning ** harmonic source not set" << endl;
+        return; 
+    }
+
+    const int N_pcell = _grid.numPressureCells(); 
+
+
+    for (int ii=0; ii<N_pcell; ii++) 
+    {
+        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+        const REAL testValue = (*hs_eval)(0.0, fieldPosition); 
+
+        if ( ! isnan(testValue) )
+        {
+            hsIndex.push_back( ii );
+        }
+
+    }
+
+    int N_hsIndex = hsIndex.size();
+
+    if ( N_hsIndex < 1 ) 
+    {
+        cout << "** Warning ** no harmonic source has been set! Check the threshold " << endl; 
+    }
+    else 
+    {
+        printf("%u discrete harmonic sources have been identified.\n", N_hsIndex); 
+    }
+
+    initHSTimer.pause();
+    printf("Initialize harmonic source distribution takes %f s.\n", initHSTimer.elapsed()); 
+
+}
+
+
 //////////////////////////////////////////////////////////////////////
 // Time steps the system in the given interval
 //////////////////////////////////////////////////////////////////////
@@ -247,6 +303,36 @@ bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
     return true;
 }
 
+// Overload the step system function to handle sources
+bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval )
+{
+    _stepTimer.start();
+    double start = omp_get_wtime();
+    stepLeapfrog( bcEvaluator, hsEval );
+
+    _timeIndex += 1;
+    _stepTimer.pause();
+
+    //printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
+    printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    _stepTimer.reset();
+#if 0
+    printf( "Algebra took %f ms\n", _algebraTimer.getTotalSecs() );
+    printf( "Memory operations took %f ms\n", _memoryTimer.getTotalSecs() );
+    printf( "Writing took %f ms\n", _writeTimer.getTotalSecs() );
+    printf( "Gradient computation took %f ms\n", _gradientTimer.getTotalSecs() );
+    printf( "Divergence computation took %f ms\n",
+            _divergenceTimer.getTotalSecs() );
+#endif
+
+    if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
+    {
+        return false;
+    }
+
+    return true;
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void PML_WaveSolver::vertexPressure( const Tuple3i &index,
@@ -286,7 +372,7 @@ REAL PML_WaveSolver::GetMaxCFL()
     if ( N_vcellx != N_vcelly || N_vcellx != N_vcellz ) 
     {
         cout << "** Warning ** number of velocity cells not equal" << endl; 
-        return numeric_limits<REAL>::quiet_NaN(); 
+        return std::numeric_limits<REAL>::quiet_NaN(); 
     }
 
     const int N = N_vcellx; 
@@ -490,5 +576,40 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
         _sliceData.write( buf );
     }
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEvaluator )
+{
+
+    Timer<false> evalSourceTimer; 
+    evalSourceTimer.start(); 
+
+    if ( NULL == hsEvaluator ) 
+    {
+        cout << "** Warning ** Harmonic source evaluator not set! " << endl; 
+    }
+    else 
+    {
+
+        for ( unsigned int ii=0; ii<hsIndex.size(); ii++ )
+        {
+
+            const Vector3d fieldPosition = _grid.pressureFieldPosition( hsIndex[ii] ); 
+            const REAL pSource = (*hsEvaluator)( _currentTime, fieldPosition );
+            _pFull( hsIndex[ii], 0 ) = pSource; 
+
+            cout << "source " << ii << " : " << SDUMP( pSource ) << endl;
+
+        }
+
+    }
+
+    evalSourceTimer.pause(); 
+    printf("Evaluating harmonic source takes %f s.\n", evalSourceTimer.elapsed()); 
+
+    stepLeapfrog( bcEvaluator ); 
+
 }
 
