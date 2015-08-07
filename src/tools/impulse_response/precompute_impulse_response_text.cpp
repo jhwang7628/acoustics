@@ -92,7 +92,7 @@ REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &
 
     if ( r <= ballRadius && r > EPS)  // prevent singularity
     { 
-        return -rho_0 * / 4.0 / PI / r * Sw * w * cos(w*t + phase);
+        return -rho_0 *ballRadius *ballRadius / 4.0 / PI / r  * Sw * w * cos(w*t + phase);
     }
     else 
     {
