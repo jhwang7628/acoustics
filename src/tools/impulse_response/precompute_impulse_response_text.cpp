@@ -60,16 +60,11 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
 {
     //cout << "Initializing the field with Gaussian" << endl; 
 
-	//REAL stddev = 0.001;
     REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
                       +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
                       +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
-//value = - value / ( 2.0 * stddev * stddev ); 
-    value = -value / (0.001*0.001); 
+    value = -value / ( stddev * stddev ); 
     value = exp( value ); 
-    //value /= pow( stddev * sqrt(2.0*3.14159265359) , 3 );  // normalization
-    //value *= 1E-12;
-
     return value; 
 	
 }
@@ -168,7 +163,7 @@ int main( int argc, char **argv )
 
     //REAL                     listeningRadius;
     Vector3Array             listeningPositions;
-    Vector3d                 sound_source;
+    Vector3d                 sourcePosition;
     BoundaryEvaluator        boundaryCondition;
 
     REAL                     timeStep;
@@ -177,7 +172,7 @@ int main( int argc, char **argv )
 
     fileName = argv[1];
     char pattern[100];
-    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
+    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sourcePosition);
     printf("Queried end time for the simulation = %lf\n", endTime);
 
     /* Build parser from solver configuration. */
@@ -256,18 +251,18 @@ int main( int argc, char **argv )
                                   1, /* acceleration directions */
                                   endTime );
 
+
+    const REAL ic_stddev = 0.001; 
+    //const Vector3d sourcePosition(sound_source); 
+    cout << "Source position is set at " << sourcePosition << endl;
+    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
+    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
     solver.initSystemNontrivial( 0.0, &initial ); 
     //solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
     solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
-
-#if 0 // if harmonic sources 
-    const REAL ic_stddev = 0.001; 
-    const Vector3d sourcePosition(0.0,0.0,0.075); 
-    cout << "Source position is set at " << sourcePosition << endl;
-    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
-    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
    
+#if 0 // if harmonic sources 
     const REAL w = 2.0*3.1415926*2000; // 500 Hz test
     const REAL Sw = 1.0; // source strength
     const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
@@ -284,7 +279,8 @@ int main( int argc, char **argv )
     bool continueStepping = true; 
     while ( continueStepping )
     {
-        continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
+        //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
+        continueStepping = solver.stepSystem( boundaryCondition ); 
     }
 
     cout << "End of program. " << endl;
@@ -327,9 +323,9 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
 /* 
  * Write listened data. 
  */
-void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTime, int n)
+void writeData(const vector<REAL> & w, char * pattern, REAL endTime, int n)
 {
-    int samples = w[0][0].size();
+    int samples = w.size();
     char buffer[80];
     char fname[100];
     REAL timestep = 0;
