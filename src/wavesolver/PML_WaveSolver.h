@@ -38,6 +38,7 @@
 class PML_WaveSolver : public Solver {
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
+        typedef boost::function<void (const vector<REAL>&w, const REAL &t, const int &i)> WriteCallbackIndividual;
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
@@ -50,6 +51,7 @@ class PML_WaveSolver : public Solver {
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
+                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
                         REAL endTime = -1.0 );
@@ -66,9 +68,11 @@ class PML_WaveSolver : public Solver {
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
+                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
                         REAL endTime = -1.0 );
+
 
         // Destructor
         virtual ~PML_WaveSolver();
@@ -202,6 +206,7 @@ class PML_WaveSolver : public Solver {
         VECTOR                   _listenerOutput;
 
         WriteCallback           *_callback;
+        WriteCallbackIndividual *_callbackInd;
 
         Timer<false>             _gradientTimer;
         Timer<false>             _divergenceTimer;

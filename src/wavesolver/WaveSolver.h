@@ -71,6 +71,7 @@ class WaveSolver : public Solver {
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)>
             WriteCallback;
+        typedef boost::function<void (const vector<REAL>&w, const REAL &t)> WriteCallbackIndividual;
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.

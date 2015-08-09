@@ -101,7 +101,7 @@ void readConfigFile(const char * filename, REAL * endTime,
                     char * pattern, 
                     Vector3d & sound_source); 
 
-void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTime, int n); 
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, char * pattern, REAL endTime, int n);
 
 REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
                    int field_id, InterpolationFunction *interp )
@@ -231,7 +231,7 @@ int main( int argc, char **argv )
     boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
-    WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
+    PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, pattern, endTime, listeningPositions.size());
 
     // TODO bind ic_eval
 
@@ -245,7 +245,8 @@ int main( int argc, char **argv )
                                   0.0, /* distance tolerance */
                                   true, /* use boundary */
                                   &listeningPositions,
-                                  "tmp", /* No output file */
+                                  NULL, /* No output file */
+                                  NULL, /* Write callback */
                                   &dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
@@ -323,28 +324,24 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
 /* 
  * Write listened data. 
  */
-void writeData(const vector<REAL> & w, char * pattern, REAL endTime, int n)
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, char * pattern, REAL endTime, int n)
 {
-    int samples = w.size();
     char buffer[80];
     char fname[100];
-    REAL timestep = 0;
 
-    if(samples > 1){
-        timestep = endTime/(samples-1);
-    }
+    REAL nowTime = timeStep * (REAL) timeStamp; 
+    sprintf(buffer, "%05d", timeStamp);
+    sprintf(fname, pattern, buffer);
 
-    REAL dtime = 0;
+    FILE * fp = fopen(fname, "w+");
+    fprintf(fp, "%d %.6lf\n", n, nowTime);
 
-    for (int s = 0; s < samples; s++)
-    {
-        sprintf(buffer, "%05d", s);
-        sprintf(fname, pattern, buffer);
-        FILE * fp = fopen(fname, "w+");
-        fprintf(fp, "%d %.6lf\n", n, dtime);
-        fclose(fp);
-        dtime = dtime + timestep;
-    }
+    int samples = w.size();
+
+    for (int ii=0; ii<w.size(); ii++)
+        fprintf( fp, "%.12f\n", w[ii] );
+
+    fclose(fp);
 }
 
 

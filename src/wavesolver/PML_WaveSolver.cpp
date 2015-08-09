@@ -28,6 +28,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const Vector3Array *listeningPositions,
                                 const char *outputFile,
                                 WriteCallback *callback,
+                                WriteCallbackIndividual *callbacki,
                                 int subSteps, int N,
                                 REAL endTime )
 : _timeStep( timeStep ),
@@ -37,6 +38,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
+    _callbackInd( callbacki ),
     _subSteps( subSteps ),
     _N( N ),
     _endTime( endTime ),
@@ -85,6 +87,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
         const Vector3Array *listeningPositions,
         const char *outputFile,
         WriteCallback *callback,
+        WriteCallbackIndividual *callbacki,
         int subSteps, int N,
         REAL endTime )
 : _timeStep( timeStep ),
@@ -93,8 +96,8 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
-    _callback( callback ),
     _subSteps( subSteps ),
+    _callbackInd( callbacki ),
     _endTime( endTime ),
     _zSlice( -1 )
 {
@@ -482,58 +485,23 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
         // MY IMPLEMENTATION //
         // FIXME FIXME so hacky //
 
-        if ( _outputFile ) 
+
+        if ( _callbackInd )
         {
             vector<REAL> MyWaveOutput; 
-
             MyWaveOutput.resize( _listeningPositions->size() ); 
-
-            char buf[ 1024 ]; 
-
-            sprintf( buf, "data/%s_%.5u", _outputFile,  ( _timeIndex / _subSteps ) ); 
-            cout << "buf = " << buf << endl;
-
-            ofstream of(buf); 
-            of.precision(12); 
-
-
-            if (!buf) 
-            {
-                cerr << "*Warning: Cannot open file " << buf << " for writing" << endl; 
-                exit(1);
-            }
-
             for ( int ii=0; ii<_listeningPositions->size(); ii++) 
             {
                 field.interpolateVectorField( _listeningPositions->at( ii ), 
-                                              _pFull, _listenerOutput );  // output is _listenerOutput and is scalar.
-
-                //printf("at (%f, %f, %f), _listenerOutput = %f\n", _listeningPositions->at( ii )[ 0 ], 
-                //                                                  _listeningPositions->at( ii )[ 1 ], 
-                //                                                  _listeningPositions->at( ii )[ 2 ], 
-                //                                                  _listenerOutput(0) ); 
+                                              _pFull, _listenerOutput ); 
                   
-                  
-                if ( _N != 1 ) 
-                {
-                    cerr << "** Error: should have only one field. " << endl; 
-                    exit(1); 
-                }
-
                 MyWaveOutput[ii] = _listenerOutput( 0 ); 
-
-                of << std::fixed << _listenerOutput( 0 ) << endl;
-
-
-
-                //listenerOutput = _listenerOutput( 0 ); 
-                //_waveOutput[ ii ][ 0 ].push_back( listenerOutput ); 
-
             }
 
-            of.close(); 
-        }
+            //REAL nowTime = (REAL)_timeIndex * _timeStep; 
+            (*_callbackInd)( MyWaveOutput, _timeStep, _timeIndex );
 
+        }
 
         // END MY IMPLEMENTATION //
 
