@@ -101,7 +101,7 @@ void readConfigFile(const char * filename, REAL * endTime,
                     char * pattern, 
                     Vector3d & sound_source); 
 
-void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, char * pattern, REAL endTime, int n);
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, char * pattern, REAL endTime, int n);
 
 REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
                    int field_id, InterpolationFunction *interp )
@@ -231,7 +231,7 @@ int main( int argc, char **argv )
     boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
-    PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, pattern, endTime, listeningPositions.size());
+    PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
 
     // TODO bind ic_eval
 
@@ -324,13 +324,13 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
 /* 
  * Write listened data. 
  */
-void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, char * pattern, REAL endTime, int n)
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, char * pattern, REAL endTime, int n)
 {
     char buffer[80];
     char fname[100];
 
     REAL nowTime = timeStep * (REAL) timeStamp; 
-    sprintf(buffer, "%05d", timeStamp);
+    sprintf(buffer, "%05d", timeStamp/substep);
     sprintf(fname, pattern, buffer);
 
     FILE * fp = fopen(fname, "w+");
