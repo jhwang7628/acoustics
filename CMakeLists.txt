@@ -90,6 +90,7 @@ endif ()
 
 # ARPACK for eigensolvers
 find_package(ARPACK REQUIRED)
+find_package(Eigen REQUIRED)
 
 # SuperLU is also required for the eigensolver
 #

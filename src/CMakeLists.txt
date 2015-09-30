@@ -3,6 +3,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${Boost_INCLUDE_DIR}
+    ${Eigen_INCLUDE_DIR}
     ${MKL_INCLUDE_DIR})
 
 link_directories(${Boost_LIBRARY_DIRS})

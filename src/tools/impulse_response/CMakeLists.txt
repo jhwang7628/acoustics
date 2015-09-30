@@ -163,11 +163,11 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	            ${MULTIPOLE_SRC})
 
 	        target_link_libraries(precompute-impulse-response-text
+	            ${MKL_LIBRARY}
 	            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
 	            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
 	            ${GSL_LIBRARY}                  boost_thread
 	            boost_system                    boost_serialization
-	            ${MKL_LIBRARY}
 	            ${CUDA_LIBRARIES})
 	    else(USE_CUDA)
 	    	add_executable(precompute-impulse-response-text
@@ -182,11 +182,13 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
 	            )
 
+            message( "DEBUG>>>>>>>>>>>> " ${MKL_LIBRARIES} )
 	        target_link_libraries(precompute-impulse-response-text
-	            ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+                ${MKL_LIBRARY}
+                ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
 	            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
 	            ${GSL_LIBRARY}                  boost_thread
-	            boost_system                    ${MKL_LIBRARY})
+	            boost_system                    )
 	    endif(USE_CUDA)
 
         set_target_properties(precompute-impulse-response-text PROPERTIES LINK_FLAGS ${LINK_FLAGS})
