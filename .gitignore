@@ -6,6 +6,8 @@ gcc-build2
 gcc-build3
 gcc-build4
 
+build
+
 *.swp 
 *.swo 
 .*.swp 
