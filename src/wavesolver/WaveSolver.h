@@ -23,6 +23,8 @@
 
 #include <TYPES.h>
 
+#include "WaveSolverPointData.h"
+
 #include <boost/function.hpp>
 
 //////////////////////////////////////////////////////////////////////

@@ -35,13 +35,12 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
+#include <wavesolver/WaveSolverPointData.h>
 
 #include <boost/bind.hpp>
 
 #include <iostream>
 #include <string>
-
-#define PI 3.14159265359
 
 #if 1  
     #define _GNU_SOURCE 1  
@@ -153,7 +152,7 @@ int main( int argc, char **argv )
     string                   fileName( "default.xml" );
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh = NULL;
-    RigidMesh               *rigidMesh = NULL;
+    //RigidMesh               *rigidMesh = NULL;
     ClosestPointField       *sdf = NULL;
     BoundingBox              fieldBBox;
     REAL                     cellSize;
@@ -336,9 +335,7 @@ void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeSt
     FILE * fp = fopen(fname, "w+");
     fprintf(fp, "%d %.6lf\n", n, nowTime);
 
-    int samples = w.size();
-
-    for (int ii=0; ii<w.size(); ii++)
+    for (size_t ii=0; ii<w.size(); ii++)
         fprintf( fp, "%.12f\n", w[ii] );
 
     fclose(fp);
