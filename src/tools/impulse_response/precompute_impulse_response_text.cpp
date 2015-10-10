@@ -239,6 +239,7 @@ int main( int argc, char **argv )
 
    
 
+    /// pass in listening position
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
                                   *mesh, *sdf,
                                   0.0, /* distance tolerance */
@@ -250,6 +251,20 @@ int main( int argc, char **argv )
                                   parms._subSteps,
                                   1, /* acceleration directions */
                                   endTime );
+
+
+    //WaveSolverPointData   rawData; 
+    //PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
+    //                              *mesh, *sdf,
+    //                              &rawData,
+    //                              0.0, /* distance tolerance */
+    //                              true, /* use boundary */
+    //                              &listeningPositions,
+    //                              NULL, /* No output file */
+    //                              NULL, /* Write callback */
+    //                              parms._subSteps,
+    //                              1, /* acceleration directions */
+    //                              endTime );
 
 
     const REAL ic_stddev = 0.001; 
@@ -318,6 +333,7 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
         fscanf(fp, "%lf %lf %lf", &x, &y, &z);
         listeningPositions->push_back(Vector3d(x, y, z));
     }
+
 }
 
 /* 

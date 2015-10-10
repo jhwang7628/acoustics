@@ -1,10 +1,10 @@
 <!-- 44000 Hz sampling. -->
         <?xml version="1.0" ?>
         <impact>
-            <mesh file="/home/jui-hsien/code/acoustics/work/impulse-response/data/fluent5.msh.obj" scale="1.0" />
+            <mesh file="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.obj" scale="1.0" />
 
           <acoustic_transfer
-              distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/data/fluent5.msh.dist"
+              distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.dist"
             fieldresolution="150"
             gridresolution="400"
             gridscale="1.400000"

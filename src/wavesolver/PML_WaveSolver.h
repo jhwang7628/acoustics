@@ -42,6 +42,7 @@ class PML_WaveSolver : public Solver {
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
+        // and the write function pointer.
         PML_WaveSolver( REAL timeStep,
                         const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
@@ -52,6 +53,22 @@ class PML_WaveSolver : public Solver {
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
                         WriteCallbackIndividual *callbacki = NULL,
+                        int subSteps = 1,
+                        int N = 1,
+                        REAL endTime = -1.0 );
+
+        // Provide the size of the domain (bbox), finite difference division
+        // size, and a signed distance function for the interior boundary.
+        PML_WaveSolver( REAL timeStep,
+                        const BoundingBox &bbox, REAL cellSize,
+                        const TriMesh &mesh,
+                        const DistanceField &distanceField,
+                        WaveSolverPointData * rawData,
+                        REAL distanceTolerance = 0.0,
+                        bool useBoundary = true,
+                        const Vector3Array *listeningPositions = NULL,
+                        const char *outputFile = NULL,
+                        WriteCallback *callback = NULL,
                         int subSteps = 1,
                         int N = 1,
                         REAL endTime = -1.0 );
@@ -79,6 +96,10 @@ class PML_WaveSolver : public Solver {
 
         void setPMLBoundaryWidth( REAL width, REAL strength );
         void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
+
+        void SetWaveSolverPointDataPosition(); 
+        void AddCurrentPressureToWaveSolverPointData(); 
+
 
         // Time steps the system in the given interval
         void solveSystem( REAL startTime, REAL endTime,
@@ -207,6 +228,7 @@ class PML_WaveSolver : public Solver {
 
         WriteCallback           *_callback;
         WriteCallbackIndividual *_callbackInd;
+        WaveSolverPointData     *_rawData;
 
         Timer<false>             _gradientTimer;
         Timer<false>             _divergenceTimer;

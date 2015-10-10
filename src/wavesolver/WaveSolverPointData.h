@@ -1,3 +1,5 @@
+#ifndef WAVESOLVERPOINTDATA_H
+#define WAVESOLVERPOINTDATA_H
 
 #include <Eigen/Dense>
 /*
@@ -9,6 +11,11 @@ class WaveSolverPointData
     private: 
         // N-by-3 matrix that stores positions of N cells
         Eigen::MatrixXd position_; 
+
+        // N-by-3 matrix that stores index in (x,y,z) direction
+        Eigen::MatrixXi index3D_; 
+
+        Eigen::Vector3i divisions_;
 
         // M-by-1 matrix that stores time stamp of the simulation snapshot 
         Eigen::VectorXd time_; 
@@ -22,10 +29,13 @@ class WaveSolverPointData
         WaveSolverPointData(){ }; 
 
 
-        inline void SetPosition( const Eigen::MatrixXd & position )
+        inline void SetPosition( const Eigen::MatrixXd & position, const Eigen::MatrixXi & cellIndex, const Eigen::Vector3i & cellDivisions )
         {
             if ( position.cols() != 3 ) throw runtime_error( "**ERROR** columns of position matrix is not 3" );
-            position_ = position;
+            if ( cellIndex.cols() != 3 ) throw runtime_error( "**ERROR** columns of index matrix is not 3" );
+            position_  = position;
+            index3D_   = cellIndex;
+            divisions_ = cellDivisions; 
         }
 
         inline void PushPressure( const double time, const Eigen::MatrixXd pressure )
@@ -39,3 +49,7 @@ class WaveSolverPointData
 
 
 };
+
+
+
+#endif
