@@ -7,6 +7,7 @@
 #include <config.h>
 #include <TYPES.h>
 
+#include "IO/IO.h"
 #include <limits>
 
 #include <math/InterpolationFunction.h>
@@ -42,6 +43,9 @@
 #include <iostream>
 #include <string>
 
+
+#include <unistd.h> 
+
 #if 1  
     #define _GNU_SOURCE 1  
     #include <fenv.h>
@@ -68,6 +72,7 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
     return value; 
 	
 }
+
 
 /* 
  * Harmonic Source with frequency w and velocity strength Sw, 
@@ -248,7 +253,7 @@ int main( int argc, char **argv )
                                   &listeningPositions,
                                   NULL, /* No output file */
                                   NULL, /* Write callback */
-                                  &dacallback, /* Write callback */
+                                  NULL, //&dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
                                   endTime );
@@ -292,14 +297,155 @@ int main( int argc, char **argv )
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
+
+    
+
+
+    /// write grid and pressure value
+    Eigen::Vector3i minDrawBound; 
+    Eigen::Vector3i maxDrawBound; 
+    minDrawBound << 0, 0, 0; 
+    maxDrawBound << solver.fieldDivisions()[0], solver.fieldDivisions()[1], solver.fieldDivisions()[2]; 
+    printf( "domain size: (%u, %u, %u)\n", maxDrawBound[0], maxDrawBound[1], maxDrawBound[2] );
+
+    int Ndivision = maxDrawBound[0] * maxDrawBound[1] * maxDrawBound[2];
+    Eigen::MatrixXd vertexPosition( Ndivision, 3 ); // vertex position
+    Eigen::MatrixXd vertexPressure( Ndivision, 1 ); // full pressure
+    Eigen::MatrixXi vertexIndex( Ndivision, 3 ); // pressure vertex index
+
+
+    int count = 0;
+    for ( int kk=0; kk<maxDrawBound[2]; kk++ )
+    {
+        for ( int jj=0; jj<maxDrawBound[1]; jj++ ) 
+        {
+            for ( int ii=0; ii<maxDrawBound[0]; ii++ ) 
+            {
+                Tuple3i  vIndex( ii, jj, kk );
+                Vector3d vPosition = solver.fieldPosition(  vIndex );
+
+                vertexPosition( count, 0 ) = vPosition[0];
+                vertexPosition( count, 1 ) = vPosition[1];
+                vertexPosition( count, 2 ) = vPosition[2];
+
+                vertexIndex( count, 0 ) = vIndex[0]; 
+                vertexIndex( count, 1 ) = vIndex[1]; 
+                vertexIndex( count, 2 ) = vIndex[2]; 
+
+                count ++; 
+
+            }
+        }
+    }
+
+    printf("writing pressure vertex position\n");
+    {
+
+        char buffer[100]; 
+        snprintf( buffer,100,pattern,"vertex_position.dat"); 
+        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
+        //ofstream of(buffer); 
+        //of << std::setprecision(16) << std::fixed; 
+        //of << vertexPosition << endl; 
+        //of.close();
+        //ofstream of(buffer); 
+        //of << std::setprecision(16) << std::fixed; 
+        //of << vertexPosition << endl; 
+        //of.close();
+
+    }
+
+    printf("writing pressure vertex index\n");
+    {
+
+        char buffer[100]; 
+        snprintf( buffer,100,pattern,"vertex_index.dat"); 
+        IO::writeMatrixXi( vertexIndex, buffer, IO::BINARY );
+        //ofstream of(buffer); 
+        //of << std::setprecision(16) << std::fixed; 
+        //of << vertexIndex << endl; 
+        //of.close();
+
+    }
+
+    printf("writing solver settings\n"); 
+    {
+
+        char buffer[100]; 
+        snprintf( buffer, 100, pattern, "solver_setting.txt"); 
+        ofstream of(buffer); 
+
+        of << "[fieldBBox.minBound] = " << fieldBBox.minBound() << endl;
+        of << "[fieldBBox.maxBound] = " << fieldBBox.maxBound() << endl;
+        of << "[solver.fieldDivisions] = " << maxDrawBound.transpose() << endl;
+        of << SDUMP( cellSize ) << endl;
+        of << SDUMP( CFL ) << endl;
+        of << SDUMP( timeStep ) << endl;
+        of << SDUMP( endTime ) << endl;
+  
+        of << "precision : double (hard-coded)" << endl;
+        of << "binary write method : IO writeMatrixXd method (hard-coded)" << endl;
+        of.close();
+
+    }
+
+
+
+    /// time step system
     bool continueStepping = true; 
+    int nSteps = 0; 
     while ( continueStepping )
     {
         //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
         continueStepping = solver.stepSystem( boundaryCondition ); 
+
+        if ( nSteps % parms._subSteps == 0 ) 
+        {
+            int count = 0;
+            for ( int kk=0; kk<maxDrawBound[2]; kk++ )
+            {
+                for ( int jj=0; jj<maxDrawBound[1]; jj++ ) 
+                {
+                    for ( int ii=0; ii<maxDrawBound[0]; ii++ ) 
+                    {
+                        Tuple3i  vIndex( ii, jj, kk );
+
+                        VECTOR vPressure;
+                        solver.vertexPressure( vIndex, vPressure );
+
+                        vertexPressure( count, 0 ) = vPressure[0];
+
+                        count ++; 
+
+                    }
+                }
+            }
+
+
+            printf( "writing pressure %u\n", nSteps/parms._subSteps );
+            {
+                char buf[100]; 
+                char pressure_buf[100]; 
+                snprintf( pressure_buf, 100, "pressure_%u.dat", nSteps/parms._subSteps ); 
+                snprintf( buf, 100, pattern, pressure_buf );
+
+                IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+                //ofstream of(buf); 
+                //of << std::setprecision(16) << std::fixed; 
+                //of << vertexPressure << endl; 
+                //of.close();
+            }
+        }
+
+
+    nSteps ++; 
+
+
     }
 
     cout << "End of program. " << endl;
+
+
 
     return 0;
 

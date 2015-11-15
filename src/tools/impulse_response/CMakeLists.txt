@@ -45,7 +45,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI)
             include(${QT_USE_FILE})
         endif(USE_QT5)
 
-        include_directories("/home/jui-hsien/Research/code/TurbulentHead/tools")
+        include_directories("/home/jui-hsien/code/turbsound_postfluid/tools")
 
         set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -121,6 +121,8 @@ endif ( BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI )
 #   Builds the Impulse Response Wavesolver
 # =============================================================================
 if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
+
+    set(CMAKE_CXX_FLAGS "-std=c++11")
     # ===================
     # Dependencies
     # ===================
@@ -182,7 +184,6 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	            ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
 	            )
 
-            message( "DEBUG>>>>>>>>>>>> " ${MKL_LIBRARIES} )
 	        target_link_libraries(precompute-impulse-response-text
                 ${MKL_LIBRARY}
                 ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}

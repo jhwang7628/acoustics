@@ -19,3 +19,6 @@ build*
 .*.swo 
 
 .*.sw?
+
+
+work/impulse-response/test

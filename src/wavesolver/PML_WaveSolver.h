@@ -192,7 +192,7 @@ class PML_WaveSolver : public Solver {
         void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
     private:
-        static const REAL        WAVE_SPEED = 343.0;
+        static constexpr REAL        WAVE_SPEED = 343.0;
 
         // Discretization for the domain
         MAC_Grid                 _grid;

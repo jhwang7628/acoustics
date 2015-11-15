@@ -42,15 +42,16 @@ def convert_to_earfile(listener, ear):
 
 def main(args):
 
-        os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
 	if args.visual_ear:
+                os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build_ui/bin")
 		if args.visual_ear == "left":
-			efile = convert_to_earfile(args.listener_file, 0)
-			os.system("precompute-impulse-response %s %s %s %s"%(args.wave_file, efile, args.centroid_file, args.centroid_file2))
+		    efile = convert_to_earfile(args.listener_file, 0)
+		    os.system("precompute-impulse-response %s %s"%(args.wave_file, efile))
 		elif args.visual_ear == "right":
-			efile = convert_to_earfile(args.listener_file, 1)
-			os.system("precompute-impulse-response %s %s %s %s"%(args.wave_file, efile, args.centroid_file, args.centroid_file2))
+		    efile = convert_to_earfile(args.listener_file, 1)
+		    os.system("precompute-impulse-response %s %s"%(args.wave_file, efile))
 	else:
+                os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
 		print "Left Ear"
 		efile = convert_to_earfile(args.listener_file, 0)
 		os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))

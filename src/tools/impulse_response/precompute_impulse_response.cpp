@@ -38,6 +38,7 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
+#include <wavesolver/WaveSolverPointData.h>
 
 #include <boost/bind.hpp>
 
@@ -63,17 +64,40 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
 {
     //cout << "Initializing the field with Gaussian" << endl; 
 
-	//REAL stddev = 0.001;
     REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
                       +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
                       +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
-    value = - value / ( 2.0 * stddev * stddev ); 
+    value = -value / ( stddev * stddev ); 
     value = exp( value ); 
-    value /= pow( stddev * sqrt(2.0*3.14159265359) , 3 );  // normalization
-    //value *= 1E-12;
-
+    value *= 10000.0;
     return value; 
 	
+}
+
+/* 
+ * Harmonic Source with frequency w and velocity strength Sw, 
+ * the pressure source strength will then be
+ *
+ * p = (-i*w) * rho * a^2/r * Sw * exp(-i*w*t)
+ *
+ * Modeled by a small ball radius given. (should be much smaller compared to
+ * any length scale in the system)
+ *
+ */ 
+REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &tPosition, const REAL w, const REAL Sw, const REAL ballRadius, const REAL rho_0, const REAL phase)  
+{
+
+    const REAL r = (sPosition - tPosition).norm();  
+    const REAL EPS = 1E-10;
+
+    if ( r <= ballRadius && r > EPS)  // prevent singularity
+    { 
+        return -rho_0 *ballRadius *ballRadius / 4.0 / PI / r  * Sw * w * cos(w*t + phase);
+    }
+    else 
+    {
+        return numeric_limits<REAL>::quiet_NaN();
+    }
 }
 
 
@@ -123,35 +147,22 @@ using namespace std;
 int main( int argc, char **argv )
 {
 
+#ifndef Q_MOC_RUN
     QApplication             app( argc, argv );
+#endif
 
     glutInit( &argc, argv );
 
 
-#if 0 //complete refactor configuration reader
-
-    string                   fileName( "default.xml" );
-    Parser                   *parser = NULL;
-    Parser::ImpulseResponseParms parms;
-
-    parser = Parser::buildParser( fileName );
-
-    parms = parser->getImpulseResponseParms();
-
-    REAL * tmp = (parms._sourcePositions)[0];
-    cout << tmp[1] << endl;
-
-#else
-
-    //if (argc != 3){
-    //    printf("**Usage: %s solver_configuration_XML listening_configuration_file", argv[0]);
-    //    exit(1);
-    //}
+    if (argc != 3){
+        printf("**Usage: %s solver_configuration_XML listening_configuration_file", argv[0]);
+        exit(1);
+    }
 
     string                   fileName( "default.xml" );
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh = NULL;
-    RigidMesh               *rigidMesh = NULL;
+    //RigidMesh               *rigidMesh = NULL;
     ClosestPointField       *sdf = NULL;
     BoundingBox              fieldBBox;
     REAL                     cellSize;
@@ -161,7 +172,7 @@ int main( int argc, char **argv )
 
     //REAL                     listeningRadius;
     Vector3Array             listeningPositions;
-    Vector3d                 sound_source;
+    Vector3d                 sourcePosition;
     BoundaryEvaluator        boundaryCondition;
 
     REAL                     timeStep;
@@ -170,7 +181,7 @@ int main( int argc, char **argv )
 
     fileName = argv[1];
     char pattern[100];
-    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sound_source);
+    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sourcePosition);
     printf("Queried end time for the simulation = %lf\n", endTime);
 
     /* Build parser from solver configuration. */
@@ -199,15 +210,14 @@ int main( int argc, char **argv )
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
 
-    cout << "max, min = " << sdf->bmin() <<  ", " << sdf->bmax() << endl;
 
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;
+    cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
 
     cellDivisions = parms._gridResolution;
 
     cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
-    cout << SDUMP(cellSize) << endl;
     cellSize /= (REAL)cellDivisions;
 
     cout << SDUMP( cellSize ) << endl;
@@ -223,102 +233,89 @@ int main( int argc, char **argv )
     cout << SDUMP( CENTER_OF_MASS ) << endl;
     cout << SDUMP( cellSize ) << endl; 
 
+
+    REAL CFL = parms._c * timeStep / cellSize; 
+    cout << SDUMP( CFL ) << endl;
+
     boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
-    WaveSolver::WriteCallback dacallback = boost::bind(writeData, _1, pattern, endTime, listeningPositions.size());
-
-    //CUDA_PAT_WaveSolver solver(timeStep,
-    //                           sound_source,
-    //                           fieldBBox, cellSize,
-    //                           *mesh, 
-    //                           CENTER_OF_MASS,
-    //                           *sdf,
-    //                           0.0,
-    //                           &listeningPositions,
-    //                           &dacallback,
-    //                           parms._subSteps,
-    //                           endTime,
-    //                           2*acos(-1)*4000,
-    //                           parms._nbar,
-    //                           boundRadius,
-    //                           40,
-    //                           100000);
-
-
+    //PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
 
     // TODO bind ic_eval
 
 
-    const REAL ic_stddev = 0.1; 
-    const Vector3d sourcePosition(0.1,0.1,0.1); 
-    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
-    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
+
+
    
 
+    /// pass in listening position
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
                                   *mesh, *sdf,
                                   0.0, /* distance tolerance */
                                   true, /* use boundary */
                                   &listeningPositions,
-                                  "tmp", /* No output file */
-                                  &dacallback, /* Write callback */
+                                  NULL, /* No output file */
+                                  NULL, /* Write callback */
+                                  NULL, //&dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
                                   endTime );
 
+
+    //WaveSolverPointData   rawData; 
+    //PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
+    //                              *mesh, *sdf,
+    //                              &rawData,
+    //                              0.0, /* distance tolerance */
+    //                              true, /* use boundary */
+    //                              &listeningPositions,
+    //                              NULL, /* No output file */
+    //                              NULL, /* Write callback */
+    //                              parms._subSteps,
+    //                              1, /* acceleration directions */
+    //                              endTime );
+
+
+    const REAL ic_stddev = 0.001; 
+    //const Vector3d sourcePosition(sound_source); 
+    cout << "Source position is set at " << sourcePosition << endl;
+    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
+    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
     solver.initSystemNontrivial( 0.0, &initial ); 
-    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    //solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
-    // CUDA_PAT_WaveSolver solver(timeStep,
-    //                            sound_source,
-    //                            fieldBBox, cellSize,
-    //                            *mesh, 
-    //                            CENTER_OF_MASS,
-    //                            *sdf,
-    //                            0.0, // distance tolerance
-    //                            &listeningPositions,
-    //                            &dacallback,
-    //                            parms._subSteps,
-    //                            endTime,
-    //                            QNAN_R, 
-    //                            QNAN_I,
-    //                            QNAN_R, 
-    //                            40,
-    //                            100000);
-
-
-
-    // bool ended = false;
-
-    // while(!ended){
-    //     ended = !solver.stepSystem(NULL);
-    //     REAL time = solver.currentSimTime();
-    //     printf("%lf out of %lf (%lf %%)\n", time, endTime, time/endTime);
-    // }
-
-    // solver.writeWaveOutput();
-
-
-#endif
-
+   
+#if 0 // if harmonic sources 
+    const REAL w = 2.0*3.1415926*2000; // 500 Hz test
+    const REAL Sw = 1.0; // source strength
+    const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
+    cout << SDUMP(ballRadius) << endl;
+    const REAL phase = 0;
+    HarmonicSourceEvaluator sourceFunction = boost::bind( Harmonic_Source, _1, sourcePosition, _2, w, Sw, ballRadius, parms._density, phase ); 
+    solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
+#endif 
 
 
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
-    //for (int ii=0; ii<440*5; ii++) 
-    //{
+    bool continueStepping = true; 
+    while ( continueStepping )
+    {
+        //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
+        continueStepping = solver.stepSystem( boundaryCondition ); 
+    }
 
-    //    solver.stepSystem(boundaryCondition); 
-    //}
 
     // Extra GL data // 
-    ExtraGLData extraGLData; 
-    SimplePointSet<REAL> * fluidMshCentroids; 
-    SimplePointSet<REAL> * fluidMshCentroids2;
+    //ExtraGLData extraGLData; 
+    //SimplePointSet<REAL> * fluidMshCentroids; 
+    //SimplePointSet<REAL> * fluidMshCentroids2;
 
-    WaveWindow                 waveApp( solver , &extraGLData);
+    WaveWindow                 waveApp( solver , NULL);
+    //WaveWindow                 waveApp( solver , &extraGLData);
 
     waveApp.setAccelerationFunction( NULL );
 
@@ -365,46 +362,5 @@ void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listen
         listeningPositions->push_back(Vector3d(x, y, z));
     }
 }
-
-/* 
- * Write listened data. 
- */
-void writeData(const vector<vector<FloatArray> > & w, char * pattern, REAL endTime, int n)
-{
-    int samples = w[0][0].size();
-    char buffer[80];
-    char fname[100];
-    REAL timestep = 0;
-
-    if(samples > 1){
-        timestep = endTime/(samples-1);
-    }
-
-    REAL dtime = 0;
-
-    double mabs = 0;
-
-    for (int s = 0; s < samples; s++)
-    {
-        for(int i = 0; i < n; i++)
-            mabs = max(mabs, abs(w[i][0][s]));
-    }
-
-
-    for (int s = 0; s < samples; s++)
-    {
-        sprintf(buffer, "%05d", s);
-        sprintf(fname, pattern, buffer);
-        FILE * fp = fopen(fname, "w+");
-        fprintf(fp, "%d %.6lf\n", n, dtime);
-
-        for(int i = 0; i < n; i++)
-            fprintf(fp, "%.10lf\n", w[i][0][s]/mabs);
-
-        fclose(fp);
-        dtime = dtime + timestep;
-    }
-}
-
 
 

@@ -226,7 +226,7 @@ void PML_WaveSolver::setHarmonicSource( const HarmonicSourceEvaluator * hs_eval)
 
         const REAL testValue = (*hs_eval)(0.0, fieldPosition); 
 
-        if ( ! isnan(testValue) )
+        if ( ! std::isnan(testValue) )
         {
             hsIndex.push_back( ii );
         }
@@ -354,12 +354,6 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
         const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
 
         _pFull(ii, 0) = ( *ic_eval )( fieldPosition ); 
-
-        //if (_pFull(ii, 0) > 1E-8)
-        //{
-        //    cout << "fieldPosition = " << fieldPosition << endl; 
-        //    cout << "_pFull = " << _pFull(ii,0) << endl; 
-        //}
 
     }
 

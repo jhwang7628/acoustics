@@ -203,7 +203,7 @@ class WaveSolver : public Solver {
                 const BoundaryEvaluator &bcEvaluator );
 
     private:
-        static const REAL        WAVE_SPEED = 343.0;
+        static constexpr REAL        WAVE_SPEED = 343.0;
 
         // Laplacian discretization for this domain
         Laplacian                _laplacian;
