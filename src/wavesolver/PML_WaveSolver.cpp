@@ -363,7 +363,7 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
 
     }
 
-    SetWaveSolverPointDataPosition();
+    //SetWaveSolverPointDataPosition();
 
     initTimer.pause(); 
     printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 

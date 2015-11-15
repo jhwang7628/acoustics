@@ -64,6 +64,7 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
                       +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
     value = -value / ( stddev * stddev ); 
     value = exp( value ); 
+    value *= 10000.0;
     return value; 
 	
 }
@@ -352,7 +353,7 @@ void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeSt
     fprintf(fp, "%d %.6lf\n", n, nowTime);
 
     for (size_t ii=0; ii<w.size(); ii++)
-        fprintf( fp, "%.12f\n", w[ii] );
+        fprintf( fp, "%.16f\n", w[ii] );
 
     fclose(fp);
 }

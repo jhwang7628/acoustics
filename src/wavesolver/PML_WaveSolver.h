@@ -114,6 +114,7 @@ class PML_WaveSolver : public Solver {
         // Takes a single time step with source function
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
+        // Get vertex pressure for each field
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
         virtual void writeWaveOutput() const;

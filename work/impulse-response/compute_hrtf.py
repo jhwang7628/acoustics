@@ -1,5 +1,6 @@
 import argparse
 import os
+from subprocess import call
 # 0 -> Left
 # 1 -> Right
 
@@ -57,6 +58,9 @@ def main(args):
 		print "Right Ear"
 		efile = convert_to_earfile(args.listener_file, 1)
 		os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))
+
+
+        call( 'rm temp*', shell=True )
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Run GPU wave solver')
