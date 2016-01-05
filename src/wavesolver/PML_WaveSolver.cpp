@@ -349,6 +349,31 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
 
     const int N_pcell = _grid.numPressureCells(); 
 
+
+    /// determine which is the closest vertex to put 1
+    //int closestVertex = -1; 
+    //REAL smallestDistance = 9999999.0; 
+    //for (int ii=0; ii<N_pcell; ii++) 
+    //{
+
+    //    const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+    //    REAL distance = ( *ic_eval )( fieldPosition ); 
+
+    //    if ( distance < smallestDistance ) 
+    //    {
+    //        closestVertex = ii; 
+    //        smallestDistance = distance; 
+    //    }
+
+    //}
+    //_pFull( closestVertex, 0 ) = 1.0;
+
+
+
+
+
+    /// If want to use smooth Gaussian initialization
     for (int ii=0; ii<N_pcell; ii++) 
     {
         const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 

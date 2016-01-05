@@ -6,7 +6,7 @@
           <acoustic_transfer
               distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.dist"
             fieldresolution="150"
-            gridresolution="285"
+            gridresolution="150"
             gridscale="1.0800000"
             timestepfrequency="1280000"
             substeps="32"

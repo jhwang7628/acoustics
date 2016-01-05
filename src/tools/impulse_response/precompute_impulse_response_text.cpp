@@ -66,12 +66,26 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
     REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
                       +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
                       +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
-    value = -value / ( stddev * stddev ); 
+    value = -value / ( 2.0 * stddev * stddev ); 
     value = exp( value ); 
     value *= 10000.0;
     return value; 
 	
 }
+
+/* Evaluate distance between source and points in the grid for Point Gaussian initialization */
+REAL PointGaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePosition )
+{
+    //cout << "Initializing the field with Gaussian" << endl; 
+
+    REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
+                      +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
+                      +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
+
+    return value; 
+    
+}
+
 
 
 /* 
@@ -148,8 +162,6 @@ int main( int argc, char **argv )
 {
 
 
-
-
     if (argc != 3){
         printf("**Usage: %s solver_configuration_XML listening_configuration_file", argv[0]);
         exit(1);
@@ -206,7 +218,6 @@ int main( int argc, char **argv )
 
     fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
 
-
     // Scale this up to build a finite difference field
     fieldBBox *= parms._gridScale;
     cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
@@ -237,14 +248,7 @@ int main( int argc, char **argv )
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
-
-    // TODO bind ic_eval
-
-
-
-
-   
-
+ 
     /// pass in listening position
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
                                   *mesh, *sdf,
@@ -253,34 +257,20 @@ int main( int argc, char **argv )
                                   &listeningPositions,
                                   NULL, /* No output file */
                                   NULL, /* Write callback */
-                                  NULL, //&dacallback, /* Write callback */
+                                  //NULL,// uncomment this if don't want to listen and comment the next one
+                                  &dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
                                   endTime );
 
-
-    //WaveSolverPointData   rawData; 
-    //PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-    //                              *mesh, *sdf,
-    //                              &rawData,
-    //                              0.0, /* distance tolerance */
-    //                              true, /* use boundary */
-    //                              &listeningPositions,
-    //                              NULL, /* No output file */
-    //                              NULL, /* Write callback */
-    //                              parms._subSteps,
-    //                              1, /* acceleration directions */
-    //                              endTime );
-
-
-    const REAL ic_stddev = 0.001; 
+    const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
     cout << "Source position is set at " << sourcePosition << endl;
-    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, _2, ic_stddev); 
     InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
+    //InitialConditionEvaluator initial = boost::bind(PointGaussian_3D, _1, sourcePosition);
     solver.initSystemNontrivial( 0.0, &initial ); 
-    //solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
-    solver.setPMLBoundaryWidth( 20.0, 100000.0 );
+    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    //solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
    
 #if 0 // if harmonic sources 
@@ -296,9 +286,6 @@ int main( int argc, char **argv )
 
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
-
-
-    
 
 
     /// write grid and pressure value
@@ -332,40 +319,16 @@ int main( int argc, char **argv )
                 vertexIndex( count, 1 ) = vIndex[1]; 
                 vertexIndex( count, 2 ) = vIndex[2]; 
 
+
+                VECTOR vPressure;
+                solver.vertexPressure( vIndex, vPressure );
+
+                vertexPressure( count, 0 ) = vPressure[0];
+
                 count ++; 
 
             }
         }
-    }
-
-    printf("writing pressure vertex position\n");
-    {
-
-        char buffer[100]; 
-        snprintf( buffer,100,pattern,"vertex_position.dat"); 
-        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
-        //ofstream of(buffer); 
-        //of << std::setprecision(16) << std::fixed; 
-        //of << vertexPosition << endl; 
-        //of.close();
-        //ofstream of(buffer); 
-        //of << std::setprecision(16) << std::fixed; 
-        //of << vertexPosition << endl; 
-        //of.close();
-
-    }
-
-    printf("writing pressure vertex index\n");
-    {
-
-        char buffer[100]; 
-        snprintf( buffer,100,pattern,"vertex_index.dat"); 
-        IO::writeMatrixXi( vertexIndex, buffer, IO::BINARY );
-        //ofstream of(buffer); 
-        //of << std::setprecision(16) << std::fixed; 
-        //of << vertexIndex << endl; 
-        //of.close();
-
     }
 
     printf("writing solver settings\n"); 
@@ -375,6 +338,7 @@ int main( int argc, char **argv )
         snprintf( buffer, 100, pattern, "solver_setting.txt"); 
         ofstream of(buffer); 
 
+        of << std::setprecision(16) << std::fixed;
         of << "[fieldBBox.minBound] = " << fieldBBox.minBound() << endl;
         of << "[fieldBBox.maxBound] = " << fieldBBox.maxBound() << endl;
         of << "[solver.fieldDivisions] = " << maxDrawBound.transpose() << endl;
@@ -389,6 +353,31 @@ int main( int argc, char **argv )
 
     }
 
+
+    printf("writing pressure vertex position\n");
+    {
+
+        char buffer[100]; 
+        snprintf( buffer,100,pattern,"vertex_position.dat"); 
+        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
+    }
+
+    printf("writing pressure vertex index\n");
+    {
+
+        char buffer[100]; 
+        snprintf( buffer,100,pattern,"vertex_index.dat"); 
+        IO::writeMatrixXi( vertexIndex, buffer, IO::BINARY );
+    }
+
+    printf("writing initial pressure\n");
+    {
+        char buf[100]; 
+        char pressure_buf[100]; 
+        snprintf( pressure_buf, 100, "pressure.dat" ); 
+        snprintf( buf, 100, pattern, pressure_buf );
+        IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+    }
 
 
     /// time step system
@@ -426,14 +415,10 @@ int main( int argc, char **argv )
             {
                 char buf[100]; 
                 char pressure_buf[100]; 
-                snprintf( pressure_buf, 100, "pressure_%u.dat", nSteps/parms._subSteps ); 
+                snprintf( pressure_buf, 100, "pressure_%05u.dat", nSteps/parms._subSteps ); 
                 snprintf( buf, 100, pattern, pressure_buf );
 
                 IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
-                //ofstream of(buf); 
-                //of << std::setprecision(16) << std::fixed; 
-                //of << vertexPressure << endl; 
-                //of.close();
             }
         }
 
