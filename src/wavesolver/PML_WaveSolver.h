@@ -96,6 +96,7 @@ class PML_WaveSolver : public Solver {
 
         void setPMLBoundaryWidth( REAL width, REAL strength );
         void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
+        inline void SetExternalSource( ExternalSourceEvaluator *sourceEvaluator ){ _sourceEvaluator = sourceEvaluator; } 
 
         void SetWaveSolverPointDataPosition(); 
         void AddCurrentPressureToWaveSolverPointData(); 
@@ -241,6 +242,13 @@ class PML_WaveSolver : public Solver {
         // Optionally write a 2D slice out of the finite difference grid
         int                      _zSlice;
         MATRIX                   _sliceData;
+
+
+
+        // Evaluator 
+        ExternalSourceEvaluator *_sourceEvaluator; 
+
+
 
 };
 

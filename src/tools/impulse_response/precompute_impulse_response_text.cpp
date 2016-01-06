@@ -46,6 +46,13 @@
 
 #include <unistd.h> 
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288419716939937510582
+#endif
+
+const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
+const double sqrt_2 = sqrt(2.0); 
+
 #if 1  
     #define _GNU_SOURCE 1  
     #include <fenv.h>
@@ -71,6 +78,40 @@ REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePositi
     value *= 10000.0;
     return value; 
 	
+}
+
+/* space-time gaussian with center at sourcePosition x offsetTime */
+REAL Gaussian_4D( const Vector3d &evaluatePosition, const REAL &evaluateTime, const Vector3d &sourcePosition, const REAL &widthSpace, const REAL &widthTime, const REAL &offsetTime ) 
+{
+    REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
+                      +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
+                      +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
+    value  = -value / ( 2.0 * widthSpace * widthSpace ); 
+    value += -(evaluateTime - offsetTime)*(evaluateTime - offsetTime)/(2.0*widthTime*widthTime); 
+    value  = exp( value ); 
+    value *= 10000.0; // just to scale it up, the wave equation is linear
+
+    return value; 
+}
+
+/* 
+ * 3D gaussian in space x error function in time (integral of shifted gaussian) 
+ *
+ * */ 
+REAL Gaussian_3D_erf_time( const Vector3d &evaluatePosition, const REAL &evaluateTime, const Vector3d &sourcePosition, const REAL &widthSpace, const REAL &widthTime, const REAL &offsetTime ) 
+{
+    REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
+                      +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
+                      +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
+    value  = -value / ( 2.0 * widthSpace * widthSpace ); 
+    value  = exp( value ); 
+    value *= 10000.0; // just to scale it up, the wave equation is linear
+
+    // integral of a gaussian in time: 
+    // http://www.wolframalpha.com/input/?i=int%28+exp%28-%28x-a%29%5E2%2F2%2Fb%5E2+%29+%29+dx
+    value *= sqrt_pi_over_2*(-widthTime)*erf((offsetTime - evaluateTime)/(sqrt_2*widthTime)); 
+
+    return value; 
 }
 
 /* Evaluate distance between source and points in the grid for Point Gaussian initialization */
@@ -263,12 +304,23 @@ int main( int argc, char **argv )
                                   1, /* acceleration directions */
                                   endTime );
 
-    const REAL ic_stddev = 0.005; 
+    ///// initialize system with initial condition /////
+    //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
     cout << "Source position is set at " << sourcePosition << endl;
-    InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
+    //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
     //InitialConditionEvaluator initial = boost::bind(PointGaussian_3D, _1, sourcePosition);
-    solver.initSystemNontrivial( 0.0, &initial ); 
+    //solver.initSystemNontrivial( 0.0, &initial ); 
+      
+    
+    ///// initialize system with external source. ///// 
+    solver.initSystem(0.0);
+    const REAL widthSpace = 0.005; 
+    const REAL widthTime  = 1./10000.; 
+    const REAL offsetTime = 4.*widthTime; // the center of the gaussian in time
+    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime); 
+
+    solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
     //solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 

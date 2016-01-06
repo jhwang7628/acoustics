@@ -325,6 +325,8 @@ void PML_WaveSolver::initSystem( REAL startTime )
     _v[ 0 ].clear();
     _v[ 1 ].clear();
     _v[ 2 ].clear();
+
+    _sourceEvaluator = nullptr; 
 }
 
 /* 
@@ -562,9 +564,9 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     // Use the new velocity to update pressure
     start = omp_get_wtime();
     _divergenceTimer.start();
-    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, WAVE_SPEED );
-    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED );
-    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED );
+    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
+    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
+    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
     _divergenceTimer.pause();
     printf( "pressure %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 

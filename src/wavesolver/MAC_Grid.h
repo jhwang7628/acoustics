@@ -79,7 +79,10 @@ class MAC_Grid {
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
         void PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
-                                 REAL timeStep, REAL c, REAL density = 1.0 );
+                                 REAL timeStep, REAL c, 
+                                 const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime,
+                                 REAL density = 1.0
+                                 );
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix

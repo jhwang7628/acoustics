@@ -335,6 +335,8 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                 -= gradientCoefficient * p( neighbour_idx, i );
             /// _pressureField.cellSize();
         }
+
+        // TODO add sources here for bulk cells 
     }
 
     // Handle boundary cells.
@@ -377,7 +379,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 // as detailed by Liu et al. (equation (16))
 //////////////////////////////////////////////////////////////////////
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
-                                   REAL timeStep, REAL c, REAL density )
+                                   REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
     // We only have to worry about bulk cells here
 #ifdef USE_OPENMP
@@ -431,6 +433,16 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
             p( cell_idx, i ) -= divergenceCoefficient * v( neighbour_idx, i )
                 / _velocityField[ dimension ].cellSize();
         }
+
+
+        if ( sourceEvaluator == nullptr ) continue; 
+
+        // for external sources.
+        for ( int i = 0; i < _N; i++ ) 
+        {
+            p( cell_idx, i ) += directionalCoefficient * (*sourceEvaluator)( cell_position, simulationTime+0.5*timeStep ); 
+        }
+
     }
 }
 

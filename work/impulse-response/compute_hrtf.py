@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from subprocess import call
 # 0 -> Left
 # 1 -> Right
@@ -41,6 +42,11 @@ def convert_to_earfile(listener, ear):
 	return nfname
 
 def main(args):
+
+        outdir = open(args.listener_file,'r').readline().split('/')[0]
+
+        call( 'cp %s %s %s' %(args.wave_file, args.listener_file, outdir), shell=True )
+        sys.exit()
 
 	if args.visual_ear:
                 os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build_ui/bin")
