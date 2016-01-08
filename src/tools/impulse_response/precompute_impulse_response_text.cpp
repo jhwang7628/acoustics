@@ -51,6 +51,7 @@
 #endif
 
 const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
+const double sqrt_2_pi = sqrt(2.0*M_PI); 
 const double sqrt_2 = sqrt(2.0); 
 
 #if 1  
@@ -98,18 +99,19 @@ REAL Gaussian_4D( const Vector3d &evaluatePosition, const REAL &evaluateTime, co
  * 3D gaussian in space x error function in time (integral of shifted gaussian) 
  *
  * */ 
-REAL Gaussian_3D_erf_time( const Vector3d &evaluatePosition, const REAL &evaluateTime, const Vector3d &sourcePosition, const REAL &widthSpace, const REAL &widthTime, const REAL &offsetTime ) 
+REAL Gaussian_3D_erf_time( const Vector3d &evaluatePosition, const REAL &evaluateTime, const Vector3d &sourcePosition, const REAL &widthSpace, const REAL &widthTime, const REAL &offsetTime, const REAL &normalizeConstant ) 
 {
-    REAL value =       (evaluatePosition.x - sourcePosition.x) * (evaluatePosition.x - sourcePosition.x) 
-                      +(evaluatePosition.y - sourcePosition.y) * (evaluatePosition.y - sourcePosition.y) 
-                      +(evaluatePosition.z - sourcePosition.z) * (evaluatePosition.z - sourcePosition.z); 
-    value  = -value / ( 2.0 * widthSpace * widthSpace ); 
-    value  = exp( value ); 
-    value *= 10000.0; // just to scale it up, the wave equation is linear
+    REAL value = (evaluatePosition.x - sourcePosition.x)*(evaluatePosition.x - sourcePosition.x) 
+               + (evaluatePosition.y - sourcePosition.y)*(evaluatePosition.y - sourcePosition.y) 
+               + (evaluatePosition.z - sourcePosition.z)*(evaluatePosition.z - sourcePosition.z); 
+    value  = -value / (2.0*widthSpace*widthSpace); 
+    value  = exp(value); 
 
     // integral of a gaussian in time: 
     // http://www.wolframalpha.com/input/?i=int%28+exp%28-%28x-a%29%5E2%2F2%2Fb%5E2+%29+%29+dx
-    value *= sqrt_pi_over_2*(-widthTime)*erf((offsetTime - evaluateTime)/(sqrt_2*widthTime)); 
+    value *= erf((evaluateTime - offsetTime)/(sqrt_2*widthTime)) - erf(-offsetTime/(sqrt_2*widthTime)); 
+
+    value *= normalizeConstant; // just to scale it up, the wave equation is linear
 
     return value; 
 }
@@ -125,6 +127,15 @@ REAL PointGaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourceP
 
     return value; 
     
+}
+
+/* readjust the source position so that it lies at the center of some cell */ 
+void AdjustSourcePosition( const Vector3d &minBound, const Vector3d &maxBound, const int &divisions, Vector3d &sourcePosition ) 
+{
+    Vector3d dx = (maxBound-minBound)/(double)divisions; 
+    sourcePosition = Vector3d( min(maxBound.x, max(0.0, dx.x*(0.5 + floor(sourcePosition.x/dx.x)))),
+                               min(maxBound.y, max(0.0, dx.y*(0.5 + floor(sourcePosition.y/dx.y)))),
+                               min(maxBound.z, max(0.0, dx.z*(0.5 + floor(sourcePosition.z/dx.z)))));
 }
 
 
@@ -298,12 +309,13 @@ int main( int argc, char **argv )
                                   &listeningPositions,
                                   NULL, /* No output file */
                                   NULL, /* Write callback */
-                                  //NULL,// uncomment this if don't want to listen and comment the next one
-                                  &dacallback, /* Write callback */
+                                  NULL,// uncomment this if don't want to listen and comment the next one
+                                  //&dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
                                   endTime );
 
+    AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
     ///// initialize system with initial condition /////
     //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
@@ -315,13 +327,21 @@ int main( int argc, char **argv )
     
     ///// initialize system with external source. ///// 
     solver.initSystem(0.0);
-    const REAL widthSpace = 0.005; 
-    const REAL widthTime  = 1./10000.; 
-    const REAL offsetTime = 4.*widthTime; // the center of the gaussian in time
-    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime); 
+    const REAL widthSpace = cellSize; 
+    //const REAL widthSpace = 0.2; 
+    const REAL widthTime  = 1./10000/2.; 
+    //const REAL offsetTime = 4.*widthTime; // the center of the gaussian in time
+    const REAL offsetTime = 2.0*widthTime;
+    //const REAL offsetTime = 0.0; 
+    const REAL normalizeConstant = 10000.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
+    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
+   
+    const REAL PML_width=11.0; 
+    const REAL PML_strength=1000000.0; 
     solver.SetExternalSource( &source ); 
-    solver.setPMLBoundaryWidth( 11.0, 1000000.0 );
+    solver.setPMLBoundaryWidth( PML_width, PML_strength );
+    //solver.setPMLBoundaryWidth( 10.0, 100000.0 );
     //solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
    
@@ -391,6 +411,7 @@ int main( int argc, char **argv )
         ofstream of(buffer); 
 
         of << std::setprecision(16) << std::fixed;
+        of << "[sourceposition] = " << sourcePosition << endl;
         of << "[fieldBBox.minBound] = " << fieldBBox.minBound() << endl;
         of << "[fieldBBox.maxBound] = " << fieldBBox.maxBound() << endl;
         of << "[solver.fieldDivisions] = " << maxDrawBound.transpose() << endl;
@@ -398,6 +419,10 @@ int main( int argc, char **argv )
         of << SDUMP( CFL ) << endl;
         of << SDUMP( timeStep ) << endl;
         of << SDUMP( endTime ) << endl;
+
+        of << SDUMP( widthSpace ) << endl;
+        of << SDUMP( widthTime ) << endl;
+        of << SDUMP( offsetTime ) << endl;
   
         of << "precision : double (hard-coded)" << endl;
         of << "binary write method : IO writeMatrixXd method (hard-coded)" << endl;

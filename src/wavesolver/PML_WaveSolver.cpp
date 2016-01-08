@@ -410,7 +410,6 @@ bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
     printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
     REAL t = (REAL)_timeIndex * _timeStep; 
     cout << SDUMP( t ) << endl; 
-    cout << SDUMP( _endTime ) << endl;
     _stepTimer.reset();
 #if 0
     printf( "Algebra took %f ms\n", _algebraTimer.getTotalSecs() );
@@ -554,7 +553,6 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2,
                               _currentTime, _timeStep );
     _gradientTimer.pause();
-    printf( "velocity %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 #if 0
     printf( "Max v_x: %f\n", _v[ 0 ].frobeniusNorm() );
     printf( "Max v_y: %f\n", _v[ 1 ].frobeniusNorm() );
@@ -587,8 +585,8 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _currentTime += _timeStep;
 
 
-    REAL MaxCFL = GetMaxCFL();
-    cout << SDUMP( MaxCFL ) << endl; 
+    //REAL MaxCFL = GetMaxCFL();
+    //cout << SDUMP( MaxCFL ) << endl; 
     
 
 #if 0

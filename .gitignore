@@ -20,5 +20,12 @@ build*
 
 .*.sw?
 
+*.vtk
+*.dat
+
 
 work/impulse-response/test
+work/impulse-response/integral_freespace
+work/impulse-response/test2
+work/impulse-response/test3
+*.txt

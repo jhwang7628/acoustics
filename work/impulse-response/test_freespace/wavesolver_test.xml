@@ -1,0 +1,24 @@
+<!-- 44000 Hz sampling. -->
+        <?xml version="1.0" ?>
+        <impact>
+            <mesh file="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/unit_sphere.obj" scale="1.0" />
+
+          <acoustic_transfer
+              distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/unit_sphere.dist"
+            fieldresolution="100"
+            gridresolution="100"
+            gridscale="1.0800000"
+            timestepfrequency="160000"
+            substeps="4"
+            nbar="5"
+            mode="0"
+            radius_multipole="1.200000"
+
+            mode_data_file="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.modes"
+            rigidprefix="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plateRigid"
+            rigiddensity="2300.000000"
+            outputfile="pulsedata_clipped"
+            multipole_outputfile="head.multipole"
+            />
+
+    </impact>

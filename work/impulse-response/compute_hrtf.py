@@ -15,8 +15,12 @@ def convert_to_earfile(listener, ear):
 
 	nfname = ""
 
-        sourceL = "%lf %lf %lf\n" %(0.0, 0.0,  0.075)
-        sourceR = "%lf %lf %lf\n" %(0.0, 0.0, -0.075)
+        sourceL = "%lf %lf %lf\n" %(0.0, 0.0,  0.08)
+        sourceR = "%lf %lf %lf\n" %(0.0, 0.0, -0.08)
+
+        # sourceL = "%lf %lf %lf\n" %(0.0, 0.0, 0.0)
+        # sourceR = "%lf %lf %lf\n" %(0.0, 0.0, 1.25)
+
 
         sout = open(listener_[0]+'/source_position.txt', 'w')
         sout.write('----\n')
@@ -46,7 +50,6 @@ def main(args):
         outdir = open(args.listener_file,'r').readline().split('/')[0]
 
         call( 'cp %s %s %s' %(args.wave_file, args.listener_file, outdir), shell=True )
-        sys.exit()
 
 	if args.visual_ear:
                 os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build_ui/bin")
@@ -58,9 +61,9 @@ def main(args):
 		    os.system("precompute-impulse-response %s %s"%(args.wave_file, efile))
 	else:
                 os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
-		# print "Left Ear"
-		# efile = convert_to_earfile(args.listener_file, 0)
-		# os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))
+		print "Left Ear"
+		efile = convert_to_earfile(args.listener_file, 0)
+		os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))
 
 		print "Right Ear"
 		efile = convert_to_earfile(args.listener_file, 1)
