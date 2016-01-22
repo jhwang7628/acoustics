@@ -133,9 +133,9 @@ REAL PointGaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourceP
 void AdjustSourcePosition( const Vector3d &minBound, const Vector3d &maxBound, const int &divisions, Vector3d &sourcePosition ) 
 {
     Vector3d dx = (maxBound-minBound)/(double)divisions; 
-    sourcePosition = Vector3d( min(maxBound.x, max(0.0, dx.x*(0.5 + floor(sourcePosition.x/dx.x)))),
-                               min(maxBound.y, max(0.0, dx.y*(0.5 + floor(sourcePosition.y/dx.y)))),
-                               min(maxBound.z, max(0.0, dx.z*(0.5 + floor(sourcePosition.z/dx.z)))));
+    sourcePosition = Vector3d( min(maxBound.x, max(minBound.x, dx.x*(0.5 + floor(sourcePosition.x/dx.x)))),
+                               min(maxBound.y, max(minBound.y, dx.y*(0.5 + floor(sourcePosition.y/dx.y)))),
+                               min(maxBound.z, max(minBound.z, dx.z*(0.5 + floor(sourcePosition.z/dx.z)))));
 }
 
 
@@ -329,11 +329,12 @@ int main( int argc, char **argv )
     solver.initSystem(0.0);
     const REAL widthSpace = cellSize; 
     //const REAL widthSpace = 0.2; 
-    const REAL widthTime  = 1./10000/2.; 
-    //const REAL offsetTime = 4.*widthTime; // the center of the gaussian in time
-    const REAL offsetTime = 2.0*widthTime;
+    const REAL widthTime  = 1./10000/10.; 
+    //const REAL widthTime  = timeStep*2.; 
+    //const REAL offsetTime = 4.*widthTime; 
+    const REAL offsetTime = 5.0*widthTime; // the center of the gaussian in time
     //const REAL offsetTime = 0.0; 
-    const REAL normalizeConstant = 10000.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
+    const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
    
