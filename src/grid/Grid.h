@@ -162,7 +162,15 @@ class Grid
             vertexData_.insert( mapData );
         }
 
-        inline int FlattenIndicies(const int x, const int y, const int z) const { return x+y*cellCount_[0]+z*cellCount_[0]*cellCount_[1]; }
+        inline int FlattenIndicies(const int &x, const int &y, const int &z) const { return x+y*cellCount_[0]+z*cellCount_[0]*cellCount_[1]; }
+        inline void UnflattenIndicies(const int &ind, int &x, int &y, int &z) const 
+        {
+            x = ind     % cellCount_[0]; 
+            y = ((ind-x) / cellCount_[0]) % cellCount_[1];
+            z = (ind-x-y)/cellCount_[0]/cellCount_[1]; 
+        }
+        inline void UnflattenIndicies(const int &ind, Eigen::Vector3i &indicies) const { this->UnflattenIndices(ind,indicies[0],indicies[1],indicies[2]); }
+
         inline void DeleteCellCenteredData( const std::string & name_key ) { cellCenteredData_.erase( name_key ); }
         inline void DeleteVertexData( const std::string & name_key ) { vertexData_.erase( name_key ); }
         inline void UpdateCellCenteredData( const std::string &nameKey, std::shared_ptr<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>> dataIn)
@@ -177,6 +185,7 @@ class Grid
         /// interpolation helpers 
         inline void SetInterpolationScheme( const INTERP_SCHEME & interpScheme ) { interpolationScheme_ = interpScheme; } 
         inline INTERP_SCHEME GetInterpolationScheme() { return interpolationScheme_; } 
+        inline int N_cells(){ return cellCount_[0]*cellCount_[1]*cellCount_[2]; } 
 
         friend GridData<T>; 
 
@@ -232,12 +241,21 @@ class UniformGrid : public Grid<T>
         }
 
         /// return cell center position
-        virtual Eigen::Vector3d GetCellCenterPosition( const int ii, const int jj, const int kk ) const 
+        virtual Eigen::Vector3d GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const 
         {
-            return Eigen::Vector3d(this->minBound_[0]+((double)(ii)+0.5)*dx_[0], 
-                    this->minBound_[1]+((double)(jj)+0.5)*dx_[1], 
-                    this->minBound_[2]+((double)(kk)+0.5)*dx_[2]); 
+            Eigen::Vector3d pos; 
+            this->GetCellCenterPosition(ii,jj,kk,pos[0],pos[1],pos[2]);
+            return pos;
         }
+
+        virtual void GetCellCenterPosition( const int &ii, const int &jj, const int &kk, double &x, double &y, double &z ) const 
+        {
+            x = this->minBound_[0]+((double)(ii)+0.5)*dx_[0]; 
+            y = this->minBound_[1]+((double)(jj)+0.5)*dx_[1]; 
+            z = this->minBound_[2]+((double)(kk)+0.5)*dx_[2]; 
+        }
+
+
 
         /// interpolate the vertex data with given position
         Eigen::VectorXd InterpolateVertexData( const std::string& dataName, const Eigen::Vector3d& position ) 
@@ -379,7 +397,7 @@ class UniformGrid : public Grid<T>
         }
 
         // in case no buffer is wanted
-        void CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData)
+        virtual void CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData)
         {
             std::vector<std::shared_ptr<Eigen::MatrixXd>> gradientBuffer; 
             CellCenteredScalarHessian(dataName, gradientBuffer, hessianData);
@@ -391,7 +409,7 @@ class UniformGrid : public Grid<T>
         //
         // to minimize reallocation of memory, can pass in an optionally empty pre-allocated
         // memory block for gradient
-        void CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientBuffer, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData) 
+        virtual void CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientBuffer, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData) 
         {
 
             const GridData<T> &gridData = this->GetCellCenteredData(dataName); 
@@ -476,7 +494,7 @@ class UniformGrid : public Grid<T>
         // YZ:  [gy,gz]
         // XZ:  [gx,gz]
         //     
-        void CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData , const CELL_GRADIENT_COMPONENT &component=ALL)
+        virtual void CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData , const CELL_GRADIENT_COMPONENT &component=ALL)
         {
             const GridData<T> & data = this->GetCellCenteredData( dataName ); 
             const int dataDimension =  data.NData(); 
@@ -613,7 +631,7 @@ class UniformGrid : public Grid<T>
         }
 
         // please don't use this..
-        std::vector<std::shared_ptr<Eigen::MatrixXd>> CellCenteredDataGradient( const std::string &dataName, const CELL_GRADIENT_COMPONENT &component=ALL ) 
+        virtual std::vector<std::shared_ptr<Eigen::MatrixXd>> CellCenteredDataGradient( const std::string &dataName, const CELL_GRADIENT_COMPONENT &component=ALL ) 
         {
             std::vector<std::shared_ptr<Eigen::MatrixXd>> gradientData; 
             CellCenteredDataGradient(dataName, gradientData, component); 

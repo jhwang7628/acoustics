@@ -68,7 +68,7 @@ class WaveletBasis {
             clear();
         }
 
-        WaveletBasis &operator=(const WaveletBasis &basis)
+        void operator=(const WaveletBasis &basis)
         {
             this->_type = basis._type;
             this->_order = basis._order;
@@ -117,7 +117,7 @@ class WaveletBasis {
         // Note that this overrides the signal with wavelet basis coefficients.
         // Use the effectiveLength argument if we only wish to consider the
         // contents of signal up to a given length
-        void transform(REAL *signal, int effectiveLength)
+        int transform(REAL *signal, int effectiveLength)
         {
             int                    status;
 
@@ -125,9 +125,11 @@ class WaveletBasis {
                     effectiveLength, _workspace );
 
             TRACE_ASSERT( status == GSL_EINVAL, "GSL wavelet transform failed" );
+
+            return status; 
         }
 
-        void inverseTransform(REAL *signal, int effectiveLength)
+        int inverseTransform(REAL *signal, int effectiveLength)
         {
             int                    status;
 
@@ -136,6 +138,8 @@ class WaveletBasis {
 
             TRACE_ASSERT( status == GSL_SUCCESS,
                     "GSL inverse wavelet trasnform failed" );
+
+            return status; 
         }
 
     private:
@@ -203,7 +207,7 @@ class WaveletManager {
         {
             FloatArray            &transformStorage = getTransformStorage();
 
-            for ( int i = 0; i < transformStorage.size(); i++ ) {
+            for ( size_t i = 0; i < transformStorage.size(); i++ ) {
                 transformStorage[ i ] = 0.0;
             }
         }
@@ -315,7 +319,7 @@ class CompressedMultiTermApproximation : public RadialApproximation,
 
     protected:
         // Reads field data from disk
-        virtual void read( const std::string &filename );
+        virtual size_t read( const std::string &filename );
 
         // Gets the given direction field at the given sample
         virtual REAL sampleDirection( int direction_idx, int sample_idx,
@@ -373,7 +377,7 @@ class CompressedMultiTermApproximation : public RadialApproximation,
             const CoefficientArray  &signal = _fieldTerms[ term_idx ][ direction_idx ];
             FloatArray              &transformStorage = getTransformStorage();
 
-            for ( int coef_idx = 0; coef_idx < signal.size(); coef_idx++ ) {
+            for ( size_t coef_idx = 0; coef_idx < signal.size(); coef_idx++ ) {
                 const WaveletCoefficient  &coef = signal[ coef_idx ];
 
                 transformStorage[ coef.first ] += scale * coef.second;
@@ -517,7 +521,7 @@ class CompactCompressedMultiTermApproximation : public CompactRadialApproximatio
 
             FloatArray              &transformStorage = getTransformStorage();
 
-            for ( int coef_idx = 0; coef_idx < signal.size(); coef_idx++ ) {
+            for ( size_t coef_idx = 0; coef_idx < signal.size(); coef_idx++ ) {
                 const WaveletCoefficient  &coef = signal[ coef_idx ];
 
                 transformStorage[ coef.first ] += scale * coef.second;

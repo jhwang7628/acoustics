@@ -1125,7 +1125,7 @@ void CompressedMultiTermApproximation::ReadAccelerationSet( const std::string &f
 //////////////////////////////////////////////////////////////////////
 // Reads field data from disk
 //////////////////////////////////////////////////////////////////////
-void CompressedMultiTermApproximation::read( const std::string &filename )
+size_t CompressedMultiTermApproximation::read( const std::string &filename )
 {
     FILE                       *file;
     int                         size;
@@ -1188,6 +1188,8 @@ void CompressedMultiTermApproximation::read( const std::string &filename )
     _sampleDiv = 1.0 / (REAL)_fieldSampleRate;
 
     fclose( file );
+
+    return bytes_read; 
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1322,7 +1324,7 @@ void CompressedMultiTermApproximation::thresholdDirectionCoefficients( int direc
         }
 
         if ( useCoef ) {
-            for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
+            for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
                 // Leave the coefficient value empty for now
                 _fieldTerms[ term_idx ][ direction_idx ].push_back(
                         WaveletCoefficient( coef_idx, 0.0 ) );
@@ -1376,8 +1378,8 @@ void CompressedMultiTermApproximation::buildWaveletLSSystem( int direction_idx,
     }
 
     // Build the right hand side
-    for ( int radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
-        for ( int comp_coef_idx = 0; comp_coef_idx < directionCoefs.size();
+    for ( size_t radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
+        for ( size_t comp_coef_idx = 0; comp_coef_idx < directionCoefs.size();
                 comp_coef_idx++ )
         {
             // The actual wavelet coefficient we are storing
@@ -1394,7 +1396,7 @@ void CompressedMultiTermApproximation::buildWaveletLSSystem( int direction_idx,
 void CompressedMultiTermApproximation::extractSolvedCoefficients( int direction_idx,
                                                                   const MATRIX &rhs )
 {
-    int                        numTerms = _fieldTerms.size();
+    //int                        numTerms = _fieldTerms.size();
 
     // Copy terms
     for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
@@ -1403,7 +1405,7 @@ void CompressedMultiTermApproximation::extractSolvedCoefficients( int direction_
 
         TRACE_ASSERT( directionCoefs.size() == rhs.cols() );
 
-        for ( int coef_idx = 0; coef_idx < directionCoefs.size(); coef_idx++ ) {
+        for ( size_t coef_idx = 0; coef_idx < directionCoefs.size(); coef_idx++ ) {
             directionCoefs[ coef_idx ].second = rhs( term_idx, coef_idx );
         }
     }

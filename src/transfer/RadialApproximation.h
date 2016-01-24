@@ -334,7 +334,7 @@ class RadialApproximation : public RadialField {
 
     protected:
         // Reads field data from disk
-        virtual void read( const std::string &filename ) = 0;
+        virtual size_t read( const std::string &filename ) = 0;
 
     protected:
         REAL                     _fieldTimeScale;

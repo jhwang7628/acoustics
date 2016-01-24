@@ -30,7 +30,7 @@ ProxyManager::ProxyManager( vector<RigidMesh *> &rigidMeshes,
     : _rigidMeshes( rigidMeshes )
 {
     // Build a proxy ellipsoid for each mesh
-    for ( int mesh_idx = 0; mesh_idx < _rigidMeshes.size(); mesh_idx++ ) {
+    for ( size_t mesh_idx = 0; mesh_idx < _rigidMeshes.size(); mesh_idx++ ) {
         _rigidMeshes[ mesh_idx ]->fitEllipsoid( measure );
     }
 
@@ -49,8 +49,8 @@ ProxyManager::ProxyManager( vector<RigidMesh *> &rigidMeshes,
 //////////////////////////////////////////////////////////////////////
 ProxyManager::~ProxyManager()
 {
-    for ( int i = 0; i < _proxyModels.size(); i++ )
-        for ( int j = 0; j < _proxyModels[ i ].size(); j++ ) {
+    for ( size_t i = 0; i < _proxyModels.size(); i++ )
+        for ( size_t j = 0; j < _proxyModels[ i ].size(); j++ ) {
             _proxyModels[ i ][ j ]->clear();
 
             delete _compactProxyModels[ i ][ j ];
@@ -126,7 +126,7 @@ void ProxyManager::fitEllipsoids( REAL proxyMinScale, int proxyIncrements,
 
     scaleDivision = ( 1.0 - proxyMinScale ) / (REAL)( proxyIncrements );
 
-    for ( int mesh_idx = 0; mesh_idx < _rigidMeshes.size(); mesh_idx++ ) {
+    for ( size_t mesh_idx = 0; mesh_idx < _rigidMeshes.size(); mesh_idx++ ) {
         xScale = _rigidMeshes[ mesh_idx ]->ellipseScaleX();
         yScale = _rigidMeshes[ mesh_idx ]->ellipseScaleY();
 
@@ -151,7 +151,7 @@ void ProxyManager::fitEllipsoids( REAL proxyMinScale, int proxyIncrements,
 
         _rigidMeshes[ mesh_idx ]->setEllipsoid( xScale, yScale, measure );
 
-        printf( "Fitting mesh %d to ellipse (%d, %d)\n",
+        printf( "Fitting mesh %zu to ellipse (%d, %d)\n",
                 mesh_idx, xIncrement, yIncrement );
         printf( "Ellipse scale is %e\n", _rigidMeshes[ mesh_idx ]->ellipseScale() );
 
@@ -174,7 +174,7 @@ void ProxyManager::initProxyStorage( int proxyIncrements )
         _proxyModels[ i ].resize( i + 1 );
         _compactProxyModels[ i ].resize( i + 1 );
 
-        for ( int j = 0; j < _proxyModels[ i ].size(); j++ ) {
+        for ( size_t j = 0; j < _proxyModels[ i ].size(); j++ ) {
             _proxyModels[ i ][ j ] = new RadialApproximation::AccelerationSet();
             _compactProxyModels[ i ][ j ] = NULL;
         }

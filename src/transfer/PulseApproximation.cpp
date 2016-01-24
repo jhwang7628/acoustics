@@ -347,7 +347,7 @@ void PulseApproximation::ReadAccelerationSet( const std::string &filePrefix,
 //////////////////////////////////////////////////////////////////////
 // Reads field data from disk
 //////////////////////////////////////////////////////////////////////
-void PulseApproximation::read( const string &filename )
+size_t PulseApproximation::read( const string &filename )
 {
     FILE                      *file;
     int                        size;
@@ -395,4 +395,6 @@ void PulseApproximation::read( const string &filename )
     bytes_read = fread( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
 
     fclose( file );
+
+    return bytes_read; 
 }
