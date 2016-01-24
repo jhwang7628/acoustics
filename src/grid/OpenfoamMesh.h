@@ -108,7 +108,7 @@ class OpenfoamCase
         int                                         _fieldCols; 
         std::string                                 _fieldName; 
 
-        UniformGrid<double>                         _grid; 
+        UniformGrid                                 _grid; 
 
 
     public: 
@@ -119,9 +119,9 @@ class OpenfoamCase
         int PrepareDataRead(const std::string &fieldName, const int &fieldCols, const double &dataStartTime=0, const double &dataStopTime=-1); 
         void ReadAllTimesteps(const int &processorIndex, Eigen::MatrixXd &data); 
         bool ReadTimestep(const size_t &timeIndex, DataTimestep &data);
-        void GetMeshGridProjectionTable(const UniformGrid<double> &grid,const std::string &file_cachedIndicies,Eigen::MatrixXi &meshGridProjectionTable, const bool &readCached); 
-        void ProjectDataTimestep(const DataTimestep &data, const Eigen::MatrixXi &meshGridProjectionTable, const UniformGrid<double> &grid, Eigen::MatrixXd &projectedData); 
-        void WriteDataTimestepVTK(const std::string &fileName, const std::string &fieldName, const Eigen::MatrixXd &data, const UniformGrid<double> &grid); 
+        void GetMeshGridProjectionTable(const UniformGrid &grid,const std::string &file_cachedIndicies,Eigen::MatrixXi &meshGridProjectionTable, const bool &readCached); 
+        void ProjectDataTimestep(const DataTimestep &data, const Eigen::MatrixXi &meshGridProjectionTable, const UniformGrid &grid, Eigen::MatrixXd &projectedData); 
+        void WriteDataTimestepVTK(const std::string &fileName, const std::string &fieldName, const Eigen::MatrixXd &data, const UniformGrid &grid); 
 
         inline int GetCellIndexOffsetProcessor(const int &proc){ return _processorMesh.at(proc)->GetCellIndexOffset(); }
         void GetCentroids(Eigen::MatrixXd &centroids); 

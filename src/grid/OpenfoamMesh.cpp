@@ -557,7 +557,7 @@ void OpenfoamCase::ReinitializeCase()
     Eigen::Vector3d maxBound(0.2204221281671500,0.2364809270171500,0.2189979682871500); 
     Eigen::Vector3i cellCount(250,250,250); 
 
-    _grid = UniformGrid<double>(minBound, maxBound, cellCount); 
+    _grid = UniformGrid(minBound, maxBound, cellCount); 
 }
 
 void OpenfoamCase::SetProcessorPath()
@@ -764,7 +764,7 @@ bool OpenfoamCase::ReadTimestep(const size_t &timeIndex, DataTimestep &data)
     return true;
 }
 
-void OpenfoamCase::GetMeshGridProjectionTable(const UniformGrid<double> &grid, const std::string &file_cachedIndicies, Eigen::MatrixXi &meshGridProjectionTable, const bool &readCached)
+void OpenfoamCase::GetMeshGridProjectionTable(const UniformGrid &grid, const std::string &file_cachedIndicies, Eigen::MatrixXi &meshGridProjectionTable, const bool &readCached)
 {
 
     std::cout << "constructing mesh-grid projection table. be patient..." << std::endl;
@@ -830,7 +830,7 @@ void OpenfoamCase::GetMeshGridProjectionTable(const UniformGrid<double> &grid, c
     }
 }
 
-void OpenfoamCase::ProjectDataTimestep(const DataTimestep &data, const Eigen::MatrixXi &meshGridProjectionTable, const UniformGrid<double> &grid, Eigen::MatrixXd &projectedData)
+void OpenfoamCase::ProjectDataTimestep(const DataTimestep &data, const Eigen::MatrixXi &meshGridProjectionTable, const UniformGrid &grid, Eigen::MatrixXd &projectedData)
 {
     const Eigen::Vector3i cellCount = grid.GetCellCount(); 
     const int N_cells = cellCount[0]*cellCount[1]*cellCount[2];
@@ -856,7 +856,7 @@ void OpenfoamCase::ProjectDataTimestep(const DataTimestep &data, const Eigen::Ma
 }
 
 // this data has to be in the flatten format prepared by projectDataTimestep
-void OpenfoamCase::WriteDataTimestepVTK(const std::string &fileName, const std::string &fieldName, const Eigen::MatrixXd &data, const UniformGrid<double> &grid)
+void OpenfoamCase::WriteDataTimestepVTK(const std::string &fileName, const std::string &fieldName, const Eigen::MatrixXd &data, const UniformGrid &grid)
 {
     const Eigen::Vector3i cellCount = grid.GetCellCount(); 
     Eigen::MatrixXd gridPosition(cellCount[0]*cellCount[1]*cellCount[2],3); 
