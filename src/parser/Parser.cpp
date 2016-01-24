@@ -129,6 +129,8 @@ std::string Parser::getMeshFileName()
 
     TiXmlElement *root = document->FirstChildElement("impact");
     if (!root)
+        root = document->FirstChildElement("impulse_response");
+    if (!root)
     {
         cerr << "No impact tag in input file" << endl;
         return NULL;
@@ -313,6 +315,40 @@ Parser::SphericalImpactParms Parser::getSphereImpactParms()
 }
 #endif
 
+Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
+{
+    ImpulseResponseParms       parms;
+
+    parms._c = queryOptionalReal( "impulse_response/solver", "c", "343.0" );
+    parms._density = queryOptionalReal( "impulse_response/solver", "density", "1.22521" );
+
+    // Get SDF parameters
+    parms._sdfResolution = queryRequiredInt( "impulse_response/solver", "fieldresolution" );
+    parms._sdfFilePrefix = queryRequiredAttr( "impulse_response/solver", "distancefield" );
+
+    // Get grid parameters
+    parms._gridResolution = queryRequiredInt( "impulse_response/solver", "gridresolution" );
+    parms._gridScale = queryRequiredReal( "impulse_response/solver", "gridscale" );
+
+    parms._fixedCellSize = ( queryOptionalInt( "impulse_response/solver", "fixedcellsize", "0" ) != 0 );
+    if ( parms._fixedCellSize )
+        parms._cellSize = queryRequiredReal( "impulse_response/solver", "cellsize" );
+
+    parms._timeStepFrequency = queryRequiredInt( "impulse_response/solver", "timestepfrequency" );
+    parms._subSteps = queryRequiredInt( "impulse_response/solver", "substeps" );
+
+    parms._stopTime = queryRequiredReal( "impulse_response/solver", "stop_time" ); 
+
+    parms._outputPattern = queryRequiredAttr( "impulse_response/solver", "output_pattern" );
+
+    parms._listeningFile = queryOptionalAttr( "impulse_response/solver", "listening_file", "none" );
+
+    parms._sourcePosition_x = queryRequiredReal( "impulse_response/solver", "source_position_x" ); 
+    parms._sourcePosition_y = queryRequiredReal( "impulse_response/solver", "source_position_y" ); 
+    parms._sourcePosition_z = queryRequiredReal( "impulse_response/solver", "source_position_z" ); 
+
+    return parms;
+}
 
 Parser::AcousticTransferParms Parser::getAcousticTransferParms()
 {
@@ -490,100 +526,6 @@ Parser::AccelerationPulseParms Parser::getAccelerationPulseParms()
     return pulseParms;
 }
 
-vector<REAL*> Parser::ImpulseResponseParms::getSoundSources(const TiXmlNode * document, const char * rootTag) const 
-{
-    vector<REAL*> ph; 
-
-    const TiXmlElement *root = document->FirstChildElement(rootTag); 
-    if (!root)
-    {
-        cerr << "No " << rootTag << " tag in input file" << endl;
-        return ph; 
-    }
-
-    const TiXmlElement *pos_L = root->FirstChildElement("source_position_L");
-    if (!pos_L) 
-    {
-        cerr << "No source_pos_Lition tag in xml" << endl; 
-        return ph; 
-    }
-
-    REAL posx, posy, posz; 
-
-    if (pos_L->QueryRealAttribute("x", &posx) != TIXML_SUCCESS ||
-        pos_L->QueryRealAttribute("y", &posy) != TIXML_SUCCESS ||
-        pos_L->QueryRealAttribute("z", &posz) != TIXML_SUCCESS)
-    {
-        cerr << "Cannot read source_position component in xml." << endl; 
-        return ph; 
-    }
-
-
-
-    REAL sound_source_L[3] = {posx, posy, posz}; 
-    ph.push_back(sound_source_L); 
-
-    printf("Queried sound source position L = {%f %f %f}\n", posx, posy, posz); 
-
-    const TiXmlElement *pos_R = root->FirstChildElement("source_position_R");
-    if (!pos_R) 
-    {
-        cerr << "No source_position tag in xml" << endl; 
-        return ph; 
-    }
-
-    if (pos_R->QueryRealAttribute("x", &posx) != TIXML_SUCCESS ||
-        pos_R->QueryRealAttribute("y", &posy) != TIXML_SUCCESS ||
-        pos_R->QueryRealAttribute("z", &posz) != TIXML_SUCCESS)
-    {
-        cerr << "Cannot read source_position component in xml." << endl; 
-        return ph; 
-    }
-
-
-
-    REAL sound_source_R[3] = {posx, posy, posz}; 
-    ph.push_back(sound_source_R); 
-
-    printf("Queried sound source position R= {%f %f %f}\n", posx, posy, posz); 
-
-
-    return ph;
-
-
-
-
-}
-
-
-/* Fetch parameters for impulse response computation. */
-Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
-{
-    ImpulseResponseParms       irParams;
-
-    vector<REAL*> tmp = irParams.getSoundSources(document, "impulse_response"); 
-
-    //ifParams._
-
-    irParams._stdevGaussian = queryRequiredReal( "impulse_response/acoustic_transfer", "stdevGaussian" ); 
-    //irParams._sourcePositions = queryRequiredRealMultiple( "impulse_response/acoustic_transfer", "sourcePosition" );
-
-    irParams._c = queryOptionalReal( "impulse_response/acoustic_transfer", "c", "343.0" );
-    irParams._density = queryOptionalReal( "impulse_response/acoustic_transfer", "density", "1.0" );
-
-    /* Get SDF parameters */
-    irParams._sdfFilePrefix = queryRequiredAttr( "impulse_response/acoustic_transfer", "distancefield" );
-    irParams._sdfResolution = queryRequiredInt( "impulse_response/acoustic_transfer", "fieldresolution" );
-
-    /* Get grid parameters */
-    irParams._gridResolution = queryRequiredInt( "impulse_response/acoustic_transfer", "gridresolution" );
-    irParams._gridScale = queryRequiredReal( "impulse_response/acoustic_transfer", "gridscale" );
-
-    irParams._timeStepFrequency = queryRequiredInt( "impulse_response/acoustic_transfer", "timestepfrequency" );
-    irParams._subSteps = queryRequiredInt( "impulse_response/acoustic_transfer", "substeps" ); 
-
-    return irParams;
-}
 
 #if 0
 //////////////////////////////////////////////////////////////////////
@@ -969,6 +911,7 @@ void Parser::getMeshes( const char *inputElement,
     TiXmlElement              *meshNode;
 
     root = document->FirstChildElement( "impact" );
+
     if ( !root )
     {
         cerr << "Error: No impact node found" << endl;

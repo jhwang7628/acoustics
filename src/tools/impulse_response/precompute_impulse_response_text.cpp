@@ -10,7 +10,6 @@
 #include "IO/IO.h"
 #include <limits>
 
-#include <math/InterpolationFunction.h>
 
 #include <distancefield/closestPointField.h>
 #include <distancefield/FieldBuilder.h>
@@ -167,44 +166,12 @@ REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &
 }
 
 
-void readConfigFile(const char * filename, REAL * endTime, 
-                    Vector3Array * listeningPositions, 
-                    char * pattern, 
-                    Vector3d & sound_source); 
 
-void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, char * pattern, REAL endTime, int n);
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, const char * pattern, REAL endTime, int n);
 
-REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t,
-                   int field_id, InterpolationFunction *interp )
-{
-    REAL                       bcResult = 0.0;
 
-    TRACE_ASSERT( obj_id == 0 );
 
-    //if ( t <= 2.0 * interp->supportLength() )
-    //{
-    //    bcResult = interp->evaluate( t, interp->supportLength() );
-
-    //    if ( field_id <= 2 )
-    //    {
-    //        bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
-    //    }
-    //    else
-    //    {
-    //        bcResult *= n.dotProduct(
-    //                        ( x - CENTER_OF_MASS ).crossProduct(
-    //                                                    ACCELERATION_DIRECTIONS[ field_id ] ) );
-    //    }
-
-    //    if ( ZERO_BC )
-    //    {
-    //        ZERO_BC = false;
-    //        cout << "Non-zero boundary condition!" << endl;
-    //    }
-    //}
-
-    return bcResult;
-}
+void UnitTesting(); 
 
 using namespace std;
 
@@ -213,16 +180,14 @@ using namespace std;
 int main( int argc, char **argv )
 {
 
-
-    if (argc != 3){
-        printf("**Usage: %s solver_configuration_XML listening_configuration_file", argv[0]);
+    if (argc != 2){
+        printf("**Usage: %s <solver_configuration_XML>\n", argv[0]);
         exit(1);
     }
 
-    string                   fileName( "default.xml" );
+    std::string fileName     = std::string(argv[1]);
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh = NULL;
-    //RigidMesh               *rigidMesh = NULL;
     ClosestPointField       *sdf = NULL;
     BoundingBox              fieldBBox;
     REAL                     cellSize;
@@ -237,12 +202,8 @@ int main( int argc, char **argv )
 
     REAL                     timeStep;
 
-    Parser::AcousticTransferParms parms;
+    Parser::ImpulseResponseParms parms;
 
-    fileName = argv[1];
-    char pattern[100];
-    readConfigFile(argv[2], &endTime, &listeningPositions, pattern, sourcePosition);
-    printf("Queried end time for the simulation = %lf\n", endTime);
 
     /* Build parser from solver configuration. */
     parser = Parser::buildParser( fileName );
@@ -253,16 +214,24 @@ int main( int argc, char **argv )
     }
 
     /* Build mesh. */
-    mesh = parser->getMesh();
+    mesh = parser->getMesh("impulse_response");
     if ( !mesh )
     {
         cerr << "ERROR: Could not build mesh" << endl;
         return 1;
     }
 
-    parms = parser->getAcousticTransferParms();
+    parms = parser->getImpulseResponseParms();
 
-    Vector3d CENTER_OF_MASS( 1.0, 0.0, 0.0 );
+    endTime = parms._stopTime; 
+    sourcePosition.x = parms._sourcePosition_x; 
+    sourcePosition.y = parms._sourcePosition_y; 
+    sourcePosition.z = parms._sourcePosition_z; 
+
+    const char *pattern = parms._outputPattern.c_str();
+
+
+    printf("Queried end time for the simulation = %lf\n", endTime);
 
     sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
                                                               parms._sdfResolution,
@@ -284,19 +253,12 @@ int main( int argc, char **argv )
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency);
 
 
-    REAL boundRadius = mesh->boundingSphereRadius( CENTER_OF_MASS );
-
     cout << SDUMP( timeStep ) << endl;
-    cout << SDUMP( parms._outputFile ) << endl;
-    cout << SDUMP( boundRadius ) << endl;
-    cout << SDUMP( CENTER_OF_MASS ) << endl;
     cout << SDUMP( cellSize ) << endl; 
 
 
     REAL CFL = parms._c * timeStep / cellSize; 
     cout << SDUMP( CFL ) << endl;
-
-    boundRadius *= parms._radiusMultipole;
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
@@ -356,9 +318,6 @@ int main( int argc, char **argv )
     solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
 #endif 
 
-
-    InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
-    boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp ); 
 
 
     /// write grid and pressure value
@@ -514,42 +473,10 @@ int main( int argc, char **argv )
 
 }
 
-
-/* 
- * Reading listening positions. 
- *
- * in: 
- *      filename: file name of read file. 
- *      endTime: end time of the simulation 
- *      listeningPosition: vector of R3 listening positions. 
- *      pattern: pattern of the written file path/name. 
- *      sound_source: sound source position
- */
-void readConfigFile(const char * filename, REAL * endTime, Vector3Array * listeningPositions, char * pattern, Vector3d & sound_source)
-{
-    FILE * fp;
-    fp = fopen(filename, "r+");
-    if(fp == NULL){
-        printf("Config file does not exist\n");
-        exit(1);
-    }
-    fscanf(fp, "%s", pattern);
-    fscanf(fp, "%lf", endTime);
-    fscanf(fp, "%lf %lf %lf", &(sound_source[0]), &(sound_source[1]), &(sound_source[2]));
-    int n;
-    fscanf(fp, "%d", &n);
-    for(int i = 0; i < n; i++){
-        double x, y, z;
-        fscanf(fp, "%lf %lf %lf", &x, &y, &z);
-        listeningPositions->push_back(Vector3d(x, y, z));
-    }
-
-}
-
 /* 
  * Write listened data. 
  */
-void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, char * pattern, REAL endTime, int n)
+void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, const char * pattern, REAL endTime, int n)
 {
     char buffer[80];
     char fname[100];
@@ -567,5 +494,25 @@ void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeSt
     fclose(fp);
 }
 
+
+
+void UnitTesting(const char* filename)
+{
+    Parser  *parser = nullptr; 
+
+    Parser::ImpulseResponseParms parms; 
+
+    parser = Parser::buildParser( filename ); 
+
+    parms = parser->getImpulseResponseParms(); 
+
+    std::cout << SDUMP(parms._stopTime        ) << std::endl;
+    std::cout << SDUMP(parms._outputPattern   ) << std::endl;
+    std::cout << SDUMP(parms._listeningFile   ) << std::endl;
+    std::cout << SDUMP(parms._sourcePosition_x) << std::endl;
+    std::cout << SDUMP(parms._sourcePosition_y) << std::endl;
+    std::cout << SDUMP(parms._sourcePosition_z) << std::endl;
+
+}
 
 
