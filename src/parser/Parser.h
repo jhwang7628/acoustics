@@ -179,34 +179,43 @@ class Parser {
         };
 #endif
 
-        /* 
-         * Parameters for impulse response precomputation. 
-         * Support 3d gaussian for now.
-         * */
+        /////////////////////////////////////////////////////
+        // Parameters for impulse response
+        /////////////////////////////////////////////////////
         struct ImpulseResponseParms 
         {
-            /* Physical properties of the medium */
-            REAL                   _c; 
-            REAL                   _density; 
+            // Speed of sound and density
+            REAL                    _c;
+            REAL                    _density;
 
-            /* SDF parms */
-            int                    _sdfResolution;
-            std::string            _sdfFilePrefix;
+            // SDF parms
+            int                     _sdfResolution;
+            std::string             _sdfFilePrefix;
 
-            /* Domain resolution and scale. */ 
-            int                    _gridResolution;
-            REAL                   _gridScale;
+            // Domain resolution and size
+            int                     _gridResolution;
 
-            /* Time stepping information. */
-            int                    _timeStepFrequency;
-            int                    _subSteps;
+            // How much to scale the bounding box of the object by
+            REAL                    _gridScale;
 
+            // Whether or not to use a fixed grid cell size
+            bool                    _fixedCellSize;
+            REAL                    _cellSize;
 
-            /* Inpulse response information */
-            std::vector<REAL*>   _sourcePositions; 
-            REAL                 _stdevGaussian;
+            int                     _timeStepFrequency;
+            int                     _subSteps;
+            
+            REAL                    _stopTime; 
 
-            vector<REAL*> getSoundSources(const TiXmlNode * document, const char * rootTag) const;
+            // Output parameters
+            std::string             _outputPattern; 
+
+            std::string             _listeningFile; 
+
+            // position of the impulse response source
+            REAL                    _sourcePosition_x; 
+            REAL                    _sourcePosition_y; 
+            REAL                    _sourcePosition_z; 
 
         };
 

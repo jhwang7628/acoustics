@@ -146,9 +146,9 @@ if ( USE_GSL )
 endif ( USE_GSL )
 
 
-if ( USE_DEBUG )
-  add_definitions(-Wall)
-endif ( USE_DEBUG )
+if (USE_DEBUG)
+    add_definitions(-Wall)
+endif (USE_DEBUG)
 
 if ( USE_OPENMP )
     find_package(OpenMP)
