@@ -1,0 +1,4 @@
+data_Gaussian_space_1cell_time_1over1E5_res250_simulation/head_right_%s
+0.005
+0.000000 0.000000 -0.080000
+0

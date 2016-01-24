@@ -44,13 +44,14 @@ option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
 option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
 
-option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE "Compiles the impulse response wavesolver" ON)
+option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wavesolver" ON)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
+option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 
+
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
 #   We should eventually go through and resolve all of these diffs
 add_definitions(-DDIFF_DEFINE)
-
 add_definitions(-DCGAL_INTERSECTION_VERSION=1)
 
 #===================================================================
@@ -74,6 +75,7 @@ endif ( USE_64BIT_ARCH )
 ## Libraries
 # check boost libraries
 find_package(Boost 1.33 REQUIRED)
+add_definitions(-DUSE_BOOST)
 
 option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
 
