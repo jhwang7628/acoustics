@@ -12,9 +12,10 @@
 #include <boost/timer/timer.hpp>
 
 #include "IO/IO.h"
-#include "Grid.h" 
+#include "grid/Grid.h" 
+#include "grid/GridWithObject.h" 
 
-#define OMP_THREADS 36
+#define OMP_THREADS 1
 
 inline double nanosecond_to_double( const boost::timer::nanosecond_type & t ) 
 {
@@ -67,7 +68,10 @@ int main(int argc, char ** argv) {
     maxBound << maxBoundx, maxBoundy, maxBoundz; 
 
     /// create grid for interpolation
-    UniformGrid grid( minBound, maxBound, cellCount ); 
+    //UniformGrid grid( minBound, maxBound, cellCount ); 
+    UniformGridWithObject grid( minBound, maxBound, cellCount ); 
+    grid.Reinitialize("/home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml");
+    grid.ClassifyCells(); 
     std::cout << grid << std::endl;
 
     /// read IR data
@@ -86,7 +90,6 @@ int main(int argc, char ** argv) {
 
     omp_set_num_threads(OMP_THREADS); 
     std::cout << "start application with " << OMP_THREADS << " threads " << std::endl;
-
 
     std::cout << "initializing buffer matrices. might take a while..." << std::endl;
     /// store the listened values 
@@ -133,7 +136,8 @@ int main(int argc, char ** argv) {
     int global_count=0;
 
     #pragma omp parallel for
-    for ( int pp=0; pp<Nts; pp++ ) 
+    for (int pp=0; pp<1; pp++)
+    //for ( int pp=0; pp<Nts; pp++ ) 
     {
 
         boost::timer::cpu_timer timer; 
@@ -146,7 +150,8 @@ int main(int argc, char ** argv) {
         boost::timer::nanosecond_type interpolationTime; 
 
         const int thread_id = omp_get_thread_num(); 
-        UniformGrid<double> grid_thread(grid); 
+        UniformGridWithObject grid_thread(grid); 
+        //UniformGrid grid_thread(grid); 
 
         if (thread_id==0)
             timer.start(); 

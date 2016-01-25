@@ -205,68 +205,6 @@ void UniformGrid::CellCenteredScalarHessian(const std::string &dataName, std::ve
 }
 
 
-/*
- * Helper for trilinear interpolation on the grid.
- *
- * trilinear interpolation following notation on wiki
- * (https://en.wikipedia.org/wiki/Trilinear_interpolation)
- *
- * this implementation does not depend on grid size
- */
-Eigen::VectorXd TrilinearInterpolate( const Eigen::Vector3d& xmin, const Eigen::Vector3d& xmax, const Eigen::Vector3i& N, const Eigen::Vector3d& position, const GridData& data ) 
-{
-    Eigen::VectorXd value; 
-    value.setZero(data.NData());
-
-    // get bounding index
-    Eigen::Vector3i lowIndex; 
-    Eigen::Vector3i highIndex;
-    Eigen::Vector3d dx = (xmax - xmin).cwiseQuotient(N.cast<double>());
-    for (int ii=0; ii<3; ii++) 
-    {
-        lowIndex[ii] = std::min<int>( floor((position[ii]-xmin[ii])/dx[ii]), N[ii]-1 );
-        lowIndex[ii] = std::max<int>( lowIndex[ii], 0 ); // prevent rounding error
-        highIndex[ii] = lowIndex[ii] + 1; 
-    }
-
-    int ix0,iy0,iz0,ix1,iy1,iz1; 
-    ix0= lowIndex[0]; 
-    ix1=highIndex[0]; 
-    iy0= lowIndex[1]; 
-    iy1=highIndex[1]; 
-    iz0= lowIndex[2]; 
-    iz1=highIndex[2]; 
-
-    double x0,y0,z0,x1,y1,z1,xd,yd,zd,x,y,z; 
-    x = std::max<REAL>( std::min<REAL>( position[0], xmax[0] ), xmin[0] );
-    y = std::max<REAL>( std::min<REAL>( position[1], xmax[1] ), xmin[1] );
-    z = std::max<REAL>( std::min<REAL>( position[2], xmax[2] ), xmin[2] );
-    x0 = xmin[0] + ix0*dx[0]; 
-    y0 = xmin[1] + iy0*dx[1]; 
-    z0 = xmin[2] + iz0*dx[2]; 
-    x1 = x0 + dx[0]; 
-    y1 = y0 + dx[1]; 
-    z1 = z0 + dx[2]; 
-    xd = (x-x0)/(x1-x0); 
-    yd = (y-y0)/(y1-y0); 
-    zd = (z-z0)/(z1-z0); 
-
-    for (int ii=0; ii<data.NData(); ii++) 
-    {
-
-        REAL c00 = data.Value(ix0,iy0,iz0)(ii)*(1.0-xd) + data.Value(ix1,iy0,iz0)(ii)*xd; 
-        REAL c10 = data.Value(ix0,iy1,iz0)(ii)*(1.0-xd) + data.Value(ix1,iy1,iz0)(ii)*xd; 
-        REAL c01 = data.Value(ix0,iy0,iz1)(ii)*(1.0-xd) + data.Value(ix1,iy0,iz1)(ii)*xd; 
-        REAL c11 = data.Value(ix0,iy1,iz1)(ii)*(1.0-xd) + data.Value(ix1,iy1,iz1)(ii)*xd; 
-
-        REAL c0 = c00*(1.0 - yd) + c10*yd; 
-        REAL c1 = c01*(1.0 - yd) + c11*yd; 
-
-        value[ii] = c0*(1.0 - zd) + c1*zd; 
-    }
-
-    return value;
-}
 
 void UniformGrid::CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientBuffer, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData)
 {
@@ -584,3 +522,67 @@ Eigen::Vector3d RotatedUniformGrid::GetCellCenterPosition( const int ii, const i
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/*
+ * Helper for trilinear interpolation on the grid.
+ *
+ * trilinear interpolation following notation on wiki
+ * (https://en.wikipedia.org/wiki/Trilinear_interpolation)
+ *
+ * this implementation does not depend on grid size
+ */
+Eigen::VectorXd TrilinearInterpolate( const Eigen::Vector3d& xmin, const Eigen::Vector3d& xmax, const Eigen::Vector3i& N, const Eigen::Vector3d& position, const GridData& data ) 
+{
+    Eigen::VectorXd value; 
+    value.setZero(data.NData());
+
+    // get bounding index
+    Eigen::Vector3i lowIndex; 
+    Eigen::Vector3i highIndex;
+    Eigen::Vector3d dx = (xmax - xmin).cwiseQuotient(N.cast<double>());
+    for (int ii=0; ii<3; ii++) 
+    {
+        lowIndex[ii] = std::min<int>( floor((position[ii]-xmin[ii])/dx[ii]), N[ii]-1 );
+        lowIndex[ii] = std::max<int>( lowIndex[ii], 0 ); // prevent rounding error
+        highIndex[ii] = lowIndex[ii] + 1; 
+    }
+
+    int ix0,iy0,iz0,ix1,iy1,iz1; 
+    ix0= lowIndex[0]; 
+    ix1=highIndex[0]; 
+    iy0= lowIndex[1]; 
+    iy1=highIndex[1]; 
+    iz0= lowIndex[2]; 
+    iz1=highIndex[2]; 
+
+    double x0,y0,z0,x1,y1,z1,xd,yd,zd,x,y,z; 
+    x = std::max<REAL>( std::min<REAL>( position[0], xmax[0] ), xmin[0] );
+    y = std::max<REAL>( std::min<REAL>( position[1], xmax[1] ), xmin[1] );
+    z = std::max<REAL>( std::min<REAL>( position[2], xmax[2] ), xmin[2] );
+    x0 = xmin[0] + ix0*dx[0]; 
+    y0 = xmin[1] + iy0*dx[1]; 
+    z0 = xmin[2] + iz0*dx[2]; 
+    x1 = x0 + dx[0]; 
+    y1 = y0 + dx[1]; 
+    z1 = z0 + dx[2]; 
+    xd = (x-x0)/(x1-x0); 
+    yd = (y-y0)/(y1-y0); 
+    zd = (z-z0)/(z1-z0); 
+
+    for (int ii=0; ii<data.NData(); ii++) 
+    {
+
+        REAL c00 = data.Value(ix0,iy0,iz0)(ii)*(1.0-xd) + data.Value(ix1,iy0,iz0)(ii)*xd; 
+        REAL c10 = data.Value(ix0,iy1,iz0)(ii)*(1.0-xd) + data.Value(ix1,iy1,iz0)(ii)*xd; 
+        REAL c01 = data.Value(ix0,iy0,iz1)(ii)*(1.0-xd) + data.Value(ix1,iy0,iz1)(ii)*xd; 
+        REAL c11 = data.Value(ix0,iy1,iz1)(ii)*(1.0-xd) + data.Value(ix1,iy1,iz1)(ii)*xd; 
+
+        REAL c0 = c00*(1.0 - yd) + c10*yd; 
+        REAL c1 = c01*(1.0 - yd) + c11*yd; 
+
+        value[ii] = c0*(1.0 - zd) + c1*zd; 
+    }
+
+    return value;
+}

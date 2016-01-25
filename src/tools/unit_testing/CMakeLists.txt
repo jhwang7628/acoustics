@@ -27,8 +27,6 @@ if (BUILD_UNIT_TESTING)
         ${TURBSOUND_INCLUDE_DIR}
         )
 
-    message(${GRID_SOURCES})
-
     add_executable(testing_grid
         ${UNIT_TESTING_SRCS}
         ${GRID_SOURCES}

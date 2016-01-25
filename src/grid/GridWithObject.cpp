@@ -55,8 +55,12 @@ void UniformGridWithObject::ClassifyCells()
     std::cout << " fluid : " << N_cells - N_solids << std::endl;
 }
 
+
+// use first order finite-difference on boundaries 
 void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData , const CELL_GRADIENT_COMPONENT &component)
 {
+
+    std::cout << "with object version is used" << std::endl;
     const GridData & data = this->GetCellCenteredData( dataName ); 
     const int dataDimension =  data.NData(); 
     const int NCell = data.NCells(); 
@@ -155,18 +159,24 @@ void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataNam
 
 
 
+                    // second order accurate, but it creates a little jagged
+                    // edges since it extended one more stencil to maintain 2nd
+                    // accuracy
                     if (xSign != 0) 
-                        buffer0 = static_cast<double>(xSign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii+xSign*1,jj,kk)(0) - data.Value(ii+xSign*2,jj,kk)(0))/2./dx; 
+                        buffer0 = static_cast<double>(xSign)*(-data.Value(ii,jj,kk)(0) + data.Value(ii+xSign*1,jj,kk)(0))/dx; 
+                        //buffer0 = static_cast<double>(xSign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii+xSign*1,jj,kk)(0) - data.Value(ii+xSign*2,jj,kk)(0))/2./dx; 
                     else 
                         buffer0 = (data.Value(ii+1,jj,kk)(0) - data.Value(ii-1,jj,kk)(0))/2./dx; 
 
                     if (ySign != 0) 
-                        buffer1 = static_cast<double>(ySign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii,jj+ySign*1,kk)(0) - data.Value(ii,jj+ySign*2,kk)(0))/2./dy; 
+                        buffer1 = static_cast<double>(ySign)*(-data.Value(ii,jj,kk)(0) + data.Value(ii,jj+ySign*1,kk)(0))/dy; 
+                        //buffer1 = static_cast<double>(ySign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii,jj+ySign*1,kk)(0) - data.Value(ii,jj+ySign*2,kk)(0))/2./dy; 
                     else 
                         buffer1 = (data.Value(ii,jj+1,kk)(0) - data.Value(ii,jj-1,kk)(0))/2./dy; 
 
                     if (zSign != 0) 
-                        buffer2 = static_cast<double>(zSign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii,jj,kk+zSign*1)(0) - data.Value(ii,jj,kk+zSign*2)(0))/2./dz; 
+                        buffer2 = static_cast<double>(zSign)*(-data.Value(ii,jj,kk)(0) + data.Value(ii,jj,kk+zSign*1)(0))/dz; 
+                        //buffer2 = static_cast<double>(zSign)*(-3.*data.Value(ii,jj,kk)(0) + 4.*data.Value(ii,jj,kk+zSign*1)(0) - data.Value(ii,jj,kk+zSign*2)(0))/2./dz; 
                     else 
                         buffer2 = (data.Value(ii,jj,kk+1)(0) - data.Value(ii,jj,kk-1)(0))/2./dz; 
                 }

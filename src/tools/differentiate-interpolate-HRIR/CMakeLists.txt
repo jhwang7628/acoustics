@@ -47,6 +47,7 @@ if (BUILD_DIFFERENTIATE_INTERPOLATE_HRIR)
         ${GSL_LIBRARY}                  
         boost_thread
         boost_system                    
+        boost_timer
         boost_regex) 
 
 endif ( BUILD_DIFFERENTIATE_INTERPOLATE_HRIR )
