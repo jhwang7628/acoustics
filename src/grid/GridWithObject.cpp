@@ -1,5 +1,6 @@
 #include "Grid.h"
 #include "GridWithObject.h"
+#include "signalprocessing/FilterDesign.h" 
 
 void UniformGridWithObject::Reinitialize(const std::string &configFile)
 {
@@ -17,7 +18,10 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
     if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
 
     isBoundary_.clear(); 
-    isBoundary_.resize(this->N_cells());
+    isBoundary_.resize(N_cells());
+
+    interfacialCellTypes_.clear(); 
+    interfacialCellTypes_.resize(N_cells()); 
 
     initialized_ = true; 
 }
@@ -30,10 +34,12 @@ void UniformGridWithObject::ClassifyCells()
     const Eigen::Vector3i &cellCount = this->cellCount_; 
     const int N_cells = this->N_cells(); 
 
+
+    // first rasterize the geometry
     int N_solids = 0; 
     for (int kk=0; kk<cellCount[2]; kk++) 
     {
-        std::cout << " progress: " << kk << "/" << cellCount[2] << "\r" << std::flush;
+        std::cout << " classify bulk cells. progress: " << kk << "/" << cellCount[2] << "\r" << std::flush;
         for (int jj=0; jj<cellCount[1]; jj++) 
         {
             for (int ii=0; ii<cellCount[0]; ii++) 
@@ -50,17 +56,75 @@ void UniformGridWithObject::ClassifyCells()
     }
     std::cout << std::endl;
 
+
+    // then find the interfacial cells 
+    int index; 
+    int N_interfacial = 0; 
+    for (int kk=1; kk<cellCount[2]-1; kk++) 
+    {
+        std::cout << " classify interfacial cells. progress: " << kk << "/" << cellCount[2] << "\r" << std::flush;
+        for (int jj=1; jj<cellCount[1]-1; jj++) 
+        {
+            for (int ii=1; ii<cellCount[0]-1; ii++) 
+            {
+                index = FlattenIndicies(ii,jj,kk); 
+                if (isBoundary_[index]) 
+                    continue; 
+
+                InterfacialType &type = interfacialCellTypes_[index]; 
+
+                if (isBoundary_[FlattenIndicies(ii-1,jj  ,kk  )] == SOLID) type = ( type | X_BOUNDARY_ON_LEFT ); 
+                if (isBoundary_[FlattenIndicies(ii+1,jj  ,kk  )] == SOLID) type = ( type | X_BOUNDARY_ON_RIGHT);
+                if (isBoundary_[FlattenIndicies(ii  ,jj-1,kk  )] == SOLID) type = ( type | Y_BOUNDARY_ON_LEFT ); 
+                if (isBoundary_[FlattenIndicies(ii  ,jj+1,kk  )] == SOLID) type = ( type | Y_BOUNDARY_ON_RIGHT); 
+                if (isBoundary_[FlattenIndicies(ii  ,jj  ,kk-1)] == SOLID) type = ( type | Z_BOUNDARY_ON_LEFT ); 
+                if (isBoundary_[FlattenIndicies(ii  ,jj  ,kk+1)] == SOLID) type = ( type | Z_BOUNDARY_ON_RIGHT); 
+
+                if (type & (X_BOUNDARY_ON_LEFT | X_BOUNDARY_ON_RIGHT | Y_BOUNDARY_ON_LEFT | Y_BOUNDARY_ON_RIGHT | Z_BOUNDARY_ON_LEFT | Z_BOUNDARY_ON_RIGHT) )
+                {
+                    type = ( type | IS_INTERFACE ); 
+                    N_interfacial++; 
+                }
+
+            }
+        }
+    }
+    std::cout << std::endl;
+
     std::cout << "classification completed : \n"; 
     std::cout << " solid : " << N_solids << "\n"; 
-    std::cout << " fluid : " << N_cells - N_solids << std::endl;
+    std::cout << " fluid : " << N_cells - N_solids << "\n";
+    std::cout << " interfacial cells (neighbor solid) : " << N_interfacial << std::endl;
+}
+
+void UniformGridWithObject::WriteCellTypes(const std::string &filename)
+{
+    std::shared_ptr<Eigen::MatrixXd> cellTypes(new Eigen::MatrixXd(N_cells(),1)); 
+    cellTypes->setZero(); 
+    Eigen::MatrixXd positionBuffer(N_cells(),3); 
+    int indBuffer=0; 
+    std::ofstream of(filename.c_str()); 
+    for (int kk=0; kk<cellCount_[2]; kk++) 
+        for (int jj=0; jj<cellCount_[1]; jj++) 
+            for (int ii=0; ii<cellCount_[0]; ii++) 
+            {
+                FlattenIndicies(ii,jj,kk,indBuffer); 
+                GetCellCenterPosition(ii,jj,kk,positionBuffer(indBuffer,0),positionBuffer(indBuffer,1),positionBuffer(indBuffer,2)); 
+                if (isBoundary_[indBuffer]) 
+                    (*cellTypes)(indBuffer,0) = -1.0;
+                if (interfacialCellTypes_[indBuffer] & IS_INTERFACE) 
+                    (*cellTypes)(indBuffer,0) =  1.0; 
+            }
+
+    InsertCellCenteredData("types", cellTypes); 
+    WriteVTKCellCentered("cellTypes", "types", "cellTypes"); 
 }
 
 
 // use first order finite-difference on boundaries 
-void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData , const CELL_GRADIENT_COMPONENT &component)
+void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData, const CELL_GRADIENT_COMPONENT &component)
 {
 
-    std::cout << "with object version is used" << std::endl;
     const GridData & data = this->GetCellCenteredData( dataName ); 
     const int dataDimension =  data.NData(); 
     const int NCell = data.NCells(); 
@@ -157,8 +221,6 @@ void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataNam
                         else    zSign =  0; // not on boundary 
                     }
 
-
-
                     // second order accurate, but it creates a little jagged
                     // edges since it extended one more stencil to maintain 2nd
                     // accuracy
@@ -218,4 +280,24 @@ void UniformGridWithObject::CellCenteredDataGradient( const std::string &dataNam
         } 
     }
 
+    // local smoothing on interfacial cells to lower the impact on stencil
+    // choice on the boundaries
+    std::cout << "interface smoothing" << std::endl;
+    Eigen::VectorXd filter = SIGNAL_PROCESSING::DiscreteGaussian1D(3,1); 
+
+    std::vector<bool> filterMask(NCell, 1); 
+    for (int ii=0; ii<NCell; ii++) 
+        filterMask[ii] = ((interfacialCellTypes_[ii]&IS_INTERFACE) ? true : false); 
+
+    for (size_t ii=0; ii<N_gradientNeeded; ii++) 
+    {
+        InsertCellCenteredData("tmp_g", gradientData[ii]); 
+        *(gradientData[ii]) = CellCenteredSmoothing("tmp_g", filter, filterMask); 
+        DeleteCellCenteredData("tmp_g"); 
+    }
+
+
+
+
 }
+

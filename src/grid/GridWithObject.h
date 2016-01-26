@@ -18,8 +18,24 @@ class UniformGridWithObject : public UniformGrid
 
     public: 
         enum CellType : bool { FLUID=false, SOLID=true };
-        //typedef typename UniformGrid<T>::CELL_GRADIENT_COMPONENT CELL_GRADIENT_COMPONENT; 
-        //typedef UniformGrid<T>::CELL_GRADIENT_COMPONENT CELL_GRADIENT_COMPONENT; 
+        typedef unsigned char InterfacialType; 
+        // bit flags : http://www.cplusplus.com/forum/general/1590/
+        // [1|2|3|4|5|6|7|8]: 
+        //   1: whether its interface cell
+        //   2: not used
+        //   3: if cell has boundary on left  in x-direction, 
+        //   4: if cell has boundary on right in x-direction.
+        //   5: if cell has boundary on left  in y-direction, 
+        //   6: if cell has boundary on right in y-direction.
+        //   7: if cell has boundary on left  in z-direction, 
+        //   8: if cell has boundary on right in z-direction.
+        enum InterfacialInfo {        IS_INTERFACE =0x80,
+                                X_BOUNDARY_ON_LEFT =0x20, 
+                                X_BOUNDARY_ON_RIGHT=0x10, 
+                                Y_BOUNDARY_ON_LEFT =0x08, 
+                                Y_BOUNDARY_ON_RIGHT=0x04, 
+                                Z_BOUNDARY_ON_LEFT =0x02, 
+                                Z_BOUNDARY_ON_RIGHT=0x01, }; 
 
     protected: 
         std::string                             meshName_; 
@@ -29,7 +45,7 @@ class UniformGridWithObject : public UniformGrid
         Parser::ImpulseResponseParms            solverParameters_; 
 
         std::vector<CellType>                   isBoundary_; 
-
+        std::vector<InterfacialType>            interfacialCellTypes_;  
         double                                  distanceTolerance_; 
         bool                                    initialized_; 
 
@@ -42,6 +58,10 @@ class UniformGridWithObject : public UniformGrid
 
         void Reinitialize(const std::string &configFile); 
         void ClassifyCells();
+
+        void WriteCellTypes(const std::string &filename); 
+
+        void InterfacialGradientSmoothing();
 
         // same as gradient in UniformGrid class except with object handling.
         // For function usage please refer to that class.

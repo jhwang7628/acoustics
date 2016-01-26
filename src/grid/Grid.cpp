@@ -122,7 +122,7 @@ Eigen::VectorXd UniformGrid::InterpolateCellCenteredData( const std::string& dat
 // if separable filters are used, the complexity can be brought down by
 // using smart caching, see e.g.
 // http://blogs.mathworks.com/steve/2006/10/04/separable-convolution/
-Eigen::MatrixXd UniformGrid::CellCenteredSmoothing( const std::string &dataName, const Eigen::VectorXd &filter)
+Eigen::MatrixXd UniformGrid::CellCenteredSmoothing( const std::string &dataName, const Eigen::VectorXd &filter, const std::vector<bool> &mask)
 {
     const GridData &data = GetCellCenteredData( dataName ); 
     const int dataDimension = data.NData(); 
@@ -141,6 +141,8 @@ Eigen::MatrixXd UniformGrid::CellCenteredSmoothing( const std::string &dataName,
 
     int count = 0; 
 
+    int flattenedIndex = 0;
+
 #pragma omp parallel for
     for (int kk=0; kk<Nz; kk++) 
     {
@@ -153,7 +155,13 @@ Eigen::MatrixXd UniformGrid::CellCenteredSmoothing( const std::string &dataName,
         {
             for (int ii=0; ii<Nx; ii++) 
             {
-                const int flattenedIndex = data.FlattenIndicies(ii,jj,kk); 
+                flattenedIndex = data.FlattenIndicies(ii,jj,kk); 
+
+                if (!mask[flattenedIndex])
+                {
+                    smoothedData(flattenedIndex,0) = data.Value(ii,jj,kk)(0); 
+                    continue; 
+                }
 
                 // not smoothing the boundary
                 if ((ii-kernelHalfWidth < 0 || ii+kernelHalfWidth>=Nx) || 

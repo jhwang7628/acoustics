@@ -15,7 +15,7 @@
 #include "grid/Grid.h" 
 #include "grid/GridWithObject.h" 
 
-#define OMP_THREADS 1
+#define OMP_THREADS_DEFAULT 18
 
 inline double nanosecond_to_double( const boost::timer::nanosecond_type & t ) 
 {
@@ -68,7 +68,6 @@ int main(int argc, char ** argv) {
     maxBound << maxBoundx, maxBoundy, maxBoundz; 
 
     /// create grid for interpolation
-    //UniformGrid grid( minBound, maxBound, cellCount ); 
     UniformGridWithObject grid( minBound, maxBound, cellCount ); 
     grid.Reinitialize("/home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml");
     grid.ClassifyCells(); 
@@ -88,6 +87,7 @@ int main(int argc, char ** argv) {
     const int NCellListened=listeningPositions.rows(); 
     const int Nts=filenames.size(); 
 
+    const int OMP_THREADS = std::min<int>(OMP_THREADS_DEFAULT, static_cast<int>(filenames.size()));
     omp_set_num_threads(OMP_THREADS); 
     std::cout << "start application with " << OMP_THREADS << " threads " << std::endl;
 
@@ -136,8 +136,8 @@ int main(int argc, char ** argv) {
     int global_count=0;
 
     #pragma omp parallel for
-    for (int pp=0; pp<1; pp++)
-    //for ( int pp=0; pp<Nts; pp++ ) 
+    //for (int pp=0; pp<1; pp++)
+    for ( int pp=0; pp<Nts; pp++ ) 
     {
 
         boost::timer::cpu_timer timer; 
@@ -151,7 +151,6 @@ int main(int argc, char ** argv) {
 
         const int thread_id = omp_get_thread_num(); 
         UniformGridWithObject grid_thread(grid); 
-        //UniformGrid grid_thread(grid); 
 
         if (thread_id==0)
             timer.start(); 
@@ -263,12 +262,12 @@ int main(int argc, char ** argv) {
 
         if (pp%20==0) 
         {
-            grid_thread.WriteVTKCellCentered( "dGdxx_"+std::to_string(pp), key+"_xx", "dGdxx");
-            grid_thread.WriteVTKCellCentered( "dGdxy_"+std::to_string(pp), key+"_xy", "dGdxy");
-            grid_thread.WriteVTKCellCentered( "dGdxz_"+std::to_string(pp), key+"_xz", "dGdxz");
-            grid_thread.WriteVTKCellCentered( "dGdyy_"+std::to_string(pp), key+"_yy", "dGdyy");
-            grid_thread.WriteVTKCellCentered( "dGdyz_"+std::to_string(pp), key+"_yz", "dGdyz");
-            grid_thread.WriteVTKCellCentered( "dGdzz_"+std::to_string(pp), key+"_zz", "dGdzz");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(0), key+"_xx", "dG_component");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(1), key+"_xy", "dG_component");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(2), key+"_xz", "dG_component");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(3), key+"_yy", "dG_component");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(4), key+"_yz", "dG_component");
+            grid_thread.WriteVTKCellCentered( "dG_"+std::to_string(pp)+"_"+std::to_string(5), key+"_zz", "dG_component");
         }
 
         grid_thread.DeleteCellCenteredData(key+"_xx"); 

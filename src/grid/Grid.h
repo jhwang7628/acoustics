@@ -111,7 +111,8 @@ class Grid
         /// destructors 
         ~Grid(){ } 
 
-        inline int FlattenIndicies(const int &x, const int &y, const int &z) const { return x+y*cellCount_[0]+z*cellCount_[0]*cellCount_[1]; }
+        inline void FlattenIndicies(const int &x, const int &y, const int &z, int &ind) const { ind = x+y*cellCount_[0]+z*cellCount_[0]*cellCount_[1]; } 
+        inline int FlattenIndicies(const int &x, const int &y, const int &z) const { int ind; FlattenIndicies(x,y,z,ind); return ind; }
         inline void UnflattenIndicies(const int &ind, int &x, int &y, int &z) const 
         {
             x = ind      % cellCount_[0]; 
@@ -183,17 +184,19 @@ class UniformGrid : public Grid
         /// interpolate the cell-centered data with given position
         Eigen::VectorXd InterpolateCellCenteredData( const std::string& dataName, const Eigen::Vector3d& position ); 
 
-        // filter is passed in as an odd vector, the actual volumetric filter
-        // will be constructed in the function. e.g.
+        // *filter is passed in as an odd vector, the actual volumetric filter
+        //  will be constructed in the function. e.g.
         //
-        // filter = [ 1 2 1 ] ---> volumertic filter
-        // = [ 1 2 1 ] x [ 1 2 1 ] x [ 1 2 1 ]
+        //  filter = [ 1 2 1 ] ---> volumertic filter
+        //  = [ 1 2 1 ] x [ 1 2 1 ] x [ 1 2 1 ]
         //
-        // therefore this function only supports separable filters. 
+        //  therefore this function only supports separable filters. 
+        // 
+        // *only where the mask is true will be filtered. 
         //
         // TODO
         // only works for scalar data for now
-        Eigen::MatrixXd CellCenteredSmoothing( const std::string &dataName, const Eigen::VectorXd &filter);
+        Eigen::MatrixXd CellCenteredSmoothing( const std::string &dataName, const Eigen::VectorXd &filter, const std::vector<bool> &mask);
 
         // in case no buffer is wanted
         virtual void CellCenteredScalarHessian(const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessianData); 
