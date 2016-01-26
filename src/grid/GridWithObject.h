@@ -21,8 +21,8 @@ class UniformGridWithObject : public UniformGrid
         typedef unsigned char InterfacialType; 
         // bit flags : http://www.cplusplus.com/forum/general/1590/
         // [1|2|3|4|5|6|7|8]: 
-        //   1: whether its interface cell
-        //   2: not used
+        //   1: whether its solid cell
+        //   2: whether its interface cell
         //   3: if cell has boundary on left  in x-direction, 
         //   4: if cell has boundary on right in x-direction.
         //   5: if cell has boundary on left  in y-direction, 
