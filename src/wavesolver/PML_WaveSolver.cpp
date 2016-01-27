@@ -296,10 +296,6 @@ void PML_WaveSolver::AddCurrentPressureToWaveSolverPointData()
 
     ScalarField pressureField = _grid.pressureField(); 
 
-
-
-
-
 }
 
 

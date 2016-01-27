@@ -110,7 +110,7 @@ Matrix<double>* load_ma_matrixd(const char* file)
     mret = new Matrix<double>(vals[1], vals[2]);
     nv = vals[1] * vals[2];
     ptr = mret->data();
-    if ( fread((void *)ptr, sizeof(double), nv, fd) != nv ) 
+    if ( (int)fread((void *)ptr, sizeof(double), nv, fd) != nv ) 
     {
         fprintf(stderr, "Cannot read enough data\n");
         delete mret;

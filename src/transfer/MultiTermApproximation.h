@@ -179,7 +179,7 @@ class MultiTermApproximation : public RadialApproximation {
 
     protected:
         // Reads field data from disk
-        virtual void read( const std::string &filename );
+        virtual size_t read( const std::string &filename );
 
         // Gets the given direction field at the given sample
         virtual REAL sampleDirection( int direction_idx, int sample_idx,

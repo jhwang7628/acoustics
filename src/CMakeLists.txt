@@ -37,6 +37,9 @@ add_subdirectory(math)
 add_subdirectory(geometry)
 add_subdirectory(transfer)
 
+# For regular grid finite difference 
+add_subdirectory(grid) 
+
 # tinyXML-based Parser
 set(PARSER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/parser/Parser.cpp                   ${CMAKE_CURRENT_SOURCE_DIR}/parser/Parser.h

@@ -57,10 +57,10 @@ Parser::~Parser()
     delete document;
 }
 
-/* legacy support */
 TriangleMesh<REAL> *Parser::getMesh()
 {
-    return getMesh("impact");
+    throw std::runtime_error("**ERROR** need to pass in root tag for xml parsing. for example: impact");
+    return nullptr;
 }
 //////////////////////////////////////////////////////////////////////
 // Construct a triangle mesh from data stored in the XML document
@@ -620,7 +620,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool loadPANData,
     // Build SDF meshes in parallel
     parms._distanceMeshes.resize( parms._meshes.size() );
 #pragma omp parallel for schedule(static) default(shared)
-    for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ ) {
+    for ( size_t mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ ) {
         TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
 #if 0
@@ -632,7 +632,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool loadPANData,
     }
 
     // Build rigid body, curvature and SDF information
-    for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ )
+    for ( size_t mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ )
     {
         TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
@@ -777,13 +777,13 @@ TiXmlNode* Parser::getNodeByPath( std::string pathStr )
 {
     vector<string> path = IO::split( pathStr, string("/") );
     TiXmlNode* node = document;
-    for( int i = 0; i < path.size(); i++ )
+    for( size_t i = 0; i < path.size(); i++ )
     {
         node = node->FirstChildElement( path[i].c_str() );
         if( node == NULL )
         {
             cerr << "[ERROR] The required XML path did not exist: " << flush << endl;
-            for( int j = 0; j < path.size(); j++ )
+            for( size_t j = 0; j < path.size(); j++ )
             {
                 cerr << j << " " << path[j] << endl;
                 return NULL;

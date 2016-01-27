@@ -30,7 +30,7 @@ inline void clearVectorContents( std::vector<T *> &data )
 // General write function for a vector.  I assume this works.
 //////////////////////////////////////////////////////////////////////
 template <class T>
-inline void writeVector( const char *filename, const vector<T> &data )
+inline size_t writeVector( const char *filename, const vector<T> &data )
 {
     FILE* file;
     file = fopen( filename, "wb" );
@@ -40,7 +40,7 @@ inline void writeVector( const char *filename, const vector<T> &data )
     if ( file == NULL )
     {
         printf( "** WARNING ** Could not write vector to %s\n", filename );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size = data.size();
@@ -51,20 +51,22 @@ inline void writeVector( const char *filename, const vector<T> &data )
     // Write data
     bytes_written = fwrite( (void*)data.data(), sizeof(T), size, file );
     fclose( file );
+
+    return bytes_written;
 }
 
 //////////////////////////////////////////////////////////////////////
 // General write function for a vector.  I assume this works.
 //////////////////////////////////////////////////////////////////////
 template <class T>
-inline void writeVector( FILE *file, const vector<T> &data )
+inline size_t writeVector( FILE *file, const vector<T> &data )
 {
     size_t bytes_written;
 
     if ( file == NULL )
     {
         printf( "** WARNING ** Invalid file handle\n" );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size = data.size();
@@ -74,6 +76,8 @@ inline void writeVector( FILE *file, const vector<T> &data )
 
     // Write data
     bytes_written = fwrite( (void*)data.data(), sizeof(T), size, file );
+
+    return bytes_written;
 }
 
 #if 0
@@ -107,7 +111,7 @@ inline void writeVector3Array( const char *filename, Vector3Array &data )
 //////////////////////////////////////////////////////////////////////
 // Writes vector data to a file
 //////////////////////////////////////////////////////////////////////
-inline void writeRealVector(const char *filename, const vector<double> &data)
+inline size_t writeRealVector(const char *filename, const vector<double> &data)
 {
     FILE* file;
     file = fopen(filename, "wb");
@@ -117,7 +121,7 @@ inline void writeRealVector(const char *filename, const vector<double> &data)
     if( file == NULL )
     {
         printf( "** WARNING ** Could not write vector to %s\n", filename );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size = data.size();
@@ -128,6 +132,8 @@ inline void writeRealVector(const char *filename, const vector<double> &data)
     // write data
     bytes_written = fwrite((void*)data.data(), sizeof(double), size, file);
     fclose(file);
+
+    return bytes_written; 
 }
 
 #if 0
@@ -173,7 +179,7 @@ inline void writeComplexVector(const char *filename, const vector<Complex> &data
 // General vector read
 //////////////////////////////////////////////////////////////////////
 template <class T>
-inline void readVector( const char *filename, vector<T> &data )
+inline size_t readVector( const char *filename, vector<T> &data )
 {
     FILE *file;
     file = fopen(filename, "rb");
@@ -183,7 +189,7 @@ inline void readVector( const char *filename, vector<T> &data )
     if ( file == NULL )
     {
         printf( "** WARNING ** Could not read vector %s\n", filename );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size;
@@ -196,20 +202,22 @@ inline void readVector( const char *filename, vector<T> &data )
     // Read data
     bytes_read = fread((void*)data.data(), sizeof(T), size, file);
     fclose(file);
+
+    return bytes_read;
 }
 
 //////////////////////////////////////////////////////////////////////
 // General vector read
 //////////////////////////////////////////////////////////////////////
 template <class T>
-inline void readVector( FILE *file, vector<T> &data )
+inline size_t readVector( FILE *file, vector<T> &data )
 {
     size_t bytes_read;
 
     if ( file == NULL )
     {
         printf( "** WARNING ** Invalid file handle\n" );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size;
@@ -221,6 +229,8 @@ inline void readVector( FILE *file, vector<T> &data )
 
     // Read data
     bytes_read = fread((void*)data.data(), sizeof(T), size, file);
+
+    return bytes_read;
 }
 
 #if 0
@@ -256,7 +266,7 @@ inline void readVector3Array( const char *filename, Vector3Array &data )
 //////////////////////////////////////////////////////////////////////
 // Reads vector data from a file
 //////////////////////////////////////////////////////////////////////
-inline void readRealVector(const char *filename, vector<double> &data)
+inline size_t readRealVector(const char *filename, vector<double> &data)
 {
     FILE *file;
     file = fopen(filename, "rb");
@@ -266,7 +276,7 @@ inline void readRealVector(const char *filename, vector<double> &data)
     if ( file == NULL )
     {
         printf( "** WARNING ** Could not read vector %s\n", filename );
-        return;
+        return std::numeric_limits<size_t>::quiet_NaN();
     }
 
     int size;
@@ -279,6 +289,8 @@ inline void readRealVector(const char *filename, vector<double> &data)
     // Read data
     bytes_read = fread((void*)data.data(), sizeof(double), size, file);
     fclose(file);
+
+    return bytes_read;
 }
 
 #if 0

@@ -36,7 +36,7 @@
 #ifdef USE_HASH_MAP
 #   include <ext/hash_map>
 #else
-#   include <tr1/unordered_map>
+#   include <unordered_map>
 #endif
 
 #include "Triangle.hpp"
@@ -249,7 +249,8 @@ template <typename T>
 void TriangleMesh<T>::get_face_neighborship(std::vector<NeighborRec>& neighbors) const
 {
 #ifdef USE_UNORDERED_MAP
-    using namespace std::tr1;
+    //using namespace std::tr1;
+    using namespace std;
     unordered_map< int, unordered_map<int, int> > hash;
 #else
     using namespace __gnu_cxx;

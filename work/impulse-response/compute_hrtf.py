@@ -61,9 +61,9 @@ def main(args):
 		    os.system("precompute-impulse-response %s %s"%(args.wave_file, efile))
 	else:
                 os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
-		print "Left Ear"
-		efile = convert_to_earfile(args.listener_file, 0)
-		os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))
+		# print "Left Ear"
+		# efile = convert_to_earfile(args.listener_file, 0)
+		# os.system("precompute-impulse-response-text %s %s"%(args.wave_file, efile))
 
 		print "Right Ear"
 		efile = convert_to_earfile(args.listener_file, 1)

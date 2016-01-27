@@ -781,7 +781,7 @@ void MultiTermApproximation::GetRadiusIndexRange( REAL radius,
 //////////////////////////////////////////////////////////////////////
 // Reads field data from disk
 //////////////////////////////////////////////////////////////////////
-void MultiTermApproximation::read( const string &filename )
+size_t MultiTermApproximation::read( const string &filename )
 {
     FILE                      *file;
     int                        size;
@@ -842,6 +842,8 @@ void MultiTermApproximation::read( const string &filename )
     bytes_read = fread( (void *)&_startSample, sizeof( int ), 1, file );
 
     fclose( file );
+
+    return bytes_read;
 }
 
 //////////////////////////////////////////////////////////////////////
