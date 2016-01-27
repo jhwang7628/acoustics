@@ -91,7 +91,7 @@ bool CompactMultiTermApproximation::addSinePulse( Point3d listeningPosition,
                                                   REAL scale )
 {
     REAL                       pulseHalfLength = pulseLength / 2.0;
-    REAL                       t;
+    //REAL                       t;
     REAL                       tPulse;
     REAL                       tDelay;
     REAL                       pulseMiddle = pulseStartTime + pulseHalfLength;
@@ -107,7 +107,7 @@ bool CompactMultiTermApproximation::addSinePulse( Point3d listeningPosition,
     REAL                       transScale = scale;
     REAL                       rotScale = scale * scale;
 
-    REAL                       sampleValue;
+    //REAL                       sampleValue;
     REAL                       sampleScale;
     REAL                       rPower;
 
@@ -260,10 +260,10 @@ MultiTermApproximation::~MultiTermApproximation()
 void MultiTermApproximation::write( const string &filename ) const
 {
     FILE                      *file;
-    int                        size;
+    //int                        size;
     int                        numTerms;
 
-    size_t                     bytes_written;
+    //size_t                     bytes_written;
 
     char                       buf[ 1024 ];
 
@@ -277,15 +277,15 @@ void MultiTermApproximation::write( const string &filename ) const
     }
 
     numTerms = _fieldTerms.size();
-    bytes_written = fwrite( (void *)&numTerms, sizeof( int ), 1, file );
+    fwrite( (void *)&numTerms, sizeof( int ), 1, file );
 
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
     {
         MATRIX                   dataMatrix( _fieldTerms[ term_idx ].size(),
                 signalLength() );
 
         // Copy field data to the matrix
-        for ( int field_point_idx = 0;
+        for ( size_t field_point_idx = 0;
                 field_point_idx < _fieldTerms[ term_idx ].size();
                 field_point_idx++ )
             for ( int sample_idx = 0; sample_idx < signalLength(); sample_idx++ )
@@ -294,20 +294,20 @@ void MultiTermApproximation::write( const string &filename ) const
                     = _fieldTerms[ term_idx ][ field_point_idx ][ sample_idx ];
             }
 
-        sprintf( buf, "%s_term_%d.matrix", filename.c_str(), term_idx );
+        sprintf( buf, "%s_term_%lu.matrix", filename.c_str(), term_idx );
         dataMatrix.write( buf );
     }
 
     // Write the remaining info needed to reconstruct the field
-    bytes_written = fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_baseSample, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_signalLength, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_startSample, sizeof( int ), 1, file );
+    fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
+    fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
+    fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
+    fwrite( (void *)&_baseSample, sizeof( int ), 1, file );
+    fwrite( (void *)&_signalLength, sizeof( int ), 1, file );
+    fwrite( (void *)&_startSample, sizeof( int ), 1, file );
 
     fclose( file );
 }
@@ -390,7 +390,7 @@ bool MultiTermApproximation::addSinePulse( Point3d listeningPosition,
 
             // Add each term
             rPower = direction._r;
-            for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+            for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
             {
                 sampleValue = interpolatedFieldSample( sample_idx, direction,
                         term_idx );
@@ -433,7 +433,7 @@ void MultiTermApproximation::evaluatePANField( Point3d listeningPosition,
 
     rPower = direction._r;
 
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
         for ( int sample_idx = 0; sample_idx < signalLength(); sample_idx++ ) {
             t = sampleDiv * (REAL)( _baseSample + sample_idx );
             t += delay;
@@ -499,11 +499,11 @@ MultiTermApproximation::resampleApproximation( int newResolution ) const
             newDirections );
 
     newField->_fieldTerms.resize( _fieldTerms.size() );
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
     {
         newField->_fieldTerms[ term_idx ].resize( newDirections.size() );
 
-        for ( int direction_idx = 0; direction_idx < newDirections.size();
+        for ( size_t direction_idx = 0; direction_idx < newDirections.size();
                 direction_idx++ )
         {
             newField->_fieldTerms[ term_idx ][ direction_idx ].resize(
@@ -511,13 +511,13 @@ MultiTermApproximation::resampleApproximation( int newResolution ) const
         }
     }
 
-    for ( int dof_idx = 0; dof_idx < newDirections.size(); dof_idx++ )
+    for ( size_t dof_idx = 0; dof_idx < newDirections.size(); dof_idx++ )
     {
         InterpolationDirection   direction;
 
         direction = interpolationDirection( newDirections[ dof_idx ] );
 
-        for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+        for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
             for ( int sample_idx = 0; sample_idx < signalLength(); sample_idx++ )
             {
                 newField->_fieldTerms[ term_idx ][ dof_idx ][ sample_idx ]
@@ -549,7 +549,7 @@ IndexRange MultiTermApproximation::BuildMultiTermSystem( const FloatArray &input
     numRows = numSamples * inputRadii.size();
 
     // Determine the number of columns that we need
-    for ( int shell_idx = 0; shell_idx < inputRadii.size(); shell_idx++ )
+    for ( size_t shell_idx = 0; shell_idx < inputRadii.size(); shell_idx++ )
     {
         int                      startIndex, endIndex;
 
@@ -570,7 +570,7 @@ IndexRange MultiTermApproximation::BuildMultiTermSystem( const FloatArray &input
     systemMatrix.resizeAndWipe( numRows, numCols );
 
     // Add each block row
-    for ( int shell_idx = 0; shell_idx < inputRadii.size(); shell_idx++ )
+    for ( size_t shell_idx = 0; shell_idx < inputRadii.size(); shell_idx++ )
     {
         int                      start_row = shell_idx * numSamples;
 
@@ -784,7 +784,7 @@ void MultiTermApproximation::GetRadiusIndexRange( REAL radius,
 size_t MultiTermApproximation::read( const string &filename )
 {
     FILE                      *file;
-    int                        size;
+    //int                        size;
     int                        numTerms;
 
     size_t                     bytes_read;
@@ -807,12 +807,12 @@ size_t MultiTermApproximation::read( const string &filename )
     bytes_read = fread( (void *)&numTerms, sizeof( int ), 1, file );
     _fieldTerms.resize( numTerms );
 
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
     {
-        sprintf( buf, "%s_term_%d.matrix", filename.c_str(), term_idx );
+        sprintf( buf, "%s_term_%lu.matrix", filename.c_str(), term_idx );
         dataMatrix.read( buf );
 
-        printf( "Read term %d with %d points and %d samples\n",
+        printf( "Read term %lu with %d points and %d samples\n",
                 term_idx, dataMatrix.rows(), dataMatrix.cols() );
 
         _fieldTerms[ term_idx ].resize( dataMatrix.rows() );

@@ -72,6 +72,26 @@ void UniformGrid::GetCellCenterPosition( const int &ii, const int &jj, const int
     z = minBound_[2]+((double)(kk)+0.5)*dx_[2]; 
 }
 
+void UniformGrid::GetAllCellCenterPosition(Eigen::MatrixXd &gridPosition) const 
+{
+    gridPosition.resize(N_cells(), 3); 
+
+    int indexBuffer;
+    for (int kk=0; kk<cellCount_[2]; kk++) 
+        for (int jj=0; jj<cellCount_[1]; jj++) 
+            for (int ii=0; ii<cellCount_[0]; ii++) 
+            {
+                indexBuffer = FlattenIndicies(ii,jj,kk); 
+                GetCellCenterPosition(ii,jj,kk,gridPosition(indexBuffer,0),gridPosition(indexBuffer,1),gridPosition(indexBuffer,2));
+            }
+}
+
+void UniformGrid::GetAllCellCenterPosition(const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, Eigen::MatrixXd &gridPosition)
+{
+    UniformGrid grid(minBound,maxBound,cellCount);
+    grid.GetAllCellCenterPosition(gridPosition); 
+}
+
 Eigen::VectorXd UniformGrid::InterpolateVertexData( const std::string& dataName, const Eigen::Vector3d& position ) 
 {
     const GridData& data = GetVertexData( dataName ); 
@@ -479,6 +499,28 @@ void UniformGrid::WriteVTKCellCentered(const std::string &vtkPrefix, const std::
         VTKConverter::VTKStructureGridWithScalarFromEigen( gridPosition, data.col(0), vtkPrefix+".vtk", dataName, VTKConverter::BINARY, cellCount );
 }
 
+void UniformGrid::WriteVTKCellCenteredFromEigen(std::shared_ptr<Eigen::MatrixXd> ptrData, std::shared_ptr<Eigen::MatrixXd> ptrGridPosition, const std::string &vtkPrefix, const std::string &dataName)
+{
+}
+
+
+
+void UniformGrid::WriteVTKCellCenteredFromEigen(std::shared_ptr<Eigen::MatrixXd> ptrData, const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, const std::string &vtkPrefix, const std::string &dataName)
+{
+
+    UniformGrid grid(minBound,maxBound,cellCount); 
+    const std::string tmpKey("tmp_data"); 
+    grid.InsertCellCenteredData(tmpKey, ptrData); 
+    grid.WriteVTKCellCentered(vtkPrefix, tmpKey, dataName);
+    grid.DeleteCellCenteredData(tmpKey); 
+}
+
+void UniformGrid::WriteVTKCellCenteredFromEigen(const Eigen::MatrixXd &data, const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, const std::string &vtkPrefix, const std::string &dataName)
+{
+    std::shared_ptr<Eigen::MatrixXd> ptrData(new Eigen::MatrixXd(data)); 
+    UniformGrid::WriteVTKCellCenteredFromEigen(ptrData, minBound, maxBound, cellCount, vtkPrefix, dataName); 
+}
+
 void UniformGrid::WriteCSVCellCentered(const std::string &csvName, const std::string &dataName)
 {
     std::ofstream of(csvName.c_str());
@@ -487,7 +529,7 @@ void UniformGrid::WriteCSVCellCentered(const std::string &csvName, const std::st
     const int &Nz = cellCount_[2]; 
     const Eigen::Vector3d &maxBound = maxBound_;
     const Eigen::Vector3d &minBound = minBound_;
-    const Eigen::Vector3d &division = cellCount_;
+    const Eigen::Vector3i &division = cellCount_;
     Eigen::MatrixXd &data = GetCellCenteredData(dataName).GetMatrix(); 
 
     for (int ii=0; ii<Nx; ii++) 

@@ -194,7 +194,7 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
 
         int closestFeature = -1;
         int closestTriangle = -1;
-        int indexClosestTriangle = -1;
+        //int indexClosestTriangle = -1;
 
 #ifdef COMPUTE_CLOSEST_POINT
         Vec3d closestPosition(DBL_MAX, DBL_MAX, DBL_MAX);
@@ -217,7 +217,7 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
                 closestPosition = triangleList[l]->getBarycentricLocation(alpha, beta, gamma);          
                 closestFeature = closestLocalFeature; 
                 closestTriangle = l;
-                indexClosestTriangle =  triangleList[l]->index();
+                //indexClosestTriangle =  triangleList[l]->index();
 
                 //Compute the feature
                 da_feature.index1 = triangleList.at(l)->firstIndex();
@@ -234,7 +234,7 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
                 closestDistance2 = d2;
                 closestFeature = closestLocalFeature;
                 closestTriangle = l;
-                indexClosestTriangle =  triangleList[l]->index();          
+                //indexClosestTriangle =  triangleList[l]->index();          
             }
 #endif
         }
@@ -245,14 +245,14 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
             return 3;
         }
 
-#ifdef GENERATE_DEBUG_DATA      
-        if ((i==34) && (j==17) && ((k==44) || (k==45)))      
-        {
-            printf("Closest index: %d Feature: %d Min dist2: %.15f\n\n", indexClosestTriangle, closestFeature, closestDistance2);
-        }      
-        if ((i==34) && (j==17) && ((k==44) || (k==45)))        
-            printf("Grid location: %.15f %.15f %.15f\n", currentPosition[0], currentPosition[1], currentPosition[2]);    
-#endif
+//#ifdef GENERATE_DEBUG_DATA      
+        //if ((i==34) && (j==17) && ((k==44) || (k==45)))      
+        //{
+        //    printf("Closest index: %d Feature: %d Min dist2: %.15f\n\n", indexClosestTriangle, closestFeature, closestDistance2);
+        //}      
+        //if ((i==34) && (j==17) && ((k==44) || (k==45)))        
+        //    printf("Grid location: %.15f %.15f %.15f\n", currentPosition[0], currentPosition[1], currentPosition[2]);    
+//#endif
 
         // square root...
         float closestDistance = sqrt(closestDistance2);
@@ -266,6 +266,9 @@ int DistanceField::computeUnsignedField(ObjFile * objFileIn, int resolution_g, i
             closestDistance *= -1;
 
         //printf("%G ", closestDistance);
+#else 
+        closestTriangle ++; // just to get rid of the set but unused warning..
+        closestTriangle --;
 #endif
 
         // register result
@@ -459,8 +462,8 @@ int DistanceField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution
         // (factor "2" added to account for numerical round-off)
 
         int closestFeature = -1;
-        int closestTriangle = -1;
-        int indexClosestTriangle = -1;
+        //int closestTriangle = -1;
+        //int indexClosestTriangle = -1;
 
 #ifdef COMPUTE_CLOSEST_POINT
         Vec3d closestPosition(DBL_MAX, DBL_MAX, DBL_MAX);
@@ -479,8 +482,8 @@ int DistanceField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution
                 closestDistance2 = d2;
                 closestPosition = triangleList[l]->getBarycentricLocation(alpha, beta, gamma);					
                 closestFeature = closestLocalFeature; 
-                closestTriangle = l;
-                indexClosestTriangle =	triangleList[l]->index();					
+                //closestTriangle = l;
+                //indexClosestTriangle =	triangleList[l]->index();					
 
                 closestBaryFeature.index1 = triangleList.at(l)->firstIndex();
                 closestBaryFeature.index2 = triangleList.at(l)->secondIndex();
@@ -495,8 +498,8 @@ int DistanceField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution
             {
                 closestDistance2 = d2;
                 closestFeature = closestLocalFeature;
-                closestTriangle = l;
-                indexClosestTriangle =	triangleList[l]->index();					
+                //closestTriangle = l;
+                //indexClosestTriangle =	triangleList[l]->index();					
             }
 #endif
         }
@@ -507,14 +510,14 @@ int DistanceField::computeUnsignedField(TriangleMesh<REAL> *mesh, int resolution
             return 3;
         }
 
-#ifdef GENERATE_DEBUG_DATA			
-        if ((i==34) && (j==17) && ((k==44) || (k==45)))			
-        {
-            printf("Closest index: %d Feature: %d Min dist2: %.15f\n\n", indexClosestTriangle, closestFeature, closestDistance2);
-        }			
-        if ((i==34) && (j==17) && ((k==44) || (k==45)))				
-            printf("Grid location: %.15f %.15f %.15f\n", currentPosition[0], currentPosition[1], currentPosition[2]);		
-#endif
+//#ifdef GENERATE_DEBUG_DATA			
+//        if ((i==34) && (j==17) && ((k==44) || (k==45)))			
+//        {
+//            printf("Closest index: %d Feature: %d Min dist2: %.15f\n\n", indexClosestTriangle, closestFeature, closestDistance2);
+//        }			
+//        if ((i==34) && (j==17) && ((k==44) || (k==45)))				
+//            printf("Grid location: %.15f %.15f %.15f\n", currentPosition[0], currentPosition[1], currentPosition[2]);		
+//#endif
 
         // square root...
         float closestDistance = sqrt(closestDistance2);

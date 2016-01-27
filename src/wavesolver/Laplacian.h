@@ -250,17 +250,18 @@ class Laplacian {
         static REAL ghost_pG3_Coefficient( REAL d1, REAL d2 );
 
     private:
-        std::vector<const DistanceField *>   _boundaryFields;
-        std::vector<const TriMesh *>         _boundaryMeshes;
-
+        ScalarField              _field;
         REAL                     _distanceTolerance;
+
+        std::vector<const TriMesh *>         _boundaryMeshes;
+        std::vector<const DistanceField *>   _boundaryFields;
+
 
 #if 0
         const DistanceField     *_boundarySDF;
         const TriMesh           *_mesh;
 #endif
 
-        ScalarField              _field;
 
         BoolArray                _isBulkCell;
         BoolArray                _isInterfacialCell;

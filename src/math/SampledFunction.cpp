@@ -64,7 +64,7 @@ void SampledFunction::addSample( REAL t, REAL sampleValue )
     sampleMin = max( sampleMin, 0 );
 
     // Enlarge the function if necessary, padding new space with zeros
-    while ( sampleMax >= _function.size() )
+    while ( sampleMax >= (int)_function.size() )
     {
         _function.resize( 2 * _function.size(), 0.0 );
     }

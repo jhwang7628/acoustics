@@ -30,7 +30,7 @@ PulseApproximation::PulseApproximation( const vector<vector<FloatArray> > &field
     _fieldData.resize( fieldData.size() );
 
     // Copy field field_id from fieldData
-    for ( int field_position = 0; field_position < fieldData.size();
+    for ( size_t field_position = 0; field_position < fieldData.size();
             field_position++ )
     {
         _fieldData[ field_position ] = fieldData[ field_position ][ field_id ];
@@ -59,9 +59,9 @@ PulseApproximation::~PulseApproximation()
 void PulseApproximation::write( const string &filename ) const
 {
     FILE                      *file;
-    int                        size;
+    //int                        size;
 
-    size_t                     bytes_written;
+    //size_t                     bytes_written;
 
     char                       buf[ 1024 ];
 
@@ -77,7 +77,7 @@ void PulseApproximation::write( const string &filename ) const
     }
 
     // Copy field data to the matrix
-    for ( int field_point_idx = 0; field_point_idx < _fieldData.size();
+    for ( size_t field_point_idx = 0; field_point_idx < _fieldData.size();
             field_point_idx++ )
         for ( int sample_idx = 0; sample_idx < signalLength(); sample_idx++ )
         {
@@ -109,12 +109,12 @@ void PulseApproximation::write( const string &filename ) const
 #endif
 
     // Write the remaining info needed to reconstruct the field
-    bytes_written = fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
+    fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
+    fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
+    fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
 
     fclose( file );
 }
@@ -236,8 +236,8 @@ PulseApproximation *PulseApproximation::resampleOctant( int octantResolution ) c
             newDirections );
 
     // FIXME: debugging
-    for ( int i = 0; i < newDirections.size(); i++ ) {
-        printf( "Direction %d: ", i );
+    for ( size_t i = 0; i < newDirections.size(); i++ ) {
+        printf( "Direction %lu: ", i );
         cout << newDirections[ i ] << endl;
     }
 
@@ -246,7 +246,7 @@ PulseApproximation *PulseApproximation::resampleOctant( int octantResolution ) c
     TRACE_ASSERT( _fieldData.size() % numDirections == 0 );
 
     newField->_fieldData.resize( numRadii * new_numDirections );
-    for ( int dir_idx = 0; dir_idx < newField->_fieldData.size(); dir_idx++ ) {
+    for ( size_t dir_idx = 0; dir_idx < newField->_fieldData.size(); dir_idx++ ) {
         newField->_fieldData[ dir_idx ].resize( signalLength() );
     }
 
@@ -294,8 +294,8 @@ PulseApproximation *PulseApproximation::resamplePoints( const Vector3Array &newD
     newField->_interp = NULL;
 
     // FIXME: debugging
-    for ( int i = 0; i < newDirections.size(); i++ ) {
-        printf( "Direction %d: ", i );
+    for ( size_t i = 0; i < newDirections.size(); i++ ) {
+        printf( "Direction %lu: ", i );
         cout << newDirections[ i ] << endl;
     }
 
@@ -305,7 +305,7 @@ PulseApproximation *PulseApproximation::resamplePoints( const Vector3Array &newD
     TRACE_ASSERT( _fieldData.size() % numDirections == 0 );
 
     newField->_fieldData.resize( numRadii * new_numDirections );
-    for ( int dir_idx = 0; dir_idx < newField->_fieldData.size(); dir_idx++ ) {
+    for ( size_t dir_idx = 0; dir_idx < newField->_fieldData.size(); dir_idx++ ) {
         newField->_fieldData[ dir_idx ].resize( signalLength() );
     }
 
@@ -350,7 +350,7 @@ void PulseApproximation::ReadAccelerationSet( const std::string &filePrefix,
 size_t PulseApproximation::read( const string &filename )
 {
     FILE                      *file;
-    int                        size;
+    //int                        size;
 
     size_t                     bytes_read;
 

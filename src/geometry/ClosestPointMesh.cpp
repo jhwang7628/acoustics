@@ -123,7 +123,7 @@ ClosestPointMesh::MeshPoint ClosestPointMesh::closestPoint( const Point3d &x ) c
 
     if ( hit1._hitReference.first != 0
             || hit1._hitReference.second < 0
-            || hit1._hitReference.second >= _mesh.triangles().size() )
+            || hit1._hitReference.second >= (int)_mesh.triangles().size() )
     {
         cerr << "Warning: no closest point found on mesh" << endl;
 

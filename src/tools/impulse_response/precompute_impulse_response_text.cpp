@@ -28,7 +28,8 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
-//#include <wavesolver/WaveSolverPointData.h>
+
+#include <grid/Grid.h>
 
 #include <boost/bind.hpp>
 
@@ -37,11 +38,13 @@
 
 #include <unistd.h> 
 
+#include "vtkConverter/vtkConverter.h" 
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288419716939937510582
 #endif
 
-const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
+//const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
 const double sqrt_2_pi = sqrt(2.0*M_PI); 
 const double sqrt_2 = sqrt(2.0); 
 
@@ -56,6 +59,12 @@ const double sqrt_2 = sqrt(2.0);
         feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);  
       }
 #endif  
+
+template <class T> 
+Eigen::Matrix<T,3,1> ToEigenVector3(const Vector3<T> &vec)
+{
+    return Eigen::Matrix<T,3,1>(vec.x,vec.y,vec.z); 
+}
 
 /* Gaussian */
 REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePosition, const REAL stddev )
@@ -258,6 +267,7 @@ int main( int argc, char **argv )
     REAL CFL = parms._c * timeStep / cellSize; 
 
     cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
+    cout << SDUMP(cellDivisions) << endl;
     cout << SDUMP( timeStep ) << endl;
     cout << SDUMP( cellSize ) << endl; 
     cout << SDUMP( CFL ) << endl;
@@ -272,17 +282,17 @@ int main( int argc, char **argv )
 
     /// pass in listening position
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-            *mesh, *sdf,
-            0.0, /* distance tolerance */
-            true, /* use boundary */
-            &listeningPositions,
-            NULL, /* No output file */
-            NULL, /* Write callback */
-            NULL,// uncomment this if don't want to listen and comment the next one
-            //&dacallback, /* Write callback */
-            parms._subSteps,
-            1, /* acceleration directions */
-            endTime );
+                                  *mesh, *sdf,
+                                  0.0, /* distance tolerance */
+                                  true, /* use boundary */
+                                  &listeningPositions,
+                                  NULL, /* No output file */
+                                  NULL, /* Write callback */
+                                  NULL,// uncomment this if don't want to listen and comment the next one
+                                  //&dacallback, /* Write callback */
+                                  parms._subSteps,
+                                  1, /* acceleration directions */
+                                  endTime );
 
     AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
     ///// initialize system with initial condition /////
@@ -306,7 +316,7 @@ int main( int argc, char **argv )
     const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
-    const REAL PML_width=11.0; 
+    const REAL PML_width=5.0; 
     const REAL PML_strength=1000000.0; 
     solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( PML_width, PML_strength );
@@ -331,9 +341,16 @@ int main( int argc, char **argv )
 
     const int Ndivision = maxDrawBound[0] * maxDrawBound[1] * maxDrawBound[2];
     Eigen::MatrixXd vertexPosition( Ndivision, 3 ); // vertex position
-    Eigen::MatrixXd vertexPressure( Ndivision, 1 ); // full pressure
+    std::shared_ptr<Eigen::MatrixXd> vertexPressure( new Eigen::MatrixXd(Ndivision, 1) ); // full pressure
     Eigen::MatrixXi vertexIndex( Ndivision, 3 ); // pressure vertex index
 
+    
+    // for vtk dump
+    Eigen::Vector3d minBound = ToEigenVector3<double>(fieldBBox.minBound());
+    Eigen::Vector3d maxBound = ToEigenVector3<double>(fieldBBox.maxBound());
+    Eigen::Vector3i cellCount= ToEigenVector3<int>(solver.fieldDivisions()); 
+    std::shared_ptr<Eigen::MatrixXd> cellCenteredPosition(new Eigen::MatrixXd()); 
+    UniformGrid::GetAllCellCenterPosition(minBound, maxBound, cellCount,*cellCenteredPosition); 
 
     int count = 0;
     Vector3d vPosition;
@@ -356,7 +373,7 @@ int main( int argc, char **argv )
                 VECTOR vPressure;
                 solver.vertexPressure( vIndex, vPressure );
 
-                vertexPressure( count, 0 ) = vPressure[0];
+                (*vertexPressure)( count, 0 ) = vPressure[0];
 
                 count ++; 
 
@@ -412,7 +429,7 @@ int main( int argc, char **argv )
         char pressure_buf[100]; 
         snprintf( pressure_buf, 100, "pressure.dat" ); 
         snprintf( buf, 100, pattern, pressure_buf );
-        IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+        IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
     }
 
 
@@ -436,7 +453,7 @@ int main( int argc, char **argv )
                         VECTOR vPressure;
                         solver.vertexPressure( vIndex, vPressure );
 
-                        vertexPressure( count, 0 ) = vPressure[0];
+                        (*vertexPressure)( count, 0 ) = vPressure[0];
 
                         count ++; 
 
@@ -450,7 +467,10 @@ int main( int argc, char **argv )
                 snprintf( pressure_buf, 100, "pressure_%05u.dat", nSteps/parms._subSteps ); 
                 snprintf( buf, 100, pattern, pressure_buf );
 
-                IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+                IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
+                VTKConverter::VTKStructureGridWithScalarFromEigen(*cellCenteredPosition,*vertexPressure,std::string(buf)+".vtk","pressure",VTKConverter::BINARY,cellCount); 
+
+                //UniformGrid::WriteVTKCellCenteredFromEigen(vertexPressure, minBound, maxBound, cellCount, std::string(buf), "test_data"); 
             }
         }
 

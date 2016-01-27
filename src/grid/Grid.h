@@ -134,8 +134,8 @@ class Grid
 
         /// interpolation helpers 
         inline void SetInterpolationScheme( const INTERP_SCHEME & interpScheme ) { interpolationScheme_ = interpScheme; } 
-        inline INTERP_SCHEME GetInterpolationScheme() { return interpolationScheme_; } 
-        inline int N_cells(){ return cellCount_[0]*cellCount_[1]*cellCount_[2]; } 
+        inline INTERP_SCHEME GetInterpolationScheme() const { return interpolationScheme_; } 
+        inline int N_cells() const { return cellCount_[0]*cellCount_[1]*cellCount_[2]; } 
 
         virtual Eigen::Vector3d GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const = 0;
         /// data IO
@@ -177,6 +177,8 @@ class UniformGrid : public Grid
 
         virtual Eigen::Vector3d GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const; 
         virtual void GetCellCenterPosition( const int &ii, const int &jj, const int &kk, double &x, double &y, double &z ) const; 
+        virtual void GetAllCellCenterPosition(Eigen::MatrixXd &gridPosition) const; 
+        static void GetAllCellCenterPosition(const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, Eigen::MatrixXd &gridPosition); 
 
         /// interpolate the vertex data with given position
         Eigen::VectorXd InterpolateVertexData( const std::string& dataName, const Eigen::Vector3d& position ); 
@@ -231,8 +233,15 @@ class UniformGrid : public Grid
         void PrintDataMeta();
 
         void WriteVTKCellGrid(const std::string &vtkName); 
-
         void WriteVTKCellCentered(const std::string &vtkPrefix, const std::string &key, const std::string &dataName); 
+
+        // static method to write vtk directly from eigen data
+        static void WriteVTKCellCenteredFromEigen(std::shared_ptr<Eigen::MatrixXd> ptrData, std::shared_ptr<Eigen::MatrixXd> ptrGridPosition, const std::string &vtkPrefix, const std::string &dataName); 
+        static void WriteVTKCellCenteredFromEigen(std::shared_ptr<Eigen::MatrixXd> ptrData, const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, const std::string &vtkPrefix, const std::string &dataName); 
+
+        // a simple wrapper that will copy the incoming data to write to vtk.
+        // it will clean up after itself.  
+        static void WriteVTKCellCenteredFromEigen(const Eigen::MatrixXd &data, const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, const std::string &vtkPrefix, const std::string &dataName); 
 
         void WriteCSVCellCentered(const std::string &csvName, const std::string &dataName); 
 

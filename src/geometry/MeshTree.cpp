@@ -50,7 +50,7 @@ void MeshTree::addMesh( const TriangleMesh<REAL> *mesh )
 
     TRACE_ASSERT( !_sceneTree, "Scene tree is already built" );
 
-    for ( int tri_idx = 0; tri_idx < triangles.size(); tri_idx++ )
+    for ( size_t tri_idx = 0; tri_idx < triangles.size(); tri_idx++ )
     {
         const Tuple3ui        &triangle = triangles[ tri_idx ];
 

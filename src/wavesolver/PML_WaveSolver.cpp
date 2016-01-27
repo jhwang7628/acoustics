@@ -31,17 +31,18 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 WriteCallbackIndividual *callbacki,
                                 int subSteps, int N,
                                 REAL endTime )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ),
+    _endTime( endTime ),
+    _N( N ),
     _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
     _callbackInd( callbacki ),
-    _subSteps( subSteps ),
-    _N( N ),
-    _endTime( endTime ),
     _zSlice( -1 )
 {
     cout << "CPU PML wavesolver starting (config 1)... " << endl;
@@ -61,7 +62,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -85,17 +86,18 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 WriteCallback *callback,
                                 int subSteps, int N,
                                 REAL endTime )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ),
+    _endTime( endTime ),
+    _N( N ),
     _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
     _rawData( rawData ),
-    _subSteps( subSteps ),
-    _N( N ),
-    _endTime( endTime ),
     _zSlice( -1 )
 {
     cout << "CPU PML wavesolver starting (config 1)... " << endl;
@@ -115,7 +117,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -143,15 +145,16 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
         WriteCallbackIndividual *callbacki,
         int subSteps, int N,
         REAL endTime )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ),
+    _endTime( endTime ),
     _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
-    _subSteps( subSteps ),
     _callbackInd( callbacki ),
-    _endTime( endTime ),
     _zSlice( -1 )
 {
     cout << "CPU PML wavesolver starting (config 2)... " << endl;
@@ -171,7 +174,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -530,7 +533,7 @@ REAL PML_WaveSolver::GetMaxCFL()
 //////////////////////////////////////////////////////////////////////
 void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 {
-    const MATRIX              *velocities[] = { &_v[ 0 ], &_v[ 1 ], &_v[ 2 ] };
+    //const MATRIX              *velocities[] = { &_v[ 0 ], &_v[ 1 ], &_v[ 2 ] };
 
 #if 0
     printf( "p is %d x %d\n", _p.rows(), _p.cols() );
@@ -593,18 +596,15 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     start = omp_get_wtime();
     if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
     {
-        REAL                     listenerOutput;
+        //REAL                     listenerOutput;
         const ScalarField       &field = _grid.pressureField();
 
         // MY IMPLEMENTATION //
-        // FIXME FIXME so hacky //
-
-
         if ( _callbackInd )
         {
             vector<REAL> MyWaveOutput; 
             MyWaveOutput.resize( _listeningPositions->size() ); 
-            for ( int ii=0; ii<_listeningPositions->size(); ii++) 
+            for ( size_t ii=0; ii<_listeningPositions->size(); ii++) 
             {
                 field.interpolateVectorField( _listeningPositions->at( ii ), 
                                               _pFull, _listenerOutput ); 
@@ -616,9 +616,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
             (*_callbackInd)( MyWaveOutput, _timeStep, _timeIndex );
 
         }
-
         // END MY IMPLEMENTATION //
-
 
         /* 
         for ( int i = 0; i < _listeningPositions->size(); i++ )

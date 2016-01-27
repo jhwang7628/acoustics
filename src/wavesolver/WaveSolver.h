@@ -218,6 +218,9 @@ class WaveSolver : public Solver {
 
         bool                     _useMACGrid;
 
+        // Number of fields to solve for
+        int                      _N;
+
         // Store the last two time steps for a second order time differencing
         // scheme.  We form p2 (the current time step) using p0 and p1
         MATRIX                   _p0;
@@ -228,8 +231,6 @@ class WaveSolver : public Solver {
         MATRIX                   _p;
         MATRIX                   _a;
 
-        // Number of fields to solve for
-        int                      _N;
 
         // Workspace for Laplacian application
         MATRIX                   _workspace;

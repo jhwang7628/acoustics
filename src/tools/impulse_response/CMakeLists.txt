@@ -174,6 +174,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	    else(USE_CUDA)
 	    	add_executable(precompute-impulse-response-text
 	            ${IR_PRECOMPUTE_SRCS}
+                ${GRID_SOURCES}
 	            ${GENERIC_SRC}                    ${IO_SRC}
 	            ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
 	            ${DISTANCEFIELD_SRC}              ${MATH_SRC}
@@ -189,7 +190,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
                 ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
 	            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
 	            ${GSL_LIBRARY}                  boost_thread
-	            boost_system                    )
+	            boost_system                    boost_regex)
 	    endif(USE_CUDA)
 
         set_target_properties(precompute-impulse-response-text PROPERTIES LINK_FLAGS ${LINK_FLAGS})

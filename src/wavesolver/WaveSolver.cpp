@@ -26,15 +26,16 @@ WaveSolver::WaveSolver( REAL timeStep,
                         const char *outputFile,
                         WriteCallback *callback,
                         int subSteps, int N )
-    : _timeStep( timeStep ),
-      _timeIndex( 0 ),
+    : 
       _laplacian( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+      _timeStep( timeStep ),
+      _timeIndex( 0 ),
+      _subSteps( subSteps ),
       _useLeapfrog( useLeapfrog ),
+      _N( N ),
       _listeningPositions( listeningPositions ),
       _outputFile( outputFile ),
       _callback( callback ),
-      _subSteps( subSteps ),
-      _N( N ),
       _laplacianTimer( "Laplacian" ),
       _boundaryTimer( "Laplacian boundary" )
 {
@@ -69,7 +70,7 @@ WaveSolver::WaveSolver( REAL timeStep,
         // NCell 
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -96,14 +97,15 @@ WaveSolver::WaveSolver( REAL timeStep,
         const char *outputFile,
         WriteCallback *callback,
         int subSteps, int N )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _laplacian( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ), 
     _useLeapfrog( useLeapfrog ),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
-    _callback( callback ),
-    _subSteps( subSteps )
+    _callback( callback )
 {
     if ( useLeapfrog )
     {
@@ -135,7 +137,7 @@ WaveSolver::WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -322,7 +324,7 @@ void WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
         REAL                     listenerOutput;
         const ScalarField       &field = _laplacian.field();
 
-        for ( int i = 0; i < _listeningPositions->size(); i++ )
+        for ( size_t i = 0; i < _listeningPositions->size(); i++ )
         {
 #if 0
             listenerOutput = field.interpolateScalarField(
@@ -344,7 +346,7 @@ void WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
                 for ( int field_id = 0; field_id < _N; field_id++ )
                 {
-                    sprintf( buf, "%s_field_%d_position_%03d.vector", _outputFile,
+                    sprintf( buf, "%s_field_%d_position_%03lu.vector", _outputFile,
                             field_id, i );
 
                     writeVector( buf, _waveOutput[ i ][ field_id ] );

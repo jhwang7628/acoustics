@@ -114,7 +114,7 @@ FloatArray &WaveletManager::getTransformStorage()
 
     FloatArray                &storage = *_transformStorage;
 
-    if ( storage.size() != _waveletSignalLength ) {
+    if ( (int)storage.size() != _waveletSignalLength ) {
         storage.resize( _waveletSignalLength );
     }
 
@@ -343,11 +343,11 @@ void CompactCompressedMultiTermApproximation::setDirectionSet( const string &dir
 
     _directionMesh = new TriangleMesh<REAL>();
 
-    for ( int vert_idx = 0; vert_idx < vertices.size(); vert_idx++ ) {
+    for ( size_t vert_idx = 0; vert_idx < vertices.size(); vert_idx++ ) {
         _directionMesh->add_vertex( vertices[ vert_idx ] );
     }
 
-    for ( int tri_idx = 0; tri_idx < triangles.size(); tri_idx++ ) {
+    for ( size_t tri_idx = 0; tri_idx < triangles.size(); tri_idx++ ) {
         _directionMesh->add_triangle( triangles[ tri_idx ][ 0 ],
                                       triangles[ tri_idx ][ 1 ],
                                       triangles[ tri_idx ][ 2 ] );
@@ -418,10 +418,10 @@ bool CompactCompressedMultiTermApproximation::addSinePulse_uniformAngle(
     REAL                       fieldTimeScale = _fieldTimeScale;
     REAL                       fieldSupport = _fieldSupport;
 
-    REAL                       totalScaling;
+    //REAL                       totalScaling;
 
     REAL                       sampleScale;
-    REAL                       rPower;
+    //REAL                       rPower;
 
     InterpolationDirection     direction;
 
@@ -573,7 +573,7 @@ bool CompactCompressedMultiTermApproximation::addSinePulse_directionMesh(
                                                     REAL scale )
 {
     REAL                       pulseHalfLength = pulseLength / 2.0;
-    REAL                       t;
+    //REAL                       t;
     REAL                       tPulse;
     REAL                       tDelay;
     REAL                       pulseMiddle = pulseStartTime + pulseHalfLength;
@@ -591,7 +591,7 @@ bool CompactCompressedMultiTermApproximation::addSinePulse_directionMesh(
 
     REAL                       totalScaling;
 
-    REAL                       sampleValue;
+    //REAL                       sampleValue;
     REAL                       sampleScale;
     REAL                       rPower;
     REAL                       R;
@@ -819,7 +819,7 @@ void CompressedMultiTermApproximation::write( const std::string &filename ) cons
     int                         numTerms;
     char                        buf[ 1024 ];
 
-    size_t                      bytes_written;
+    //size_t                      bytes_written;
 
     sprintf( buf, "%s.dat", filename.c_str() );
 
@@ -833,41 +833,41 @@ void CompressedMultiTermApproximation::write( const std::string &filename ) cons
     int                        waveletSignalLength = getWaveletSignalLength();
 
     // Write basic info about the field first
-    bytes_written = fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
-    bytes_written = fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_baseSample, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_signalLength, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&_startSample, sizeof( int ), 1, file );
-    bytes_written = fwrite( (void *)&waveletSignalLength, sizeof( int ), 1,
+    fwrite( (void *)&_fieldCenter, sizeof( Point3d ), 1, file );
+    fwrite( (void *)&_fieldRadius, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldResolution, sizeof( int ), 1, file );
+    fwrite( (void *)&_fieldTimeScale, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSupport, sizeof( REAL ), 1, file );
+    fwrite( (void *)&_fieldSampleRate, sizeof( int ), 1, file );
+    fwrite( (void *)&_baseSample, sizeof( int ), 1, file );
+    fwrite( (void *)&_signalLength, sizeof( int ), 1, file );
+    fwrite( (void *)&_startSample, sizeof( int ), 1, file );
+    fwrite( (void *)&waveletSignalLength, sizeof( int ), 1,
             file );
 
     numTerms = _fieldTerms.size();
-    bytes_written = fwrite( (void *)&numTerms, sizeof( int ), 1, file );
+    fwrite( (void *)&numTerms, sizeof( int ), 1, file );
 
     // Write out each term
     //
     // We will just store everything in the same file here, since we can
     // no longer store things individually as matrices
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ )
     {
         size = _fieldTerms[ term_idx ].size();
-        bytes_written = fwrite( (void *)&size, sizeof( int ), 1, file );
+        fwrite( (void *)&size, sizeof( int ), 1, file );
 
         // Write each direction
-        for ( int direction_idx = 0; direction_idx < _fieldTerms[ term_idx ].size();
+        for ( size_t direction_idx = 0; direction_idx < _fieldTerms[ term_idx ].size();
                 direction_idx++ )
         {
             const CoefficientArray &term = _fieldTerms[ term_idx ][ direction_idx ];
 
             size = term.size();
-            bytes_written = fwrite( (void *)&size, sizeof( int ), 1, file );
+            fwrite( (void *)&size, sizeof( int ), 1, file );
 
             // Write the data itself
-            bytes_written = fwrite( (void *)term.data(), sizeof( WaveletCoefficient ),
+            fwrite( (void *)term.data(), sizeof( WaveletCoefficient ),
                     size, file );
         }
     }
@@ -900,7 +900,7 @@ bool CompressedMultiTermApproximation::addSinePulse( Point3d listeningPosition,
     REAL                       fieldTimeScale = _fieldTimeScale;
     REAL                       fieldSupport = _fieldSupport;
 
-    REAL                       sampleValue;
+    //REAL                       sampleValue;
     REAL                       sampleScale;
     REAL                       rPower;
 
@@ -962,7 +962,7 @@ bool CompressedMultiTermApproximation::addSinePulse( Point3d listeningPosition,
             // Scale by the interpolation coefficient, and the radial attenuation
             // factor for each term.
             rPower = direction._r;
-            for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
+            for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
                 addScaledSignal( term_idx, directions[ direction_idx ],
                         sampleScale * pulseAmplitude * interpCoef / rPower );
 
@@ -996,7 +996,7 @@ void CompressedMultiTermApproximation::evaluatePANField( Point3d listeningPositi
 {
     REAL                       delay;
     REAL                       sampleDiv = _sampleDiv;
-    REAL                       sampleValue;
+    //REAL                       sampleValue;
     REAL                       t;
     REAL                       pulseAmplitude = 1.0;
 
@@ -1036,7 +1036,7 @@ void CompressedMultiTermApproximation::evaluatePANField( Point3d listeningPositi
         // Scale by the interpolation coefficient, and the radial attenuation
         // factor for each term.
         rPower = direction._r;
-        for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
+        for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
             addScaledSignal( term_idx, directions[ direction_idx ],
                     pulseAmplitude * interpCoef / rPower );
 
@@ -1171,7 +1171,7 @@ size_t CompressedMultiTermApproximation::read( const std::string &filename )
         _fieldTerms[ term_idx ].resize( size );
 
         // Read each direction
-        for ( int direction_idx = 0; direction_idx < _fieldTerms[ term_idx ].size();
+        for ( size_t direction_idx = 0; direction_idx < _fieldTerms[ term_idx ].size();
                 direction_idx++ )
         {
             CoefficientArray &term = _fieldTerms[ term_idx ][ direction_idx ];
@@ -1271,7 +1271,7 @@ void CompressedMultiTermApproximation::copyDirectionTerms( const FloatArray &rad
     int                        sampleOffset;
     int                        signalEnd;
 
-    for ( int radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
+    for ( size_t radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
         radius = radii[ radius_idx ];
 
         sampleOffset = (int)( radius / _c / _sampleDiv );
@@ -1367,7 +1367,7 @@ void CompressedMultiTermApproximation::buildWaveletLSSystem( int direction_idx,
     rhs.resizeAndWipe( radii.size(), _fieldTerms[ 0 ][ direction_idx ].size() );
 
     // Build the system matrix
-    for ( int radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
+    for ( size_t radius_idx = 0; radius_idx < radii.size(); radius_idx++ ) {
         REAL                     r = radii[ radius_idx ];
 
         for ( int term_idx = 0; term_idx < numTerms; term_idx++ ) {
@@ -1399,7 +1399,7 @@ void CompressedMultiTermApproximation::extractSolvedCoefficients( int direction_
     //int                        numTerms = _fieldTerms.size();
 
     // Copy terms
-    for ( int term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
+    for ( size_t term_idx = 0; term_idx < _fieldTerms.size(); term_idx++ ) {
         CoefficientArray        &directionCoefs = _fieldTerms[ term_idx ]
             [ direction_idx ];
 

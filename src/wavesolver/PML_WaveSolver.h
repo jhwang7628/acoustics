@@ -203,6 +203,7 @@ class PML_WaveSolver : public Solver {
         REAL                     _currentTime;
         int                      _timeIndex;
         int                      _subSteps;
+        REAL                     _endTime;
 
         // Leapfrog variables for a MAC grid
         //
@@ -214,7 +215,6 @@ class PML_WaveSolver : public Solver {
         // Number of fields to solve for
         int                      _N;
 
-        REAL                     _endTime;
 
         const REAL               _cellSize; 
         const Vector3Array      *_listeningPositions;

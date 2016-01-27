@@ -149,7 +149,7 @@ void GTS_TriMesh::precomputeMeanCurvatures( bool smooth )
 {
     _meanCurvatures.resize( _vertices.size() );
 
-    for ( int vertex_idx = 0; vertex_idx < _vertices.size(); vertex_idx++ ) {
+    for ( size_t vertex_idx = 0; vertex_idx < _vertices.size(); vertex_idx++ ) {
         //_meanCurvatures[ vertex_idx ] = norm( meanCurvature( vertex_idx ) ) / 2.0;
         _meanCurvatures[ vertex_idx ] = meanCurvature( vertex_idx ).length() / 2.0;
     }
@@ -181,7 +181,7 @@ void GTS_TriMesh::initSurface()
                                 gts_edge_class(),
                                 gts_vertex_class() );
 
-    for ( int vertex_idx = 0; vertex_idx < vertices.size(); vertex_idx++ )
+    for ( size_t vertex_idx = 0; vertex_idx < vertices.size(); vertex_idx++ )
     {
         const Point3d           &x = vertices[ vertex_idx ];
 
@@ -190,7 +190,7 @@ void GTS_TriMesh::initSurface()
     }
 
     // Generate the faces and edges
-    for ( int tri_idx = 0; tri_idx < triangles.size(); tri_idx++ )
+    for ( size_t tri_idx = 0; tri_idx < triangles.size(); tri_idx++ )
     {
         const Tuple3ui          &triangle = triangles[ tri_idx ];
 
@@ -274,7 +274,7 @@ void GTS_TriMesh::smoothCurvatures()
 
     FloatArray                   triangleCounts( _mesh.vertices().size(), 0.0 );
 
-    for ( int tri_idx = 0; tri_idx < _mesh.triangles().size(); tri_idx++ ) {
+    for ( size_t tri_idx = 0; tri_idx < _mesh.triangles().size(); tri_idx++ ) {
         const Tuple3ui          &tri = _mesh.triangles()[ tri_idx ];
 
         for ( int i = 0; i < 3; i++ ) {
@@ -286,7 +286,7 @@ void GTS_TriMesh::smoothCurvatures()
     _meanCurvatures.clear();
     _meanCurvatures.resize( _mesh.vertices().size(), 0.0 );
 
-    for ( int tri_idx = 0; tri_idx < _mesh.triangles().size(); tri_idx++ ) {
+    for ( size_t tri_idx = 0; tri_idx < _mesh.triangles().size(); tri_idx++ ) {
         const Tuple3ui          &tri = _mesh.triangles()[ tri_idx ];
 
         for ( int i = 0; i < 3; i++ ) {
@@ -295,12 +295,12 @@ void GTS_TriMesh::smoothCurvatures()
         }
     }
 
-    for ( int vert_idx = 0; vert_idx < _meanCurvatures.size(); vert_idx++ ) {
+    for ( size_t vert_idx = 0; vert_idx < _meanCurvatures.size(); vert_idx++ ) {
         _meanCurvatures[ vert_idx ] /= triangleCounts[ vert_idx ];
 
-        printf( "Vertex %d smoothed curvature: %f\n",
+        printf( "Vertex %lu smoothed curvature: %f\n",
                 vert_idx, _meanCurvatures[ vert_idx ] );
-        printf( "Vertex %d smoothed radius: %f\n\n\n",
+        printf( "Vertex %lu smoothed radius: %f\n\n\n",
                 vert_idx, 1.0 / _meanCurvatures[ vert_idx ] );
     }
 }

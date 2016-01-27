@@ -22,8 +22,9 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
                     const TriMesh &mesh,
                     const DistanceField &boundarySDF,
                     REAL distanceTolerance, int N )
-    : _pressureField( bbox, cellSize ),
+    : 
       _distanceTolerance( distanceTolerance ),
+      _pressureField( bbox, cellSize ),
       _N( N ),
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
@@ -56,9 +57,11 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
                     vector<const TriMesh *> &meshes,
                     vector<const DistanceField *> &boundaryFields,
                     REAL distanceTolerance, int N )
-    : _pressureField( bbox, cellSize ),
-      _boundaryMeshes( meshes ),
+    : 
       _boundaryFields( boundaryFields ),
+      _boundaryMeshes( meshes ),
+      _distanceTolerance(distanceTolerance),
+      _pressureField( bbox, cellSize ),
       _N( N ),
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
@@ -66,11 +69,11 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
     Vector3d                   xMin, yMin, zMin;
     Tuple3i                    xDivs, yDivs, zDivs;
 
-    for ( int mesh_idx = 0; mesh_idx < _boundaryMeshes.size(); mesh_idx++ )
+    for ( size_t mesh_idx = 0; mesh_idx < _boundaryMeshes.size(); mesh_idx++ )
     {
-        printf( "Boundary mesh %d has %d vertices and %d triangles\n",
-                mesh_idx, (int)_boundaryMeshes[ mesh_idx ]->vertices().size(),
-                (int)_boundaryMeshes[ mesh_idx ]->triangles().size() );
+        printf( "Boundary mesh %lu has %lu vertices and %lu triangles\n",
+                mesh_idx, _boundaryMeshes[ mesh_idx ]->vertices().size(),
+                _boundaryMeshes[ mesh_idx ]->triangles().size() );
     }
 
     // Put velocity values on the exterior boundary
@@ -136,7 +139,7 @@ void MAC_Grid::velocityDerivative( const MATRIX &p,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
             bulk_cell_idx++ )
     {
         int                  cell_idx = bulkCells[ bulk_cell_idx ];
@@ -178,7 +181,7 @@ void MAC_Grid::velocityDerivative( const MATRIX &p,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int interfacial_cell_idx = 0;
+    for ( size_t interfacial_cell_idx = 0;
             interfacial_cell_idx < interfacialCells.size();
             interfacial_cell_idx++ )
     {
@@ -213,7 +216,7 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
         int                      cell_idx = _bulkCells[ bulk_cell_idx ];
@@ -276,7 +279,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
             bulk_cell_idx++ )
     {
         int                  cell_idx = bulkCells[ bulk_cell_idx ];
@@ -345,7 +348,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int interfacial_cell_idx = 0;
+    for ( size_t interfacial_cell_idx = 0;
             interfacial_cell_idx < interfacialCells.size();
             interfacial_cell_idx++ )
     {
@@ -384,7 +387,7 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
         int                      cell_idx = _bulkCells[ bulk_cell_idx ];
@@ -649,7 +652,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
         // Check all boundary fields to see if this is a bulk cell
         _isBulkCell[ cell_idx ] = true;
-        for ( int field_idx = 0; field_idx < _boundaryFields.size(); field_idx++ )
+        for ( size_t field_idx = 0; field_idx < _boundaryFields.size(); field_idx++ )
         {
             if ( _boundaryFields[ field_idx ]->distance( cellPos )
                     <= _distanceTolerance )
@@ -680,7 +683,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
         _pressureField.cellNeighbours( cell_idx, neighbours );
 
-        for ( int neighbour_idx = 0; neighbour_idx < neighbours.size();
+        for ( size_t neighbour_idx = 0; neighbour_idx < neighbours.size();
                 neighbour_idx++ )
         {
             if ( _isBulkCell[ neighbours[ neighbour_idx ] ] )

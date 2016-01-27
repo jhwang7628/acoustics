@@ -6,6 +6,7 @@
 #include "ScalarField.h"
 
 #include <utils/IO.h>
+#include <config.h> 
 
 const int ScalarField::NUM_NEIGHBOURS = 6;
 
@@ -34,7 +35,7 @@ ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
     for ( int dimension = 0; dimension < 3; dimension++ )
     {
         _divisions[ dimension ]
-            = (int)ceil( bbox.axislength( dimension ) / cellSize );
+            = (int)ceil( (bbox.axislength( dimension )-EPS) / cellSize ); // minus EPS to prevent rounding error in case division gives integer
 
         minBound[ dimension ] = bbox.minBound()[ dimension ];
 
@@ -278,7 +279,7 @@ REAL ScalarField::interpolateScalarField( const Vector3d &x,
 
     interpolationCoefficients( x, coefficients );
 
-    for ( int i = 0; i < coefficients.size(); i++ )
+    for ( size_t i = 0; i < coefficients.size(); i++ )
     {
         const KeyValuePair      &coef = coefficients[ i ];
 
@@ -312,7 +313,7 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
         output.clear();
     }
 
-    for ( int i = 0; i < coefficients.size(); i++ )
+    for ( size_t i = 0; i < coefficients.size(); i++ )
     {
         const KeyValuePair      &coef = coefficients[ i ];
 
