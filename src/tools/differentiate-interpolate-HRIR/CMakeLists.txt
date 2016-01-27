@@ -1,13 +1,12 @@
 # =============================================================================
-#   Builds the unit testing tools
+#   Builds the tools for differentiating HRIR computed from wavesolver
 # =============================================================================
-if (BUILD_UNIT_TESTING)
+if (BUILD_DIFFERENTIATE_INTERPOLATE_HRIR)
     # ===================
     # Dependencies
     # ===================
-
-    set(UNIT_TESTING_SRCS 
-        test_GridWithObject.cpp)
+    set(DIFFERENTIATE_INTERPOLATE_HRIR_SRCS 
+        DifferentiateInterpolateHRIR.cpp)
     set(TURBSOUND_INCLUDE_DIR
         /home/jui-hsien/code/turbsound_postfluid/src
         /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -17,6 +16,7 @@ if (BUILD_UNIT_TESTING)
     # Settings
     # ===================
     set(CMAKE_CXX_FLAGS "-std=c++11")
+    set(TARGET_NAME differentiate-interpolate-HRIR)
 
 
     # ===================
@@ -27,8 +27,8 @@ if (BUILD_UNIT_TESTING)
         ${TURBSOUND_INCLUDE_DIR}
         )
 
-    add_executable(testing_grid
-        ${UNIT_TESTING_SRCS}
+    add_executable(${TARGET_NAME}
+        ${DIFFERENTIATE_INTERPOLATE_HRIR_SRCS}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
@@ -40,13 +40,14 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
         )
 
-    target_link_libraries(testing_grid
+    target_link_libraries(${TARGET_NAME}
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         boost_thread
         boost_system                    
+        boost_timer
         boost_regex) 
 
-endif ( BUILD_UNIT_TESTING )
+endif ( BUILD_DIFFERENTIATE_INTERPOLATE_HRIR )

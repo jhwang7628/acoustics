@@ -81,7 +81,6 @@ ELSE(WIN32)
       ${GTS_CONFIG_PREFER_PATH}
       /work2/arm2arm/SOFTWARE/bin/
       )
-    MESSAGE("DBG GTS_CONFIG ${GTS_CONFIG}")
     
     IF (GTS_CONFIG) 
       
@@ -106,9 +105,7 @@ ELSE(WIN32)
       EXEC_PROGRAM(${GTS_CONFIG}
         ARGS --libs
         OUTPUT_VARIABLE  GTS_CONFIG_LIBS )
-      MESSAGE("DBG GTS_CONFIG_LIBS ${GTS_CONFIG_LIBS}")
       SET(GTS_LIBRARIES "${GTS_CONFIG_LIBS}")
-      MESSAGE("DBG GTS_CONFIG_LIBS ${GTS_LIBRARIES}")
 
       # split off the link dirs (for rpath)
       # use regular expression to match wildcard equivalent "-L*<endchar>"

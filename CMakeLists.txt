@@ -47,6 +47,7 @@ option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wavesolver" ON)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
 option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 
+option(BUILD_DIFFERENTIATE_INTERPOLATE_HRIR  "Compiles HRIR differentiation tools" ON) 
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
