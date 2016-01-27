@@ -212,6 +212,10 @@ class Parser {
 
             std::string             _listeningFile; 
 
+            REAL                    _widthSpace; 
+            REAL                    _widthTime; 
+            REAL                    _offsetTime; 
+
             // position of the impulse response source
             REAL                    _sourcePosition_x; 
             REAL                    _sourcePosition_y; 

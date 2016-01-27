@@ -1,6 +1,13 @@
 /* 
- * CUDA port of file tools/acceleration_noise/precompute_acceleration_pulse.cpp
- * using GPU enabled wavesolver
+ * impulse-response solve using the finite-difference time-domain (FDTD) wave solver. 
+ *
+ * ref: 
+ *  [1] Chadwick 2012, Precomputed Acceleration Noise for Improved Rigid-Body Sound
+ *  [2] Liu 1997, The perfectly matched layer for acoustic waves in absorptive media
+ *
+ * Author: Jui-Hsien Wang
+ *  
+ *  
  */
 
 
@@ -10,38 +17,23 @@
 #include "IO/IO.h"
 #include <limits>
 
-
 #include <distancefield/closestPointField.h>
 #include <distancefield/FieldBuilder.h>
 
-//#include <geometry/RigidMesh.h>
 #include <geometry/TriangleMesh.hpp>
-
-//#include <deformable/ModeData.h>
 
 #include <linearalgebra/Vector3.hpp>
 
 #include <parser/Parser.h>
 
-//#include <transfer/PulseApproximation.h>
-
-
-//#include <utils/IO.h>
-//#include <utils/MathUtil.h>
-//#include <utils/Evaluator.h>
-
-//#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAN_WaveSolver.h>
-//#include <wavesolver/gpusolver/wrapper/cuda/CUDA_PAT_WaveSolver.h>
-
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
-#include <wavesolver/WaveSolverPointData.h>
+//#include <wavesolver/WaveSolverPointData.h>
 
 #include <boost/bind.hpp>
 
 #include <iostream>
 #include <string>
-
 
 #include <unistd.h> 
 
@@ -156,20 +148,44 @@ REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &
     const REAL EPS = 1E-10;
 
     if ( r <= ballRadius && r > EPS)  // prevent singularity
-    { 
         return -rho_0 *ballRadius *ballRadius / 4.0 / PI / r  * Sw * w * cos(w*t + phase);
-    }
     else 
-    {
         return numeric_limits<REAL>::quiet_NaN();
-    }
+}
+
+REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id, InterpolationFunction *interp )
+{
+    REAL bcResult = 0.0;
+
+    TRACE_ASSERT( obj_id == 0 );
+
+    //if ( t <= 2.0 * interp->supportLength() )
+    //{
+    //    bcResult = interp->evaluate( t, interp->supportLength() );
+
+    //    if ( field_id <= 2 )
+    //    {
+    //        bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
+    //    }
+    //    else
+    //    {
+    //        bcResult *= n.dotProduct(
+    //                        ( x - CENTER_OF_MASS ).crossProduct(
+    //                                                    ACCELERATION_DIRECTIONS[ field_id ] ) );
+    //    }
+
+    //    if ( ZERO_BC )
+    //    {
+    //        ZERO_BC = false;
+    //        cout << "Non-zero boundary condition!" << endl;
+    //    }
+    //}
+
+    return bcResult;
 }
 
 
-
 void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, const char * pattern, REAL endTime, int n);
-
-
 
 void UnitTesting(); 
 
@@ -185,17 +201,18 @@ int main( int argc, char **argv )
         exit(1);
     }
 
-    std::string fileName     = std::string(argv[1]);
+    std::string fileName = std::string(argv[1]);
+
     Parser                  *parser = NULL;
-    TriangleMesh<REAL>      *mesh = NULL;
-    ClosestPointField       *sdf = NULL;
+    TriangleMesh<REAL>      *mesh   = NULL;
+    ClosestPointField       *sdf    = NULL;
     BoundingBox              fieldBBox;
     REAL                     cellSize;
     int                      cellDivisions;
 
+
     REAL                     endTime = -1.0;
 
-    //REAL                     listeningRadius;
     Vector3Array             listeningPositions;
     Vector3d                 sourcePosition;
     BoundaryEvaluator        boundaryCondition;
@@ -207,19 +224,11 @@ int main( int argc, char **argv )
 
     /* Build parser from solver configuration. */
     parser = Parser::buildParser( fileName );
-    if ( !parser )
-    {
-        cerr << "ERROR: Could not build parser from " << fileName << endl;
-        return 1;
-    }
+    if ( !parser ) throw std::runtime_error("**ERROR** Could not build parser from : "+fileName); 
 
     /* Build mesh. */
     mesh = parser->getMesh("impulse_response");
-    if ( !mesh )
-    {
-        cerr << "ERROR: Could not build mesh" << endl;
-        return 1;
-    }
+    if ( !mesh ) throw std::runtime_error("**ERROR** Could not build mesh from : " + fileName); 
 
     parms = parser->getImpulseResponseParms();
 
@@ -230,64 +239,62 @@ int main( int argc, char **argv )
 
     const char *pattern = parms._outputPattern.c_str();
 
-
     printf("Queried end time for the simulation = %lf\n", endTime);
 
     sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
-                                                              parms._sdfResolution,
-                                                              parms._sdfFilePrefix.c_str() );
-
-    fieldBBox = BoundingBox( sdf->bmin(), sdf->bmax() );
+            parms._sdfResolution,
+            parms._sdfFilePrefix.c_str() );
 
     // Scale this up to build a finite difference field
+    fieldBBox  = BoundingBox(sdf->bmin(),sdf->bmax());
     fieldBBox *= parms._gridScale;
-    cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
 
     cellDivisions = parms._gridResolution;
 
     cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
     cellSize /= (REAL)cellDivisions;
 
-    cout << SDUMP( cellSize ) << endl;
-
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency);
+    REAL CFL = parms._c * timeStep / cellSize; 
 
-
+    cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
     cout << SDUMP( timeStep ) << endl;
     cout << SDUMP( cellSize ) << endl; 
-
-
-    REAL CFL = parms._c * timeStep / cellSize; 
     cout << SDUMP( CFL ) << endl;
+
+    // for boundary interpolation : not used
+    InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
+    boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
+
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
- 
+
     /// pass in listening position
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-                                  *mesh, *sdf,
-                                  0.0, /* distance tolerance */
-                                  true, /* use boundary */
-                                  &listeningPositions,
-                                  NULL, /* No output file */
-                                  NULL, /* Write callback */
-                                  NULL,// uncomment this if don't want to listen and comment the next one
-                                  //&dacallback, /* Write callback */
-                                  parms._subSteps,
-                                  1, /* acceleration directions */
-                                  endTime );
+            *mesh, *sdf,
+            0.0, /* distance tolerance */
+            true, /* use boundary */
+            &listeningPositions,
+            NULL, /* No output file */
+            NULL, /* Write callback */
+            NULL,// uncomment this if don't want to listen and comment the next one
+            //&dacallback, /* Write callback */
+            parms._subSteps,
+            1, /* acceleration directions */
+            endTime );
 
     AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
     ///// initialize system with initial condition /////
     //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
-    cout << "Source position is set at " << sourcePosition << endl;
     //InitialConditionEvaluator initial = boost::bind(Gaussian_3D, _1, sourcePosition, ic_stddev);
     //InitialConditionEvaluator initial = boost::bind(PointGaussian_3D, _1, sourcePosition);
     //solver.initSystemNontrivial( 0.0, &initial ); 
-      
-    
+
+
     ///// initialize system with external source. ///// 
+    cout << "Source position is set at " << sourcePosition << endl;
     solver.initSystem(0.0);
     const REAL widthSpace = cellSize; 
     //const REAL widthSpace = 0.2; 
@@ -299,7 +306,6 @@ int main( int argc, char **argv )
     const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
-   
     const REAL PML_width=11.0; 
     const REAL PML_strength=1000000.0; 
     solver.SetExternalSource( &source ); 
@@ -307,41 +313,36 @@ int main( int argc, char **argv )
     //solver.setPMLBoundaryWidth( 10.0, 100000.0 );
     //solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
-   
-#if 0 // if harmonic sources 
-    const REAL w = 2.0*3.1415926*2000; // 500 Hz test
-    const REAL Sw = 1.0; // source strength
-    const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
-    cout << SDUMP(ballRadius) << endl;
-    const REAL phase = 0;
-    HarmonicSourceEvaluator sourceFunction = boost::bind( Harmonic_Source, _1, sourcePosition, _2, w, Sw, ballRadius, parms._density, phase ); 
-    solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
-#endif 
 
-
+    // if harmonic sources 
+    //const REAL w = 2.0*3.1415926*2000; // 500 Hz test
+    //const REAL Sw = 1.0; // source strength
+    //const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
+    //cout << SDUMP(ballRadius) << endl;
+    //const REAL phase = 0;
+    //HarmonicSourceEvaluator sourceFunction = boost::bind( Harmonic_Source, _1, sourcePosition, _2, w, Sw, ballRadius, parms._density, phase ); 
+    //solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
+ 
 
     /// write grid and pressure value
-    Eigen::Vector3i minDrawBound; 
-    Eigen::Vector3i maxDrawBound; 
-    minDrawBound << 0, 0, 0; 
-    maxDrawBound << solver.fieldDivisions()[0], solver.fieldDivisions()[1], solver.fieldDivisions()[2]; 
+    Eigen::Vector3i minDrawBound(0,0,0); 
+    Eigen::Vector3i maxDrawBound(solver.fieldDivisions()[0], solver.fieldDivisions()[1], solver.fieldDivisions()[2]); 
     printf( "domain size: (%u, %u, %u)\n", maxDrawBound[0], maxDrawBound[1], maxDrawBound[2] );
 
-    int Ndivision = maxDrawBound[0] * maxDrawBound[1] * maxDrawBound[2];
+    const int Ndivision = maxDrawBound[0] * maxDrawBound[1] * maxDrawBound[2];
     Eigen::MatrixXd vertexPosition( Ndivision, 3 ); // vertex position
     Eigen::MatrixXd vertexPressure( Ndivision, 1 ); // full pressure
     Eigen::MatrixXi vertexIndex( Ndivision, 3 ); // pressure vertex index
 
 
     int count = 0;
+    Vector3d vPosition;
     for ( int kk=0; kk<maxDrawBound[2]; kk++ )
-    {
         for ( int jj=0; jj<maxDrawBound[1]; jj++ ) 
-        {
             for ( int ii=0; ii<maxDrawBound[0]; ii++ ) 
             {
                 Tuple3i  vIndex( ii, jj, kk );
-                Vector3d vPosition = solver.fieldPosition(  vIndex );
+                vPosition = solver.fieldPosition(  vIndex );
 
                 vertexPosition( count, 0 ) = vPosition[0];
                 vertexPosition( count, 1 ) = vPosition[1];
@@ -360,8 +361,6 @@ int main( int argc, char **argv )
                 count ++; 
 
             }
-        }
-    }
 
     printf("writing solver settings\n"); 
     {
@@ -383,7 +382,7 @@ int main( int argc, char **argv )
         of << SDUMP( widthSpace ) << endl;
         of << SDUMP( widthTime ) << endl;
         of << SDUMP( offsetTime ) << endl;
-  
+
         of << "precision : double (hard-coded)" << endl;
         of << "binary write method : IO writeMatrixXd method (hard-coded)" << endl;
         of.close();
@@ -429,9 +428,7 @@ int main( int argc, char **argv )
         {
             int count = 0;
             for ( int kk=0; kk<maxDrawBound[2]; kk++ )
-            {
                 for ( int jj=0; jj<maxDrawBound[1]; jj++ ) 
-                {
                     for ( int ii=0; ii<maxDrawBound[0]; ii++ ) 
                     {
                         Tuple3i  vIndex( ii, jj, kk );
@@ -444,8 +441,6 @@ int main( int argc, char **argv )
                         count ++; 
 
                     }
-                }
-            }
 
 
             printf( "writing pressure %u\n", nSteps/parms._subSteps );
@@ -460,7 +455,7 @@ int main( int argc, char **argv )
         }
 
 
-    nSteps ++; 
+        nSteps ++; 
 
 
     }
