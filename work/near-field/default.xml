@@ -1,20 +1,20 @@
 <?xml version="1.0" ?>
 <impulse_response>
-    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/ball/ball.obj" scale="1.0" />
+    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" scale="1.0" />
 
     <solver
         stop_time="0.005"
-        distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball/ball.obj.dist"
-        fieldresolution="150"
-        gridresolution="150"
-        gridscale="1.5000000"
+        distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.dist"
+        fieldresolution="200"
+        gridresolution="200"
+        gridscale="1.0000000"
         timestepfrequency="640000"
         substeps="8"
 
-        output_pattern="data_ball/test_%s"
+        output_pattern="data_small_ball/test_%s"
 
-        source_position_x="1.2" 
-        source_position_y="1.2" 
+        source_position_x="0.11" 
+        source_position_y="0.11" 
         source_position_z="0.0" 
 
         />

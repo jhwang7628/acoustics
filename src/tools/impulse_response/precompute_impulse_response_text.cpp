@@ -4,9 +4,6 @@
  * ref: 
  *  [1] Chadwick 2012, Precomputed Acceleration Noise for Improved Rigid-Body Sound
  *  [2] Liu 1997, The perfectly matched layer for acoustic waves in absorptive media
- *
- * Author: Jui-Hsien Wang
- *  
  *  
  */
 
@@ -218,14 +215,10 @@ int main( int argc, char **argv )
     BoundingBox              fieldBBox;
     REAL                     cellSize;
     int                      cellDivisions;
-
-
     REAL                     endTime = -1.0;
-
     Vector3Array             listeningPositions;
     Vector3d                 sourcePosition;
     BoundaryEvaluator        boundaryCondition;
-
     REAL                     timeStep;
 
     Parser::ImpulseResponseParms parms;
@@ -248,8 +241,6 @@ int main( int argc, char **argv )
 
     const char *pattern = parms._outputPattern.c_str();
 
-    printf("Queried end time for the simulation = %lf\n", endTime);
-
     sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
             parms._sdfResolution,
             parms._sdfFilePrefix.c_str() );
@@ -266,16 +257,9 @@ int main( int argc, char **argv )
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency);
     REAL CFL = parms._c * timeStep / cellSize; 
 
-    cout << "fieldBBox -> [min, max] = " << fieldBBox.minBound() <<  ", " << fieldBBox.maxBound() << endl;
-    cout << SDUMP(cellDivisions) << endl;
-    cout << SDUMP( timeStep ) << endl;
-    cout << SDUMP( cellSize ) << endl; 
-    cout << SDUMP( CFL ) << endl;
-
     // for boundary interpolation : not used
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
-
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
@@ -316,7 +300,7 @@ int main( int argc, char **argv )
     const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
-    const REAL PML_width=5.0; 
+    const REAL PML_width=11.0; 
     const REAL PML_strength=1000000.0; 
     solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( PML_width, PML_strength );
@@ -335,15 +319,11 @@ int main( int argc, char **argv )
  
 
     /// write grid and pressure value
-    Eigen::Vector3i minDrawBound(0,0,0); 
     Eigen::Vector3i maxDrawBound(solver.fieldDivisions()[0], solver.fieldDivisions()[1], solver.fieldDivisions()[2]); 
     printf( "domain size: (%u, %u, %u)\n", maxDrawBound[0], maxDrawBound[1], maxDrawBound[2] );
 
     const int Ndivision = maxDrawBound[0] * maxDrawBound[1] * maxDrawBound[2];
-    Eigen::MatrixXd vertexPosition( Ndivision, 3 ); // vertex position
     std::shared_ptr<Eigen::MatrixXd> vertexPressure( new Eigen::MatrixXd(Ndivision, 1) ); // full pressure
-    Eigen::MatrixXi vertexIndex( Ndivision, 3 ); // pressure vertex index
-
     
     // for vtk dump
     Eigen::Vector3d minBound = ToEigenVector3<double>(fieldBBox.minBound());
@@ -351,33 +331,6 @@ int main( int argc, char **argv )
     Eigen::Vector3i cellCount= ToEigenVector3<int>(solver.fieldDivisions()); 
     std::shared_ptr<Eigen::MatrixXd> cellCenteredPosition(new Eigen::MatrixXd()); 
     UniformGrid::GetAllCellCenterPosition(minBound, maxBound, cellCount,*cellCenteredPosition); 
-
-    int count = 0;
-    Vector3d vPosition;
-    for ( int kk=0; kk<maxDrawBound[2]; kk++ )
-        for ( int jj=0; jj<maxDrawBound[1]; jj++ ) 
-            for ( int ii=0; ii<maxDrawBound[0]; ii++ ) 
-            {
-                Tuple3i  vIndex( ii, jj, kk );
-                vPosition = solver.fieldPosition(  vIndex );
-
-                vertexPosition( count, 0 ) = vPosition[0];
-                vertexPosition( count, 1 ) = vPosition[1];
-                vertexPosition( count, 2 ) = vPosition[2];
-
-                vertexIndex( count, 0 ) = vIndex[0]; 
-                vertexIndex( count, 1 ) = vIndex[1]; 
-                vertexIndex( count, 2 ) = vIndex[2]; 
-
-
-                VECTOR vPressure;
-                solver.vertexPressure( vIndex, vPressure );
-
-                (*vertexPressure)( count, 0 ) = vPressure[0];
-
-                count ++; 
-
-            }
 
     printf("writing solver settings\n"); 
     {
@@ -388,9 +341,9 @@ int main( int argc, char **argv )
 
         of << std::setprecision(16) << std::fixed;
         of << "[sourceposition] = " << sourcePosition << endl;
-        of << "[fieldBBox.minBound] = " << fieldBBox.minBound() << endl;
-        of << "[fieldBBox.maxBound] = " << fieldBBox.maxBound() << endl;
-        of << "[solver.fieldDivisions] = " << maxDrawBound.transpose() << endl;
+        of << "[fieldBBox.minBound] = " << minBound << endl;
+        of << "[fieldBBox.maxBound] = " << maxBound << endl;
+        of << "[solver.fieldDivisions] = " << cellCount.transpose() << endl;
         of << SDUMP( cellSize ) << endl;
         of << SDUMP( CFL ) << endl;
         of << SDUMP( timeStep ) << endl;
@@ -405,33 +358,6 @@ int main( int argc, char **argv )
         of.close();
 
     }
-
-
-    printf("writing pressure vertex position\n");
-    {
-
-        char buffer[100]; 
-        snprintf( buffer,100,pattern,"vertex_position.dat"); 
-        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
-    }
-
-    printf("writing pressure vertex index\n");
-    {
-
-        char buffer[100]; 
-        snprintf( buffer,100,pattern,"vertex_index.dat"); 
-        IO::writeMatrixXi( vertexIndex, buffer, IO::BINARY );
-    }
-
-    printf("writing initial pressure\n");
-    {
-        char buf[100]; 
-        char pressure_buf[100]; 
-        snprintf( pressure_buf, 100, "pressure.dat" ); 
-        snprintf( buf, 100, pattern, pressure_buf );
-        IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
-    }
-
 
     /// time step system
     bool continueStepping = true; 
@@ -459,22 +385,20 @@ int main( int argc, char **argv )
 
                     }
 
-
             printf( "writing pressure %u\n", nSteps/parms._subSteps );
             {
                 char buf[100]; 
                 char pressure_buf[100]; 
+
                 snprintf( pressure_buf, 100, "pressure_%05u.dat", nSteps/parms._subSteps ); 
                 snprintf( buf, 100, pattern, pressure_buf );
-
                 IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
-                VTKConverter::VTKStructureGridWithScalarFromEigen(*cellCenteredPosition,*vertexPressure,std::string(buf)+".vtk","pressure",VTKConverter::BINARY,cellCount); 
 
-                //UniformGrid::WriteVTKCellCenteredFromEigen(vertexPressure, minBound, maxBound, cellCount, std::string(buf), "test_data"); 
+                snprintf( pressure_buf, 100, "pressure_%05u.vtk", nSteps/parms._subSteps ); 
+                snprintf( buf, 100, pattern, pressure_buf ); 
+                VTKConverter::VTKStructureGridWithScalarFromEigen(*cellCenteredPosition,*vertexPressure,std::string(buf)+".vtk","pressure",VTKConverter::BINARY,cellCount); 
             }
         }
-
-
         nSteps ++; 
 
 
