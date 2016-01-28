@@ -4,10 +4,10 @@
 #include <unistd.h>
 
 #include "OpenfoamMesh.h" 
-#include "IO/IO.h" 
+#include "utils/IO/IO.h" 
 
 #include "Grid.h" 
-#include "STL_Utils/STL_Wrapper.h" 
+#include "utils/STL_Wrapper.h" 
 
 #include "vtkConverter/vtkConverter.h"
 

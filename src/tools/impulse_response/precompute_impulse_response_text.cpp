@@ -11,7 +11,7 @@
 #include <config.h>
 #include <TYPES.h>
 
-#include "IO/IO.h"
+#include "utils/IO/IO.h"
 #include <limits>
 
 #include <distancefield/closestPointField.h>

@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense> 
 
-#include "IO/IO.h" 
+#include "utils/IO/IO.h" 
 #include "TetrahedronMesh.h" 
 #include "Grid.h" 
 

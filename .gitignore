@@ -1,12 +1,3 @@
-work/head_test/data_head
-work/head_test/data_head2
-work/sphericalhead_test
-work/impulse-response/geometry
-gcc-build
-gcc-build2
-gcc-build3
-gcc-build4
-
 temp* 
 *data*
 
@@ -30,3 +21,9 @@ work/impulse-response/integral_freespace
 work/impulse-response/test2
 work/impulse-response/test3
 work/impulse-response/test*
+
+work/head_test/data_head
+work/head_test/data_head2
+work/sphericalhead_test
+work/impulse-response/geometry
+

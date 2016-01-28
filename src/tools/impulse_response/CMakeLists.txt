@@ -45,7 +45,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI)
             include(${QT_USE_FILE})
         endif(USE_QT5)
 
-        include_directories("/home/jui-hsien/code/turbsound_postfluid/tools")
+        # include_directories("/home/jui-hsien/code/turbsound_postfluid/tools")
 
         set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
