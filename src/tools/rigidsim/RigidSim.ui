@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RigidSim</class>
+ <widget class="QMainWindow" name="RigidSim">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>889</width>
+    <height>702</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Rigid Simulator</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="images.qrc">
+    <normaloff>:/images/fracture.png</normaloff>:/images/fracture.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="RigidCanvas" name="canvas" native="true"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>889</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Demo">
+    <property name="title">
+     <string>&amp;Demo</string>
+    </property>
+    <addaction name="actionDropObjects"/>
+    <addaction name="actionDropObjsWithFixed"/>
+    <addaction name="actionShakingPiggy"/>
+    <addaction name="separator"/>
+    <addaction name="actionStart"/>
+    <addaction name="actionStep"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menu_Demo"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionLoadBody">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/images/load_frac.png</normaloff>:/images/load_frac.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Rigid Body</string>
+   </property>
+  </action>
+  <action name="actionExportMatlab">
+   <property name="text">
+    <string>&amp;Export Matlab Data</string>
+   </property>
+  </action>
+  <action name="actionExportAbaqus">
+   <property name="text">
+    <string>&amp;Export Abaqus Mesh</string>
+   </property>
+  </action>
+  <action name="actionModeShapes">
+   <property name="text">
+    <string>Mode Shapes</string>
+   </property>
+  </action>
+  <action name="actionLoadModes">
+   <property name="text">
+    <string>Load Modes</string>
+   </property>
+  </action>
+  <action name="actionExportMatrices">
+   <property name="text">
+    <string>Export Matrices</string>
+   </property>
+  </action>
+  <action name="actionExportSurfaceMesh">
+   <property name="text">
+    <string>Export Surface Mesh</string>
+   </property>
+  </action>
+  <action name="actionExportImpulses">
+   <property name="text">
+    <string>Export Impulses</string>
+   </property>
+  </action>
+  <action name="actionManual_Adjusting">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Manual Adjusting</string>
+   </property>
+  </action>
+  <action name="action_Load">
+   <property name="text">
+    <string>&amp;Load</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>&amp;Exit</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>&amp;Start</string>
+   </property>
+   <property name="shortcut">
+    <string>F8</string>
+   </property>
+  </action>
+  <action name="actionRecord_Positions">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Record Positions</string>
+   </property>
+  </action>
+  <action name="actionShakingPiggy">
+   <property name="text">
+    <string>Shaking piggy bank</string>
+   </property>
+  </action>
+  <action name="actionStep">
+   <property name="text">
+    <string>Step</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionDrop_Multiple_Objs">
+   <property name="text">
+    <string>Drop Multiple Objs</string>
+   </property>
+  </action>
+  <action name="actionDropObjects">
+   <property name="text">
+    <string>Drop objects</string>
+   </property>
+  </action>
+  <action name="actionDropObjsWithFixed">
+   <property name="text">
+    <string>Drop objs with fixed </string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RigidCanvas</class>
+   <extends></extends>
+   <header>tools/rigidsim/RigidCanvas.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

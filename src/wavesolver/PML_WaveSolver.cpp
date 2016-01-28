@@ -4,9 +4,13 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "PML_WaveSolver.h"
+#include "utils/Evaluator.h"
+
+#include "math.h"
 
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
+
 
 //////////////////////////////////////////////////////////////////////
 // Constructor
@@ -24,19 +28,24 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const Vector3Array *listeningPositions,
                                 const char *outputFile,
                                 WriteCallback *callback,
+                                WriteCallbackIndividual *callbacki,
                                 int subSteps, int N,
                                 REAL endTime )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ),
+    _endTime( endTime ),
+    _N( N ),
+    _cellSize(cellSize),
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
-    _subSteps( subSteps ),
-    _N( N ),
-    _endTime( endTime ),
+    _callbackInd( callbacki ),
     _zSlice( -1 )
 {
+    cout << "CPU PML wavesolver starting (config 1)... " << endl;
     _pFull.resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), N );
@@ -53,7 +62,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -63,6 +72,62 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
 
     _listenerOutput.resizeAndWipe( _N );
 }
+
+PML_WaveSolver::PML_WaveSolver( REAL timeStep,
+                                const BoundingBox &bbox,
+                                REAL cellSize,
+                                const TriMesh &mesh,
+                                const DistanceField &distanceField,
+                                WaveSolverPointData *rawData,
+                                REAL distanceTolerance,
+                                bool useBoundary,
+                                const Vector3Array *listeningPositions,
+                                const char *outputFile,
+                                WriteCallback *callback,
+                                int subSteps, int N,
+                                REAL endTime )
+: 
+    _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
+    _subSteps( subSteps ),
+    _endTime( endTime ),
+    _N( N ),
+    _cellSize(cellSize),
+    _listeningPositions( listeningPositions ),
+    _outputFile( outputFile ),
+    _callback( callback ),
+    _rawData( rawData ),
+    _zSlice( -1 )
+{
+    cout << "CPU PML wavesolver starting (config 1)... " << endl;
+    _pFull.resizeAndWipe( _grid.numPressureCells(), N );
+    _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), N );
+    _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), N );
+    _p[ 2 ].resizeAndWipe( _grid.numPressureCells(), N );
+    _v[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
+    _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
+    _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
+
+    _grid.initFieldRasterized( useBoundary );
+
+    cout << SDUMP( cellSize ) << endl;
+
+    if ( _listeningPositions )
+    {
+        _waveOutput.resize( _listeningPositions->size() );
+
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
+        {
+            _waveOutput[ i ].resize( _N );
+        }
+
+        cout << "Setting " << _waveOutput.size() << " listening positions" << endl;
+    }
+
+    _listenerOutput.resizeAndWipe( _N );
+}
+
 
 //////////////////////////////////////////////////////////////////////
 // Provide the size of the domain (bbox), finite difference division
@@ -77,18 +142,22 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
         const Vector3Array *listeningPositions,
         const char *outputFile,
         WriteCallback *callback,
+        WriteCallbackIndividual *callbacki,
         int subSteps, int N,
         REAL endTime )
-: _timeStep( timeStep ),
-    _timeIndex( 0 ),
+: 
     _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
-    _listeningPositions( listeningPositions ),
-    _outputFile( outputFile ),
-    _callback( callback ),
+    _timeStep( timeStep ),
+    _timeIndex( 0 ),
     _subSteps( subSteps ),
     _endTime( endTime ),
+    _cellSize(cellSize),
+    _listeningPositions( listeningPositions ),
+    _outputFile( outputFile ),
+    _callbackInd( callbacki ),
     _zSlice( -1 )
 {
+    cout << "CPU PML wavesolver starting (config 2)... " << endl;
     _pFull.resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), N );
     _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), N );
@@ -105,7 +174,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     {
         _waveOutput.resize( _listeningPositions->size() );
 
-        for ( int i = 0; i < _waveOutput.size(); i++ )
+        for ( size_t i = 0; i < _waveOutput.size(); i++ )
         {
             _waveOutput[ i ].resize( _N );
         }
@@ -130,6 +199,109 @@ void PML_WaveSolver::setPMLBoundaryWidth( REAL width, REAL strength )
     _grid.setPMLBoundaryWidth( width, strength );
 }
 
+
+//////////////////////////////////////////////////////////////////////
+// set the harmonic source distribution for the wavesolver
+//////////////////////////////////////////////////////////////////////
+void PML_WaveSolver::setHarmonicSource( const HarmonicSourceEvaluator * hs_eval)
+{
+
+    // FIXME hack to initialize out the initial condition 
+    initSystem( 0.0 );
+
+
+    Timer<false> initHSTimer; 
+    initHSTimer.start(); 
+
+
+    if ( NULL == hs_eval ) 
+    {
+        cout << "** Warning ** harmonic source not set" << endl;
+        return; 
+    }
+
+    const int N_pcell = _grid.numPressureCells(); 
+
+
+    for (int ii=0; ii<N_pcell; ii++) 
+    {
+        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+        const REAL testValue = (*hs_eval)(0.0, fieldPosition); 
+
+        if ( ! std::isnan(testValue) )
+        {
+            hsIndex.push_back( ii );
+        }
+
+    }
+
+    int N_hsIndex = hsIndex.size();
+
+    if ( N_hsIndex < 1 ) 
+    {
+        cout << "** Warning ** no harmonic source has been set! Check the threshold " << endl; 
+    }
+    else 
+    {
+        printf("%u discrete harmonic sources have been identified.\n", N_hsIndex); 
+    }
+
+    initHSTimer.pause();
+    printf("Initialize harmonic source distribution takes %f s.\n", initHSTimer.elapsed()); 
+
+}
+
+
+void PML_WaveSolver::SetWaveSolverPointDataPosition() 
+{
+    std::cout << "Set wave solver point data position." << std::endl;
+
+    int NCell = _grid.numPressureCells(); 
+    Eigen::MatrixXd pos; 
+    pos.resize( NCell, 3 );
+    pos.setZero();
+
+    Eigen::MatrixXi cellIndex; 
+    cellIndex.resize( NCell, 3 ); 
+    cellIndex.setZero(); 
+
+    ScalarField pressureField = _grid.pressureField(); 
+
+    for (int ii=0; ii<NCell; ii++) 
+    {
+        Vector3d pressureFieldPosition = _grid.pressureFieldPosition( ii );
+
+        pos( ii, 0 ) = pressureFieldPosition.x; 
+        pos( ii, 1 ) = pressureFieldPosition.y; 
+        pos( ii, 2 ) = pressureFieldPosition.z; 
+
+        Tuple3i ind = pressureField.cellIndex( ii ); 
+
+        cellIndex( ii, 0 ) = ind.x; 
+        cellIndex( ii, 1 ) = ind.y; 
+        cellIndex( ii, 2 ) = ind.z; 
+
+
+    }
+    Tuple3i div = pressureField.cellDivisions(); 
+    Eigen::Vector3i cellDivisions; 
+    cellDivisions << div.x, div.y, div.z; 
+
+    _rawData->SetPosition( pos, cellIndex, cellDivisions );
+
+}
+
+
+void PML_WaveSolver::AddCurrentPressureToWaveSolverPointData()
+{
+    std::cout << "write data to wave solver point data buffer" << std::endl;
+
+    ScalarField pressureField = _grid.pressureField(); 
+
+}
+
+
 //////////////////////////////////////////////////////////////////////
 // Time steps the system in the given interval
 //////////////////////////////////////////////////////////////////////
@@ -152,22 +324,123 @@ void PML_WaveSolver::initSystem( REAL startTime )
     _v[ 0 ].clear();
     _v[ 1 ].clear();
     _v[ 2 ].clear();
+
+    _sourceEvaluator = nullptr; 
+}
+
+/* 
+ * Initialize the field data using non-trivial initial conditions. 
+ */
+void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval )
+{
+
+    if ( NULL == ic_eval ) 
+    {
+        cout << "** Warning ** Initial condition evaluator not set! " << endl; 
+        return; 
+    }
+
+    Timer<false> initTimer; 
+    initTimer.start();
+
+    _currentTime = startTime;
+    _timeIndex = 0;
+
+    initSystem( startTime ); 
+
+    const int N_pcell = _grid.numPressureCells(); 
+
+
+    /// determine which is the closest vertex to put 1
+    //int closestVertex = -1; 
+    //REAL smallestDistance = 9999999.0; 
+    //for (int ii=0; ii<N_pcell; ii++) 
+    //{
+
+    //    const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+    //    REAL distance = ( *ic_eval )( fieldPosition ); 
+
+    //    if ( distance < smallestDistance ) 
+    //    {
+    //        closestVertex = ii; 
+    //        smallestDistance = distance; 
+    //    }
+
+    //}
+    //_pFull( closestVertex, 0 ) = 1.0;
+
+
+
+
+
+    /// If want to use smooth Gaussian initialization
+    for (int ii=0; ii<N_pcell; ii++) 
+    {
+        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
+
+        _pFull(ii, 0) = ( *ic_eval )( fieldPosition ); 
+
+    }
+
+    //SetWaveSolverPointDataPosition();
+
+    initTimer.pause(); 
+    printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
+
+
 }
 
 //////////////////////////////////////////////////////////////////////
 // Takes a single time step
 //////////////////////////////////////////////////////////////////////
+#include <omp.h>
+
 bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
 {
     _stepTimer.start();
+    double start = omp_get_wtime();
     stepLeapfrog( bcEvaluator );
 
     _timeIndex += 1;
     _stepTimer.pause();
 
     //printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
+    printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    REAL t = (REAL)_timeIndex * _timeStep; 
+    cout << SDUMP( t ) << endl; 
+    _stepTimer.reset();
 #if 0
-    printf( "Time step %d took %f ms\n", _timeIndex, _stepTimer.getTotalSecs() );
+    printf( "Algebra took %f ms\n", _algebraTimer.getTotalSecs() );
+    printf( "Memory operations took %f ms\n", _memoryTimer.getTotalSecs() );
+    printf( "Writing took %f ms\n", _writeTimer.getTotalSecs() );
+    printf( "Gradient computation took %f ms\n", _gradientTimer.getTotalSecs() );
+    printf( "Divergence computation took %f ms\n",
+            _divergenceTimer.getTotalSecs() );
+#endif
+
+    if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
+    {
+        return false;
+    }
+
+    return true;
+}
+
+// Overload the step system function to handle sources
+bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval )
+{
+    _stepTimer.start();
+    double start = omp_get_wtime();
+    stepLeapfrog( bcEvaluator, hsEval );
+
+    _timeIndex += 1;
+    _stepTimer.pause();
+
+    //printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
+    printf( "Time step %d took %f s with sources\n", _timeIndex, omp_get_wtime()-start);
+    _stepTimer.reset();
+#if 0
     printf( "Algebra took %f ms\n", _algebraTimer.getTotalSecs() );
     printf( "Memory operations took %f ms\n", _memoryTimer.getTotalSecs() );
     printf( "Writing took %f ms\n", _writeTimer.getTotalSecs() );
@@ -213,11 +486,54 @@ void PML_WaveSolver::writeWaveOutput() const
     ( *_callback )( _waveOutput );
 }
 
+REAL PML_WaveSolver::GetMaxCFL()
+{
+
+    const int N_vcellx = _grid.numVelocityCellsX(); 
+    const int N_vcelly = _grid.numVelocityCellsY(); 
+    const int N_vcellz = _grid.numVelocityCellsZ(); 
+
+    if ( N_vcellx != N_vcelly || N_vcellx != N_vcellz ) 
+    {
+        cout << "** Warning ** number of velocity cells not equal" << endl; 
+        return std::numeric_limits<REAL>::quiet_NaN(); 
+    }
+
+    const int N = N_vcellx; 
+
+    REAL vmax = -1;  // should be positive
+
+    for (int ii=0; ii<N; ii++) 
+    {
+        REAL vx, vy, vz, v; 
+
+        vx = _v[0](ii, 0); 
+        vy = _v[1](ii, 0); 
+        vz = _v[2](ii, 0); 
+        
+        v = sqrt( vx*vx + vy*vy + vz*vz ); 
+
+        vmax = max(v, vmax); 
+
+    }
+
+    //cout << "vmax = " << vmax << endl;
+
+    REAL CFL = vmax * _timeStep / _cellSize; 
+    //cout << SDUMP(CFL) << endl;
+
+
+    return CFL; 
+    
+
+}
+
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 {
-    const MATRIX              *velocities[] = { &_v[ 0 ], &_v[ 1 ], &_v[ 2 ] };
+    //const MATRIX              *velocities[] = { &_v[ 0 ], &_v[ 1 ], &_v[ 2 ] };
 
 #if 0
     printf( "p is %d x %d\n", _p.rows(), _p.cols() );
@@ -227,6 +543,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
 
     // Update velocity in each direction
+    double start = omp_get_wtime();
     _gradientTimer.start();
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 0 ], 0,
                               _currentTime, _timeStep );
@@ -235,7 +552,6 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2,
                               _currentTime, _timeStep );
     _gradientTimer.pause();
-
 #if 0
     printf( "Max v_x: %f\n", _v[ 0 ].frobeniusNorm() );
     printf( "Max v_y: %f\n", _v[ 1 ].frobeniusNorm() );
@@ -243,11 +559,13 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
 
     // Use the new velocity to update pressure
+    start = omp_get_wtime();
     _divergenceTimer.start();
-    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, WAVE_SPEED );
-    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED );
-    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED );
+    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
+    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
+    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
     _divergenceTimer.pause();
+    printf( "pressure %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 
     _algebraTimer.start();
 #if 0
@@ -265,16 +583,42 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
     _currentTime += _timeStep;
 
+
+    //REAL MaxCFL = GetMaxCFL();
+    //cout << SDUMP( MaxCFL ) << endl; 
+    
+
 #if 0
     printf( "Max pressure: %f\n", _pFull.frobeniusNorm() );
 #endif
 
     _writeTimer.start();
+    start = omp_get_wtime();
     if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
     {
-        REAL                     listenerOutput;
+        //REAL                     listenerOutput;
         const ScalarField       &field = _grid.pressureField();
 
+        // MY IMPLEMENTATION //
+        if ( _callbackInd )
+        {
+            vector<REAL> MyWaveOutput; 
+            MyWaveOutput.resize( _listeningPositions->size() ); 
+            for ( size_t ii=0; ii<_listeningPositions->size(); ii++) 
+            {
+                field.interpolateVectorField( _listeningPositions->at( ii ), 
+                                              _pFull, _listenerOutput ); 
+                  
+                MyWaveOutput[ii] = _listenerOutput( 0 ); 
+            }
+
+            //REAL nowTime = (REAL)_timeIndex * _timeStep; 
+            (*_callbackInd)( MyWaveOutput, _timeStep, _timeIndex );
+
+        }
+        // END MY IMPLEMENTATION //
+
+        /* 
         for ( int i = 0; i < _listeningPositions->size(); i++ )
         {
             field.interpolateVectorField( _listeningPositions->at( i ),
@@ -300,9 +644,11 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
                 }
             }
         }
+        */
     }
     _writeTimer.pause();
 
+    printf( "Writing %d took %f s\n", _timeIndex, omp_get_wtime()-start);
     if ( _zSlice >= 0 )
     {
         char                     buf[ 1024 ];
@@ -313,5 +659,40 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
         _sliceData.write( buf );
     }
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEvaluator )
+{
+
+    Timer<false> evalSourceTimer; 
+    evalSourceTimer.start(); 
+
+    if ( NULL == hsEvaluator ) 
+    {
+        cout << "** Warning ** Harmonic source evaluator not set! " << endl; 
+    }
+    else 
+    {
+
+        for ( unsigned int ii=0; ii<hsIndex.size(); ii++ )
+        {
+
+            const Vector3d fieldPosition = _grid.pressureFieldPosition( hsIndex[ii] ); 
+            const REAL pSource = (*hsEvaluator)( _currentTime, fieldPosition );
+            _pFull( hsIndex[ii], 0 ) = pSource; 
+
+            cout << "source " << ii << " : " << SDUMP( pSource ) << endl;
+
+        }
+
+    }
+
+    evalSourceTimer.pause(); 
+    printf("Evaluating harmonic source takes %f s.\n", evalSourceTimer.elapsed()); 
+
+    stepLeapfrog( bcEvaluator ); 
+
 }
 

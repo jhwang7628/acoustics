@@ -185,7 +185,7 @@ bool ImpulseIO::ReadBinaryImpulses( const char *filename, ImpulseSet &impulses )
     char                     binaryFilename[ 1024 ];
     FILE                    *f;
 
-    size_t                   bytes_read;
+    //size_t                   bytes_read;
 
     sprintf( binaryFilename, "%s.dat", filename );
 
@@ -198,8 +198,8 @@ bool ImpulseIO::ReadBinaryImpulses( const char *filename, ImpulseSet &impulses )
     readVector( f, impulses._objectImpulses );
     readVector( f, impulses._planeImpulses );
 
-    bytes_read = fread( (void*)&impulses._maxObjectImpulse, sizeof(REAL), 1, f );
-    bytes_read = fread( (void*)&impulses._maxPlaneImpulse, sizeof(REAL), 1, f );
+    fread( (void*)&impulses._maxObjectImpulse, sizeof(REAL), 1, f );
+    fread( (void*)&impulses._maxPlaneImpulse, sizeof(REAL), 1, f );
 
     fclose( f );
 
@@ -214,7 +214,7 @@ void ImpulseIO::WriteBinaryImpulses( const char *filename, const ImpulseSet &imp
     char                     binaryFilename[ 1024 ];
     FILE                    *f;
 
-    size_t                   bytes_written;
+    //size_t                   bytes_written;
 
     sprintf( binaryFilename, "%s.dat", filename );
 
@@ -227,8 +227,8 @@ void ImpulseIO::WriteBinaryImpulses( const char *filename, const ImpulseSet &imp
     writeVector( f, impulses._objectImpulses );
     writeVector( f, impulses._planeImpulses );
 
-    bytes_written = fwrite( (const void*)&impulses._maxObjectImpulse, sizeof(REAL), 1, f );
-    bytes_written = fwrite( (const void*)&impulses._maxPlaneImpulse, sizeof(REAL), 1, f );
+    fwrite( (const void*)&impulses._maxObjectImpulse, sizeof(REAL), 1, f );
+    fwrite( (const void*)&impulses._maxPlaneImpulse, sizeof(REAL), 1, f );
 
     fclose( f );
 }

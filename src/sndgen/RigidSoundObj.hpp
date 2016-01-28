@@ -228,7 +228,7 @@ template<class TModalAnalysis,
     const vector<double>& omegad = mp_modal->omegad();
     const vector<double>& xi     = mp_modal->xi();
 
-    for(int mid = 0;mid < NUM_MODES;++ mid)
+    for(int mid = 0;mid < mp_modal->num_modes();++ mid)
     {
         if ( omega[mid] < 125.6637 || omega[mid] > CUTTING_OMEGA ) continue;
         printf("freq[%d] = %lf\n", mid, omega[mid]*0.5*M_1_PI);
@@ -250,16 +250,21 @@ template<class TModalAnalysis,
                c2 = - M_SQR(eps),
                c3 = 2*(eps*cos(theta+gamma) + c2*cos(2*theta+gamma))
                    / (3*omega[mid]*omegad[mid]);
+        printf("%d %lf %lf %lf\n", mid, c1, c2, c3);
+        printf("%lf %lf %lf\n", theta, eps, gamma);
 
         buf.begin_sound_gen(TSBEGIN);
         double ticktime;
         for(int tick = 0;(ticktime = TSBEGIN + tick*H) < TSEND;++ tick)
         {
             //double u = c1*lastm1 + c2*lastm2 + c3*mp_imp->get_impulse(ticktime);
+            double force = mp_hertzImpulseSeries->getForce( ticktime );
             double u = c1*lastm1 + c2*lastm2
-                + c3*mp_hertzImpulseSeries->getForce(ticktime);
-            if ( !buf.add_sound_sample(mp_transfer->transfer_norm(ticktime)*u) )
+                + c3*force;
+            if ( !buf.add_sound_sample(u*mp_transfer->transfer_norm(ticktime)) )
                 break;
+            // if ( !buf.add_sound_sample(force) )
+            //     break;
             lastm2 = lastm1;
             lastm1 = u;
         }
@@ -402,7 +407,7 @@ template<class TModalAnalysis,
             if ( useDelay ) {
                 if ( !buf.add_sound_sample(
                             // Sample value
-                            mp_transfer->transfer_norm( ticktime ) * displacement,
+                            displacement*mp_transfer->transfer_norm(ticktime),
                             // Sample time
                             ticktime + delay ) )
                 {
@@ -412,7 +417,7 @@ template<class TModalAnalysis,
             }
             else {
                 if ( !buf.add_sound_sample(
-                            mp_transfer->transfer_norm( ticktime ) * displacement ) )
+                            displacement*mp_transfer->transfer_norm(ticktime) ) )
                     //mp_transfer->transfer_norm( ticktime ) * velocity / f ) )
                 {
                     printf( "Breaking at time %f\n", ticktime );

@@ -165,7 +165,7 @@ RadialField::octantInterpolationDirection( const Point3d &x ) const
     REAL                       thetaDiv;
     REAL                       phiDiv;
 
-    int                        fieldDOFS;
+    //int                        fieldDOFS;
 
     int                        azimuthResolution;
 
@@ -174,7 +174,7 @@ RadialField::octantInterpolationDirection( const Point3d &x ) const
     thetaDiv = M_PI / 2.0 / (REAL)( _fieldResolution );
     phiDiv = M_PI / 2.0 / (REAL)( azimuthResolution - 1 );
 
-    fieldDOFS = _fieldResolution * ( azimuthResolution ) + 1;
+    //fieldDOFS = _fieldResolution * ( azimuthResolution ) + 1;
 
     if ( theta < 0 )
     {
@@ -528,10 +528,10 @@ bool CompactRadialApproximation::addSinePulse( Point3d listeningPosition,
     REAL                       fieldTimeScale = _fieldTimeScale;
     REAL                       fieldSupport = _fieldSupport;
 
-    REAL                       totalScaling;
+    //REAL                       totalScaling;
 
     REAL                       sampleScale;
-    REAL                       rPower;
+    //REAL                       rPower;
 
     InterpolationDirection     direction;
 

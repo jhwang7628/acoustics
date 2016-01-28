@@ -117,10 +117,10 @@ class DistanceField
         inline int packedVoxelIndex(int i, int j, int k);
 
         // returns indices of voxel containing pos
-        inline void voxelIndices(Vec3d pos, int * i, int * j, int * k);
+        inline void voxelIndices(Vec3d pos, int * i, int * j, int * k) const;
 
         // tells whether the pos is inside box or not
-        inline bool insideBox(Vec3d pos);
+        inline bool insideBox(Vec3d pos) const;
 
         // returns a 32-bit unique voxel index, for voxel constaining pos
         inline int packedVoxelIndex(Vec3d pos);
@@ -265,14 +265,14 @@ inline void DistanceField::setInvGridXYZ()
 }
 
 // returns indices of voxel containing pos
-inline void DistanceField::voxelIndices(Vec3d pos, int * i, int * j, int * k)
+inline void DistanceField::voxelIndices(Vec3d pos, int * i, int * j, int * k) const
 {
     *i = (int)((pos[0] - bmin_[0]) * invGridX);
     *j = (int)((pos[1] - bmin_[1]) * invGridY);
     *k = (int)((pos[2] - bmin_[2]) * invGridZ);
 }
 
-inline bool DistanceField::insideBox(Vec3d pos)
+inline bool DistanceField::insideBox(Vec3d pos) const
 {
     int i = (int)((pos[0] - bmin_[0]) * invGridX);
     int j = (int)((pos[1] - bmin_[1]) * invGridY);

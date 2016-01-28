@@ -79,9 +79,19 @@ static std::vector< std::basic_string<T> >
 tokenize(const std::basic_string<T> &s, const std::basic_string<T> &delim = " \t\n")
 {
     std::vector<std::basic_string<T> > ret(0);
-    for(int b,e=0;;ret.push_back(s.substr(b,e-b)))
-        if ( (b=s.find_first_not_of(delim,e))==(e=s.find_first_of(delim,b)) )
-            return ret;
+    int b=0,e=0;
+    while(true)
+    {
+        b=s.find_first_not_of(delim,e); 
+        e=s.find_first_of(delim,b); 
+        if (b==e)
+            return ret; 
+        ret.push_back(s.substr(b,e-b)); 
+    }
+    //int e=0;
+    //for(int b,e=0;;ret.push_back(s.substr(b,e-b)))
+    //    if ( (b=s.find_first_not_of(delim,e))==(e=s.find_first_of(delim,b)) )
+    //        return ret;
 }
 
 template <class T>

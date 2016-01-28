@@ -167,7 +167,7 @@ void SPARSE_MATRIX::writeToBinary(string filename)
         }
         // Write values
         for( i = _matrix.begin(); i != _matrix.end(); ++i ) {
-            pair<int,int> index = i->first;
+            //pair<int,int> index = i->first;
             double valueBin = (double)i->second;
             f.write( (char*)&valueBin, sizeof(double) );
         }
@@ -311,11 +311,11 @@ VECTOR operator*(const SPARSE_MATRIX& A, const VECTOR& x)
 //////////////////////////////////////////////////////////////////////
 VECTOR operator*(const SPARSE_MATRIX::SparseColumnMatrix &A, const VECTOR &x)
 {
-    assert(A._ncol == x.size());
+    assert((int)A._ncol == (int)x.size());
 
     VECTOR y(A._nrow);
 
-    for ( int col_idx = 0; col_idx < A._ncol; col_idx++ )
+    for ( size_t col_idx = 0; col_idx < A._ncol; col_idx++ )
     {
         for ( int row_ptr = A._p[ col_idx ]; row_ptr < A._p[ col_idx + 1 ];
                 row_ptr++ )
@@ -531,7 +531,7 @@ REAL SPARSE_MATRIX::sum() const
     map<pair<int,int>, REAL>::const_iterator i;
     // Write values
     for( i = _matrix.begin(); i != _matrix.end(); ++i ) {
-        pair<int,int> index = i->first;
+        //pair<int,int> index = i->first;
         total += (REAL)i->second;
     }
     return total;
@@ -667,7 +667,7 @@ REAL SPARSE_MATRIX::normFrob()
 //////////////////////////////////////////////////////////////////////
 void SPARSE_MATRIX::denseMultiply( MATRIX &A, MATRIX &out )
 {
-    const int n = A.rows();
+    //const int n = A.rows();
     const int m = A.cols();
 
     TRACE_ASSERT( _cols == n, "Matrix dimensions do not match (%d, %d)", _cols, n );
@@ -741,7 +741,7 @@ void SPARSE_MATRIX::constructSparseColumnCopy( SparseColumnMatrix &M ) const
     }
 
     // Construct the final p
-    for ( int i = 0; i < M._ncol; i++ )
+    for ( size_t i = 0; i < M._ncol; i++ )
     {
         M._p[ i + 1 ] += M._p[ i ];
     }
@@ -794,7 +794,7 @@ int SPARSE_MATRIX::matrixMultiply( const SparseColumnMatrix &A,
         }
     }
 
-    for ( int col_idx = 0; col_idx < A._ncol; col_idx++ ) {
+    for ( size_t col_idx = 0; col_idx < A._ncol; col_idx++ ) {
         for ( int row_idx = A._p[ col_idx ]; row_idx < A._p[ col_idx + 1 ];
                 row_idx++ )
         {
@@ -1287,7 +1287,7 @@ void SPARSE_MATRIX::subMatrixLeftMultiply( const SparseColumnMatrix &A,
 void SPARSE_MATRIX::convertToGraphLaplacian( SparseColumnMatrix &A,
                                              bool normalize )
 {
-    for ( int col = 0; col < A._ncol; col++ ) {
+    for ( int col = 0; col < (int)A._ncol; col++ ) {
         for ( int row_ptr = A._p[ col ]; row_ptr < A._p[ col + 1 ]; row_ptr++ ) {
             if ( A._i[ row_ptr ] == col ) {
                 // Set diagonal elements to node degree
@@ -1317,7 +1317,7 @@ void SPARSE_MATRIX::projectInplace( MATRIX& basis, MATRIX& workMat, MATRIX& out 
 {
     workMat.clear();
     const int r = basis.cols();
-    const int n = basis.rows();
+    //const int n = basis.rows();
 
     map<pair<int,int>, REAL>::const_iterator entryIt;
     for( entryIt = _matrix.begin(); entryIt != _matrix.end(); ++entryIt ) {
@@ -1467,7 +1467,7 @@ void SPARSE_MATRIX::writeToBinary( const SPARSE_MATRIX::SparseColumnMatrix &A,
         fwrite( (void *)A._i, sizeof( int ), A._nzmax, file );
 
         // Write column indices
-        for ( int col_idx = 0; col_idx < A._ncol; col_idx++ ) {
+        for ( size_t col_idx = 0; col_idx < A._ncol; col_idx++ ) {
             int numRows = A._p[ col_idx + 1 ] - A._p[ col_idx ];
 
             for ( int row_idx = 0; row_idx < numRows; row_idx++ ) {
@@ -1498,7 +1498,6 @@ void SPARSE_MATRIX::readFromBinary( SPARSE_MATRIX::SparseColumnMatrix &A,
                                     const char *filename )
 {
     FILE* file;
-    size_t bytes_read;
     file = fopen( filename, "rb" );
 
     if( file == NULL )
@@ -1508,9 +1507,9 @@ void SPARSE_MATRIX::readFromBinary( SPARSE_MATRIX::SparseColumnMatrix &A,
     }
 
     // Read entry count, rows and columns
-    bytes_read = fread( (void *)&( A._nzmax ), sizeof( size_t ), 1, file );
-    bytes_read = fread( (void *)&( A._nrow ), sizeof( size_t ), 1, file );
-    bytes_read = fread( (void *)&( A._ncol ), sizeof( size_t ), 1, file );
+    fread( (void *)&( A._nzmax ), sizeof( size_t ), 1, file );
+    fread( (void *)&( A._nrow ), sizeof( size_t ), 1, file );
+    fread( (void *)&( A._ncol ), sizeof( size_t ), 1, file );
 
     // Allocate
     if ( A._p )
@@ -1536,9 +1535,9 @@ void SPARSE_MATRIX::readFromBinary( SPARSE_MATRIX::SparseColumnMatrix &A,
     A._x = (REAL *)malloc( A._nzmax * sizeof( REAL ) );
 
     // Read columns, rows and data
-    bytes_read = fread( (void *)A._p, sizeof( int ), A._ncol + 1, file );
-    bytes_read = fread( (void *)A._i, sizeof( int ), A._nzmax, file );
-    bytes_read = fread( (void *)A._x, sizeof( REAL ), A._nzmax, file );
+    fread( (void *)A._p, sizeof( int ), A._ncol + 1, file );
+    fread( (void *)A._i, sizeof( int ), A._nzmax, file );
+    fread( (void *)A._x, sizeof( REAL ), A._nzmax, file );
 
     cout << SDUMP( A._nzmax ) << endl;
     cout << SDUMP( A._nrow ) << endl;
@@ -1569,7 +1568,7 @@ long int SPARSE_MATRIX::computeFillIn(
 
     long int                   nonZeros = 0;
 
-    for ( int col_idx = 0; col_idx < A._ncol; col_idx++ )
+    for ( size_t col_idx = 0; col_idx < A._ncol; col_idx++ )
     {
         set<int>                &columnSet = rowSets.at( col_idx );
 
@@ -1577,7 +1576,7 @@ long int SPARSE_MATRIX::computeFillIn(
         if ( col_idx % 100 == 0 )
         {
 #endif
-            printf( "Column %d of %d\n", col_idx + 1, (int)A._ncol );
+            printf( "Column %lu of %d\n", col_idx + 1, (int)A._ncol );
 #if 0
         }
 #endif

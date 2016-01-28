@@ -57,19 +57,24 @@ Parser::~Parser()
     delete document;
 }
 
+TriangleMesh<REAL> *Parser::getMesh()
+{
+    throw std::runtime_error("**ERROR** need to pass in root tag for xml parsing. for example: impact");
+    return nullptr;
+}
 //////////////////////////////////////////////////////////////////////
 // Construct a triangle mesh from data stored in the XML document
 //////////////////////////////////////////////////////////////////////
-TriangleMesh<REAL> *Parser::getMesh()
+TriangleMesh<REAL> *Parser::getMesh(const char * rootTag)
 {
     const char              *fileName;
     REAL                     scale = 1.0;
     TriangleMesh<REAL>      *mesh = NULL;
 
-    TiXmlElement *root = document->FirstChildElement("impact");
+    TiXmlElement *root = document->FirstChildElement(rootTag);
     if (!root)
     {
-        cerr << "No impact tag in input file" << endl;
+        cerr << "No " << rootTag << " tag in input file" << endl;
         return NULL;
     }
 
@@ -123,6 +128,8 @@ std::string Parser::getMeshFileName()
     const char            *fileName;
 
     TiXmlElement *root = document->FirstChildElement("impact");
+    if (!root)
+        root = document->FirstChildElement("impulse_response");
     if (!root)
     {
         cerr << "No impact tag in input file" << endl;
@@ -308,6 +315,108 @@ Parser::SphericalImpactParms Parser::getSphereImpactParms()
 }
 #endif
 
+Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
+{
+    ImpulseResponseParms       parms;
+
+    parms._c = queryOptionalReal( "impulse_response/solver", "c", "343.0" );
+    parms._density = queryOptionalReal( "impulse_response/solver", "density", "1.22521" );
+
+    // Get SDF parameters
+    parms._sdfResolution = queryRequiredInt( "impulse_response/solver", "fieldresolution" );
+    parms._sdfFilePrefix = queryRequiredAttr( "impulse_response/solver", "distancefield" );
+
+    // Get grid parameters
+    parms._gridResolution = queryRequiredInt( "impulse_response/solver", "gridresolution" );
+    parms._gridScale = queryRequiredReal( "impulse_response/solver", "gridscale" );
+
+    parms._fixedCellSize = ( queryOptionalInt( "impulse_response/solver", "fixedcellsize", "0" ) != 0 );
+    if ( parms._fixedCellSize )
+        parms._cellSize = queryRequiredReal( "impulse_response/solver", "cellsize" );
+
+    parms._timeStepFrequency = queryRequiredInt( "impulse_response/solver", "timestepfrequency" );
+    parms._subSteps = queryRequiredInt( "impulse_response/solver", "substeps" );
+
+    parms._stopTime = queryRequiredReal( "impulse_response/solver", "stop_time" ); 
+
+    parms._outputPattern = queryRequiredAttr( "impulse_response/solver", "output_pattern" );
+
+    parms._listeningFile = queryOptionalAttr( "impulse_response/solver", "listening_file", "none" );
+
+    parms._sourcePosition_x = queryRequiredReal( "impulse_response/solver", "source_position_x" ); 
+    parms._sourcePosition_y = queryRequiredReal( "impulse_response/solver", "source_position_y" ); 
+    parms._sourcePosition_z = queryRequiredReal( "impulse_response/solver", "source_position_z" ); 
+
+    return parms;
+}
+
+Parser::AcousticTransferParms Parser::getAcousticTransferParms()
+{
+    AcousticTransferParms      transferParams;
+    string                     modeData;
+    string                     outputFile;
+    string                     multiTermOutputFile;
+
+    transferParams._c = queryOptionalReal( "impact/acoustic_transfer",
+            "c", "343.0" );
+    transferParams._density = queryOptionalReal( "impact/acoustic_transfer",
+            "density", "1.22521" );
+
+    // Get SDF parameters
+    transferParams._sdfResolution = queryRequiredInt( "impact/acoustic_transfer",
+            "fieldresolution" );
+
+    transferParams._sdfFilePrefix = queryRequiredAttr( "impact/acoustic_transfer",
+            "distancefield" );
+
+    // Get grid parameters
+    transferParams._gridResolution = queryRequiredInt( "impact/acoustic_transfer",
+            "gridresolution" );
+
+    transferParams._gridScale = queryRequiredReal( "impact/acoustic_transfer",
+            "gridscale" );
+
+    transferParams._fixedCellSize
+        = ( queryOptionalInt( "impact/acoustic_transfer", "fixedcellsize",
+                    "0" ) != 0 );
+    if ( transferParams._fixedCellSize )
+    {
+        transferParams._cellSize = queryRequiredReal( "impact/acoustic_transfer",
+                "cellsize" );
+    }
+
+    transferParams._timeStepFrequency = queryRequiredInt(
+            "impact/acoustic_transfer",
+            "timestepfrequency" );
+    transferParams._subSteps = queryRequiredInt( "impact/acoustic_transfer",
+            "substeps" );
+    transferParams._mode = queryOptionalInt( "impact/acoustic_transfer",
+            "mode", "0");
+
+    transferParams._nbar = queryRequiredReal( "impact/acoustic_transfer",
+            "nbar" );
+
+    transferParams._radiusMultipole = queryRequiredReal( "impact/acoustic_transfer",
+            "radius_multipole" );
+
+    modeData = queryRequiredAttr("impact/acoustic_transfer", "mode_data_file");
+    transferParams._modeDataFile = modeData;
+
+    transferParams._rigidPrefix = queryRequiredAttr( "impact/acoustic_transfer",
+            "rigidprefix" );
+    transferParams._rigidDensity = queryRequiredReal( "impact/acoustic_transfer",
+            "rigiddensity" );
+
+
+    outputFile = queryRequiredAttr( "impact/acoustic_transfer", "outputfile" );
+    transferParams._outputFile = outputFile;
+
+    transferParams._multipoleOutputFile
+        = queryRequiredAttr( "impact/acoustic_transfer", "multipole_outputfile" );
+
+    return transferParams;
+}
+
 //////////////////////////////////////////////////////////////////////
 // Fetches parameters for acceleration pulse precomputation
 //////////////////////////////////////////////////////////////////////
@@ -417,6 +526,7 @@ Parser::AccelerationPulseParms Parser::getAccelerationPulseParms()
     return pulseParms;
 }
 
+
 #if 0
 //////////////////////////////////////////////////////////////////////
 // Fetches parameters for setting up the input to an acoustic
@@ -510,7 +620,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool loadPANData,
     // Build SDF meshes in parallel
     parms._distanceMeshes.resize( parms._meshes.size() );
 #pragma omp parallel for schedule(static) default(shared)
-    for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ ) {
+    for ( size_t mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ ) {
         TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
 #if 0
@@ -522,7 +632,7 @@ Parser::SceneObjectParms Parser::getSceneObjectParms( bool loadPANData,
     }
 
     // Build rigid body, curvature and SDF information
-    for ( int mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ )
+    for ( size_t mesh_idx = 0; mesh_idx < parms._meshes.size(); mesh_idx++ )
     {
         TriangleMesh<REAL>  *mesh = parms._meshes[ mesh_idx ];
 
@@ -667,13 +777,13 @@ TiXmlNode* Parser::getNodeByPath( std::string pathStr )
 {
     vector<string> path = IO::split( pathStr, string("/") );
     TiXmlNode* node = document;
-    for( int i = 0; i < path.size(); i++ )
+    for( size_t i = 0; i < path.size(); i++ )
     {
         node = node->FirstChildElement( path[i].c_str() );
         if( node == NULL )
         {
             cerr << "[ERROR] The required XML path did not exist: " << flush << endl;
-            for( int j = 0; j < path.size(); j++ )
+            for( size_t j = 0; j < path.size(); j++ )
             {
                 cerr << j << " " << path[j] << endl;
                 return NULL;
@@ -706,6 +816,33 @@ string Parser::queryRequiredAttr( std::string path, std::string attr )
     cout << "Queried " << attr << "=\"" << val << "\"" << endl;
     return val;
 }
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+std::vector<std::string> Parser::queryRequiredAttrMultiple( std::string path, std::string attr )
+{
+    std::vector<std::string> allval; 
+    while (true) 
+    {
+
+        TiXmlNode* node = getNodeByPath( path );
+        if (node != NULL) 
+        {
+            TiXmlElement* elm = node->ToElement();
+            string val = queryRequiredAttr( elm, attr );
+            cout << "Queried " << attr << "=\"" << val << "\"" << endl;
+            allval.push_back(val); 
+        }
+        else 
+        {
+            break; 
+        }
+    }
+
+    return allval;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////
 // Gets a list of listening positions from the 
@@ -774,6 +911,7 @@ void Parser::getMeshes( const char *inputElement,
     TiXmlElement              *meshNode;
 
     root = document->FirstChildElement( "impact" );
+
     if ( !root )
     {
         cerr << "Error: No impact node found" << endl;

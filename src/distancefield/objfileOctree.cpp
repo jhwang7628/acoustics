@@ -47,6 +47,7 @@ ObjFileOctree<TriangleClass>::ObjFileOctree( ObjFile * objFileIn, int maxTriCoun
             Vec3d p2 = objFile->vertexPosition(objFile->vertexIndex(i,j,2));
             TriangleClass triangle(p0,p1,p2);
             triangle.setIndex(triangleIndex); // 0-indexed
+            triangle.setVertexIndex(objFile->vertexIndex(i,j,0), objFile->vertexIndex(i,j,1), objFile->vertexIndex(i,j,2));
             triangleIndex++;
             triangles.push_back(triangle);
         }
@@ -248,6 +249,7 @@ ObjFileOctree<TriangleWithCollisionInfoAndPseudoNormals>::ObjFileOctree( ObjFile
             //p1 = objFile->vertexPosition(index1);
             //p2 = objFile->vertexPosition(index2);
             TriangleWithCollisionInfoAndPseudoNormals triangle(p0,p1,p2,pseudoNormals);
+            triangle.setVertexIndex(objFile->vertexIndex(i,j,0), objFile->vertexIndex(i,j,1), objFile->vertexIndex(i,j,2));
             triangles.push_back(triangle);
         }
     }

@@ -45,11 +45,11 @@ Laplacian::Laplacian( const BoundingBox &bbox, REAL cellSize,
 {
     printf( "Initialized Laplacian with %d cells\n", _field.numCells() );
 
-    for ( int mesh_idx = 0; mesh_idx < _boundaryMeshes.size(); mesh_idx++ )
+    for ( size_t mesh_idx = 0; mesh_idx < _boundaryMeshes.size(); mesh_idx++ )
     {
-        printf( "Boundary mesh %d has %d vertices and %d triangles\n",
-                mesh_idx, (int)_boundaryMeshes[ mesh_idx ]->vertices().size(),
-                (int)_boundaryMeshes[ mesh_idx ]->triangles().size() );
+        printf( "Boundary mesh %lu has %lu vertices and %lu triangles\n",
+                mesh_idx, _boundaryMeshes[ mesh_idx ]->vertices().size(),
+                _boundaryMeshes[ mesh_idx ]->triangles().size() );
     }
 }
 
@@ -121,7 +121,7 @@ void Laplacian::apply( const MATRIX &p, MATRIX &Lp, REAL alpha ) const
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
             bulk_cell_idx++ )
     {
         int                      cell_idx = _bulkCells[ bulk_cell_idx ];
@@ -214,12 +214,12 @@ void Laplacian::apply( const MATRIX &p, MATRIX &Lp, REAL alpha ) const
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( int interfacial_cell_idx = 0;
+    for ( size_t interfacial_cell_idx = 0;
             interfacial_cell_idx < _interfacialCells.size();
             interfacial_cell_idx++ )
     {
         int                      cell_idx;
-        int                      neighbour_idx;
+        //int                      neighbour_idx;
 
         cell_idx = _interfacialCells[ interfacial_cell_idx ];
 
@@ -231,7 +231,7 @@ void Laplacian::apply( const MATRIX &p, MATRIX &Lp, REAL alpha ) const
             Lp( cell_idx, i ) = 0.0;
         }
 
-        for ( int coef_idx = 0; coef_idx < coefficients.size(); coef_idx++ )
+        for ( size_t coef_idx = 0; coef_idx < coefficients.size(); coef_idx++ )
         {
             const KeyValuePair    &coef = coefficients[ coef_idx ];
 
@@ -292,11 +292,11 @@ void Laplacian::applyBoundary( MATRIX &Lp, const BoundaryEvaluator &bc,
     TRACE_ASSERT( _interfacialCells.size() > 0, "No interfacial cells!" );
 #endif
 
-    bool anyNonZero = false;
+    //bool anyNonZero = false;
 
     // This only applies to interfacial cells; bulk cells have no boundary
     // contribution
-    for ( int interfacial_cell_idx = 0;
+    for ( size_t interfacial_cell_idx = 0;
             interfacial_cell_idx < _interfacialCells.size();
             interfacial_cell_idx++ )
     {
@@ -309,7 +309,7 @@ void Laplacian::applyBoundary( MATRIX &Lp, const BoundaryEvaluator &bc,
 
         TRACE_ASSERT( coefficients.size() > 0, "Empty coefficient list" );
 
-        for ( int coef_idx = 0; coef_idx < coefficients.size(); coef_idx++ )
+        for ( size_t coef_idx = 0; coef_idx < coefficients.size(); coef_idx++ )
         {
             const BoundaryPoint   &point = coefficients[ coef_idx ];
 
@@ -486,7 +486,7 @@ void Laplacian::classifyCells( bool useBoundary )
 
         // Check all boundary fields to see if this is a bulk cell
         _isBulkCell[ cell_idx ] = true;
-        for ( int field_idx = 0; field_idx < _boundaryFields.size(); field_idx++ )
+        for ( size_t field_idx = 0; field_idx < _boundaryFields.size(); field_idx++ )
         {
             if ( _boundaryFields[ field_idx ]->distance( cellPos )
                     <= _distanceTolerance )
@@ -525,7 +525,7 @@ void Laplacian::classifyCells( bool useBoundary )
 
         _field.cellNeighbours( cell_idx, neighbours );
 
-        for ( int neighbour_idx = 0; neighbour_idx < neighbours.size();
+        for ( size_t neighbour_idx = 0; neighbour_idx < neighbours.size();
                 neighbour_idx++ )
         {
             if ( _isBulkCell[ neighbours[ neighbour_idx ] ] )
@@ -552,7 +552,7 @@ void Laplacian::classifyCells( bool useBoundary )
 
         _field.cellNeighbours( cell_idx, neighbours );
 
-        for ( int neighbour_idx = 0; neighbour_idx < neighbours.size();
+        for ( size_t neighbour_idx = 0; neighbour_idx < neighbours.size();
                 neighbour_idx++ )
         {
             if ( _isGhostCell[ neighbours[ neighbour_idx ] ] )
@@ -615,7 +615,7 @@ void Laplacian::checkGhostCellValidity()
     Vector3d                   x;
     KeyValueArray              interpolationCoefficients;
 
-    for ( int ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
+    for ( size_t ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
             ghost_cell_idx++ )
     {
         cellPos = _field.cellPosition( _ghostCells[ ghost_cell_idx ] );
@@ -633,7 +633,7 @@ void Laplacian::checkGhostCellValidity()
 
             _field.interpolationCoefficients( x, interpolationCoefficients );
 
-            for ( int j = 0; j < interpolationCoefficients.size(); j++ )
+            for ( size_t j = 0; j < interpolationCoefficients.size(); j++ )
             {
                 if ( !insideDomain( interpolationCoefficients[ j ].first ) )
                 {
@@ -674,7 +674,7 @@ void Laplacian::buildGhostCellCoefficients()
             "Size mismatch" );
 
     // Map ghost cell indices to system indices
-    for ( int cell_idx = 0; cell_idx < _ghostCells.size(); cell_idx++ )
+    for ( size_t cell_idx = 0; cell_idx < _ghostCells.size(); cell_idx++ )
     {
         ghostIndices[ _ghostCells[ cell_idx ] ] = cell_idx;
     }
@@ -682,12 +682,12 @@ void Laplacian::buildGhostCellCoefficients()
     // Go through each ghost cell coefficient list, add contributions
     // from ghost cells to the system, and contributions from non-ghost
     // cells to the right-hand side
-    for ( int ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
+    for ( size_t ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
             ghost_cell_idx++ )
     {
         const KeyValueArray     &coefficients = _ghostCoefficients[ ghost_cell_idx ];
 
-        for ( int coefficient_idx = 0; coefficient_idx < coefficients.size();
+        for ( size_t coefficient_idx = 0; coefficient_idx < coefficients.size();
                 coefficient_idx++ )
         {
             int                    cell_idx = coefficients[ coefficient_idx ].first;
@@ -727,12 +727,12 @@ void Laplacian::buildGhostCellCoefficients()
     int nnz = 0;
 
     // Build a total list of coefficients
-    for ( int row_idx = 0; row_idx < _ghostCells.size(); row_idx++ )
+    for ( size_t row_idx = 0; row_idx < _ghostCells.size(); row_idx++ )
     {
         map<int,REAL>           &cellTerms = finalRHSCoefficients[ row_idx ];
         BoundaryPointArray      &bcTerms = finalBoundaryCoefficients[ row_idx ];
 
-        for ( int col_idx = 0; col_idx < _ghostCells.size(); col_idx++ )
+        for ( size_t col_idx = 0; col_idx < _ghostCells.size(); col_idx++ )
         {
             if ( ghostCellSystem( row_idx, col_idx ) == 0.0 )
             {
@@ -748,7 +748,7 @@ void Laplacian::buildGhostCellCoefficients()
 
             // Add all terms from this entry on the right hand side of the
             // system, scaled by the inverse system entry
-            for ( int term_idx = 0; term_idx < rhsTerms.size(); term_idx++ )
+            for ( size_t term_idx = 0; term_idx < rhsTerms.size(); term_idx++ )
             {
                 const KeyValuePair    &coef = rhsTerms[ term_idx ];
 
@@ -757,7 +757,7 @@ void Laplacian::buildGhostCellCoefficients()
 
             // Do the same for boundary terms.  These should be unique though,
             // so we shouldn't need a map.
-            for ( int term_idx = 0; term_idx < rhsBCterms.size(); term_idx++ )
+            for ( size_t term_idx = 0; term_idx < rhsBCterms.size(); term_idx++ )
             {
                 const BoundaryPoint   &bcTerm = rhsBCterms[ term_idx ];
 
@@ -770,7 +770,7 @@ void Laplacian::buildGhostCellCoefficients()
     printf( "Found %d ghost cell relationships\n", nnz );
 
     // Assemble the final cell/boundary coefficients for ghost cells
-    for ( int ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
+    for ( size_t ghost_cell_idx = 0; ghost_cell_idx < _ghostCells.size();
             ghost_cell_idx++ )
     {
         KeyValueArray       &coefs = _ghostCoefficients[ ghost_cell_idx ];
@@ -815,7 +815,7 @@ void Laplacian::buildGhostCellCoefficients( int cell_idx )
     // Distance values from [Marelli et al.]
     REAL                       d1 = abs( sdfDistance );
     REAL                       d2 = d1 + _field.cellSize();
-    REAL                       d3 = d2 + _field.cellSize();
+    //REAL                       d3 = d2 + _field.cellSize();
 
     TRACE_ASSERT( _isGhostCell[ cell_idx ], "Not a ghost cell" );
 
@@ -851,7 +851,7 @@ void Laplacian::buildGhostCellCoefficients( int cell_idx )
     // position.
     //
     // This builds a row/rhs contribution in the ghost cell system
-    for ( int i = 0; i < interpolationCoefficients_x2.size(); i++ )
+    for ( size_t i = 0; i < interpolationCoefficients_x2.size(); i++ )
     {
         KeyValuePair            &coef = interpolationCoefficients_x2[ i ];
         int                      interp_idx = coef.first;
@@ -897,7 +897,7 @@ void Laplacian::buildGhostCellCoefficients( int cell_idx )
         coefficients[ interp_idx ] += x2_coefficient * coef.second;
     }
 
-    for ( int i = 0; i < interpolationCoefficients_x3.size(); i++ )
+    for ( size_t i = 0; i < interpolationCoefficients_x3.size(); i++ )
     {
         KeyValuePair            &coef = interpolationCoefficients_x3[ i ];
         int                      interp_idx = coef.first;
@@ -1019,7 +1019,7 @@ boundaryCoefficients.clear();
 // Add scaled coefficients to the list.  We won't worry about
 // guaranteeing uniqueness here, since we can just take care
 // of that at the end.
-for ( int coef_idx = 0; coef_idx < rightCoefficients.size(); coef_idx++ )
+for ( size_t coef_idx = 0; coef_idx < rightCoefficients.size(); coef_idx++ )
 {
     KeyValuePair            &coef = rightCoefficients[ coef_idx ];
 
@@ -1029,7 +1029,7 @@ for ( int coef_idx = 0; coef_idx < rightCoefficients.size(); coef_idx++ )
 
     coefficients.push_back( coef );
 }
-for ( int coef_idx = 0; coef_idx < leftCoefficients.size(); coef_idx++ )
+for ( size_t coef_idx = 0; coef_idx < leftCoefficients.size(); coef_idx++ )
 {
     KeyValuePair            &coef = leftCoefficients[ coef_idx ];
 
@@ -1042,7 +1042,7 @@ for ( int coef_idx = 0; coef_idx < leftCoefficients.size(); coef_idx++ )
 
 // FIXME: Check the sign on the boundary coefficients (we may need
 // to scale everything here by -1)
-for ( int coef_idx = 0; coef_idx < rightBoundaryCoefficients.size();
+for ( size_t coef_idx = 0; coef_idx < rightBoundaryCoefficients.size();
         coef_idx++ )
 {
     BoundaryPoint           &coef = rightBoundaryCoefficients[ coef_idx ];
@@ -1053,7 +1053,7 @@ for ( int coef_idx = 0; coef_idx < rightBoundaryCoefficients.size();
 
     boundaryCoefficients.push_back( coef );
 }
-for ( int coef_idx = 0; coef_idx < leftBoundaryCoefficients.size();
+for ( size_t coef_idx = 0; coef_idx < leftBoundaryCoefficients.size();
         coef_idx++ )
 {
     BoundaryPoint           &coef = leftBoundaryCoefficients[ coef_idx ];
@@ -1149,7 +1149,7 @@ void Laplacian::buildIntersectionCoefficients(
     {
         _field.interpolationCoefficients( x[ i ], interpolationCoefficients );
 
-        for ( int interp_idx = 0; interp_idx < interpolationCoefficients.size();
+        for ( size_t interp_idx = 0; interp_idx < interpolationCoefficients.size();
                 interp_idx++ )
         {
             cell_idx = interpolationCoefficients[ interp_idx ].first;
@@ -1166,7 +1166,7 @@ void Laplacian::buildIntersectionCoefficients(
 
                 // Add each cell in the ghost coefficient list, scaling their
                 // coefficients by the inerpolation coefficient
-                for ( int ghost_idx = 0; ghost_idx < ghostCoefficients.size();
+                for ( size_t ghost_idx = 0; ghost_idx < ghostCoefficients.size();
                         ghost_idx++ )
                 {
                     cell_idx2 = ghostCoefficients[ ghost_idx ].first;
@@ -1185,7 +1185,7 @@ void Laplacian::buildIntersectionCoefficients(
                             _ghostCoefficientPointers[ cell_idx ] );
 
                 // Add ghost boundary points to the mix
-                for ( int ghost_idx = 0; ghost_idx < ghostBoundaryCoefficients.size();
+                for ( size_t ghost_idx = 0; ghost_idx < ghostBoundaryCoefficients.size();
                         ghost_idx++ )
                 {
                     boundaryCoefficients.push_back(
@@ -1235,8 +1235,8 @@ REAL Laplacian::boundaryIntersection( Vector3d x, Vector3d d, REAL tolerance )
     while ( distance > tolerance * _field.cellSize() )
     {
         // FIXME
-        REAL xd = _boundaryFields[ 0 ]->distance( x );
-        REAL md = _boundaryFields[ 0 ]->distance( x + d );
+        //REAL xd = _boundaryFields[ 0 ]->distance( x );
+        //REAL md = _boundaryFields[ 0 ]->distance( x + d );
         TRACE_ASSERT( _boundaryFields[ 0 ]->distance( x ) > 0.0
                 && _boundaryFields[ 0 ]->distance( x + d ) <= 0.0,
                 "Bisection condition violated" );
@@ -1267,7 +1267,7 @@ void Laplacian::buildInterfacialCoefficients()
     _interfacialCoefficients.resize( _interfacialCells.size() );
     _interfacialBoundaryCoefficients.resize( _interfacialCells.size() );
 
-    for ( int cell_idx = 0; cell_idx < _interfacialCells.size(); cell_idx++ )
+    for ( size_t cell_idx = 0; cell_idx < _interfacialCells.size(); cell_idx++ )
     {
         // Note: this assumes that no interfacial cells lie on the
         //       grid boundary.
@@ -1302,7 +1302,7 @@ void Laplacian::buildInterfacialCoefficients()
 
             // Put the cell coefficients in a map so that we can guarantee
             // uniqueness in the final list
-            for ( int coef_idx = 0; coef_idx < directionCoefficients.size();
+            for ( size_t coef_idx = 0; coef_idx < directionCoefficients.size();
                     coef_idx++ )
             {
                 const KeyValuePair  &coef = directionCoefficients[ coef_idx ];
@@ -1311,7 +1311,7 @@ void Laplacian::buildInterfacialCoefficients()
             }
 
             // Add the boundary conditions to the list for this cell
-            for ( int coef_idx = 0; coef_idx < directionBoundaryCoefficients.size();
+            for ( size_t coef_idx = 0; coef_idx < directionBoundaryCoefficients.size();
                     coef_idx++ )
             {
                 const BoundaryPoint &coef = directionBoundaryCoefficients[ coef_idx ];
@@ -1353,7 +1353,7 @@ void Laplacian::buildInterfacialCoefficientsRasterized()
     _interfacialCoefficients.resize( _interfacialCells.size() );
     _interfacialBoundaryCoefficients.resize( _interfacialCells.size() );
 
-    for ( int cell_idx = 0; cell_idx < _interfacialCells.size(); cell_idx++ )
+    for ( size_t cell_idx = 0; cell_idx < _interfacialCells.size(); cell_idx++ )
     {
         // Note: this assumes that no interfacial cells lie on the
         //       grid boundary.

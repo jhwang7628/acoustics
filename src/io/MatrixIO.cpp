@@ -110,7 +110,7 @@ Matrix<double>* load_ma_matrixd(const char* file)
     mret = new Matrix<double>(vals[1], vals[2]);
     nv = vals[1] * vals[2];
     ptr = mret->data();
-    if ( fread((void *)ptr, sizeof(double), nv, fd) != nv ) 
+    if ( (int)fread((void *)ptr, sizeof(double), nv, fd) != nv ) 
     {
         fprintf(stderr, "Cannot read enough data\n");
         delete mret;
@@ -141,7 +141,7 @@ ERR_RET:
 int write_ma_matrixd(const char* filename, const Matrix<double>* mat)
 {
     char  mtype[] = "\x9\x12";
-    int   nds[] ={ 2, mat->shape()[0], mat->shape()[1] };
+    int   nds[] ={ 2, static_cast<int>(mat->shape()[0]), static_cast<int>(mat->shape()[1]) };
     int   nele = nds[1] * nds[2];
     FILE* fd;
 
@@ -156,7 +156,7 @@ int write_ma_matrixd(const char* filename, const Matrix<double>* mat)
     if ( fwrite(nds, sizeof(int), 3, fd) != 3 )             // 2D data + nrow + ncolumn
         goto ERR_RET;
 
-    if ( fwrite((const void*)mat->data(), sizeof(double), nele, fd) != nele )
+    if ( (int)fwrite((const void*)mat->data(), sizeof(double), nele, fd) != nele )
         goto ERR_RET;
     
     fclose(fd);
@@ -185,7 +185,7 @@ int write_ma_matrixd(const char* filename, int m, int n, const double* ele)
     if ( fwrite(nds, sizeof(int), 3, fd) != 3 )             // 2D data + nrow + ncolumn
         goto ERR_RET;
 
-    if ( fwrite((const void*)ele, sizeof(double), nele, fd) != nele )
+    if ( (int)fwrite((const void*)ele, sizeof(double), nele, fd) != nele )
         goto ERR_RET;
     
     fclose(fd);
@@ -217,7 +217,7 @@ int DenseMatrixIO::write_matrix( const char* filename, const Matrix<double>& mat
     }
 
     // Write the actual data
-    if ( fwrite( (const void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
+    if ( (int)fwrite( (const void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
         goto ERR_RET;
     }
 
@@ -251,7 +251,7 @@ int DenseMatrixIO::read_matrix( const char* filename, Matrix<double>& mat )
     mat = Matrix<double>( rows, cols );
 
     // Write the actual data
-    if ( fread( (void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
+    if ( (int)fread( (void*)mat.data(), sizeof(double), rows * cols, f ) != rows * cols ) {
         goto ERR_RET;
     }
 
@@ -283,7 +283,7 @@ int DenseMatrixIO::write_matrix( const char* filename, const Matrix3<double>& ma
     }
 
     // Write the actual data
-    if ( fwrite( (const void*)&mat.cols, sizeof(double), rows * cols, f ) != rows * cols ) {
+    if ( (int) fwrite( (const void*)&mat.cols, sizeof(double), rows * cols, f ) != rows * cols ) {
         goto ERR_RET;
     }
 

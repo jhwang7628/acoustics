@@ -3,15 +3,25 @@
 # Copyright @ Jan 2009
 project(isostuffer)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0.2)
+
+# set(CMAKE_C_COMPILER "/usr/bin/gcc-4.6")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++-4.6")
+
+# set(CMAKE_C_COMPILER "/usr/bin/gcc")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # compile option
-option(USE_DEBUG "Turn on the debug mode" OFF)
-option(USE_OPENMP "Turn on the OpenMP feature when compiling" OFF)
+option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
+option(USE_DEBUG "Turn on the debug mode" ON)
+option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
+option(USE_CUDA "Use CUDA" OFF)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -24,6 +34,7 @@ option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
 option(BUILD_RIGIDSIM           "Compile the command-line RBD solver" ON)
 option(BUILD_RIGIDSIM_GUI       "Compile rigid-body solver GUI" ON)
 option(BUILD_RIGIDSIM_PLAYER    "Compile the RBD solver replayer" ON)
+option(BUILD_PAT_PRECOMPUTE_GUI "Compile GUI for PAT precomputation" ON)
 option(BUILD_PAN_PRECOMPUTE_GUI "Compile GUI for PAN precomputation" ON)
 option(BUILD_RUN_PULSE_SOLVE    "Compile command-line PAN precomputation" ON)
 option(BUILD_MULTITERM_PAN      "Compile multi-term PAN system builder" ON)
@@ -31,11 +42,18 @@ option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" ON)
 option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
 option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
+option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
+
+option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wavesolver" ON)
+option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
+option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 
+option(BUILD_DIFFERENTIATE_INTERPOLATE_HRIR  "Compiles HRIR differentiation tools" ON) 
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
 #   We should eventually go through and resolve all of these diffs
 add_definitions(-DDIFF_DEFINE)
+add_definitions(-DCGAL_INTERSECTION_VERSION=1)
 
 #===================================================================
 ## Compiler
@@ -58,6 +76,7 @@ endif ( USE_64BIT_ARCH )
 ## Libraries
 # check boost libraries
 find_package(Boost 1.33 REQUIRED)
+add_definitions(-DUSE_BOOST)
 
 option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
 
@@ -74,6 +93,18 @@ endif ()
 
 # ARPACK for eigensolvers
 find_package(ARPACK REQUIRED)
+find_package(Eigen REQUIRED)
+
+# SuperLU is also required for the eigensolver
+#
+# The prepackaged version that can be installed with Ubuntu doesn't
+# seem to work.  Try downloading and compiling the new version (v4.3).
+# 
+# When setting up the cmake project, use the flag
+#   -DSUPERLU_LIBRARIES=<path to version 4.3 SuperLU library>
+#     NOTE: for now, includes aren't needed
+#   -DSUPERLU_INCLUDES=<SuperLU include directory>
+find_package(SuperLU REQUIRED)
 
 # SuperLU is also required for the eigensolver
 #
@@ -139,15 +170,24 @@ if ( USE_GSL )
 endif ( USE_GSL )
 
 
-if ( USE_DEBUG )
-  add_definitions(-Wall)
-endif ( USE_DEBUG )
+if (USE_DEBUG)
+    add_definitions(-Wall)
+endif (USE_DEBUG)
 
 if ( USE_OPENMP )
+    find_package(OpenMP)
     add_definitions(-DUSE_OPENMP)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif ( USE_OPENMP )
 
 set(LINK_FLAGS " ")
+
+if (USE_CUDA)
+    find_package(CUDA)
+    add_definitions(-DUSE_CUDA)
+endif (USE_CUDA)
 
 # check if we're using Intel's compiler
 if ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
@@ -168,6 +208,10 @@ else ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
 
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
+
+
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 add_subdirectory(src)
 

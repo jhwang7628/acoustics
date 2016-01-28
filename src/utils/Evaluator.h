@@ -42,8 +42,16 @@ typedef boost::function<bool (const VEC3F &x, REAL &value)> ScalarEvaluator_E;
 
 typedef boost::function<REAL (REAL)> RealFunction;
 
-typedef boost::function<REAL (const Vector3d &x, const Vector3d &n,
-                              int obj_id, REAL t, int field_id)>
-                                                BoundaryEvaluator;
+typedef boost::function<REAL (const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id)> BoundaryEvaluator;
+typedef boost::function<REAL (const Vector3d &x, const REAL t)> ExternalSourceEvaluator; 
+
+/* Given a structure grid, initialize the solution. */
+//typedef boost::function<REAL (const REAL &x, const REAL &y, const REAL &z, const IC_TYPE ic_type)> 
+//                                                InitialConditionEvaluator; 
+//typedef boost::function<REAL (const Vector3d & evaluatePosition, const Vector3d & sourcePosition )> 
+//                                                InitialConditionEvaluator; 
+typedef boost::function<REAL (const Vector3d & evaluatePosition)> InitialConditionEvaluator; 
+typedef boost::function<REAL (const REAL & t, const Vector3d & sPosition)> HarmonicSourceEvaluator;
+
 
 #endif

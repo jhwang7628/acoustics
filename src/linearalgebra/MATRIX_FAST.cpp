@@ -779,7 +779,7 @@ void MATRIX::uppertriMultiplyInplace( VECTOR& x, VECTOR& prod )
 //////////////////////////////////////////////////////////////////////
 void MATRIX::solve(VECTOR& b)
 {
-    char uplo = 'U';
+    //char uplo = 'U';
     int nrhs = 1;
     int info = 0;
     int R = _rows;
@@ -1150,7 +1150,7 @@ void MATRIX::copyRow( const REAL *A, REAL *B,
 void MATRIX::copyRows( const REAL *A, REAL *B,
         const IntArray &rowsA, int nCols )
 {
-    for ( int row_idx = 0; row_idx < rowsA.size(); row_idx++ )
+    for ( size_t row_idx = 0; row_idx < rowsA.size(); row_idx++ )
     {
         MATRIX::copyRow( A, B, rowsA[ row_idx ], row_idx, nCols, nCols );
     }
@@ -1162,7 +1162,7 @@ void MATRIX::copyRows( const REAL *A, REAL *B,
 void MATRIX::scatterRows( const REAL *A, REAL *B,
         const IntArray &rowsB, int nCols )
 {
-    for ( int row_idx = 0; row_idx < rowsB.size(); row_idx++ )
+    for ( size_t row_idx = 0; row_idx < rowsB.size(); row_idx++ )
     {
         MATRIX::copyRow( A, B, row_idx, rowsB[ row_idx ], nCols, nCols );
     }
@@ -1229,7 +1229,7 @@ void MATRIX::gemm( const REAL *A, const REAL *B, REAL *C,
         int lda_A, int lda_B, int lda_C,
         REAL alpha, REAL beta )
 {
-    int requiredCols = transposeB ? rowsB : colsB;
+    //int requiredCols = transposeB ? rowsB : colsB;
 
 #ifdef SINGLE_PRECISION
     cblas_sgemm(
@@ -1339,7 +1339,7 @@ void MATRIX::syrk( const REAL *A, REAL *C,
         int lda_A, int lda_C,
         bool transpose, REAL alpha, REAL beta )
 {
-    int requiredCols = transpose ? rowsC : k;
+    //int requiredCols = transpose ? rowsC : k;
 
 #ifdef SINGLE_PRECISION
     cblas_ssyrk(
@@ -1846,7 +1846,7 @@ void MATRIX::symmetricEigensystem( const Matrix3<REAL> &M, Vector3d &eigenvalues
     REAL                       Z[ 9 ];
     REAL                       evOut[ 3 ];
 
-    int                        info;
+    //int                        info;
     int                        numEigenvalues;
 
     int                        isuppz[ 6 ];
@@ -1863,7 +1863,7 @@ void MATRIX::symmetricEigensystem( const Matrix3<REAL> &M, Vector3d &eigenvalues
     A[ 8 ] = M.cols[ 2 ][ 2 ];
 
 #ifdef SINGLE_PRECISION
-    info = LAPACKE_ssyevr( LAPACK_ROW_MAJOR,
+    LAPACKE_ssyevr( LAPACK_ROW_MAJOR,
                            'V', /* evals and evecs */
                            'A', /* all eigenvalues */
                            'L', /* lower triangular part is stored */
@@ -1876,7 +1876,7 @@ void MATRIX::symmetricEigensystem( const Matrix3<REAL> &M, Vector3d &eigenvalues
                            Z, 3, /* eigenvectors and leading dimension */
                            isuppz );
 #else
-    info = LAPACKE_dsyevr( LAPACK_ROW_MAJOR,
+    LAPACKE_dsyevr( LAPACK_ROW_MAJOR,
                          'V', /* evals and evecs */
                          'A', /* all eigenvalues */
                          'L', /* lower triangular part is stored */

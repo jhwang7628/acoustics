@@ -1,0 +1,103 @@
+<!-- 44000 Hz sampling. -->
+        <?xml version="1.0" ?>
+        <impact>
+            <mesh file="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.obj" scale="1.0" />
+
+          <acoustic_transfer
+              distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.dist"
+            fieldresolution="150"
+            gridresolution="600"
+            gridscale="1.0800000"
+            timestepfrequency="1280000"
+            substeps="4"
+            nbar="5"
+            mode="0"
+            radius_multipole="1.200000"
+
+            mode_data_file="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.modes"
+            rigidprefix="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plateRigid"
+            rigiddensity="2300.000000"
+            outputfile="pulsedata_clipped"
+            multipole_outputfile="head.multipole"
+            />
+
+    </impact>
+    <!-- for GPU
+        <?xml version="1.0" ?>
+        <impact>
+            <mesh file="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.obj" scale="1.0" />
+
+          <acoustic_transfer
+              distancefield="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.dist"
+            fieldresolution="150"
+            gridresolution="400"
+            gridscale="1.400000"
+            timestepfrequency="529200"
+            substeps="12"
+            nbar="5"
+            mode="0"
+            radius_multipole="1.200000"
+
+
+
+            mode_data_file="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.modes"
+            rigidprefix="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plateRigid"
+            rigiddensity="2300.000000"
+            outputfile="pulsedata_clipped"
+            multipole_outputfile="head.multipole"
+            />
+
+        </impact>
+    -->
+
+<!--
+        <?xml_version="1.0" ?> 
+        <impulse_response> 
+            <source_position x="0.0" y="0.0" z=" 0.075" />
+            <mesh file="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.obj" scale="1.0" />
+            <acoustic_transfer
+              c="343.0"
+              density="1.0"
+              distancefield="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.dist"
+              fieldresolution="150"
+              gridresolution="400"
+              gridscale="1.400000"
+              timestepfrequency="500000"
+              substeps="50"
+              stdevGaussian="0.001"
+              />
+        </impulse_response>
+        -->
+    
+
+
+
+
+<!-- 10000 Hz sampling. --> 
+<!--
+        <?xml version="1.0" ?>
+        <impact>
+            <mesh file="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.obj" scale="1.0" />
+
+          <acoustic_transfer
+            distancefield="/media/jui-hsien/Data1/turbsound/impulse-response/fluent5/fluent5.msh.dist"
+            fieldresolution="150"
+            gridresolution="400"
+            gridscale="1.400000"
+            timestepfrequency="500000"
+            substeps="50"
+            nbar="5"
+            mode="0"
+            radius_multipole="1.200000"
+
+
+
+            mode_data_file="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plate.modes"
+            rigidprefix="/home/rf356/Desktop/Code/acoustics/work/objects/ceramic_plate/ceramic_plateRigid"
+            rigiddensity="2300.000000"
+            outputfile="pulsedata_clipped"
+            multipole_outputfile="head.multipole"
+            />
+
+    </impact>
+    -->

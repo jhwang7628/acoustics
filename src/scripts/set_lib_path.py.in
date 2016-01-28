@@ -1,0 +1,8 @@
+import os, sys
+
+installPath = '@PROJECT_SOURCE_DIR@';
+libpath = '@LIBRARY_OUTPUT_PATH@'
+workpath = '@PROJECT_SOURCE_DIR@/work/'
+
+sys.path.append(libpath)
+sys.path.append(workpath)

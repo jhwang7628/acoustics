@@ -338,9 +338,9 @@ void PardisoMatrix<T>::multiply(const std::vector< Vector3<T> >& in,
 template <typename T>
 void PardisoMatrix<T>::multiply(const T* in, T* out) const
 {
-#ifdef USE_OPENMP
-    #pragma omp parallel for default(none) schedule(dynamic) shared(inPtr, outPtr)
-#endif
+// #ifdef USE_OPENMP
+//     #pragma omp parallel for default(none) schedule(dynamic) shared(inPtr, outPtr)
+// #endif
     for(int i = 0;i < m_numRows;++ i)
     {
         out[i] = 0;

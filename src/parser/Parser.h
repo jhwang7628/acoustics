@@ -43,6 +43,7 @@ class Parser {
 
         // Construct a triangle mesh from information stored
         // in this document
+        TriangleMesh<REAL> *getMesh(const char * rootTag);
         TriangleMesh<REAL> *getMesh();
 
         // Mesh file name
@@ -177,6 +178,105 @@ class Parser {
 
         };
 #endif
+
+        /////////////////////////////////////////////////////
+        // Parameters for impulse response
+        /////////////////////////////////////////////////////
+        struct ImpulseResponseParms 
+        {
+            // Speed of sound and density
+            REAL                    _c;
+            REAL                    _density;
+
+            // SDF parms
+            int                     _sdfResolution;
+            std::string             _sdfFilePrefix;
+
+            // Domain resolution and size
+            int                     _gridResolution;
+
+            // How much to scale the bounding box of the object by
+            REAL                    _gridScale;
+
+            // Whether or not to use a fixed grid cell size
+            bool                    _fixedCellSize;
+            REAL                    _cellSize;
+
+            int                     _timeStepFrequency;
+            int                     _subSteps;
+            
+            REAL                    _stopTime; 
+
+            // Output parameters
+            std::string             _outputPattern; 
+
+            std::string             _listeningFile; 
+
+            REAL                    _widthSpace; 
+            REAL                    _widthTime; 
+            REAL                    _offsetTime; 
+
+            // position of the impulse response source
+            REAL                    _sourcePosition_x; 
+            REAL                    _sourcePosition_y; 
+            REAL                    _sourcePosition_z; 
+
+        };
+
+        /////////////////////////////////////////////////////
+        // Parameters for acceleration pulse precomputation
+        /////////////////////////////////////////////////////
+        struct AcousticTransferParms {
+            /////////////////////////////////////////////////////
+            // Speed of sound and density
+            /////////////////////////////////////////////////////
+            REAL                   _c;
+            REAL                   _density;
+
+            /////////////////////////////////////////////////////
+            // SDF parms
+            /////////////////////////////////////////////////////
+            int                    _sdfResolution;
+
+            std::string            _sdfFilePrefix;
+
+            /////////////////////////////////////////////////////
+            // Domain resolution and size
+            /////////////////////////////////////////////////////
+            int                    _gridResolution;
+
+            // How much to scale the bounding box of the object by
+            REAL                   _gridScale;
+
+            // Whether or not to use a fixed grid cell size
+            bool                   _fixedCellSize;
+            REAL                   _cellSize;
+
+            int                    _timeStepFrequency;
+            int                    _subSteps;
+
+            /////////////////////////////////////////////////////
+            // For computing a multi-term expansion
+            /////////////////////////////////////////////////////
+            int                    _nbar;
+            REAL                   _radiusMultipole;
+            std::string            _modeDataFile;
+            int                    _mode;
+
+            /////////////////////////////////////////////////////
+            // Rigid mesh information
+            /////////////////////////////////////////////////////
+            std::string            _rigidPrefix;
+            REAL                   _rigidDensity;
+
+            /////////////////////////////////////////////////////
+            // Output parameters
+            /////////////////////////////////////////////////////
+            std::string            _outputFile;
+
+            std::string            _multipoleOutputFile;
+
+        };
 
         /////////////////////////////////////////////////////
         // Parameters for acceleration pulse precomputation
@@ -462,7 +562,11 @@ class Parser {
 #endif
 
         // Fetches parameters for acceleration pulse precomputation
+        AcousticTransferParms getAcousticTransferParms();
         AccelerationPulseParms getAccelerationPulseParms();
+
+        /* Fetch parameters for impulse response computation. */
+        ImpulseResponseParms getImpulseResponseParms(); 
 
 #if 0
         // Fetches parameters for setting up the input to an acoustic
@@ -525,6 +629,10 @@ class Parser {
         {
             return atoi( queryRequiredAttr( path, attr ).c_str() );
         }
+
+
+        /* Multiple queries on same attributes */
+        std::vector<std::string> queryRequiredAttrMultiple( std::string path, std::string attr ); 
 
         // If you want to walk the DOM on your own, use this
         TiXmlDocument* getDocument() { return document; }

@@ -38,9 +38,11 @@
 class PML_WaveSolver : public Solver {
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
+        typedef boost::function<void (const vector<REAL>&w, const REAL &t, const int &i)> WriteCallbackIndividual;
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
+        // and the write function pointer.
         PML_WaveSolver( REAL timeStep,
                         const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
@@ -50,9 +52,27 @@ class PML_WaveSolver : public Solver {
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
+                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
                         REAL endTime = -1.0 );
+
+        // Provide the size of the domain (bbox), finite difference division
+        // size, and a signed distance function for the interior boundary.
+        PML_WaveSolver( REAL timeStep,
+                        const BoundingBox &bbox, REAL cellSize,
+                        const TriMesh &mesh,
+                        const DistanceField &distanceField,
+                        WaveSolverPointData * rawData,
+                        REAL distanceTolerance = 0.0,
+                        bool useBoundary = true,
+                        const Vector3Array *listeningPositions = NULL,
+                        const char *outputFile = NULL,
+                        WriteCallback *callback = NULL,
+                        int subSteps = 1,
+                        int N = 1,
+                        REAL endTime = -1.0 );
+
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a list of SDFs for the interior boundary
@@ -65,14 +85,22 @@ class PML_WaveSolver : public Solver {
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
+                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
                         REAL endTime = -1.0 );
+
 
         // Destructor
         virtual ~PML_WaveSolver();
 
         void setPMLBoundaryWidth( REAL width, REAL strength );
+        void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
+        inline void SetExternalSource( ExternalSourceEvaluator *sourceEvaluator ){ _sourceEvaluator = sourceEvaluator; } 
+
+        void SetWaveSolverPointDataPosition(); 
+        void AddCurrentPressureToWaveSolverPointData(); 
+
 
         // Time steps the system in the given interval
         void solveSystem( REAL startTime, REAL endTime,
@@ -80,9 +108,14 @@ class PML_WaveSolver : public Solver {
 
         void initSystem( REAL startTime );
 
+        void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
+
         // Takes a single time step
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
+        // Takes a single time step with source function
+        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
+        // Get vertex pressure for each field
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
 
         virtual void writeWaveOutput() const;
@@ -91,6 +124,11 @@ class PML_WaveSolver : public Solver {
         {
             return _grid.pressureFieldDivisions();
         }
+
+        // Test the max CFL condition based on particle velocity in the grid. 
+        virtual REAL GetMaxCFL();
+        
+
 
         virtual Vector3d         fieldPosition( const Tuple3i &index ) const
         {
@@ -151,11 +189,11 @@ class PML_WaveSolver : public Solver {
     protected:
 
     private:
-        void                     stepLeapfrog(
-                const BoundaryEvaluator &bcEvaluator );
+        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
+        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
     private:
-        static const REAL        WAVE_SPEED = 343.0;
+        static constexpr REAL        WAVE_SPEED = 343.0;
 
         // Discretization for the domain
         MAC_Grid                 _grid;
@@ -165,6 +203,7 @@ class PML_WaveSolver : public Solver {
         REAL                     _currentTime;
         int                      _timeIndex;
         int                      _subSteps;
+        REAL                     _endTime;
 
         // Leapfrog variables for a MAC grid
         //
@@ -176,17 +215,22 @@ class PML_WaveSolver : public Solver {
         // Number of fields to solve for
         int                      _N;
 
-        REAL                     _endTime;
 
+        const REAL               _cellSize; 
         const Vector3Array      *_listeningPositions;
         const char              *_outputFile;
 
         std::vector<std::vector<FloatArray> >
             _waveOutput;
 
+        // cells indexed by hsIndex is source cell that emits harmonic waves 
+        std::vector<int> hsIndex; 
+
         VECTOR                   _listenerOutput;
 
         WriteCallback           *_callback;
+        WriteCallbackIndividual *_callbackInd;
+        WaveSolverPointData     *_rawData;
 
         Timer<false>             _gradientTimer;
         Timer<false>             _divergenceTimer;
@@ -198,6 +242,13 @@ class PML_WaveSolver : public Solver {
         // Optionally write a 2D slice out of the finite difference grid
         int                      _zSlice;
         MATRIX                   _sliceData;
+
+
+
+        // Evaluator 
+        ExternalSourceEvaluator *_sourceEvaluator; 
+
+
 
 };
 

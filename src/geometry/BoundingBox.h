@@ -37,7 +37,7 @@ class BoundingBox {
       _minBound = FLT_MAX;
       _maxBound = -FLT_MAX;
 
-      for ( int i = 0; i < vertices.size(); i++ )
+      for ( size_t i = 0; i < vertices.size(); i++ )
       {
         if ( vertices.at( i )[0] > xmax() )
         {
@@ -174,11 +174,14 @@ class BoundingBox {
                      {
                         return axismax( i ) - axismin( i );
                      }
-
     REAL             maxlength() const
                      {
                         return max( axislength( 0 ), max( axislength( 1 ),
                                                          axislength( 2 ) ) );
+                     }
+    REAL             minlength() const 
+                     {
+                         return min( axislength(0), min(axislength(1), axislength(2))); 
                      }
 
     bool             isInside( const Vector3d &x ) const

@@ -119,8 +119,8 @@ class ScalarField {
 
     private:
         BoundingBox              _bbox;
-        REAL                     _cellSize;
         Tuple3i                  _divisions;
+        REAL                     _cellSize;
 
         ScalarArray3D           *_fieldValues;
 

@@ -62,7 +62,7 @@ class IsoStufferFrame : public QMainWindow, private Ui_IsoStufferFrame
 
         void reload_mesh()
         {
-            load_tgl_mesh(curFile_.toAscii().data());
+            load_tgl_mesh(curFile_.toStdString().data());
         }
 
     protected:

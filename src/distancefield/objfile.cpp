@@ -73,7 +73,7 @@ ObjFile::ObjFile( const std::string& filename, int verbose )
   unsigned int currentGroup=0;
   unsigned int ignoreCounter=0;
 
-  unsigned int  currentMaterialIndex = 0;
+  //unsigned int  currentMaterialIndex = 0;
   addMaterial("default",Vec3d(1,1,1),Vec3d(1,1,1),Vec3d(1,1,1),0);
 
   if (verbose)
@@ -670,7 +670,7 @@ int ObjFileOrientable::GenerateHalfEdgeDataStructure()
 
   std::cout << "Step 1: Generating the list of half edges..." << std::endl;
 
-  typedef std::vector<ObjFile::Group> SGroup;
+  //typedef std::vector<ObjFile::Group> SGroup;
 
   int coutCounter = 0;
 

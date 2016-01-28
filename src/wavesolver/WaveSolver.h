@@ -23,6 +23,8 @@
 
 #include <TYPES.h>
 
+#include "WaveSolverPointData.h"
+
 #include <boost/function.hpp>
 
 //////////////////////////////////////////////////////////////////////
@@ -71,6 +73,7 @@ class WaveSolver : public Solver {
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)>
             WriteCallback;
+        typedef boost::function<void (const vector<REAL>&w, const REAL &t)> WriteCallbackIndividual;
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
@@ -200,7 +203,7 @@ class WaveSolver : public Solver {
                 const BoundaryEvaluator &bcEvaluator );
 
     private:
-        static const REAL        WAVE_SPEED = 343.0;
+        static constexpr REAL        WAVE_SPEED = 343.0;
 
         // Laplacian discretization for this domain
         Laplacian                _laplacian;
@@ -215,6 +218,9 @@ class WaveSolver : public Solver {
 
         bool                     _useMACGrid;
 
+        // Number of fields to solve for
+        int                      _N;
+
         // Store the last two time steps for a second order time differencing
         // scheme.  We form p2 (the current time step) using p0 and p1
         MATRIX                   _p0;
@@ -225,8 +231,6 @@ class WaveSolver : public Solver {
         MATRIX                   _p;
         MATRIX                   _a;
 
-        // Number of fields to solve for
-        int                      _N;
 
         // Workspace for Laplacian application
         MATRIX                   _workspace;

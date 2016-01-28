@@ -569,7 +569,6 @@ REAL AccelerationNoiseModel::HertzImpactTimeScale( const MeshSet &objectA,
             impactData._posA, impulseDirectionA );
 
     inverseEffectiveMass = inverseEffectiveMassA + inverseEffectiveMassB;
-
     materialConstant = HertzMaterialConstant(
             objectA._rigidMesh.youngsModulus(),
             impactData._planeYoungsModulus,
