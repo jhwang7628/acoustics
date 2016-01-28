@@ -12,7 +12,7 @@
 #include <linearalgebra/VECTOR.h>
 
 #include <utils/MathUtil.h>
-#include <utils/IO.h>
+#include <utils/utils_IO.h>
 #include <utils/STLUtil.h>
 
 static const REAL ROOT_2_INV = 1.0 / sqrt( 2 );

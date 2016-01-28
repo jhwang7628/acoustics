@@ -156,13 +156,9 @@ REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &
     const REAL EPS = 1E-10;
 
     if ( r <= ballRadius && r > EPS)  // prevent singularity
-    { 
         return -rho_0 *ballRadius *ballRadius / 4.0 / PI / r  * Sw * w * cos(w*t + phase);
-    }
     else 
-    {
         return numeric_limits<REAL>::quiet_NaN();
-    }
 }
 
 
@@ -396,7 +392,7 @@ int main( int argc, char **argv )
 
         char buffer[100]; 
         snprintf( buffer,100,pattern,"vertex_position.dat"); 
-        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
+        IO::writeMatrixX<double>( vertexPosition, buffer, IO::BINARY );
     }
 
     printf("writing pressure vertex index\n");
@@ -404,7 +400,7 @@ int main( int argc, char **argv )
 
         char buffer[100]; 
         snprintf( buffer,100,pattern,"vertex_index.dat"); 
-        IO::writeMatrixXi( vertexIndex, buffer, IO::BINARY );
+        IO::writeMatrixX<int>( vertexIndex, buffer, IO::BINARY );
     }
 
     printf("writing initial pressure\n");
@@ -413,7 +409,7 @@ int main( int argc, char **argv )
         char pressure_buf[100]; 
         snprintf( pressure_buf, 100, "pressure.dat" ); 
         snprintf( buf, 100, pattern, pressure_buf );
-        IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+        IO::writeMatrixX<double>( vertexPressure, buf, IO::BINARY );
     }
 
 
@@ -455,7 +451,7 @@ int main( int argc, char **argv )
                 snprintf( pressure_buf, 100, "pressure_%05u.dat", nSteps/parms._subSteps ); 
                 snprintf( buf, 100, pattern, pressure_buf );
 
-                IO::writeMatrixXd( vertexPressure, buf, IO::BINARY );
+                IO::writeMatrixX<double>( vertexPressure, buf, IO::BINARY );
             }
         }
 

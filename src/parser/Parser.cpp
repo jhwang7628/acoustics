@@ -6,7 +6,7 @@
 
 #include <io/TglMeshReader.hpp>
 
-#include <utils/IO.h>
+#include <utils/utils_IO.h>
 
 #if 0
 #include <file/obj.h>
@@ -775,7 +775,7 @@ string Parser::queryOptionalAttr( TiXmlElement *node, std::string attr,
 //////////////////////////////////////////////////////////////////////
 TiXmlNode* Parser::getNodeByPath( std::string pathStr )
 {
-    vector<string> path = IO::split( pathStr, string("/") );
+    vector<string> path = UTILS_IO::split( pathStr, string("/") );
     TiXmlNode* node = document;
     for( size_t i = 0; i < path.size(); i++ )
     {

@@ -17,25 +17,26 @@ class UniformGridWithObject : public UniformGrid
 {
 
     public: 
-        enum CellType : bool { FLUID=false, SOLID=true };
-        typedef unsigned char InterfacialType; 
+        typedef unsigned char CellType; 
         // bit flags : http://www.cplusplus.com/forum/general/1590/
         // [1|2|3|4|5|6|7|8]: 
-        //   1: whether its solid cell
-        //   2: whether its interface cell
-        //   3: if cell has boundary on left  in x-direction, 
-        //   4: if cell has boundary on right in x-direction.
-        //   5: if cell has boundary on left  in y-direction, 
-        //   6: if cell has boundary on right in y-direction.
-        //   7: if cell has boundary on left  in z-direction, 
-        //   8: if cell has boundary on right in z-direction.
-        enum InterfacialInfo {        IS_INTERFACE =0x80,
-                                X_BOUNDARY_ON_LEFT =0x20, 
-                                X_BOUNDARY_ON_RIGHT=0x10, 
-                                Y_BOUNDARY_ON_LEFT =0x08, 
-                                Y_BOUNDARY_ON_RIGHT=0x04, 
-                                Z_BOUNDARY_ON_LEFT =0x02, 
-                                Z_BOUNDARY_ON_RIGHT=0x01, }; 
+        //   1: whether its solid cell: enclosed by object using sdf
+        //   2: whether its interface cell: solid cell that has at least one
+        //      neighbour that is not solid 
+        //   3: if cell has solid on left  in x-direction, 
+        //   4: if cell has solid on right in x-direction.
+        //   5: if cell has solid on left  in y-direction, 
+        //   6: if cell has solid on right in y-direction.
+        //   7: if cell has solid on left  in z-direction, 
+        //   8: if cell has solid on right in z-direction.
+        enum InterfacialInfo {  IS_SOLID     =0x80,
+                                IS_INTERFACE =0x40,
+                                X_SOLID_ON_LEFT =0x20, 
+                                X_SOLID_ON_RIGHT=0x10, 
+                                Y_SOLID_ON_LEFT =0x08, 
+                                Y_SOLID_ON_RIGHT=0x04, 
+                                Z_SOLID_ON_LEFT =0x02, 
+                                Z_SOLID_ON_RIGHT=0x01, }; 
 
     protected: 
         std::string                             meshName_; 
@@ -44,8 +45,7 @@ class UniformGridWithObject : public UniformGrid
         std::shared_ptr<Parser>                 parser_; 
         Parser::ImpulseResponseParms            solverParameters_; 
 
-        std::vector<CellType>                   isBoundary_; 
-        std::vector<InterfacialType>            interfacialCellTypes_;  
+        std::vector<CellType>                   cellTypes_;  
         double                                  distanceTolerance_; 
         bool                                    initialized_; 
 

@@ -434,14 +434,14 @@ void UniformGrid::WriteVTKCellGrid(const std::string &vtkName)
     const Eigen::Vector3i cellCount = GetCellCount(); 
     Eigen::MatrixXd gridPosition(cellCount[0]*cellCount[1]*cellCount[2],3); 
 
-    for (int kk=0; kk<cellCount[2]; kk++) 
+    for (int kk=0; kk<cellCount[2]+1; kk++) 
     {
-        for (int jj=0; jj<cellCount[1]; jj++)
+        for (int jj=0; jj<cellCount[1]+1; jj++)
         {
-            for (int ii=0; ii<cellCount[0]; ii++)
+            for (int ii=0; ii<cellCount[0]+1; ii++)
             {
                 const int index  = FlattenIndicies(ii,jj,kk); 
-                gridPosition.row(index) = GetCellCenterPosition(ii,jj,kk);
+                gridPosition.row(index) = GetCellCenterPosition(ii,jj,kk)-dx_/2.;
             }
         }
     }

@@ -11,7 +11,7 @@
 #include <mesh/Triangle.h>
 #include <mesh/TriMesh.h>
 
-#include <util/IO.h>
+#include <util/utils_IO.h>
 
 #include <algorithm>
 

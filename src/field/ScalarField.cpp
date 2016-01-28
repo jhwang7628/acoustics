@@ -5,7 +5,7 @@
 
 #include "ScalarField.h"
 
-#include <utils/IO.h>
+#include <utils/utils_IO.h>
 
 const int ScalarField::NUM_NEIGHBOURS = 6;
 
