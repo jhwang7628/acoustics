@@ -271,6 +271,19 @@ void ClosestPointField::getClosestPointData(float ** floatBuffer)
 	memcpy(*floatBuffer, closestPointData, sizeof(float) * size);
 }
 
+void ClosestPointField::closestPoint(const Vector3d &pos, Vector3d &result)
+{
+    float result_float[3]; 
+    float position_float[3] = {(float)pos[0], (float)pos[1], (float)pos[2]}; 
+
+    closestPoint(position_float, result_float); 
+
+    result[0] = (double) result_float[0]; 
+    result[1] = (double) result_float[1]; 
+    result[2] = (double) result_float[2]; 
+
+}
+
 void ClosestPointField::closestPoint(float pos[3], float result[3])
 {
 	int i,j,k;

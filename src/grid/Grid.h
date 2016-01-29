@@ -164,7 +164,6 @@ class UniformGrid : public Grid
 
     protected: 
         /// some length scale we can reason about
-        Eigen::Vector3d dimension_; 
         Eigen::Vector3d dx_; 
 
     public: 
@@ -175,7 +174,10 @@ class UniformGrid : public Grid
         /// copy constructors
         UniformGrid(const UniformGrid& grid);
 
+        inline void RecomputeCachedField() { dx_ = (maxBound_ - minBound_).cwiseQuotient(cellCount_.cast<double>()); } 
         virtual Eigen::Vector3d GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const; 
+        virtual inline void GetCellCenterPosition(const int &index, Eigen::Vector3d &position) const {int ii,jj,kk; UnflattenIndicies(index,ii,jj,kk); GetCellCenterPosition(ii,jj,kk,position[0],position[1],position[2]);} 
+        virtual inline void GetCellCenterPosition(const int &ii, const int &jj, const int &kk, Eigen::Vector3d &position) const {GetCellCenterPosition(ii,jj,kk,position[0],position[1],position[2]);} 
         virtual void GetCellCenterPosition( const int &ii, const int &jj, const int &kk, double &x, double &y, double &z ) const; 
         virtual void GetAllCellCenterPosition(Eigen::MatrixXd &gridPosition) const; 
         static void GetAllCellCenterPosition(const Eigen::Vector3d &minBound, const Eigen::Vector3d &maxBound, const Eigen::Vector3i &cellCount, Eigen::MatrixXd &gridPosition); 
@@ -248,12 +250,11 @@ class UniformGrid : public Grid
         friend std::ostream& operator << ( std::ostream& os, const UniformGrid grid ) 
         { 
 
-            os << std::setprecision(4) << std::fixed;
+            os << std::setprecision(12) << std::fixed;
             os << "Uniform grid: \n"; 
             os << "------------- \n"; 
             os << "min: [" << grid.minBound_.transpose()  << "]\n";  
             os << "max: [" << grid.maxBound_.transpose()  << "]\n";  
-            os << "dim: [" << grid.dimension_.transpose() << "]\n";
             os << "dx : [" << grid.dx_.transpose() << "]\n"; 
             os << "cell count : [" << grid.cellCount_.transpose() << "]\n";
 

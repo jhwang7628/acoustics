@@ -54,19 +54,29 @@ class UniformGridWithObject : public UniformGrid
             UniformGrid(minBound, maxBound, cellCount), 
             initialized_(false) { }
 
-        UniformGridWithObject() { } 
+        UniformGridWithObject() : 
+            UniformGrid(), 
+            initialized_(false) { } 
 
         void Reinitialize(const std::string &configFile); 
         void ClassifyCells();
 
-        void WriteCellTypes(const std::string &filename); 
+        // return a valid index points to cell not enclosed by the object
+        bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, Eigen::Vector3d &reflectedPosition);
+
+        void WriteCellTypes(const std::string &filename, const int &verbosity); 
 
         void InterfacialGradientSmoothing();
+
+        virtual void CellCenteredScalarHessian( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessian); 
 
         // same as gradient in UniformGrid class except with object handling.
         // For function usage please refer to that class.
         virtual void CellCenteredDataGradient( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &gradientData , const CELL_GRADIENT_COMPONENT &component=ALL); 
 
+
+        ///// testing routines //////
+        void Test_Reflection();
 };
 
 

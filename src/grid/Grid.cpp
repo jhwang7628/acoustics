@@ -47,16 +47,16 @@ void Grid::InsertVertexData( const std::string &name, std::shared_ptr<Eigen::Mat
 
 
 UniformGrid::UniformGrid(const Eigen::Vector3d& minBound, const Eigen::Vector3d& maxBound, const Eigen::Vector3i& cellCount) : 
-    Grid(minBound, maxBound, cellCount),
-    dimension_(maxBound_ - minBound_), 
-    dx_(dimension_[0]/(double)cellCount_[0], dimension_[1]/(double)cellCount_[1], dimension_[2]/(double)cellCount_[2]) 
+    Grid(minBound, maxBound, cellCount)
 {
+    RecomputeCachedField(); 
 }
 
 
 UniformGrid::UniformGrid(const UniformGrid& grid) : 
     UniformGrid(grid.minBound_,grid.maxBound_,grid.cellCount_) 
 {
+    RecomputeCachedField();
 }
 
 Eigen::Vector3d UniformGrid::GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const 

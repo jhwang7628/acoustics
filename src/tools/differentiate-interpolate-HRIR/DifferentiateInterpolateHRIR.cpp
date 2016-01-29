@@ -181,7 +181,7 @@ int main(int argc, char ** argv) {
             lastTime = dataReadCPUTime.wall; 
         }
 
-        grid_thread.CellCenteredScalarHessian( key, gradientBuffer[thread_id], hessianBuffer[thread_id] ); 
+        //grid_thread.CellCenteredScalarHessian( key, gradientBuffer[thread_id], hessianBuffer[thread_id] ); 
 
         if (global_count%OMP_THREADS==0)
         {

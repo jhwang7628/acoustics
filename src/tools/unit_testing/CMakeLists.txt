@@ -8,9 +8,9 @@ if (BUILD_UNIT_TESTING)
 
     set(UNIT_TESTING_SRCS 
         test_GridWithObject.cpp)
-    set(TURBSOUND_INCLUDE_DIR
-        /home/jui-hsien/code/turbsound_postfluid/src
-        /home/jui-hsien/code/turbsound_postfluid/tools)
+    # set(TURBSOUND_INCLUDE_DIR
+    #     /home/jui-hsien/code/turbsound_postfluid/src
+    #     /home/jui-hsien/code/turbsound_postfluid/tools)
 
 
     # ===================
@@ -23,11 +23,11 @@ if (BUILD_UNIT_TESTING)
     # Target
     # ===================
 
-    include_directories(
-        ${TURBSOUND_INCLUDE_DIR}
-        )
+    # include_directories(
+    #     ${TURBSOUND_INCLUDE_DIR}
+    #     )
 
-    add_executable(testing_grid
+    add_executable(unit_testing_grid
         ${UNIT_TESTING_SRCS}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
@@ -40,7 +40,7 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
         )
 
-    target_link_libraries(testing_grid
+    target_link_libraries(unit_testing_grid
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
