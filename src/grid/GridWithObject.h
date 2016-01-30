@@ -45,7 +45,9 @@ class UniformGridWithObject : public UniformGrid
         std::shared_ptr<Parser>                 parser_; 
         Parser::ImpulseResponseParms            solverParameters_; 
 
+
         std::vector<CellType>                   cellTypes_;  
+        std::vector<int>                        finiteDifferenceStencils_;  // see readme for routine ComputeInterfaceStencils
         double                                  distanceTolerance_; 
         bool                                    initialized_; 
 
@@ -62,11 +64,20 @@ class UniformGridWithObject : public UniformGrid
         void ClassifyCells();
 
         // return a valid index points to cell not enclosed by the object
-        bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, Eigen::Vector3d &reflectedPosition);
+        bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, int &nearestCell);
+
+        // the interfacial cells is needed for finite-difference, however its
+        // value is undefined. so we need to do an even extension on the
+        // interfacial cells to figure out what value to fetch. 
+        void ComputeFiniteDifferenceStencils(); 
 
         void WriteCellTypes(const std::string &filename, const int &verbosity); 
 
         void InterfacialGradientSmoothing();
+
+        // get finite difference stencil
+        int GetStencilIndex(Eigen::Vector3i &indicies); 
+        void GetStencilIndex(Eigen::Vector3i &indicies, int &stencilIndex); 
 
         virtual void CellCenteredScalarHessian( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessian); 
 

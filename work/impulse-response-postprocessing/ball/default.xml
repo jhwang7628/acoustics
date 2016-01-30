@@ -3,15 +3,15 @@
     <mesh file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" scale="1.0" />
 
     <solver
-        stop_time="0.002"
+        stop_time="0.005"
         distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.dist"
         fieldresolution="100"
         gridresolution="100"
-        gridscale="2.0000000"
+        gridscale="1.0000000"
         timestepfrequency="640000"
         substeps="8"
 
-        output_pattern="data_small_ball/test_%s"
+        output_pattern="data_small_ball_grid100/test_%s"
 
         source_position_x="0.11" 
         source_position_y="0.11" 

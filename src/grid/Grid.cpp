@@ -72,6 +72,25 @@ void UniformGrid::GetCellCenterPosition( const int &ii, const int &jj, const int
     z = minBound_[2]+((double)(kk)+0.5)*dx_[2]; 
 }
 
+void UniformGrid::GetCellCenterPosition(const int &index, Eigen::Vector3d &position) const 
+{
+    int ii,jj,kk; 
+    UnflattenIndicies(index,ii,jj,kk); 
+    GetCellCenterPosition(ii,jj,kk,position[0],position[1],position[2]);
+} 
+
+void UniformGrid::GetCellCenterPosition(const int &index, double &x, double &y, double &z) const
+{
+    int ii,jj,kk; 
+    UnflattenIndicies(index,ii,jj,kk); 
+    GetCellCenterPosition(ii,jj,kk,x,y,z);
+}
+
+void UniformGrid::GetCellCenterPosition(const int &ii, const int &jj, const int &kk, Eigen::Vector3d &position) const 
+{
+    GetCellCenterPosition(ii,jj,kk,position[0],position[1],position[2]);
+} 
+
 void UniformGrid::GetAllCellCenterPosition(Eigen::MatrixXd &gridPosition) const 
 {
     gridPosition.resize(N_cells(), 3); 

@@ -1,0 +1,17 @@
+[sourceposition] = [0.1086750000000000,0.1086750000000000,0.0015750000000000]
+[fieldBBox.minBound] = -0.1575000000000000
+-0.1575000000000000
+-0.1575000000000000
+[fieldBBox.maxBound] = 0.1575000000000000
+0.1575000000000000
+0.1575000000000000
+[solver.fieldDivisions] = 100 100 100
+ cellSize=[ 0.0031500000000000 ] 
+ CFL=[ 0.1701388888888889 ] 
+ timeStep=[ 0.0000015625000000 ] 
+ endTime=[ 0.0050000000000000 ] 
+ widthSpace=[ 0.0031500000000000 ] 
+ widthTime=[ 0.0000100000000000 ] 
+ offsetTime=[ 0.0000500000000000 ] 
+precision : double (hard-coded)
+binary write method : IO writeMatrixXd method (hard-coded)

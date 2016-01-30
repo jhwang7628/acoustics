@@ -28,50 +28,24 @@ inline double nanosecond_to_double( const boost::timer::nanosecond_type & t )
  */
 int main(int argc, char ** argv) {
 
-    if (argc != 14) 
+    if (argc != 6) 
     {
-        std::cerr << "**Usage: " << argv[0] << " <data_dir> <data_name> <Nx> <Ny> <Nz> <minBoundx> <minBoundy> <minBoundz> <maxBoundx> <maxBoundy> <maxBoundz> <listening_points> <out_file_prefix> (need 14 you have " << std::to_string(argc) << ")" << std::endl;
+        std::cerr << "**Usage: " << argv[0] << " <config_file> <data_dir> <data_name> <listening_points> <out_file_prefix> " << std::endl;
         exit(1);
     }
 
 
     /// read parameters 
-    const char * datadir  = argv[1]; 
-    const char * dataname = argv[2]; 
-    const int Nx = atoi( argv[3] ); 
-    const int Ny = atoi( argv[4] ); 
-    const int Nz = atoi( argv[5] );
+    std::string configFile = std::string(argv[1]);
+    const char * datadir  = argv[2]; 
+    const char * dataname = argv[3]; 
+    const char * listenfile = argv[4];
+    std::string outPrefix = std::string(argv[5]);
 
-    const double minBoundx = atof( argv[6] ); 
-    const double minBoundy = atof( argv[7] ); 
-    const double minBoundz = atof( argv[8] ); 
-
-    const double maxBoundx = atof( argv[9] ); 
-    const double maxBoundy = atof( argv[10] );
-    const double maxBoundz = atof( argv[11]);
-
-    const char * listenfile = argv[12];
-    std::string outPrefix = std::string(argv[13]);
-
-    const double dx = ( maxBoundx - minBoundx ) / Nx; 
-    const double dy = ( maxBoundy - minBoundy ) / Ny; 
-    const double dz = ( maxBoundz - minBoundz ) / Nz; 
-
-
-    Eigen::Vector3i cellCount; 
-    cellCount << Nx, Ny, Nz; 
-
-    Eigen::Vector3d minBound; 
-    minBound << minBoundx, minBoundy, minBoundz; 
-
-    Eigen::Vector3d maxBound; 
-    maxBound << maxBoundx, maxBoundy, maxBoundz; 
 
     /// create grid for interpolation
-    UniformGridWithObject grid( minBound, maxBound, cellCount ); 
-    grid.Reinitialize("/home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml");
-    grid.ClassifyCells(); 
-    std::cout << grid << std::endl;
+    UniformGridWithObject grid; 
+    grid.Reinitialize(configFile);
 
     /// read IR data
     std::vector<std::string> filenames; 
@@ -83,18 +57,19 @@ int main(int argc, char ** argv) {
     Eigen::MatrixXd listeningPositions; 
     IO::readMatrixXd( listeningPositions, listenfile, IO::BINARY, 0 ); 
 
-    const int NCell=Nx*Ny*Nz; 
+    const int &NCell=grid.N_cells(); 
     const int NCellListened=listeningPositions.rows(); 
     const int Nts=filenames.size(); 
 
     const int OMP_THREADS = std::min<int>(OMP_THREADS_DEFAULT, static_cast<int>(filenames.size()));
+
     omp_set_num_threads(OMP_THREADS); 
+
     std::cout << "start application with " << OMP_THREADS << " threads " << std::endl;
 
     std::cout << "initializing buffer matrices. might take a while..." << std::endl;
     /// store the listened values 
     std::vector<std::shared_ptr<Eigen::MatrixXd>> pressureBuffer(OMP_THREADS); // pressure read from disk
-    std::vector<std::vector<std::shared_ptr<Eigen::MatrixXd>>> gradientBuffer(OMP_THREADS); 
     std::vector<std::vector<std::shared_ptr<Eigen::MatrixXd>>> hessianBuffer(OMP_THREADS); 
 
 
@@ -115,13 +90,7 @@ int main(int argc, char ** argv) {
         std::cout << "  - for thread : " << jj << std::endl;
         pressureBuffer[jj].reset(new Eigen::MatrixXd(NCell,1)); 
         pressureBuffer[jj]->setZero(); 
-        gradientBuffer[jj].resize(3);
         hessianBuffer[jj].resize(6);
-        for (int ii=0; ii<3; ii++) 
-        {
-            gradientBuffer[jj][ii].reset(new Eigen::MatrixXd(NCell,1)); 
-            gradientBuffer[jj][ii]->setZero(); 
-        }
         for (int ii=0; ii<6; ii++) 
         {
             hessianBuffer[jj][ii].reset(new Eigen::MatrixXd(NCell,1)); 
@@ -181,7 +150,7 @@ int main(int argc, char ** argv) {
             lastTime = dataReadCPUTime.wall; 
         }
 
-        //grid_thread.CellCenteredScalarHessian( key, gradientBuffer[thread_id], hessianBuffer[thread_id] ); 
+        grid_thread.CellCenteredScalarHessian( key, hessianBuffer[thread_id] ); 
 
         if (global_count%OMP_THREADS==0)
         {
@@ -190,39 +159,6 @@ int main(int argc, char ** argv) {
             lastTime = hessianCPUTime.wall; 
         }
 
-
-
-        // debug
-        //std::ofstream ofxx("data/differentiated_xx_" + std::to_string(pp) + ".txt"); 
-        //std::ofstream ofxy("data/differentiated_xy_" + std::to_string(pp) + ".txt"); 
-        //std::ofstream ofxz("data/differentiated_xz_" + std::to_string(pp) + ".txt"); 
-        //std::ofstream ofyy("data/differentiated_yy_" + std::to_string(pp) + ".txt"); 
-        //std::ofstream ofyz("data/differentiated_yz_" + std::to_string(pp) + ".txt"); 
-        //std::ofstream ofzz("data/differentiated_zz_" + std::to_string(pp) + ".txt"); 
-        //for (int ii=0; ii<Nx; ii++) 
-        //{
-        //    for (int jj=0; jj<Ny; jj++) 
-        //    {
-        //        for (int kk=0; kk<Nz; kk++) 
-        //        {
-        //            double x = minBound[0] + ii*(maxBoundx-minBoundx)/Nx + dx/2.; 
-        //            double y = minBound[1] + jj*(maxBoundy-minBoundy)/Ny + dy/2.; 
-        //            double z = minBound[2] + kk*(maxBoundz-minBoundz)/Nz + dz/2.; 
-        //            ofxx << x << "," << y << "," << z << "," << (*hessianBuffer[0])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //            ofxy << x << "," << y << "," << z << "," << (*hessianBuffer[1])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //            ofxz << x << "," << y << "," << z << "," << (*hessianBuffer[2])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //            ofyy << x << "," << y << "," << z << "," << (*hessianBuffer[3])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //            ofyz << x << "," << y << "," << z << "," << (*hessianBuffer[4])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //            ofzz << x << "," << y << "," << z << "," << (*hessianBuffer[5])(ii+jj*Nx+kk*Ny*Nz) << std::endl;
-        //        }
-        //    }
-        //}
-        //ofxx.close(); 
-        //ofxy.close(); 
-        //ofxz.close(); 
-        //ofyy.close(); 
-        //ofyz.close(); 
-        //ofzz.close(); 
 
         ///// interpolate /////
         // add hessian for interpolation

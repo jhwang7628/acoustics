@@ -1,0 +1,91 @@
+config file : /home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml
+[STATUS] Optional attribute "c" not found. Using default: 343.0
+Queried c="343.0"
+[STATUS] Optional attribute "density" not found. Using default: 1.22521
+Queried density="1.22521"
+Queried fieldresolution="250"
+Queried distancefield="/home/jui-hsien/code/acoustics/work/impulse-response/geometry/fluent5.msh.dist"
+Queried gridresolution="250"
+Queried gridscale="1.0800000"
+[STATUS] Optional attribute "fixedcellsize" not found. Using default: 0
+Queried fixedcellsize="0"
+Queried timestepfrequency="640000"
+Queried substeps="8"
+Queried stop_time="0.005"
+Queried output_pattern="data/head_%s"
+[STATUS] Optional attribute "listening_file" not found. Using default: none
+Queried listening_file="none"
+Queried source_position_x="0.0"
+Queried source_position_y="0.0"
+Queried source_position_z="0.08"
+Loading distance field...
+First feature = 9123, 8439, 8440, 0, 0, 1
+Last feature = 6935, 6958, 6956, 0, 1, 0
+classifying cells
+ classify bulk cells. progress: 249/249
+ classify interfacial cells. progress: 248/248
+classification completed :
+ solid : 1005508
+ fluid : 14619492
+ interfacial cells (subset of solid cells neighboring fluid) : 46767
+computing finite-difference stencils for solid cells
+ progress : 249/249
+ stencils cached
+  success reflection : 989172
+  failure reflection : 244
+    * in the failure case, program falls back to use original cell index as stencil
+
+Uniform grid:
+-------------
+min: [-0.217833759167 -0.201774960317 -0.219257919047]
+max: [0.220422128167 0.236480927017 0.218997968287]
+dx : [0.001753023549 0.001753023549 0.001753023549]
+cell count : [250 250 250]
+
+reading listening matrix : /home/jui-hsien/code/turbsound_postfluid/FOAM_templates/smooth_BL2_1m_refineconcave/cellCentroid.dat
+start application with 1 threads
+initializing buffer matrices. might take a while...
+ check memory now
+ allocating listen values
+ allocating buffers
+  - for thread : 0
+ check memory again
+start computing hessian
+1 hessian computation
+write vtk structured grid from eigen matrix to file dG_0_0.vtk
+write vtk structured grid from eigen matrix to file dG_0_1.vtk
+write vtk structured grid from eigen matrix to file dG_0_2.vtk
+write vtk structured grid from eigen matrix to file dG_0_3.vtk
+write vtk structured grid from eigen matrix to file dG_0_4.vtk
+write vtk structured grid from eigen matrix to file dG_0_5.vtk
+
+Timing:
+ data read takes 1.585946575000
+ hessian computation takes 448.743949052000
+ interpolation takes 58.267994696000
+
+Write data in BINARY format to file : HRTFcatedL.dat_xx.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+Write data in BINARY format to file : HRTFcatedL.dat_xy.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+Write data in BINARY format to file : HRTFcatedL.dat_xz.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+Write data in BINARY format to file : HRTFcatedL.dat_yy.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+Write data in BINARY format to file : HRTFcatedL.dat_yz.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+Write data in BINARY format to file : HRTFcatedL.dat_zz.dat
+ - Data Dimension: 808733 x 1
+ - Progress:
+     99.995919543286 % 00000 %
+
