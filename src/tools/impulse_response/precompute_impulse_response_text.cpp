@@ -290,13 +290,13 @@ int main( int argc, char **argv )
     ///// initialize system with external source. ///// 
     cout << "Source position is set at " << sourcePosition << endl;
     solver.initSystem(0.0);
-    const REAL widthSpace = cellSize; 
-    //const REAL widthSpace = 0.2; 
-    //const REAL widthTime  = 1./10000/10.; 
-    const REAL widthTime  = timeStep; 
+    const REAL widthTime  = 1./10000./16.; 
+    //const REAL widthTime  = timeStep; 
     //const REAL offsetTime = 4.*widthTime; 
-    const REAL offsetTime = 5.0*widthTime; // the center of the gaussian in time
+    const REAL offsetTime = 8.0*widthTime; // the center of the gaussian in time
     //const REAL offsetTime = 0.0; 
+    const REAL widthSpace = parms._c * widthTime; 
+    //const REAL widthSpace = 0.2; 
     const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 

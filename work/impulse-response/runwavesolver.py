@@ -5,10 +5,11 @@ from subprocess import call
 import xml.etree.ElementTree as ET
 
 
-def main(args):
+def RunWavesolver(configFile):
 
-    configFile = args[1]
+    # configFile = args[0]
 
+    print configFile
     tree = ET.parse(configFile)
     root = tree.getroot()
 
@@ -34,4 +35,4 @@ if __name__ == '__main__':
         print '**Usage %s <impulse_response_config_file>' %(sys.argv[0])
         sys.exit()
 
-    main(sys.argv)
+    RunWavesolver(sys.argv[1])
