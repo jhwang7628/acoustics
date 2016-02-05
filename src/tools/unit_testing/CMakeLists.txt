@@ -6,8 +6,11 @@ if (BUILD_UNIT_TESTING)
     # Dependencies
     # ===================
 
-    set(UNIT_TESTING_SRCS 
+    set(GRID_TESTING_SRCS 
         test_GridWithObject.cpp)
+
+    set(LEASTSQUARESURFACE_TESTING_SRCS 
+        test_LeastSquareSurface.cpp)
     # set(TURBSOUND_INCLUDE_DIR
     #     /home/jui-hsien/code/turbsound_postfluid/src
     #     /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -27,8 +30,12 @@ if (BUILD_UNIT_TESTING)
     #     ${TURBSOUND_INCLUDE_DIR}
     #     )
 
+    add_executable(unit_testing_leastSquareSurface
+        ${LEASTSQUARESURFACE_TESTING_SRCS}
+        ${LEASTSQUARESURFACE_SOURCES}
+        )
     add_executable(unit_testing_grid
-        ${UNIT_TESTING_SRCS}
+        ${GRID_TESTING_SRCS}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}

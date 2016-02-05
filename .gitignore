@@ -35,6 +35,7 @@ work/impulse-response/test*
 work/head_test/*
 work/sphericalhead_test
 work/impulse-response/geometry
+work/impulse-response/*.xml
 
 work/unit_testing*
 

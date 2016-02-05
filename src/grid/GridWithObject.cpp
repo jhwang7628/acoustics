@@ -574,9 +574,12 @@ void UniformGridWithObject::GetStencilIndex(Eigen::Vector3i &indicies, int &sten
 }
 
 
+// Get stencil data with trilinear interpolation (assuming all interior cells
+// have zero values) 
 double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk) const 
 {
     assert(data.NData()==1);
+
 
     // clamp the stencils
     const int xIndex = min(max(ii,0),cellCount_[0]-1); 
@@ -585,6 +588,8 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
 
     int indexBuffer;
     FlattenIndicies(xIndex,yIndex,zIndex,indexBuffer); 
+
+    // early return if its interior cell
     if ((cellTypes_[indexBuffer]&IS_SOLID)==0)
         return data.Value(indexBuffer)(0); 
 
@@ -593,30 +598,45 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
     // fetch the reflected cell position
     FlattenIndiciesWithReflection(xIndex,yIndex,zIndex,indexBuffer,reflectedPosition); 
 
-    // find the largest cell index that is smaller than the reflected position
-    Eigen::Vector3i lowestCellIndex = ((reflectedPosition-dx_/2.0).cwiseQuotient(dx_)).cast<int>(); 
-    lowestCellIndex[0] = min(max(lowestCellIndex[0],0),cellCount_[0]-2); 
-    lowestCellIndex[1] = min(max(lowestCellIndex[1],0),cellCount_[1]-2); 
-    lowestCellIndex[2] = min(max(lowestCellIndex[2],0),cellCount_[2]-2); 
+    double result; 
 
-    FlattenIndicies(lowestCellIndex[0], lowestCellIndex[1], lowestCellIndex[2], indexBuffer); 
+    switch (reflectionFetchMethod) 
+    {
+        case TRILINEAR:
 
-    Eigen::Vector3d lowestCellPosition  = GetCellCenterPosition(lowestCellIndex); 
-    Eigen::Vector3d highestCellPosition = GetCellCenterPosition(lowestCellIndex+Eigen::Vector3i::Ones()); 
+        // find the largest cell index that is smaller than the reflected position
+        Eigen::Vector3i lowestCellIndex = ((reflectedPosition-dx_/2.0).cwiseQuotient(dx_)).cast<int>(); 
+        lowestCellIndex[0] = min(max(lowestCellIndex[0],0),cellCount_[0]-2); 
+        lowestCellIndex[1] = min(max(lowestCellIndex[1],0),cellCount_[1]-2); 
+        lowestCellIndex[2] = min(max(lowestCellIndex[2],0),cellCount_[2]-2); 
 
-    Eigen::Vector3d weights = (reflectedPosition-lowestCellPosition).cwiseQuotient(highestCellPosition-lowestCellPosition); 
+        FlattenIndicies(lowestCellIndex[0], lowestCellIndex[1], lowestCellIndex[2], indexBuffer); 
 
-    const Eigen::Vector3i &l = lowestCellIndex; 
-    const double v000 = data.Value(l[0]  ,l[1]  ,l[2]  )(0); 
-    const double v100 = data.Value(l[0]+1,l[1]  ,l[2]  )(0); 
-    const double v110 = data.Value(l[0]+1,l[1]+1,l[2]  )(0); 
-    const double v010 = data.Value(l[0]  ,l[1]+1,l[2]  )(0); 
-    const double v001 = data.Value(l[0]  ,l[1]  ,l[2]+1)(0); 
-    const double v101 = data.Value(l[0]+1,l[1]  ,l[2]+1)(0); 
-    const double v111 = data.Value(l[0]+1,l[1]+1,l[2]+1)(0); 
-    const double v011 = data.Value(l[0]  ,l[1]+1,l[2]+1)(0); 
+        Eigen::Vector3d lowestCellPosition  = GetCellCenterPosition(lowestCellIndex); 
+        Eigen::Vector3d highestCellPosition = GetCellCenterPosition(lowestCellIndex+Eigen::Vector3i::Ones()); 
 
-    return TRILINEAR_INTERPOLATION(weights[0],weights[1],weights[2],v000,v100,v110,v010,v001,v101,v111,v011); 
+        Eigen::Vector3d weights = (reflectedPosition-lowestCellPosition).cwiseQuotient(highestCellPosition-lowestCellPosition); 
+
+        const Eigen::Vector3i &l = lowestCellIndex; 
+        const double v000 = data.Value(l[0]  ,l[1]  ,l[2]  )(0); 
+        const double v100 = data.Value(l[0]+1,l[1]  ,l[2]  )(0); 
+        const double v110 = data.Value(l[0]+1,l[1]+1,l[2]  )(0); 
+        const double v010 = data.Value(l[0]  ,l[1]+1,l[2]  )(0); 
+        const double v001 = data.Value(l[0]  ,l[1]  ,l[2]+1)(0); 
+        const double v101 = data.Value(l[0]+1,l[1]  ,l[2]+1)(0); 
+        const double v111 = data.Value(l[0]+1,l[1]+1,l[2]+1)(0); 
+        const double v011 = data.Value(l[0]  ,l[1]+1,l[2]+1)(0); 
+
+        result = TRILINEAR_INTERPOLATION(weights[0],weights[1],weights[2],v000,v100,v110,v010,v001,v101,v111,v011); 
+        break; 
+
+        case LEAST_SQUARE: 
+
+
+
+
+
+    }
 
 }
 

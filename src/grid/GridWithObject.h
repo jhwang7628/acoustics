@@ -37,6 +37,7 @@ class UniformGridWithObject : public UniformGrid
                                 Y_SOLID_ON_RIGHT=0x04, 
                                 Z_SOLID_ON_LEFT =0x02, 
                                 Z_SOLID_ON_RIGHT=0x01, }; 
+        enum ReflectionFetchMethod { TRILINEAR=0, LEAST_SQUARE=1 }; 
 
     protected: 
         std::string                             meshName_; 
@@ -48,6 +49,7 @@ class UniformGridWithObject : public UniformGrid
 
         std::vector<CellType>                   cellTypes_;  
         std::vector<int>                        finiteDifferenceStencils_;  // see readme for routine ComputeInterfaceStencils
+        ReflectionFetchMethod                   reflectionFetchMethod; 
         double                                  distanceTolerance_; 
         bool                                    initialized_; 
 
