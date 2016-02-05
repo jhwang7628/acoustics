@@ -44,6 +44,7 @@ option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
 option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
 option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
 
+option(BUILD_DOWNSAMPLE_IMPULSE_RESPONSE     "Compiles the tool for downsampling the impulse response" ON)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wavesolver" ON)
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
 option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 

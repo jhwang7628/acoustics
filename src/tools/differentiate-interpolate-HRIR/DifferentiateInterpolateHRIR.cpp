@@ -170,31 +170,31 @@ int main(int argc, char ** argv) {
         grid_thread.InsertCellCenteredData( key+"_zz", hessianBuffer[thread_id][5] ); 
 
 
-        for ( int jj=0; jj<NCellListened; jj++ ) 
-        {
-            const double buffer_xx = grid_thread.InterpolateCellCenteredData( key+"_xx", listeningPositions.row(jj) )(0); 
-            const double buffer_xy = grid_thread.InterpolateCellCenteredData( key+"_xy", listeningPositions.row(jj) )(0); 
-            const double buffer_xz = grid_thread.InterpolateCellCenteredData( key+"_xz", listeningPositions.row(jj) )(0); 
-            const double buffer_yy = grid_thread.InterpolateCellCenteredData( key+"_yy", listeningPositions.row(jj) )(0); 
-            const double buffer_yz = grid_thread.InterpolateCellCenteredData( key+"_yz", listeningPositions.row(jj) )(0); 
-            const double buffer_zz = grid_thread.InterpolateCellCenteredData( key+"_zz", listeningPositions.row(jj) )(0); 
-            #pragma omp critical
-            {
-                listenedValues_xx(jj,pp) = buffer_xx;
-                listenedValues_xy(jj,pp) = buffer_xy;
-                listenedValues_xz(jj,pp) = buffer_xz;
-                listenedValues_yy(jj,pp) = buffer_yy;
-                listenedValues_yz(jj,pp) = buffer_yz;
-                listenedValues_zz(jj,pp) = buffer_zz;
-            }
-        }
+        //for ( int jj=0; jj<NCellListened; jj++ ) 
+        //{
+        //    const double buffer_xx = grid_thread.InterpolateCellCenteredData( key+"_xx", listeningPositions.row(jj) )(0); 
+        //    const double buffer_xy = grid_thread.InterpolateCellCenteredData( key+"_xy", listeningPositions.row(jj) )(0); 
+        //    const double buffer_xz = grid_thread.InterpolateCellCenteredData( key+"_xz", listeningPositions.row(jj) )(0); 
+        //    const double buffer_yy = grid_thread.InterpolateCellCenteredData( key+"_yy", listeningPositions.row(jj) )(0); 
+        //    const double buffer_yz = grid_thread.InterpolateCellCenteredData( key+"_yz", listeningPositions.row(jj) )(0); 
+        //    const double buffer_zz = grid_thread.InterpolateCellCenteredData( key+"_zz", listeningPositions.row(jj) )(0); 
+        //    #pragma omp critical
+        //    {
+        //        listenedValues_xx(jj,pp) = buffer_xx;
+        //        listenedValues_xy(jj,pp) = buffer_xy;
+        //        listenedValues_xz(jj,pp) = buffer_xz;
+        //        listenedValues_yy(jj,pp) = buffer_yy;
+        //        listenedValues_yz(jj,pp) = buffer_yz;
+        //        listenedValues_zz(jj,pp) = buffer_zz;
+        //    }
+        //}
 
-        if (global_count%OMP_THREADS==0)
-        {
-            interpolationCPUTime = timer.elapsed(); 
-            interpolationTime = interpolationCPUTime.wall - lastTime; 
-            lastTime = interpolationCPUTime.wall; 
-        }
+        //if (global_count%OMP_THREADS==0)
+        //{
+        //    interpolationCPUTime = timer.elapsed(); 
+        //    interpolationTime = interpolationCPUTime.wall - lastTime; 
+        //    lastTime = interpolationCPUTime.wall; 
+        //}
 
         if (pp%20==0) 
         {

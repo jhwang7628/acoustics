@@ -1,3 +1,21 @@
+
+if (BUILD_DOWNSAMPLE_IMPULSE_RESPONSE) 
+
+    find_package(Eigen REQUIRED) 
+
+    include_directories(../)
+
+    add_executable(downsample_impulse_response
+        downsample_impulse_response.cpp
+        ) 
+
+    target_link_libraries(downsample_impulse_response
+        boost_system
+        boost_thread
+        )
+
+endif (BUILD_DOWNSAMPLE_IMPULSE_RESPONSE) 
+
 # =============================================================================
 #   Builds a GUI for the Impulse Response Wavesolver
 # =============================================================================

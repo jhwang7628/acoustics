@@ -52,6 +52,7 @@ class GridData
         GridData( const std::string& nameIn, std::shared_ptr<Eigen::Matrix<REAL, Eigen::Dynamic, Eigen::Dynamic>> dataIn, Grid& owner ) : name(nameIn), dat(dataIn), owner_(owner) { } 
 
         /// getters 
+        inline Eigen::Matrix<REAL, 1, Eigen::Dynamic> Value( const Eigen::Vector3i &indicies ) const { return Value(indicies[0],indicies[1],indicies[2]); }
         inline Eigen::Matrix<REAL, 1, Eigen::Dynamic> Value( const int & index ) const { return dat->row(index); }
         inline Eigen::Matrix<REAL, 1, Eigen::Dynamic> Value( const int xIndex, const int yIndex, const int zIndex ) const { return dat->row(FlattenIndicies(xIndex, yIndex, zIndex)); }
         inline void ValueRowInplace( const int & index, Eigen::MatrixXd &filledMatrix ) const { filledMatrix.row(index) = dat->row(index); }
@@ -176,6 +177,7 @@ class UniformGrid : public Grid
 
         inline void RecomputeCachedField() { dx_ = (maxBound_ - minBound_).cwiseQuotient(cellCount_.cast<double>()); } 
         virtual Eigen::Vector3d GetCellCenterPosition( const int &ii, const int &jj, const int &kk ) const; 
+        virtual Eigen::Vector3d GetCellCenterPosition(const Eigen::Vector3i &indicies) const {return GetCellCenterPosition(indicies[0],indicies[1],indicies[2]);}
         virtual void GetCellCenterPosition(const int &index, Eigen::Vector3d &position) const ; 
         virtual void GetCellCenterPosition(const int &ii, const int &jj, const int &kk, Eigen::Vector3d &position) const;
         virtual void GetCellCenterPosition(const int &index, double &x, double &y, double &z) const; 

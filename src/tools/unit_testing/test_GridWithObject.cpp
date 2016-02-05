@@ -4,10 +4,10 @@ int main()
 {
 
     UniformGridWithObject grid; 
-    grid.Reinitialize("/home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml");
+    grid.Reinitialize("/home/jui-hsien/code/acoustics/work/impulse-response/config/test.xml");
     //grid.ClassifyCells();
     grid.WriteCellTypes("grid_types",1);
-    //grid.Test_Reflection(); 
+    grid.Test_Reflection(); 
     //grid.ComputeInterfaceStencils();
 
 

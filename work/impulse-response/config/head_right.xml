@@ -11,11 +11,11 @@
         timestepfrequency="640000"
         substeps="8"
 
-        output_pattern="data_Gaussian_space_1cell_time_1ts_res250_simulation/head_left_%s"
+        output_pattern="data_Gaussian_space_1cell_time_1ts_res250_simulation/head_right_%s"
 
         source_position_x="0.0" 
         source_position_y="0.0" 
-        source_position_z="0.08" 
+        source_position_z="-0.08" 
         />
 
 </impulse_response>

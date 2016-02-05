@@ -64,11 +64,13 @@ class UniformGridWithObject : public UniformGrid
         void ClassifyCells();
 
         // return a valid index points to cell not enclosed by the object
-        bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, int &nearestCell);
+        bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, int &nearestCell, Eigen::Vector3d &reflectedPositionOut) const;
 
         // the interfacial cells is needed for finite-difference, however its
         // value is undefined. so we need to do an even extension on the
         // interfacial cells to figure out what value to fetch. 
+        //
+        // this is used for nearest neighbor search
         void ComputeFiniteDifferenceStencils(); 
 
         void WriteCellTypes(const std::string &filename, const int &verbosity); 
@@ -79,6 +81,7 @@ class UniformGridWithObject : public UniformGrid
         int GetStencilIndex(Eigen::Vector3i &indicies); 
         void GetStencilIndex(Eigen::Vector3i &indicies, int &stencilIndex); 
 
+        double GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk) const;
         virtual void CellCenteredScalarHessian( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessian); 
 
         // same as gradient in UniformGrid class except with object handling.

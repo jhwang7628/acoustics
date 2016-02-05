@@ -292,8 +292,8 @@ int main( int argc, char **argv )
     solver.initSystem(0.0);
     const REAL widthSpace = cellSize; 
     //const REAL widthSpace = 0.2; 
-    const REAL widthTime  = 1./10000/10.; 
-    //const REAL widthTime  = timeStep*2.; 
+    //const REAL widthTime  = 1./10000/10.; 
+    const REAL widthTime  = timeStep; 
     //const REAL offsetTime = 4.*widthTime; 
     const REAL offsetTime = 5.0*widthTime; // the center of the gaussian in time
     //const REAL offsetTime = 0.0; 
@@ -394,9 +394,9 @@ int main( int argc, char **argv )
                 snprintf( buf, 100, pattern, pressure_buf );
                 IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
 
-                snprintf( pressure_buf, 100, "pressure_%05u.vtk", nSteps/parms._subSteps ); 
-                snprintf( buf, 100, pattern, pressure_buf ); 
-                VTKConverter::VTKStructureGridWithScalarFromEigen(*cellCenteredPosition,*vertexPressure,std::string(buf)+".vtk","pressure",VTKConverter::BINARY,cellCount); 
+                //snprintf( pressure_buf, 100, "pressure_%05u.vtk", nSteps/parms._subSteps ); 
+                //snprintf( buf, 100, pattern, pressure_buf ); 
+                //VTKConverter::VTKStructureGridWithScalarFromEigen(*cellCenteredPosition,*vertexPressure,std::string(buf)+".vtk","pressure",VTKConverter::BINARY,cellCount); 
             }
         }
         nSteps ++; 
