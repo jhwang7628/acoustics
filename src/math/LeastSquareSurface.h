@@ -8,7 +8,7 @@ class LeastSquareSurfaceBase
 {
     public: 
         virtual void ComputeCoefficients(const Eigen::MatrixXd &samplePoints, const Eigen::VectorXd &sampleValues) = 0; 
-        virtual double Interpolate(const Eigen::Vector3d &evaluatePosition) = 0;
+        virtual double Evaluate(const Eigen::Vector3d &evaluatePosition) = 0;
 };
 
 // compute a least square given n points. The least square has four unknowns,
@@ -32,7 +32,7 @@ class LeastSquareSurfaceLinear3D : public LeastSquareSurfaceBase
 
     public: 
         virtual void ComputeCoefficients(const Eigen::MatrixXd &samplePoints, const Eigen::VectorXd &sampleValues); 
-        virtual double Interpolate(const Eigen::Vector3d &evaluatePosition); 
+        virtual double Evaluate(const Eigen::Vector3d &evaluatePosition); 
         
 };
 

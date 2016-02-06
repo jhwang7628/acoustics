@@ -6,6 +6,39 @@
 namespace STL_Wrapper
 {
 
+// return sorted element indicies in ascending order using lambda expression 
+//
+// after sorting, use the returned indicies to access v 
+// to get sorted elements
+//
+// example: 
+//
+// v = [0, 3, 2] 
+// for (auto i: SortIndicies(v)) 
+//   cout << v[i] << endl;
+//
+// output: 
+// 0
+// 2
+// 3
+//
+// Ref:
+// http://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
+template <typename T>
+vector<size_t> SortIndicies(const vector<T> &v) 
+{
+
+  // initialize original index locations
+  vector<size_t> idx(v.size());
+  for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+  return idx;
+}
+
+// find unique element and trim
 template <typename T> 
 void VectorSortAndTrimInPlace(std::vector<T> &vec)
 {
@@ -66,8 +99,6 @@ void RemoveInPlace(std::vector<T> &vec, const T &value)
 }
 
 };
-
-
 
 
 

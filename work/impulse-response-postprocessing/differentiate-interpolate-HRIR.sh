@@ -2,9 +2,9 @@
 
 BIN=/home/jui-hsien/code/acoustics/build/bin
 
-/home/jui-hsien/code/acoustics/build/bin/differentiate-interpolate-HRIR /home/jui-hsien/code/acoustics/work/near-field/data_small_ball/default.xml /home/jui-hsien/code/acoustics/work/near-field/data_small_ball/test_set test_pressure_ /home/jui-hsien/code/turbsound_postfluid/FOAM_templates/smooth_BL2_1m_refineconcave/cellCentroid.dat HRTFcatedL.dat
+# /home/jui-hsien/code/acoustics/build/bin/differentiate-interpolate-HRIR /home/jui-hsien/code/acoustics/work/near-field/data_small_ball/default.xml /home/jui-hsien/code/acoustics/work/near-field/data_small_ball/test_set test_pressure_ /home/jui-hsien/code/turbsound_postfluid/FOAM_templates/smooth_BL2_1m_refineconcave/cellCentroid.dat HRTFcatedL.dat
 
-# ${BIN}/differentiate-interpolate-HRIR /home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml /home/jui-hsien/code/acoustics/work/impulse-response/data_Gaussian_space_1cell_time_1over1E5_res250_simulation/test_set head_left_pressure_ /home/jui-hsien/code/turbsound_postfluid/FOAM_templates/smooth_BL2_1m_refineconcave/cellCentroid.dat HRTFcatedL.dat
+${BIN}/differentiate-interpolate-HRIR /home/jui-hsien/code/acoustics/work/impulse-response/config/default.xml /home/jui-hsien/code/acoustics/work/impulse-response/data_Gaussian_space_1cell_time_1over1E5_res250_simulation/test_set head_left_pressure_ /home/jui-hsien/code/turbsound_postfluid/FOAM_templates/smooth_BL2_1m_refineconcave/cellCentroid.dat HRTFcatedL.dat
 
 # mkdir -p results_left
 # mv *.vtk *.dat results_left

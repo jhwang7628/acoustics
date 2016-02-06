@@ -49,6 +49,7 @@ if (BUILD_UNIT_TESTING)
 
     target_link_libraries(unit_testing_grid
         ${MKL_LIBRARY}
+        ${LEASTSQUARESURFACE_SOURCES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  

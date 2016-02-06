@@ -29,6 +29,7 @@ if (BUILD_DIFFERENTIATE_INTERPOLATE_HRIR)
 
     add_executable(${TARGET_NAME}
         ${DIFFERENTIATE_INTERPOLATE_HRIR_SRCS}
+        ${LEASTSQUARESURFACE_SOURCES}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}

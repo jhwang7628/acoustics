@@ -1,6 +1,8 @@
 #include "Grid.h" 
 #include "vtkConverter/vtkConverter.h"
 
+
+
 int GridData::FlattenIndicies(const int x, const int y, const int z) const 
 { 
     return owner_.FlattenIndicies(x,y,z); 
@@ -40,6 +42,30 @@ void Grid::InsertVertexData( const std::string &name, std::shared_ptr<Eigen::Mat
     GridData gridData( name, dataIn, *this ); 
     std::pair<std::string,GridData& > mapData (name, gridData);
     vertexData_.insert( mapData );
+}
+bool Grid::CheckUpperBounds(const double &x, const double &y, const double &z) const 
+{
+    if (x > maxBound_[0]-1e-10 || y > maxBound_[1]-1e-10 || z > maxBound_[2]-1e-10) 
+        return false;
+    return true; 
+}
+bool Grid::CheckLowerBounds(const double &x, const double &y, const double &z) const 
+{
+    if (x < minBound_[0]+1e-10 || y < minBound_[1]+1e-10 || z < minBound_[2]+1e-10) 
+        return false; 
+    return true; 
+}
+
+bool Grid::CheckOutOfBounds(const double &x, const double &y, const double &z) const 
+{
+    if (CheckUpperBounds(x,y,z) && CheckLowerBounds(x,y,z))
+        return true;
+    return false; 
+}
+
+bool Grid::CheckOutOfBounds(const Eigen::Vector3d &position) const
+{
+    return CheckOutOfBounds(position[0], position[1], position[2]); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -473,14 +499,14 @@ void UniformGrid::WriteVTKCellGrid(const std::string &vtkName)
     const Eigen::Vector3i cellCount = GetCellCount(); 
     Eigen::MatrixXd gridPosition(cellCount[0]*cellCount[1]*cellCount[2],3); 
 
-    for (int kk=0; kk<cellCount[2]+1; kk++) 
+    for (int kk=0; kk<cellCount[2]; kk++) 
     {
-        for (int jj=0; jj<cellCount[1]+1; jj++)
+        for (int jj=0; jj<cellCount[1]; jj++)
         {
-            for (int ii=0; ii<cellCount[0]+1; ii++)
+            for (int ii=0; ii<cellCount[0]; ii++)
             {
                 const int index  = FlattenIndicies(ii,jj,kk); 
-                gridPosition.row(index) = GetCellCenterPosition(ii,jj,kk)-dx_/2.;
+                gridPosition.row(index) = GetCellCenterPosition(ii,jj,kk);
             }
         }
     }

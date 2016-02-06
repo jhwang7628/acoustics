@@ -49,7 +49,6 @@ class UniformGridWithObject : public UniformGrid
 
         std::vector<CellType>                   cellTypes_;  
         std::vector<int>                        finiteDifferenceStencils_;  // see readme for routine ComputeInterfaceStencils
-        ReflectionFetchMethod                   reflectionFetchMethod; 
         double                                  distanceTolerance_; 
         bool                                    initialized_; 
 
@@ -68,6 +67,9 @@ class UniformGridWithObject : public UniformGrid
         // return a valid index points to cell not enclosed by the object
         bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, int &nearestCell, Eigen::Vector3d &reflectedPositionOut) const;
 
+
+        int FindKNearestFluidCells(const int &K, const Eigen::Vector3d &centerPosition, std::vector<int> &nearestNeighbors) const;  
+
         // the interfacial cells is needed for finite-difference, however its
         // value is undefined. so we need to do an even extension on the
         // interfacial cells to figure out what value to fetch. 
@@ -83,7 +85,9 @@ class UniformGridWithObject : public UniformGrid
         int GetStencilIndex(Eigen::Vector3i &indicies); 
         void GetStencilIndex(Eigen::Vector3i &indicies, int &stencilIndex); 
 
-        double GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk) const;
+        // Get stencil data with trilinear interpolation (assuming all interior cells
+        // have zero values) 
+        double GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk, const ReflectionFetchMethod &reflectionFetchMethod) const;
         virtual void CellCenteredScalarHessian( const std::string &dataName, std::vector<std::shared_ptr<Eigen::MatrixXd>> &hessian); 
 
         // same as gradient in UniformGrid class except with object handling.

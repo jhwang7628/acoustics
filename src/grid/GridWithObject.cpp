@@ -8,6 +8,10 @@
 
 #include "IO/IO.h"
 
+#include "utils/STL_Wrapper.h" 
+
+#include "math/LeastSquareSurface.h"
+
 template<typename T> 
 void SetEigenVector3(const T &x, const T &y, const T &z, Eigen::Matrix<T,3,1> &vec3)
 {
@@ -250,6 +254,61 @@ bool UniformGridWithObject::FlattenIndiciesWithReflection(const int &ii, const i
 
     return false; 
 }
+
+int UniformGridWithObject::FindKNearestFluidCells(const int &K, const Eigen::Vector3d &centerPosition, std::vector<int> &nearestNeighbors) const 
+{
+
+    const int searchProximity = 3;  // only search k cells in proximity
+
+    const bool boundsCheckPass= CheckLowerBounds(centerPosition[0]-searchProximity*dx_[0],centerPosition[1]-searchProximity*dx_[1],centerPosition[2]-searchProximity*dx_[2]) && 
+                                CheckUpperBounds(centerPosition[0]+searchProximity*dx_[0],centerPosition[1]+searchProximity*dx_[1],centerPosition[2]+searchProximity*dx_[2]); 
+    if (!boundsCheckPass) 
+        throw std::runtime_error("**ERROR** center position for k nearest point search out of bounds. Could be that object is too close to grid boundary. Input center position: " + to_string(centerPosition[0]) + ", " + std::to_string(centerPosition[1]) + ", " + std::to_string(centerPosition[2])); 
+
+    // the previous check ensures this is greater than zero
+    const int xIndex = (int)((centerPosition[0]-minBound_[0])/dx_[0]);
+    const int yIndex = (int)((centerPosition[1]-minBound_[1])/dx_[1]); 
+    const int zIndex = (int)((centerPosition[2]-minBound_[2])/dx_[2]); 
+
+    // search the K-by-K neighbor to find the closest cells
+    int indexBuffer; 
+    nearestNeighbors.clear(); 
+    std::vector<double> distances; 
+    Eigen::Vector3d positionBuffer; 
+    double distanceBuffer; 
+
+    // TODO if it works, can use KD tree to accelerate the search 
+    for (int i=-searchProximity; i<searchProximity; i++) 
+        for (int j=-searchProximity; j<searchProximity; j++) 
+            for (int k=-searchProximity; k<searchProximity; k++) 
+            {
+                FlattenIndicies(xIndex+i, yIndex+j, zIndex+k, indexBuffer); 
+                if ((cellTypes_[indexBuffer] & IS_SOLID)==0)  // record both index and distance 
+                {
+                    GetCellCenterPosition(indexBuffer, positionBuffer[0], positionBuffer[1], positionBuffer[2]); 
+                    distanceBuffer = (positionBuffer-centerPosition).squaredNorm();  // squared should be faster
+
+                    nearestNeighbors.push_back(indexBuffer); 
+                    distances.push_back(distanceBuffer); 
+                }
+                    
+            }
+
+    std::vector<size_t> permutations = STL_Wrapper::SortIndicies(distances); 
+    std::vector<int> indiciesBuffer = nearestNeighbors; 
+    for (size_t ii=0; ii<indiciesBuffer.size(); ii++)
+        nearestNeighbors[ii] = indiciesBuffer[permutations[ii]]; 
+
+    const size_t numberNearestIndiciesFound = std::min<size_t>(nearestNeighbors.size(), (size_t)K);
+
+    if (numberNearestIndiciesFound < nearestNeighbors.size())
+        nearestNeighbors.erase(nearestNeighbors.begin()+numberNearestIndiciesFound, nearestNeighbors.end()); 
+
+
+    return (int)numberNearestIndiciesFound; 
+
+}
+
 
 void UniformGridWithObject::ComputeFiniteDifferenceStencils()
 {
@@ -574,9 +633,7 @@ void UniformGridWithObject::GetStencilIndex(Eigen::Vector3i &indicies, int &sten
 }
 
 
-// Get stencil data with trilinear interpolation (assuming all interior cells
-// have zero values) 
-double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk) const 
+double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const int &ii, const int &jj, const int &kk, const ReflectionFetchMethod &reflectionFetchMethod) const 
 {
     assert(data.NData()==1);
 
@@ -598,45 +655,84 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
     // fetch the reflected cell position
     FlattenIndiciesWithReflection(xIndex,yIndex,zIndex,indexBuffer,reflectedPosition); 
 
-    double result; 
+    double result = 0; 
 
     switch (reflectionFetchMethod) 
     {
         case TRILINEAR:
+        {
+            // find the largest cell index that is smaller than the reflected position
+            Eigen::Vector3i lowestCellIndex = ((reflectedPosition-dx_/2.0).cwiseQuotient(dx_)).cast<int>(); 
+            lowestCellIndex[0] = min(max(lowestCellIndex[0],0),cellCount_[0]-2); 
+            lowestCellIndex[1] = min(max(lowestCellIndex[1],0),cellCount_[1]-2); 
+            lowestCellIndex[2] = min(max(lowestCellIndex[2],0),cellCount_[2]-2); 
 
-        // find the largest cell index that is smaller than the reflected position
-        Eigen::Vector3i lowestCellIndex = ((reflectedPosition-dx_/2.0).cwiseQuotient(dx_)).cast<int>(); 
-        lowestCellIndex[0] = min(max(lowestCellIndex[0],0),cellCount_[0]-2); 
-        lowestCellIndex[1] = min(max(lowestCellIndex[1],0),cellCount_[1]-2); 
-        lowestCellIndex[2] = min(max(lowestCellIndex[2],0),cellCount_[2]-2); 
+            FlattenIndicies(lowestCellIndex[0], lowestCellIndex[1], lowestCellIndex[2], indexBuffer); 
 
-        FlattenIndicies(lowestCellIndex[0], lowestCellIndex[1], lowestCellIndex[2], indexBuffer); 
+            Eigen::Vector3d lowestCellPosition  = GetCellCenterPosition(lowestCellIndex); 
+            Eigen::Vector3d highestCellPosition = GetCellCenterPosition(lowestCellIndex+Eigen::Vector3i::Ones()); 
 
-        Eigen::Vector3d lowestCellPosition  = GetCellCenterPosition(lowestCellIndex); 
-        Eigen::Vector3d highestCellPosition = GetCellCenterPosition(lowestCellIndex+Eigen::Vector3i::Ones()); 
+            Eigen::Vector3d weights = (reflectedPosition-lowestCellPosition).cwiseQuotient(highestCellPosition-lowestCellPosition); 
 
-        Eigen::Vector3d weights = (reflectedPosition-lowestCellPosition).cwiseQuotient(highestCellPosition-lowestCellPosition); 
+            const Eigen::Vector3i &l = lowestCellIndex; 
+            const double v000 = data.Value(l[0]  ,l[1]  ,l[2]  )(0); 
+            const double v100 = data.Value(l[0]+1,l[1]  ,l[2]  )(0); 
+            const double v110 = data.Value(l[0]+1,l[1]+1,l[2]  )(0); 
+            const double v010 = data.Value(l[0]  ,l[1]+1,l[2]  )(0); 
+            const double v001 = data.Value(l[0]  ,l[1]  ,l[2]+1)(0); 
+            const double v101 = data.Value(l[0]+1,l[1]  ,l[2]+1)(0); 
+            const double v111 = data.Value(l[0]+1,l[1]+1,l[2]+1)(0); 
+            const double v011 = data.Value(l[0]  ,l[1]+1,l[2]+1)(0); 
 
-        const Eigen::Vector3i &l = lowestCellIndex; 
-        const double v000 = data.Value(l[0]  ,l[1]  ,l[2]  )(0); 
-        const double v100 = data.Value(l[0]+1,l[1]  ,l[2]  )(0); 
-        const double v110 = data.Value(l[0]+1,l[1]+1,l[2]  )(0); 
-        const double v010 = data.Value(l[0]  ,l[1]+1,l[2]  )(0); 
-        const double v001 = data.Value(l[0]  ,l[1]  ,l[2]+1)(0); 
-        const double v101 = data.Value(l[0]+1,l[1]  ,l[2]+1)(0); 
-        const double v111 = data.Value(l[0]+1,l[1]+1,l[2]+1)(0); 
-        const double v011 = data.Value(l[0]  ,l[1]+1,l[2]+1)(0); 
+            result = TRILINEAR_INTERPOLATION(weights[0],weights[1],weights[2],v000,v100,v110,v010,v001,v101,v111,v011); 
+            break; 
+        }
 
-        result = TRILINEAR_INTERPOLATION(weights[0],weights[1],weights[2],v000,v100,v110,v010,v001,v101,v111,v011); 
-        break; 
 
+        // find four nearest neighbor closest to the reflected position and fit
+        // a linear surface then evaulate the function at the reflected
+        // position.
         case LEAST_SQUARE: 
+        {
+            const int N_samples = 8; 
+            std::vector<int> foundCellIndicies; 
+
+            const int numberFoundCells = FindKNearestFluidCells(N_samples, reflectedPosition, foundCellIndicies); 
+
+            if (numberFoundCells < N_samples)
+                std::cout << "**WARNING** number Found cells = " << numberFoundCells << std::endl;
+
+            if (numberFoundCells < 4) throw std::runtime_error("**ERROR** number of neighbors found was less than enough to fit a linear polynomial"); 
+
+            Eigen::MatrixXd samplePoints(N_samples,3); 
+            Eigen::VectorXd sampleValues(N_samples); 
+            for (int ii=0; ii<N_samples; ii++) 
+            {
+                GetCellCenterPosition(foundCellIndicies[ii], samplePoints(ii,0), samplePoints(ii,1), samplePoints(ii,2)); 
+                sampleValues(ii) = data.Value(foundCellIndicies[ii])(0); 
+            }
+            LeastSquareSurfaceLinear3D fittedSurface; 
+            fittedSurface.ComputeCoefficients(samplePoints, sampleValues); 
+            result = fittedSurface.Evaluate(reflectedPosition); 
 
 
+            std::cout << "\n"; 
+            STL_Wrapper::PrintVectorContent(std::cout, foundCellIndicies); 
+            std::cout << "solid:";
+            for (int ii=0; ii<numberFoundCells; ii++) 
+                std::cout << (cellTypes_[foundCellIndicies[ii]]&IS_SOLID) << " "; 
+            std::cout << "\n";
 
+            std::cout << "sample points" << samplePoints << std::endl;
+            std::cout << "sample values" << sampleValues << std::endl;
+            std::cout << "result = " << result << std::endl;
 
+            break;
+        }
 
     }
+
+    return result; 
 
 }
 
@@ -695,6 +791,9 @@ void UniformGridWithObject::CellCenteredScalarHessian(const std::string &dataNam
     std::array<double,N_hessianNeeded> hessianCell; //xx, xy, xz, yy, yz, zz
     Eigen::Vector3i indiciesBuffer; 
 
+    const ReflectionFetchMethod fetchMethod = LEAST_SQUARE; 
+    //const ReflectionFetchMethod fetchMethod = TRILINEAR; 
+
     // loop through each direction and compute the data difference and
     // take care of the boundaries
     for (int kk=0; kk<Nz; kk++)
@@ -708,14 +807,15 @@ void UniformGridWithObject::CellCenteredScalarHessian(const std::string &dataNam
 
                 if (cellTypes_[flattenedInd] & IS_SOLID) continue; // do nothing if it is solid
 
-                if (ii==66 && jj==50 && kk==49)
-                    std::cout << "cell position = " << GetCellCenterPosition(ii,jj,kk) << std::endl;
+                //if (ii==66 && jj==50 && kk==49)
+                //    std::cout << "cell position = " << GetCellCenterPosition(ii,jj,kk) << std::endl;
 
 
 
                 //debug 
-                hessianCell[0] = GetStencilDataScalar(data,ii+1,jj,kk) - GetStencilDataScalar(data,ii-1,jj,kk); 
-                hessianCell[0] /= (2.0*dx_[0]); 
+                //hessianCell[0] = GetStencilDataScalar(data,ii+1,jj,kk,TRILINEAR) - GetStencilDataScalar(data,ii-1,jj,kk,TRILINEAR); 
+                //hessianCell[0] = GetStencilDataScalar(data,ii+1,jj,kk,LEAST_SQUARE) - GetStencilDataScalar(data,ii-1,jj,kk,LEAST_SQUARE); 
+                //hessianCell[0] /= (2.0*dx_[0]); 
 
                 //hessianCell[0] = 0; 
                 //SetEigenVector3<int>(ii+1,jj  ,kk  , indiciesBuffer); 
@@ -727,35 +827,35 @@ void UniformGridWithObject::CellCenteredScalarHessian(const std::string &dataNam
 
 
 
-                //// xx
-                //hessianCell[0] = GetStencilDataScalar(data,ii+1,jj,kk) + GetStencilDataScalar(data,ii-1,jj,kk) - 2.0*GetStencilDataScalar(data,ii,jj,kk); 
-                //hessianCell[0] /= dx2; 
+                // xx
+                hessianCell[0] = GetStencilDataScalar(data,ii+1,jj,kk,fetchMethod) + GetStencilDataScalar(data,ii-1,jj,kk,fetchMethod) - 2.0*GetStencilDataScalar(data,ii,jj,kk,fetchMethod); 
+                hessianCell[0] /= dx2; 
 
-                //// yy
-                //hessianCell[3] = GetStencilDataScalar(data,ii,jj+1,kk) + GetStencilDataScalar(data,ii,jj-1,kk) - 2.0*GetStencilDataScalar(data,ii,jj,kk); 
-                //hessianCell[3] /= dy2; 
-
-
-                //// zz
-                //hessianCell[5] = GetStencilDataScalar(data,ii,jj,kk+1) + GetStencilDataScalar(data,ii,jj,kk-1) - 2.0*GetStencilDataScalar(data,ii,jj,kk); 
-                //hessianCell[5] /= dz2; 
+                // yy
+                hessianCell[3] = GetStencilDataScalar(data,ii,jj+1,kk,fetchMethod) + GetStencilDataScalar(data,ii,jj-1,kk,fetchMethod) - 2.0*GetStencilDataScalar(data,ii,jj,kk,fetchMethod); 
+                hessianCell[3] /= dy2; 
 
 
-                //// xy
-                //hessianCell[1]  = GetStencilDataScalar(data,ii+1,jj+1,kk) + GetStencilDataScalar(data,ii-1,jj-1,kk)
-                //                - GetStencilDataScalar(data,ii+1,jj-1,kk) - GetStencilDataScalar(data,ii-1,jj+1,kk); 
-                //hessianCell[1] /= (dx*dy*4.0);
+                // zz
+                hessianCell[5] = GetStencilDataScalar(data,ii,jj,kk+1,fetchMethod) + GetStencilDataScalar(data,ii,jj,kk-1,fetchMethod) - 2.0*GetStencilDataScalar(data,ii,jj,kk,fetchMethod); 
+                hessianCell[5] /= dz2; 
 
 
-                //// xz
-                //hessianCell[2]  = GetStencilDataScalar(data,ii+1,jj,kk+1) + GetStencilDataScalar(data,ii-1,jj,kk-1)
-                //                - GetStencilDataScalar(data,ii+1,jj,kk-1) - GetStencilDataScalar(data,ii-1,jj,kk+1); 
-                //hessianCell[2] /= (dx*dz*4.0);
+                // xy
+                hessianCell[1]  = GetStencilDataScalar(data,ii+1,jj+1,kk,fetchMethod) + GetStencilDataScalar(data,ii-1,jj-1,kk,fetchMethod)
+                                - GetStencilDataScalar(data,ii+1,jj-1,kk,fetchMethod) - GetStencilDataScalar(data,ii-1,jj+1,kk,fetchMethod); 
+                hessianCell[1] /= (dx*dy*4.0);
 
-                //// yz
-                //hessianCell[4]  = GetStencilDataScalar(data,ii,jj+1,kk+1) + GetStencilDataScalar(data,ii,jj-1,kk-1)
-                //                - GetStencilDataScalar(data,ii,jj+1,kk-1) - GetStencilDataScalar(data,ii,jj-1,kk+1); 
-                //hessianCell[4] /= (dy*dz*4.0);
+
+                // xz
+                hessianCell[2]  = GetStencilDataScalar(data,ii+1,jj,kk+1,fetchMethod) + GetStencilDataScalar(data,ii-1,jj,kk-1,fetchMethod)
+                                - GetStencilDataScalar(data,ii+1,jj,kk-1,fetchMethod) - GetStencilDataScalar(data,ii-1,jj,kk+1,fetchMethod); 
+                hessianCell[2] /= (dx*dz*4.0);
+
+                // yz
+                hessianCell[4]  = GetStencilDataScalar(data,ii,jj+1,kk+1,fetchMethod) + GetStencilDataScalar(data,ii,jj-1,kk-1,fetchMethod)
+                                - GetStencilDataScalar(data,ii,jj+1,kk-1,fetchMethod) - GetStencilDataScalar(data,ii,jj-1,kk+1,fetchMethod); 
+                hessianCell[4] /= (dy*dz*4.0);
 
                 /* using nearest neighbor
                 // xx
@@ -838,10 +938,6 @@ void UniformGridWithObject::CellCenteredScalarHessian(const std::string &dataNam
             } 
         } 
     }
-
-    int ii=66, jj=50, kk=49; 
-    int index = FlattenIndicies(ii,jj,kk); 
-    std::cout << "the actual cached result in 66,50,49 is " << (*(hessian[0]))(index,0) << std::endl;
     
 
 }

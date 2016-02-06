@@ -143,6 +143,12 @@ class Grid
         void InsertCellCenteredData( const std::string &name, std::shared_ptr<Eigen::Matrix<REAL,Eigen::Dynamic,Eigen::Dynamic>> dataIn ); 
         void InsertVertexData( const std::string &name, std::shared_ptr<Eigen::Matrix<REAL,Eigen::Dynamic,Eigen::Dynamic>> dataIn ); 
 
+
+        bool CheckLowerBounds(const double &x, const double &y, const double &z) const; 
+        bool CheckUpperBounds(const double &x, const double &y, const double &z) const; 
+        bool CheckOutOfBounds(const double &x, const double &y, const double &z) const; 
+        bool CheckOutOfBounds(const Eigen::Vector3d &position) const; 
+
         friend GridData; 
         friend std::ostream& operator << ( std::ostream& os, const Grid &grid ) 
         {
