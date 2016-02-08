@@ -61,7 +61,7 @@ def main():
         outFile.close()
 
         RunWavesolver(configFile)
-        # subprocess.call('rm %s' %(configFile), shell=True)
+        subprocess.call('rm %s' %(configFile), shell=True)
 
 if __name__=="__main__": 
     main()
