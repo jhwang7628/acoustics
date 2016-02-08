@@ -193,6 +193,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	    	add_executable(precompute-impulse-response-text
 	            ${IR_PRECOMPUTE_SRCS}
                 ${GRID_SOURCES}
+                ${LEASTSQUARESURFACE_SOURCES}
 	            ${GENERIC_SRC}                    ${IO_SRC}
 	            ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
 	            ${DISTANCEFIELD_SRC}              ${MATH_SRC}

@@ -21,8 +21,8 @@ class UniformGridWithObject : public UniformGrid
         // bit flags : http://www.cplusplus.com/forum/general/1590/
         // [1|2|3|4|5|6|7|8]: 
         //   1: whether its solid cell: enclosed by object using sdf
-        //   2: whether its interface cell: solid cell that has at least one
-        //      neighbour that is not solid 
+        //   2: whether its interface cell: mixed cells (not all solid or all
+        //      fluids) 
         //   3: if cell has solid on left  in x-direction, 
         //   4: if cell has solid on right in x-direction.
         //   5: if cell has solid on left  in y-direction, 

@@ -343,6 +343,7 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
 
     parms._listeningFile = queryOptionalAttr( "impulse_response/solver", "listening_file", "none" );
 
+    parms._sourceWidthTime = queryRequiredReal( "impulse_response/solver", "source_width_time" );
     parms._sourcePosition_x = queryRequiredReal( "impulse_response/solver", "source_position_x" ); 
     parms._sourcePosition_y = queryRequiredReal( "impulse_response/solver", "source_position_y" ); 
     parms._sourcePosition_z = queryRequiredReal( "impulse_response/solver", "source_position_z" ); 

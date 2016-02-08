@@ -90,7 +90,16 @@ void UniformGridWithObject::ClassifyCells()
                 if (distanceField_->distance(position) <= distanceTolerance_) 
                 {
                     cellTypes_[FlattenIndicies(ii,jj,kk)] |= IS_SOLID; 
-                    //isBoundary_[this->FlattenIndicies(ii,jj,kk)] = SOLID; 
+
+                    // also tag the neighboring cells (this will tag a lot of
+                    // cells repeatedly, but this function is executed only
+                    // once
+                    cellTypes_[FlattenIndicies(ii+1,jj,kk)] |= X_SOLID_ON_LEFT; 
+                    cellTypes_[FlattenIndicies(ii-1,jj,kk)] |= X_SOLID_ON_RIGHT; 
+                    cellTypes_[FlattenIndicies(ii,jj+1,kk)] |= Y_SOLID_ON_LEFT; 
+                    cellTypes_[FlattenIndicies(ii,jj-1,kk)] |= Y_SOLID_ON_RIGHT; 
+                    cellTypes_[FlattenIndicies(ii,jj,kk+1)] |= Z_SOLID_ON_LEFT; 
+                    cellTypes_[FlattenIndicies(ii,jj,kk-1)] |= Z_SOLID_ON_RIGHT; 
                     N_solids ++; 
                 }
             }
@@ -99,10 +108,11 @@ void UniformGridWithObject::ClassifyCells()
     std::cout << std::endl;
 
 
-    // then find the interfacial cells: solid cell who has at least one
-    // neighboring cell that is fluid
+    // then find the interfacial cells: solid cell who has neighbors of mix
+    // types    
     int index; 
     int N_interfacial = 0; 
+    int countBuffer;
     for (int kk=1; kk<cellCount[2]-1; kk++) 
     {
         std::cout << " classify interfacial cells. progress: " << kk << "/" << cellCount[2]-2 << "\r" << std::flush;
@@ -112,23 +122,40 @@ void UniformGridWithObject::ClassifyCells()
             {
                 index = FlattenIndicies(ii,jj,kk); 
 
-                if ((cellTypes_[index]&IS_SOLID) == 0) // skip if not solid
-                    continue; 
+                countBuffer = 0; 
+                if (cellTypes_[index] & X_SOLID_ON_LEFT)  countBuffer+=1; 
+                else                                      countBuffer-=1; 
+                if (cellTypes_[index] & X_SOLID_ON_RIGHT) countBuffer+=1; 
+                else                                      countBuffer-=1; 
+                if (cellTypes_[index] & Y_SOLID_ON_LEFT)  countBuffer+=1; 
+                else                                      countBuffer-=1; 
+                if (cellTypes_[index] & Y_SOLID_ON_RIGHT) countBuffer+=1; 
+                else                                      countBuffer-=1; 
+                if (cellTypes_[index] & Z_SOLID_ON_LEFT)  countBuffer+=1; 
+                else                                      countBuffer-=1; 
+                if (cellTypes_[index] & Z_SOLID_ON_RIGHT) countBuffer+=1; 
+                else                                      countBuffer-=1; 
 
-                if (cellTypes_[FlattenIndicies(ii-1,jj  ,kk  )] & IS_SOLID) cellTypes_[index] |= X_SOLID_ON_LEFT ; 
-                if (cellTypes_[FlattenIndicies(ii+1,jj  ,kk  )] & IS_SOLID) cellTypes_[index] |= X_SOLID_ON_RIGHT;
-                if (cellTypes_[FlattenIndicies(ii  ,jj-1,kk  )] & IS_SOLID) cellTypes_[index] |= Y_SOLID_ON_LEFT ; 
-                if (cellTypes_[FlattenIndicies(ii  ,jj+1,kk  )] & IS_SOLID) cellTypes_[index] |= Y_SOLID_ON_RIGHT; 
-                if (cellTypes_[FlattenIndicies(ii  ,jj  ,kk-1)] & IS_SOLID) cellTypes_[index] |= Z_SOLID_ON_LEFT ; 
-                if (cellTypes_[FlattenIndicies(ii  ,jj  ,kk+1)] & IS_SOLID) cellTypes_[index] |= Z_SOLID_ON_RIGHT; 
-
-                if ((cellTypes_[index] & X_SOLID_ON_LEFT)==0 || (cellTypes_[index] & X_SOLID_ON_RIGHT)==0 || 
-                    (cellTypes_[index] & Y_SOLID_ON_LEFT)==0 || (cellTypes_[index] & Y_SOLID_ON_RIGHT)==0 || 
-                    (cellTypes_[index] & Z_SOLID_ON_LEFT)==0 || (cellTypes_[index] & Z_SOLID_ON_RIGHT)==0)
+                if (countBuffer!=6 && countBuffer!=-6) 
                 {
                     cellTypes_[index] |= IS_INTERFACE; 
                     N_interfacial++; 
                 }
+
+
+                //if (cellTypes_[FlattenIndicies(ii-1,jj  ,kk  )] & IS_SOLID) cellTypes_[index] |= X_SOLID_ON_LEFT ; 
+                //if (cellTypes_[FlattenIndicies(ii+1,jj  ,kk  )] & IS_SOLID) cellTypes_[index] |= X_SOLID_ON_RIGHT;
+                //if (cellTypes_[FlattenIndicies(ii  ,jj-1,kk  )] & IS_SOLID) cellTypes_[index] |= Y_SOLID_ON_LEFT ; 
+                //if (cellTypes_[FlattenIndicies(ii  ,jj+1,kk  )] & IS_SOLID) cellTypes_[index] |= Y_SOLID_ON_RIGHT; 
+                //if (cellTypes_[FlattenIndicies(ii  ,jj  ,kk-1)] & IS_SOLID) cellTypes_[index] |= Z_SOLID_ON_LEFT ; 
+                //if (cellTypes_[FlattenIndicies(ii  ,jj  ,kk+1)] & IS_SOLID) cellTypes_[index] |= Z_SOLID_ON_RIGHT; 
+                //if ((cellTypes_[index] & X_SOLID_ON_LEFT)==0 || (cellTypes_[index] & X_SOLID_ON_RIGHT)==0 || 
+                //    (cellTypes_[index] & Y_SOLID_ON_LEFT)==0 || (cellTypes_[index] & Y_SOLID_ON_RIGHT)==0 || 
+                //    (cellTypes_[index] & Z_SOLID_ON_LEFT)==0 || (cellTypes_[index] & Z_SOLID_ON_RIGHT)==0)
+                //{
+                //    cellTypes_[index] |= IS_INTERFACE; 
+                //    N_interfacial++; 
+                //}
 
             }
         }
@@ -172,7 +199,7 @@ bool UniformGridWithObject::FlattenIndiciesWithReflection(const int &ii, const i
     GetCellCenterPosition(ii,jj,kk,reflectedPositionOut[0],reflectedPositionOut[1],reflectedPositionOut[2]); 
     if ((cellTypes_[indexBuffer]&IS_SOLID)==0) return true; // its outside the object already 
 
-    const int maxIteration = 1;
+    const int maxIteration = 2;
 
     Vector3d position; 
     Vector3d closestPoint;
@@ -258,7 +285,7 @@ bool UniformGridWithObject::FlattenIndiciesWithReflection(const int &ii, const i
 int UniformGridWithObject::FindKNearestFluidCells(const int &K, const Eigen::Vector3d &centerPosition, std::vector<int> &nearestNeighbors) const 
 {
 
-    const int searchProximity = 3;  // only search k cells in proximity
+    const int searchProximity = 4;  // only search k cells in proximity
 
     const bool boundsCheckPass= CheckLowerBounds(centerPosition[0]-searchProximity*dx_[0],centerPosition[1]-searchProximity*dx_[1],centerPosition[2]-searchProximity*dx_[2]) && 
                                 CheckUpperBounds(centerPosition[0]+searchProximity*dx_[0],centerPosition[1]+searchProximity*dx_[1],centerPosition[2]+searchProximity*dx_[2]); 
@@ -694,7 +721,7 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
         // position.
         case LEAST_SQUARE: 
         {
-            const int N_samples = 8; 
+            const int N_samples = 12; 
             std::vector<int> foundCellIndicies; 
 
             const int numberFoundCells = FindKNearestFluidCells(N_samples, reflectedPosition, foundCellIndicies); 
@@ -704,9 +731,9 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
 
             if (numberFoundCells < 4) throw std::runtime_error("**ERROR** number of neighbors found was less than enough to fit a linear polynomial"); 
 
-            Eigen::MatrixXd samplePoints(N_samples,3); 
-            Eigen::VectorXd sampleValues(N_samples); 
-            for (int ii=0; ii<N_samples; ii++) 
+            Eigen::MatrixXd samplePoints(numberFoundCells,3); 
+            Eigen::VectorXd sampleValues(numberFoundCells); 
+            for (int ii=0; ii<numberFoundCells; ii++) 
             {
                 GetCellCenterPosition(foundCellIndicies[ii], samplePoints(ii,0), samplePoints(ii,1), samplePoints(ii,2)); 
                 sampleValues(ii) = data.Value(foundCellIndicies[ii])(0); 
@@ -723,8 +750,8 @@ double UniformGridWithObject::GetStencilDataScalar(const GridData &data, const i
                 std::cout << (cellTypes_[foundCellIndicies[ii]]&IS_SOLID) << " "; 
             std::cout << "\n";
 
-            std::cout << "sample points" << samplePoints << std::endl;
-            std::cout << "sample values" << sampleValues << std::endl;
+            //std::cout << "sample points" << samplePoints << std::endl;
+            std::cout << "sample values" << sampleValues.transpose() << std::endl;
             std::cout << "result = " << result << std::endl;
 
             break;
@@ -937,6 +964,22 @@ void UniformGridWithObject::CellCenteredScalarHessian(const std::string &dataNam
 
             } 
         } 
+    }
+
+    // local smoothing on interfacial cells to lower the impact on stencil
+    // choice on the boundaries
+    std::cout << "interface smoothing" << std::endl;
+    Eigen::VectorXd filter = SIGNAL_PROCESSING::DiscreteGaussian1D(3,1); 
+
+    std::vector<bool> filterMask(NCell, 1); 
+    for (int ii=0; ii<NCell; ii++) 
+        filterMask[ii] = ((cellTypes_[ii]&IS_INTERFACE) ? true : false); 
+
+    for (size_t ii=0; ii<hessian.size(); ii++) 
+    {
+        InsertCellCenteredData("tmp_h", hessian[ii]); 
+        *(hessian[ii]) = CellCenteredSmoothing("tmp_h", filter, filterMask); 
+        DeleteCellCenteredData("tmp_h"); 
     }
     
 

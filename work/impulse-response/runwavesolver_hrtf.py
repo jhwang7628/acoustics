@@ -5,7 +5,7 @@ import os
 import numpy as np
 from runwavesolver import RunWavesolver
 
-def CreateHRTFConfigString(left_right, source_x, source_y, source_z): 
+def CreateHRTFConfigString(datadir, left_right, source_widthTime, source_x, source_y, source_z): 
 
     configString = """<?xml version="1.0" ?>
     <impulse_response>
@@ -20,19 +20,25 @@ def CreateHRTFConfigString(left_right, source_x, source_y, source_z):
             timestepfrequency="640000"
             substeps="8"
     
-            output_pattern="data_Gaussian_space_depend_time_1over160000_res250_simulation/head_%s_%s"
-    
-            source_position_x="%f" 
-            source_position_y="%f" 
-            source_position_z="%f" 
+            output_pattern="%s/head_%s_%s"
+   
+            source_width_time="%.16f"
+            source_position_x="%.16f" 
+            source_position_y="%.16f" 
+            source_position_z="%.16f" 
             />
     
     </impulse_response>
-    """ %(left_right, '%s', source_x, source_y, source_z) 
+    """ %(datadir, left_right, '%s', source_widthTime, source_x, source_y, source_z) 
 
     return configString
 
 def main(): 
+
+    ## parameters ##
+    datadir = 'data_Gaussian_space_depend_time_1over200000_res250_dt640kHz'
+    source_widthTime = 1./200000.
+
 
     fileID = 0
     while os.path.isfile('head_left_%.5u.xml' %(fileID)) or os.path.isfile('head_right_%.5u.xml' %(fileID)): 
@@ -48,7 +54,7 @@ def main():
         else: 
             left_right = 'right'
             source_z = -0.08
-        configString = CreateHRTFConfigString(left_right, source_x, source_y, source_z) 
+        configString = CreateHRTFConfigString(datadir, left_right, source_widthTime, source_x, source_y, source_z) 
         configFile = 'head_%s_%.5u.xml' %(left_right, fileID)
         outFile = open(configFile,'w')
         outFile.write(configString)

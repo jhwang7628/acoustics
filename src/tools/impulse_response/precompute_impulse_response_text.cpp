@@ -290,10 +290,11 @@ int main( int argc, char **argv )
     ///// initialize system with external source. ///// 
     cout << "Source position is set at " << sourcePosition << endl;
     solver.initSystem(0.0);
-    const REAL widthTime  = 1./10000./16.; 
+    const REAL &widthTime = parms._sourceWidthTime; 
+    //const REAL widthTime  = 1./10000./32.; 
     //const REAL widthTime  = timeStep; 
     //const REAL offsetTime = 4.*widthTime; 
-    const REAL offsetTime = 8.0*widthTime; // the center of the gaussian in time
+    const REAL offsetTime = 16.0*widthTime; // the center of the gaussian in time
     //const REAL offsetTime = 0.0; 
     const REAL widthSpace = parms._c * widthTime; 
     //const REAL widthSpace = 0.2; 
@@ -357,6 +358,31 @@ int main( int argc, char **argv )
         of << "binary write method : IO writeMatrixXd method (hard-coded)" << endl;
         of.close();
 
+    }
+
+    Eigen::MatrixXd vertexPosition(Ndivision,3); 
+    int count = 0;
+    Vector3d vPosition;
+    for ( int kk=0; kk<maxDrawBound[2]; kk++ )
+        for ( int jj=0; jj<maxDrawBound[1]; jj++ )
+            for ( int ii=0; ii<maxDrawBound[0]; ii++ )
+            {
+                Tuple3i  vIndex( ii, jj, kk );
+                vPosition = solver.fieldPosition(  vIndex );
+
+                vertexPosition( count, 0 ) = vPosition[0];
+                vertexPosition( count, 1 ) = vPosition[1];
+                vertexPosition( count, 2 ) = vPosition[2];
+                count ++;
+
+            }
+
+    printf("writing pressure vertex position\n");
+    {
+    
+        char buffer[100];
+        snprintf( buffer,100,pattern,"vertex_position.dat");
+        IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
     }
 
     /// time step system

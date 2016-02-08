@@ -33,7 +33,13 @@ void LeastSquareSurfaceLinear3D::ComputeCoefficients(const Eigen::MatrixXd &samp
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
     coefficients = svd.solve(sampleValues); 
     const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-    std::cout << "condition number of the least square solve is = " << conditionNumber << std::endl; 
+    if (conditionNumber > 1E5) 
+    {
+        std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"; 
+        std::cout << "            the solution can be inaccurate.\n";
+        std::cout << "            the problematic matrix: \n"; 
+        std::cout << samplePoints << std::endl;
+    }
 
     //coefficients = A.householderQr().solve(sampleValues); 
     
