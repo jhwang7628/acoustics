@@ -60,12 +60,12 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
     finiteDifferenceStencils_.resize(N_cells(),-1); 
 
     ClassifyCells(); 
-    ComputeFiniteDifferenceStencils(); 
+    //ComputeFiniteDifferenceStencils(); 
 
     // output 
     std::cout << "\n" << *this << std::endl;
 
-    initialized_ = true; 
+    //initialized_ = true; 
 }
 
 void UniformGridWithObject::ClassifyCells()
@@ -641,6 +641,9 @@ void UniformGridWithObject::WriteCellTypes(const std::string &filename, const in
 
 int UniformGridWithObject::GetStencilIndex(Eigen::Vector3i &indicies)
 {
+    if (!initialized_)
+        ComputeFiniteDifferenceStencils(); 
+
     int buffer; 
     GetStencilIndex(indicies,buffer); 
 

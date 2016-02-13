@@ -294,7 +294,8 @@ int main( int argc, char **argv )
     //const REAL widthTime  = 1./10000./32.; 
     //const REAL widthTime  = timeStep; 
     //const REAL offsetTime = 4.*widthTime; 
-    const REAL offsetTime = 16.0*widthTime; // the center of the gaussian in time
+    const REAL offsetTime = 1./20000.; 
+    //const REAL offsetTime = 16.0*widthTime; // the center of the gaussian in time
     //const REAL offsetTime = 0.0; 
     const REAL widthSpace = parms._c * widthTime; 
     //const REAL widthSpace = 0.2; 
