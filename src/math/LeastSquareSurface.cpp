@@ -1,6 +1,7 @@
 #include <iostream> 
 #include "LeastSquareSurface.h" 
 
+
 void LeastSquareSurfaceLinear3D::ComputeCoefficients(const Eigen::MatrixXd &samplePoints, const Eigen::VectorXd &sampleValues)
 {
     if (samplePoints.cols()!=3) throw std::runtime_error("**ERROR** sample points is not three dimensional. input matrix number of columns : " + std::to_string(samplePoints.cols())); 
@@ -30,6 +31,10 @@ void LeastSquareSurfaceLinear3D::ComputeCoefficients(const Eigen::MatrixXd &samp
     // [2] D.Q. Lee, numerically efficient methods for solving least squares problems
     // [3] good reference on column-pivoted QR:
     //      http://www.math.usm.edu/lambers/mat610/sum10/lecture11.pdf
+    //
+    // Note that using the svd solve, the solution is implicitly a least square
+    // solution, thin SVD is enough. 
+    // (http://eigen.tuxfamily.org/dox/classEigen_1_1JacobiSVD.html)
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
     coefficients = svd.solve(sampleValues); 
     const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
