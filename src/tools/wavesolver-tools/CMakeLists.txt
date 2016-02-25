@@ -1,0 +1,28 @@
+# =============================================================================
+#   Builds tools for processing FDTD wavesolver data
+# =============================================================================
+if ( BUILD_WAVESOLVER_TOOLS )
+
+    set(CMAKE_CXX_FLAGS "-std=c++11")
+    add_executable(convert-dat-vtk
+        ${GRID_SOURCES}
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+        convert_dat_vtk.cpp) 
+
+    target_link_libraries(convert-dat-vtk
+        ${MKL_LIBRARY}
+        ${LEASTSQUARESURFACE_SOURCES}
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        boost_thread
+        boost_system                    
+        boost_regex) 
+endif ( BUILD_WAVESOLVER_TOOLS )
