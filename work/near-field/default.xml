@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
 <impulse_response>
-    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
+    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/rotated_plane/rotated_plane.obj" scale="1.0" />
 
     <solver
-        stop_time="0.5"
-        distancefield="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj.dist"
+        stop_time="0.006803"
+        distancefield="/home/jui-hsien/code/acoustics/work/meshes/rotated_plane/rotated_plane.obj.dist"
         fieldresolution="100"
         gridresolution="100"
         gridscale="1.0000000"
         timestepfrequency="176400"
         substeps="4"
 
-        output_pattern="data_plane/test_%s"
+        output_pattern="data_rotated_plane/test_%s"
 
         source_width_time="0.00005"
 

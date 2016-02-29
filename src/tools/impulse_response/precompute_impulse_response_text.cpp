@@ -454,8 +454,7 @@ void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeSt
     FILE * fp = fopen(fname, "w+");
     fprintf(fp, "%d %.6lf\n", n, nowTime);
 
-    for (size_t ii=0; ii<w.size(); ii++)
-        fprintf( fp, "%.16f\n", w[ii] );
+    for (size_t ii=0; ii<w.size(); ii++) fprintf( fp, "%.16f\n", w[ii] );
 
     fclose(fp);
 }
