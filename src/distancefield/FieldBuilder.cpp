@@ -69,3 +69,35 @@ DistanceFieldBuilder::BuildSignedClosestPointField( const std::string &objFileNa
 
     return field;
 }
+ClosestPointField *
+DistanceFieldBuilder::BuildSignedClosestPointField( const std::string &objFileName,
+                                                int resolution,
+                                                const std::string &filePrefix,
+                                                const Vec3d &boundingMin,
+                                                const Vec3d &boundingMax)
+{
+    char                     filename[ 1024 ];
+    ClosestPointField        *field = NULL;
+    int                      status = 1;
+
+    field = new ClosestPointField();
+
+    if ( !filePrefix.empty() ) {
+        sprintf( filename, "%s_%04d.scpf", filePrefix.c_str(), resolution );
+
+        status = field->load( string(filename) );
+    }
+
+    if ( status != 0 ) {
+        // Couldn't read the field, so we need to build it explicitly
+        field->setBoundingBox(boundingMin, boundingMax); 
+        field->computeSignedField( objFileName, resolution );
+
+        if ( !filePrefix.empty() ) {
+            field->save( string( filename ), false );
+        }
+    }
+
+    return field;
+}
+

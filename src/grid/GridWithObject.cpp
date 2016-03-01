@@ -42,9 +42,12 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
     cellCount_[2] = solverParameters_._gridResolution; 
 
     BoundingBox fieldBBox(distanceField_->bmin(), distanceField_->bmax()); 
-    fieldBBox *= solverParameters_._gridScale; 
+    //fieldBBox *= solverParameters_._gridScale; 
 
-    double cellSize = fieldBBox.minlength()/(REAL)solverParameters_._gridResolution; 
+
+    double cellSize;
+   
+    cellSize = fieldBBox.minlength()/(REAL)solverParameters_._gridResolution; 
 
     minBound_ = Eigen::Vector3d(fieldBBox.minBound().x, fieldBBox.minBound().y, fieldBBox.minBound().z);
     maxBound_ = minBound_ + Eigen::Vector3d::Ones()*cellSize*(double)solverParameters_._gridResolution; 

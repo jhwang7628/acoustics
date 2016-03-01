@@ -55,7 +55,7 @@ std::vector<T> VectorSortAndTrim(std::vector<T> vec)
 }
 
 template <typename T> 
-void PrintVectorContent(std::ostream &os, std::vector<T> &vec, const bool &verticalPrint=false, const int cutoff=-1)
+void PrintVectorContent(std::ostream &os, std::vector<T> &vec, const int cutoff=-1, const bool &verticalPrint=false)
 {
     const int half_cutoff = cutoff/2;
     const int N = vec.size();

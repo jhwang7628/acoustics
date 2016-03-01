@@ -21,6 +21,7 @@
 // Distance field construction functions
 //////////////////////////////////////////////////////////////////////
 class DistanceFieldBuilder {
+
     public:
         // Builds a signed distance function out of the given .obj file
         // Optionally attempts to read/write from/to the given file name
@@ -34,6 +35,11 @@ class DistanceFieldBuilder {
 	                                                           int resolution,
 	                                                           const std::string &filePrefix );
         
+        static ClosestPointField    *BuildSignedClosestPointField( const std::string &objFileName,
+	                                                           int resolution,
+	                                                           const std::string &filePrefix,
+                                                               const Vec3d &boundingMin,
+                                                               const Vec3d &boundingMax);
 };
 
 #endif

@@ -823,7 +823,7 @@ class IO {
              * Extract file names in "directory" filenames of which starts with "startString", return results 
              * in filenames. Will attempt a sort on string names. 
              */ 
-            static void listDirectoryMatch(const char *directory, const char *str, vector<string> &filenames)
+            static void listDirectoryMatch(const char *directory, const char *str, vector<string> &filenames, const string &str_cant_match="NONE_SPECIFIED")
             {
 
                 DIR *dp;
@@ -845,7 +845,8 @@ class IO {
 
                     //std::size_t found = dname.find( str );
                     //if ( found != std::string::npos ) filenames.push_back( dname );
-                    if ( StringHelper::matchSubstr( dname, str ) ) filenames.push_back( dname );
+                    if (StringHelper::matchSubstr(dname, str) && !StringHelper::matchSubstr(dname, str_cant_match)) 
+                        filenames.push_back( dname );
                 }
 
                 // sort the file names
@@ -864,11 +865,11 @@ class IO {
              * Extract file names in "directory" filenames of which starts with "startString", return results 
              * in filenames. Will attempt a sort on string names. 
              */ 
-            static std::vector<std::string> listDirectoryMatch( const char * directory, const char * str )
+            static std::vector<std::string> listDirectoryMatch( const char * directory, const char * str, const string &str_cant_match="NONE_SPECIFIED" )
             {
 
                 std::vector<std::string> filenames; 
-                listDirectoryMatch( directory, str, filenames );
+                listDirectoryMatch( directory, str, filenames, str_cant_match );
 
                 return filenames; 
             }
@@ -918,14 +919,14 @@ class IO {
              * Extract file names in "directory" filenames of which starts with "startString", return results 
              * in filenames. Will attempt a sort on string names. 
              */ 
-                static std::vector<std::string> listDirectoryG( const char * directory, const char * str )
-                {
+            static std::vector<std::string> listDirectoryG( const char * directory, const char * str )
+            {
 
-                    std::vector<std::string> filenames; 
-                    listDirectoryG( directory, str, filenames );
+                std::vector<std::string> filenames; 
+                listDirectoryG( directory, str, filenames );
 
-                    return filenames; 
-                }
+                return filenames; 
+            }
 #endif 
 
 

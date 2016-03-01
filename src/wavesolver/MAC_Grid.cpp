@@ -820,11 +820,18 @@ void MAC_Grid::classifyCells( bool useBoundary )
 //
 // FIXME: For now, we will use a quadratic profile here, though
 // we may need to try something more complex later on.
+//
+// the PML has been disabled except for the face at -z, because we 
+// want to make a acoustic cornell box (3/1, 2016)
 //////////////////////////////////////////////////////////////////////
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth,
         int dimension )
 {
     //return 0.0;
+
+    if (dimension!=2)
+        return 0.0;
+
 
     const BoundingBox         &bbox = _pressureField.bbox();
     REAL                       h;
@@ -842,7 +849,7 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
     h = bbox.maxBound()[ dimension ] - x[ dimension ];
     if ( h <= absorptionWidth )
     {
-        REAL                     dist = absorptionWidth - h;
+        //REAL                     dist = absorptionWidth - h;
 
 #if 0
         cout << "returning "
@@ -850,7 +857,8 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
             / absorptionWidth << endl;
 #endif
         //return _PML_absorptionStrength * ( absorptionWidth - h ) / absorptionWidth;
-        return _PML_absorptionStrength * dist * dist / a2;
+        //return _PML_absorptionStrength * dist * dist / a2;
+        return 0.0;
     }
 
     return 0.0;

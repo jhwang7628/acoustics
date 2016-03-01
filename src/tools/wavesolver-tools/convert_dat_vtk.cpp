@@ -9,6 +9,7 @@
 #include <omp.h>
 
 #include "utils/IO/IO.h"
+#include "utils/IO/StringHelper.h" 
 #include "utils/STL_Wrapper.h"
 #include "grid/GridWithObject.h" 
 #include "vtkConverter/vtkConverter.h"
@@ -23,14 +24,15 @@
 
 int main(int argc, char ** argv) {
 
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cerr << "**Usage: " << argv[0] << " <config_file> <data_dir> \n"; 
+        std::cerr << "**Usage: " << argv[0] << " <config_file> <data_dir> <max_number_files (-1 will disable)>\n"; 
         exit(1);
     }
 
     const char *configFile = argv[1]; 
     const char *datadir    = argv[2]; 
+    const int N            = atoi(argv[3]); 
 
     UniformGridWithObject grid; 
     grid.Reinitialize(std::string(configFile)); 
@@ -39,14 +41,23 @@ int main(int argc, char ** argv) {
 
     grid.GetAllCellCenterPosition(centroids); 
 
-    std::vector<std::string> filenames; 
-    IO::listDirectoryMatch(datadir, ".*pressure_[[:digit:]]*\\.dat", filenames); 
+    std::vector<std::string> filenames, filenamesAll; 
+    IO::listDirectoryMatch(datadir, ".*pressure_[[:digit:]]*\\.dat", filenamesAll); 
+
+    for (size_t ii=0; ii<filenamesAll.size(); ii++) 
+    {
+        if (!IO::ExistFile(filenamesAll[ii]+".vtk"))
+            filenames.push_back(filenamesAll[ii]); 
+
+        if (filenames.size()>N && N!=-1)  // early termination
+            break; 
+    }
 
     const int N_files = filenames.size(); 
     std::shared_ptr<Eigen::MatrixXd> dataBuffer(new Eigen::MatrixXd(grid.N_cells(), 3)); 
     grid.InsertCellCenteredData("dataBuffer", dataBuffer); 
 
-    STL_Wrapper::PrintVectorContent(std::cout, filenames);
+    STL_Wrapper::PrintVectorContent(std::cout, filenames, 6);
 
     std::string absFilePath; 
     for (int ii=0; ii<N_files; ii++) 

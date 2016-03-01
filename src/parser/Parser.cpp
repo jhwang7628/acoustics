@@ -315,6 +315,45 @@ Parser::SphericalImpactParms Parser::getSphereImpactParms()
 }
 #endif
 
+std::vector<Parser::ImpulseResponseParms::VolumetricSource> Parser::ImpulseResponseParms::QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed)
+{
+    if (!document) throw std::runtime_error("**ERROR** document not established"); 
+    
+    std::vector<VolumetricSource> sources; 
+    
+    TiXmlNode *node = document; 
+    node = parser->getNodeByPath(path); 
+    while (node) 
+    {
+        Parser::ImpulseResponseParms::VolumetricSource source; 
+
+        TiXmlElement *elm = node->ToElement(); 
+        source.widthTime         = parser->queryRequiredReal(elm, "source_width_time"); 
+        source.widthSpace        = parser->queryOptionalReal(elm, "source_width_space", soundSpeed*source.widthTime); 
+        source.offsetTime        = parser->queryOptionalReal(elm, "source_offset_time", 0.0); 
+        source.normalizeConstant = parser->queryOptionalReal(elm, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*source.widthSpace,3)); 
+        //source.widthSpace = c*widthTime; 
+        //source.offsetTime = 0.0; // default 
+        source.position.x = parser->queryRequiredReal(elm, "source_position_x"); 
+        source.position.y = parser->queryRequiredReal(elm, "source_position_y"); 
+        source.position.z = parser->queryRequiredReal(elm, "source_position_z"); 
+
+        std::cout << SDUMP(source.position) << std::endl;
+
+        source.flipSign = (parser->queryOptionalReal(elm, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
+        source.normalizeConstant *= (source.flipSign) ? -1.0 : 1.0;
+
+        sources.push_back(source); 
+
+        node = parser->getNextSiblingNode(node); 
+    }
+
+    if (sources.size()==0) 
+        throw std::runtime_error("**ERROR** no sources found in the configuration file"); 
+
+    return sources;
+}
+
 Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
 {
     ImpulseResponseParms       parms;
@@ -328,11 +367,13 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
 
     // Get grid parameters
     parms._gridResolution = queryRequiredInt( "impulse_response/solver", "gridresolution" );
-    parms._gridScale = queryRequiredReal( "impulse_response/solver", "gridscale" );
+    //parms._gridScale = 1.0;
+    //parms._gridScale = queryRequiredReal( "impulse_response/solver", "gridscale" );
 
-    parms._fixedCellSize = ( queryOptionalInt( "impulse_response/solver", "fixedcellsize", "0" ) != 0 );
-    if ( parms._fixedCellSize )
-        parms._cellSize = queryRequiredReal( "impulse_response/solver", "cellsize" );
+    parms._cellSize = queryOptionalReal( "impulse_response/solver", "cellsize", "-1"); 
+    //parms._fixedCellSize = ( queryOptionalInt( "impulse_response/solver", "fixedcellsize", "0" ) != 0 );
+    //if ( parms._fixedCellSize )
+    //    parms._cellSize = queryRequiredReal( "impulse_response/solver", "cellsize" );
 
     parms._timeStepFrequency = queryRequiredInt( "impulse_response/solver", "timestepfrequency" );
     parms._subSteps = queryRequiredInt( "impulse_response/solver", "substeps" );
@@ -343,10 +384,49 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
 
     parms._listeningFile = queryOptionalAttr( "impulse_response/solver", "listening_file", "none" );
 
-    parms._sourceWidthTime = queryRequiredReal( "impulse_response/solver", "source_width_time" );
-    parms._sourcePosition_x = queryRequiredReal( "impulse_response/solver", "source_position_x" ); 
-    parms._sourcePosition_y = queryRequiredReal( "impulse_response/solver", "source_position_y" ); 
-    parms._sourcePosition_z = queryRequiredReal( "impulse_response/solver", "source_position_z" ); 
+    parms._useMesh = (queryOptionalInt("impulse_response/solver", "use_mesh", "1")==0) ? false : true; 
+
+    // TODO very ineffective way to parse it but easier to implement for now,
+    // can make it better
+
+    parms._sources = ImpulseResponseParms::QueryVolumetricSource(document, this, "impulse_response/volumetric_source/source", parms._c); 
+    //std::vector<REAL> sourcesPosition_x = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_position_x" ); 
+    //std::vector<REAL> sourcesWidthTime  = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_width_time" ); 
+    //std::vector<REAL> sourcesPosition_y = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_position_y" ); 
+    //std::vector<REAL> sourcesPosition_z = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_position_z" ); 
+
+    //if (sourcesWidthTime.size() != sourcesPosition_x.size() || 
+    //    sourcesWidthTime.size() != sourcesPosition_y.size() || 
+    //    sourcesWidthTime.size() != sourcesPosition_z.size()) 
+    //    throw std::runtime_error("**ERROR** source attribute misaligned. number of specified source_width_time is inconsistent with the number of source_position"); 
+
+    //const int N_sources = sourcesWidthTime.size(); 
+
+    //parms._sources.resize(N_sources); 
+
+
+    //for (int ii=0; ii<N_sources; ii++) 
+    //{
+    //    Parser::ImpulseResponseParms::VolumetricSource source; 
+
+    //    source.widthTime = sourcesWidthTime[ii]; 
+    //    source.position_x = sourcesPosition_x[ii]; 
+    //    source.position_y = sourcesPosition_y[ii]; 
+    //    source.position_z = sourcesPosition_z[ii]; 
+
+    //    parms._sources[ii] = source; 
+
+
+    //}
+
+    //for (int ii=0; ii<N_sources; ii++) 
+    //    std::cout << parms._sources[ii] << std::endl; 
+
+
+    //parms._sourceWidthTime = queryRequiredReal( "impulse_response/solver", "source_width_time" );
+    //parms._sourcePosition_x = queryRequiredReal( "impulse_response/solver", "source_position_x" ); 
+    //parms._sourcePosition_y = queryRequiredReal( "impulse_response/solver", "source_position_y" ); 
+    //parms._sourcePosition_z = queryRequiredReal( "impulse_response/solver", "source_position_z" ); 
 
     return parms;
 }
@@ -772,6 +852,22 @@ string Parser::queryOptionalAttr( TiXmlElement *node, std::string attr,
     }
 }
 
+REAL Parser::queryOptionalReal( TiXmlElement *node, const std::string &attr, const REAL &defaultValue )
+{
+    const char* value = node->Attribute(attr.c_str());
+
+    if( value == NULL )
+    {
+        cout << "[STATUS] Optional attribute \"" << attr;
+        cout << "\" not found. Using default: " << defaultValue << endl;
+        return defaultValue;
+    }
+    else
+    {
+        return atof( value );
+    }
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 TiXmlNode* Parser::getNodeByPath( std::string pathStr )
@@ -793,6 +889,11 @@ TiXmlNode* Parser::getNodeByPath( std::string pathStr )
     }
 
     return node;
+}
+
+TiXmlNode* Parser::getNextSiblingNode( TiXmlNode* node ) 
+{
+    return node->NextSibling(); 
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -823,24 +924,52 @@ string Parser::queryRequiredAttr( std::string path, std::string attr )
 std::vector<std::string> Parser::queryRequiredAttrMultiple( std::string path, std::string attr )
 {
     std::vector<std::string> allval; 
-    while (true) 
+    TiXmlNode* node = getNodeByPath( path );
+    if (node != NULL) 
     {
+        TiXmlElement* elm = node->ToElement();
+        string val = queryRequiredAttr( elm, attr );
+        cout << "Queried " << attr << "=\"" << val << "\"" << endl;
+        allval.push_back(val); 
 
-        TiXmlNode* node = getNodeByPath( path );
-        if (node != NULL) 
+        while(true) 
         {
-            TiXmlElement* elm = node->ToElement();
-            string val = queryRequiredAttr( elm, attr );
-            cout << "Queried " << attr << "=\"" << val << "\"" << endl;
-            allval.push_back(val); 
-        }
-        else 
-        {
-            break; 
+            TiXmlNode* siblingNode = getNextSiblingNode(node); 
+            if (siblingNode!=NULL) 
+            {
+                TiXmlElement* elm = siblingNode->ToElement();
+                string val = queryRequiredAttr( elm, attr );
+                cout << "Queried " << attr << "=\"" << val << "\"" << endl;
+                allval.push_back(val); 
+
+                delete node;  // clear data in node
+
+                node = siblingNode; 
+            }
+            else
+            {
+                break; 
+            }
         }
     }
 
     return allval;
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+std::vector<REAL> Parser::queryRequiredRealMultiple( const std::string &path, const std::string &attr )
+{
+
+    std::vector<std::string> allval = queryRequiredAttrMultiple(path, attr); 
+    std::vector<REAL> allval_r(allval.size()); 
+
+    for (size_t ii=0; ii<allval.size(); ii++)
+    {
+        allval_r[ii] = atof(allval[ii].c_str()); 
+    }
+
+    return allval_r;
 }
 
 

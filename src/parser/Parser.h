@@ -184,41 +184,67 @@ class Parser {
         /////////////////////////////////////////////////////
         struct ImpulseResponseParms 
         {
+
+            struct VolumetricSource
+            {
+                // position of the impulse response source
+                Vector3d    position;  
+
+                // width of the impulse response source in space and time 
+                REAL        widthTime; 
+                REAL        widthSpace;  // optional, default to sound_speed*width_time
+
+                // offset of the source release. 
+                REAL        offsetTime;  // optional, default to 0.0
+
+                // extra normalization constant for this source 
+                REAL        normalizeConstant; //optional, default to 1/(sqrt(2pi)*width_space)^3, so that integral of gaussian is normalized to 1
+
+                // if true then flip sign of gaussian
+                bool        flipSign; // optional, default to false
+            }; 
+
             // Speed of sound and density
-            REAL                    _c;
-            REAL                    _density;
+            REAL                            _c;
+            REAL                            _density;
 
             // SDF parms
-            int                     _sdfResolution;
-            std::string             _sdfFilePrefix;
+            int                             _sdfResolution;
+            std::string                     _sdfFilePrefix;
 
-            // Domain resolution and size
-            int                     _gridResolution;
+            // Domain resolution and         size
+            int                             _gridResolution;
 
-            // How much to scale the bounding box of the object by
-            REAL                    _gridScale;
+            // How much to scale the         bounding box of the object by
+            //REAL                            _gridScale;
 
-            // Whether or not to use a fixed grid cell size
-            bool                    _fixedCellSize;
-            REAL                    _cellSize;
+            // Fix cell size (optional parameter)
+            REAL                            _cellSize;
 
-            int                     _timeStepFrequency;
-            int                     _subSteps;
+            int                             _timeStepFrequency;
+            int                             _subSteps;
             
-            REAL                    _stopTime; 
+            REAL                            _stopTime; 
 
             // Output parameters
-            std::string             _outputPattern; 
+            std::string                     _outputPattern; 
 
-            std::string             _listeningFile; 
+            std::string                     _listeningFile; 
 
-            // width of the impulse response source
-            REAL                    _sourceWidthTime; 
+            std::vector<VolumetricSource>   _sources; 
 
-            // position of the impulse response source
-            REAL                    _sourcePosition_x; 
-            REAL                    _sourcePosition_y; 
-            REAL                    _sourcePosition_z; 
+            bool                            _useMesh; 
+
+
+            //REAL                    _sourceWidthTime; 
+
+            //REAL                    _sourcePosition_x; 
+            //REAL                    _sourcePosition_y; 
+            //REAL                    _sourcePosition_z; 
+
+
+            static std::vector<VolumetricSource> QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed); 
+            void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
 
         };
 
@@ -581,14 +607,23 @@ class Parser {
         // If the attribute DNE, it will print out an error message, prompt
         // for input, and return "ERROR" for the value.
         static std::string queryRequiredAttr( TiXmlElement* node, std::string attr );
+        static REAL queryRequiredReal( TiXmlElement* node, const std::string &attr )
+        {
+            return atof(queryRequiredAttr(node, attr).c_str());
+        }
 
         // If the attribute DNE, it will return the given defaultValue
         static std::string queryOptionalAttr( TiXmlElement* node, std::string attr,
                 std::string defaultValue );
+        static REAL queryOptionalReal( TiXmlElement* node, const std::string &attr, const REAL &defaultValue );
+
 
         // Lame implementation of simple xpath. Uses the first child if there are
         // multiple elements matching a given name.
         TiXmlNode* getNodeByPath( std::string pathStr );
+
+        // get sibling node return null if not found
+        TiXmlNode* getNextSiblingNode( TiXmlNode* node ); 
 
         // Convenience function. Example:
         // return queryRequiredAttr( string("shell/farfieldsound"),
@@ -614,6 +649,7 @@ class Parser {
         {
             return atof( queryOptionalAttr( path, attr, defaultVal ).c_str() );
         }
+
         REAL queryRequiredReal( const char* path, const char* attr )
         {
             return atof( queryRequiredAttr( path, attr ).c_str() );
@@ -632,6 +668,7 @@ class Parser {
 
         /* Multiple queries on same attributes */
         std::vector<std::string> queryRequiredAttrMultiple( std::string path, std::string attr ); 
+        std::vector<REAL> queryRequiredRealMultiple( const std::string &path, const std::string &attr ); 
 
         // If you want to walk the DOM on your own, use this
         TiXmlDocument* getDocument() { return document; }

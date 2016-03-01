@@ -25,6 +25,7 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
+#include "wavesolver/ImpulseResponseTypesAndConstants.h" 
 
 #include <grid/Grid.h>
 
@@ -36,14 +37,6 @@
 #include <unistd.h> 
 
 #include "vtkConverter/vtkConverter.h" 
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327950288419716939937510582
-#endif
-
-//const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
-const double sqrt_2_pi = sqrt(2.0*M_PI); 
-const double sqrt_2 = sqrt(2.0); 
 
 #if 1  
     #define _GNU_SOURCE 1  
@@ -92,6 +85,7 @@ REAL Gaussian_4D( const Vector3d &evaluatePosition, const REAL &evaluateTime, co
     return value; 
 }
 
+
 /* 
  * 3D gaussian in space x error function in time (integral of shifted gaussian) 
  *
@@ -113,6 +107,24 @@ REAL Gaussian_3D_erf_time( const Vector3d &evaluatePosition, const REAL &evaluat
     return value; 
 }
 
+/* 
+ * multiple sources 3D gaussian in space x error function in time (integral of shifted gaussian) 
+ *
+ * implemented using simple superposition principle
+ *
+ * */ 
+REAL Gaussian_3D_erf_time_multiple( const Vector3d &evaluatePosition, const REAL &evaluateTime, const SourceVector &sources) 
+{
+
+    REAL returnValue=0; 
+    for (size_t ii=0; ii<sources.size(); ii++)
+    {
+        returnValue += Gaussian_3D_erf_time(evaluatePosition, evaluateTime, sources[ii].position, sources[ii].widthSpace, sources[ii].widthTime, sources[ii].offsetTime, sources[ii].normalizeConstant); 
+    }
+
+    return returnValue; 
+}
+
 /* Evaluate distance between source and points in the grid for Point Gaussian initialization */
 REAL PointGaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePosition )
 {
@@ -127,12 +139,15 @@ REAL PointGaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourceP
 }
 
 /* readjust the source position so that it lies at the center of some cell */ 
-void AdjustSourcePosition( const Vector3d &minBound, const Vector3d &maxBound, const int &divisions, Vector3d &sourcePosition ) 
+void AdjustSourcePosition( const Vector3d &minBound, const Vector3d &maxBound, const int &divisions, SourceVector &sources) 
 {
     Vector3d dx = (maxBound-minBound)/(double)divisions; 
-    sourcePosition = Vector3d( min(maxBound.x, max(minBound.x, dx.x*(0.5 + floor(sourcePosition.x/dx.x)))),
-                               min(maxBound.y, max(minBound.y, dx.y*(0.5 + floor(sourcePosition.y/dx.y)))),
-                               min(maxBound.z, max(minBound.z, dx.z*(0.5 + floor(sourcePosition.z/dx.z)))));
+    for (size_t ii=0; ii<sources.size(); ii++) 
+    {
+        sources[ii].position.x = min(maxBound.x, max(minBound.x, dx.x*(0.5 + floor(sources[ii].position.x/dx.x)))); 
+        sources[ii].position.y = min(maxBound.y, max(minBound.y, dx.y*(0.5 + floor(sources[ii].position.y/dx.y)))); 
+        sources[ii].position.z = min(maxBound.z, max(minBound.z, dx.z*(0.5 + floor(sources[ii].position.z/dx.z)))); 
+    } 
 }
 
 
@@ -217,7 +232,7 @@ int main( int argc, char **argv )
     int                      cellDivisions;
     REAL                     endTime = -1.0;
     Vector3Array             listeningPositions;
-    Vector3d                 sourcePosition;
+    //Vector3d                 sourcePosition;
     BoundaryEvaluator        boundaryCondition;
     REAL                     timeStep;
 
@@ -235,24 +250,46 @@ int main( int argc, char **argv )
     parms = parser->getImpulseResponseParms();
 
     endTime = parms._stopTime; 
-    sourcePosition.x = parms._sourcePosition_x; 
-    sourcePosition.y = parms._sourcePosition_y; 
-    sourcePosition.z = parms._sourcePosition_z; 
+    //sourcePosition.x = parms._sourcePosition_x; 
+    //sourcePosition.y = parms._sourcePosition_y; 
+    //sourcePosition.z = parms._sourcePosition_z; 
+    SourceVector &sources = parms._sources; 
 
     const char *pattern = parms._outputPattern.c_str();
 
-    sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
-            parms._sdfResolution,
-            parms._sdfFilePrefix.c_str() );
-
-    // Scale this up to build a finite difference field
-    fieldBBox  = BoundingBox(sdf->bmin(),sdf->bmax());
-    fieldBBox *= parms._gridScale;
 
     cellDivisions = parms._gridResolution;
 
-    cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
-    cellSize /= (REAL)cellDivisions;
+    if (parms._cellSize >= 1E-14)
+    {
+
+        cellSize = parms._cellSize; 
+        const REAL fieldLength = cellSize*(REAL)cellDivisions; 
+        const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
+        const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
+        fieldBBox = BoundingBox(fieldMin, fieldMax); 
+
+        sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
+                parms._sdfResolution,
+                parms._sdfFilePrefix.c_str(),
+                fieldMin, 
+                fieldMax
+                );
+    }
+    else
+    {
+        sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
+                parms._sdfResolution,
+                parms._sdfFilePrefix.c_str() );
+
+        // Scale this up to build a finite difference field
+        fieldBBox  = BoundingBox(sdf->bmin(),sdf->bmax());
+        //fieldBBox *= parms._gridScale;
+
+        cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
+        cellSize /= (REAL)cellDivisions;
+    }
+
 
     timeStep = 1.0 / (REAL)( parms._timeStepFrequency);
     REAL CFL = parms._c * timeStep / cellSize; 
@@ -268,7 +305,7 @@ int main( int argc, char **argv )
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
                                   *mesh, *sdf,
                                   0.0, /* distance tolerance */
-                                  true, /* use boundary */
+                                  parms._useMesh, /* use boundary */
                                   &listeningPositions,
                                   NULL, /* No output file */
                                   NULL, /* Write callback */
@@ -278,7 +315,9 @@ int main( int argc, char **argv )
                                   1, /* acceleration directions */
                                   endTime );
 
-    AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
+
+    //AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
+    AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sources);
     ///// initialize system with initial condition /////
     //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
@@ -288,19 +327,21 @@ int main( int argc, char **argv )
 
 
     ///// initialize system with external source. ///// 
-    cout << "Source position is set at " << sourcePosition << endl;
+    //cout << "Source position is set at " << sourcePosition << endl;
     solver.initSystem(0.0);
-    const REAL &widthTime = parms._sourceWidthTime; 
-    //const REAL widthTime  = 1./10000./32.; 
-    //const REAL widthTime  = timeStep; 
-    //const REAL offsetTime = 4.*widthTime; 
-    const REAL offsetTime = 1./20000.; 
-    //const REAL offsetTime = 16.0*widthTime; // the center of the gaussian in time
-    //const REAL offsetTime = 0.0; 
-    const REAL widthSpace = parms._c * widthTime; 
-    //const REAL widthSpace = 0.2; 
-    const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
-    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
+    //const REAL &widthTime = parms._sourceWidthTime; 
+    ////const REAL widthTime  = 1./10000./32.; 
+    ////const REAL widthTime  = timeStep; 
+    ////const REAL offsetTime = 4.*widthTime; 
+    //const REAL offsetTime = 1./20000.; 
+    ////const REAL offsetTime = 16.0*widthTime; // the center of the gaussian in time
+    ////const REAL offsetTime = 0.0; 
+    //const REAL widthSpace = parms._c * widthTime; 
+    ////const REAL widthSpace = 0.2; 
+    //const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
+    //ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
+    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time_multiple, _1, _2, sources); 
+
 
     const REAL PML_width=11.0; 
     const REAL PML_strength=1000000.0; 
@@ -342,18 +383,24 @@ int main( int argc, char **argv )
         ofstream of(buffer); 
 
         of << std::setprecision(16) << std::fixed;
-        of << "[sourceposition] = " << sourcePosition << endl;
-        of << "[fieldBBox.minBound] = " << minBound << endl;
-        of << "[fieldBBox.maxBound] = " << maxBound << endl;
-        of << "[solver.fieldDivisions] = " << cellCount.transpose() << endl;
-        of << SDUMP( cellSize ) << endl;
-        of << SDUMP( CFL ) << endl;
-        of << SDUMP( timeStep ) << endl;
-        of << SDUMP( endTime ) << endl;
+        for (size_t ii=0; ii<sources.size(); ii++) 
+        {
+            of << "source " << ii << std::endl; 
+            of << " position           = " << sources[ii].position          << std::endl; 
+            of << " width_space        = " << sources[ii].widthSpace        << std::endl; 
+            of << " width_time         = " << sources[ii].widthTime         << std::endl; 
+            of << " offset_time        = " << sources[ii].offsetTime        << std::endl; 
+            of << " normalize_constant = " << sources[ii].normalizeConstant << std::endl; 
+        }
+        //of << "[sourceposition] = " << sourcePosition << endl;
+        of << "fieldBBox.minBound = " << minBound << std::endl;
+        of << "fieldBBox.maxBound = " << maxBound << std::endl;
+        of << "solver.fieldDivisions = " << cellCount.transpose() << std::endl;
+        of << "cellSize = " << cellSize << std::endl; 
+        of << "CFL = " << CFL << std::endl; 
+        of << "timeStep = " << timeStep << std::endl; 
+        of << "endTime = " << endTime << std::endl; 
 
-        of << SDUMP( widthSpace ) << endl;
-        of << SDUMP( widthTime ) << endl;
-        of << SDUMP( offsetTime ) << endl;
 
         of << "precision : double (hard-coded)" << endl;
         of << "binary write method : IO writeMatrixXd method (hard-coded)" << endl;
@@ -363,9 +410,7 @@ int main( int argc, char **argv )
 
     Eigen::MatrixXd vertexPosition(Ndivision,3); 
     int count = 0;
-    Vector3d vPosition;
-    for ( int kk=0; kk<maxDrawBound[2]; kk++ )
-        for ( int jj=0; jj<maxDrawBound[1]; jj++ )
+    Vector3d vPosition; for ( int kk=0; kk<maxDrawBound[2]; kk++ ) for ( int jj=0; jj<maxDrawBound[1]; jj++ )
             for ( int ii=0; ii<maxDrawBound[0]; ii++ )
             {
                 Tuple3i  vIndex( ii, jj, kk );
@@ -474,9 +519,9 @@ void UnitTesting(const char* filename)
     std::cout << SDUMP(parms._stopTime        ) << std::endl;
     std::cout << SDUMP(parms._outputPattern   ) << std::endl;
     std::cout << SDUMP(parms._listeningFile   ) << std::endl;
-    std::cout << SDUMP(parms._sourcePosition_x) << std::endl;
-    std::cout << SDUMP(parms._sourcePosition_y) << std::endl;
-    std::cout << SDUMP(parms._sourcePosition_z) << std::endl;
+    //std::cout << SDUMP(parms._sourcePosition_x) << std::endl;
+    //std::cout << SDUMP(parms._sourcePosition_y) << std::endl;
+    //std::cout << SDUMP(parms._sourcePosition_z) << std::endl;
 
 }
 
