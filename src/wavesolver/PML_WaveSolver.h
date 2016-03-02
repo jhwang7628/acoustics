@@ -98,6 +98,13 @@ class PML_WaveSolver : public Solver {
         void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
         inline void SetExternalSource( ExternalSourceEvaluator *sourceEvaluator ){ _sourceEvaluator = sourceEvaluator; } 
 
+        inline void SetCornellBoxBoundaryCondition(const bool &isOn)
+        { 
+            _cornellBoxBoundaryCondition = isOn; 
+            _grid.SetCornellBoxBoundaryCondition(isOn); 
+
+        } 
+
         void SetWaveSolverPointDataPosition(); 
         void AddCurrentPressureToWaveSolverPointData(); 
 
@@ -243,10 +250,12 @@ class PML_WaveSolver : public Solver {
         int                      _zSlice;
         MATRIX                   _sliceData;
 
-
-
         // Evaluator 
         ExternalSourceEvaluator *_sourceEvaluator; 
+
+        // if on then PML is activated on only one face, the others will be set
+        // to hard-wall
+        bool                     _cornellBoxBoundaryCondition; 
 
 
 

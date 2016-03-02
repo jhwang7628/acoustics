@@ -315,6 +315,8 @@ int main( int argc, char **argv )
                                   1, /* acceleration directions */
                                   endTime );
 
+    solver.SetCornellBoxBoundaryCondition(parms._cornellBoxBoundaryCondition); 
+
 
     //AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
     AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sources);

@@ -3,17 +3,18 @@
     <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
 
     <solver
-        stop_time="0.05"
+        stop_time="0.001"
         distancefield="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj.1m.dist"
-        fieldresolution="150"
-        gridresolution="150"
+        fieldresolution="100"
+        gridresolution="100"
         timestepfrequency="176400"
         substeps="4"
-        cellsize="0.0066666666666666667" 
+        cellsize="0.01" 
 
-        output_pattern="data_1m_cornell_box_150/test_%s"
+        output_pattern="data_test2/test_%s"
 
         use_mesh="0"
+        cornell_box_boundary_condition="0"
         /> 
 
     <volumetric_source> 
@@ -32,6 +33,7 @@
      <solver
         stop_time="0.006803"
         gridscale="1.0000000"
+        cellsize="0.0066666666666666667" 
         />
         <source
         source_width_time="0.00005"

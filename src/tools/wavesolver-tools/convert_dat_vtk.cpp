@@ -35,7 +35,10 @@ int main(int argc, char ** argv) {
     const int N            = atoi(argv[3]); 
 
     UniformGridWithObject grid; 
+
     grid.Reinitialize(std::string(configFile)); 
+
+    std::cout << grid << std::endl;
 
     Eigen::MatrixXd centroids; 
 

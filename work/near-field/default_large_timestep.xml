@@ -14,6 +14,7 @@
         output_pattern="data_1m_cornell_box_100_large_timestep/test_%s"
 
         use_mesh="0"
+        cornell_box_boundary_condition="0"
         /> 
 
     <volumetric_source> 

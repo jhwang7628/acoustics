@@ -88,6 +88,11 @@ class MAC_Grid {
         // puts it in to a matrix
         void sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData );
 
+        // set the PML effect region flag
+        inline void SetCornellBoxBoundaryCondition(const bool &isOn)
+        { 
+            _cornellBoxBoundaryCondition = isOn; 
+        } 
 
         inline int               numPressureCells() const
         {
@@ -179,6 +184,7 @@ class MAC_Grid {
         // interfacial cell
         void classifyCells( bool useBoundary );
 
+
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
         //
@@ -251,6 +257,8 @@ class MAC_Grid {
             return ( -1.0 * density * c * c / directionalCoefficient );
         }
 
+        
+
     private:
         std::vector<const DistanceField *>   _boundaryFields;
         std::vector<const TriMesh *>         _boundaryMeshes;
@@ -285,6 +293,8 @@ class MAC_Grid {
 
         REAL                     _PML_absorptionWidth;
         REAL                     _PML_absorptionStrength;
+
+        bool                     _cornellBoxBoundaryCondition; // see readme in the solver
 
 };
 

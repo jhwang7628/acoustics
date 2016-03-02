@@ -34,20 +34,47 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
 
     solverParameters_ = parser_->getImpulseResponseParms();
 
-    distanceField_.reset(DistanceFieldBuilder::BuildSignedClosestPointField(parser_->getMeshFileName().c_str(), solverParameters_._sdfResolution, solverParameters_._sdfFilePrefix.c_str())); 
-    if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
-
+    double cellSize;
+    BoundingBox fieldBBox; 
     cellCount_[0] = solverParameters_._gridResolution; 
     cellCount_[1] = solverParameters_._gridResolution; 
     cellCount_[2] = solverParameters_._gridResolution; 
 
-    BoundingBox fieldBBox(distanceField_->bmin(), distanceField_->bmax()); 
+    if (solverParameters_._cellSize >= 1E-14) 
+    {
+        cellSize = solverParameters_._cellSize; 
+        const REAL fieldLength = cellSize*(REAL)solverParameters_._gridResolution; 
+        const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
+        const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
+        fieldBBox = BoundingBox(fieldMin, fieldMax); 
+
+        distanceField_.reset(
+                DistanceFieldBuilder::BuildSignedClosestPointField(
+                    parser_->getMeshFileName().c_str(), 
+                    solverParameters_._sdfResolution, 
+                    solverParameters_._sdfFilePrefix.c_str(),
+                    fieldMin, 
+                    fieldMax
+                    )
+                ); 
+    }
+    else 
+    {
+        distanceField_.reset(
+                DistanceFieldBuilder::BuildSignedClosestPointField(
+                    parser_->getMeshFileName().c_str(), 
+                    solverParameters_._sdfResolution, 
+                    solverParameters_._sdfFilePrefix.c_str()
+                    )
+                ); 
+        fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
+        cellSize = fieldBBox.minlength()/(REAL)solverParameters_._gridResolution; 
+    }
+
+    if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
+
     //fieldBBox *= solverParameters_._gridScale; 
 
-
-    double cellSize;
-   
-    cellSize = fieldBBox.minlength()/(REAL)solverParameters_._gridResolution; 
 
     minBound_ = Eigen::Vector3d(fieldBBox.minBound().x, fieldBBox.minBound().y, fieldBBox.minBound().z);
     maxBound_ = minBound_ + Eigen::Vector3d::Ones()*cellSize*(double)solverParameters_._gridResolution; 

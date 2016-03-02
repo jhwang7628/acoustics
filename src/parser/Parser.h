@@ -234,6 +234,7 @@ class Parser {
             std::vector<VolumetricSource>   _sources; 
 
             bool                            _useMesh; 
+            bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
 
 
             //REAL                    _sourceWidthTime; 

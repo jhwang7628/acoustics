@@ -829,7 +829,7 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
 {
     //return 0.0;
 
-    if (dimension!=2)
+    if (dimension!=2 && _cornellBoxBoundaryCondition) // skip all but z-direction face 
         return 0.0;
 
 
@@ -849,7 +849,7 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
     h = bbox.maxBound()[ dimension ] - x[ dimension ];
     if ( h <= absorptionWidth )
     {
-        //REAL                     dist = absorptionWidth - h;
+        REAL                     dist = absorptionWidth - h;
 
 #if 0
         cout << "returning "
@@ -857,8 +857,10 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
             / absorptionWidth << endl;
 #endif
         //return _PML_absorptionStrength * ( absorptionWidth - h ) / absorptionWidth;
-        //return _PML_absorptionStrength * dist * dist / a2;
-        return 0.0;
+        if (_cornellBoxBoundaryCondition)
+            return 0.0; // skip face at +z face
+        else 
+            return _PML_absorptionStrength * dist * dist / a2;
     }
 
     return 0.0;
