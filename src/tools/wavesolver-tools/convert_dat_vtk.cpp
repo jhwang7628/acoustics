@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
         if (!IO::ExistFile(filenamesAll[ii]+".vtk"))
             filenames.push_back(filenamesAll[ii]); 
 
-        if (filenames.size()>N && N!=-1)  // early termination
+        if ((int)filenames.size()>N && N!=-1)  // early termination
             break; 
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char ** argv) {
     for (int ii=0; ii<N_files; ii++) 
     {
         absFilePath = IO::AssembleFilePath(std::string(datadir), filenames[ii]); 
-        IO::readMatrixX<double>(*dataBuffer, absFilePath.c_str(), IO::BINARY); 
+        IO::readMatrixX<double>(*dataBuffer, absFilePath.c_str(), IO::BINARY, 0); 
         grid.WriteVTKCellCentered(absFilePath, "dataBuffer", "pressure");
     }
 

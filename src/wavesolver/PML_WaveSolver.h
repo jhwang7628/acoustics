@@ -117,6 +117,19 @@ class PML_WaveSolver : public Solver {
 
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
 
+
+        // Takes a single time step with restarting steps controlled by
+        // N_restart. internally, smoothing is done using weighted average
+        // method described in the paper: 
+        // L.F.Shampine, Stability of the leapfrog/midpoint method
+        //
+        // The idea is if timeindex % N_restart == 0, then average operation is performed according 
+        // to equation 8 in the paper
+        //
+        // p_i <- 1/4 * p_{i-1} + 1/2 * p_i + 1/4 * p_{i+1}
+        //
+        virtual bool stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator, const int &N_restart); 
+
         // Takes a single time step
         virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
         // Takes a single time step with source function
@@ -199,6 +212,7 @@ class PML_WaveSolver : public Solver {
         void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
         void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
 
+
     private:
         static constexpr REAL        WAVE_SPEED = 343.0;
 
@@ -218,6 +232,10 @@ class PML_WaveSolver : public Solver {
         MATRIX                   _v[ 3 ];
         MATRIX                   _p[ 3 ];
         MATRIX                   _pFull;
+
+        MATRIX                   _pLastTimestep; // for restarting
+        MATRIX                   _pThisTimestep; // for restarting
+        MATRIX                   _vThisTimestep[ 3 ]; // for restarting
 
         // Number of fields to solve for
         int                      _N;

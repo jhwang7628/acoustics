@@ -54,6 +54,12 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
     _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
 
+    _pLastTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _pThisTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _vThisTimestep[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
+    _vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
+    _vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
+
     _grid.initFieldRasterized( useBoundary );
 
     cout << SDUMP( cellSize ) << endl;
@@ -108,6 +114,12 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _v[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
     _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
     _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
+
+    _pLastTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _pThisTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _vThisTimestep[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
+    _vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
+    _vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
 
     _grid.initFieldRasterized( useBoundary );
 
@@ -165,6 +177,12 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _v[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
     _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
     _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
+
+    _pLastTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _pThisTimestep.resizeAndWipe( _grid.numPressureCells(), N ); 
+    _vThisTimestep[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), N );
+    _vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), N );
+    _vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), N );
 
     _grid.initFieldRasterized( useBoundary );
 
@@ -396,6 +414,59 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
 //////////////////////////////////////////////////////////////////////
 #include <omp.h>
 
+
+bool PML_WaveSolver::stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator, const int &N_restart)
+{
+    _stepTimer.start();
+    double start = omp_get_wtime();
+    bool restartStep = false; 
+
+    if (_timeIndex % N_restart == 0 && _timeIndex != 0) 
+        restartStep = true; 
+
+    if (_timeIndex % N_restart == N_restart - 1)  // need to cache the result for the next step, which is a restart step
+    {
+        _pLastTimestep.parallelCopy(_pFull); 
+    }
+    else if (restartStep)  // cache the current step before stepping
+    {
+        std::cout << " restart step\n"; 
+        _vThisTimestep[0].parallelCopy(_v[0]); 
+        _vThisTimestep[1].parallelCopy(_v[1]); 
+        _vThisTimestep[2].parallelCopy(_v[2]); 
+        _pThisTimestep.parallelCopy(_pFull); 
+    }
+
+    stepLeapfrog(bcEvaluator);  // now _pFull stores i+1 step pressure
+
+    if (restartStep) 
+    {
+        _grid.SmoothFieldInplace(_pLastTimestep, _pThisTimestep, _pFull, 0.25, 0.5, 0.25); 
+        // now the pressure at step i is smoothed, recover v and continue stepping
+        _v[0].parallelCopy(_vThisTimestep[0]); 
+        _v[1].parallelCopy(_vThisTimestep[1]); 
+        _v[2].parallelCopy(_vThisTimestep[2]); 
+        //stepLeapfrog(bcEvaluator); 
+    }
+
+    _timeIndex += 1;
+    _stepTimer.pause();
+
+    //printf( "Average time step cost: %f ms\r", _stepTimer.getMsPerCycle() );
+    printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    REAL t = (REAL)_timeIndex * _timeStep; 
+    cout << SDUMP( t ) << endl; 
+    _stepTimer.reset();
+
+    if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
+    {
+        return false;
+    }
+
+    return true;
+
+}
+
 bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
 {
     _stepTimer.start();
@@ -527,7 +598,6 @@ REAL PML_WaveSolver::GetMaxCFL()
     
 
 }
-
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////

@@ -436,10 +436,12 @@ int main( int argc, char **argv )
     /// time step system
     bool continueStepping = true; 
     int nSteps = 0; 
+    const int N_restart = 10; 
     while ( continueStepping )
     {
         //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
-        continueStepping = solver.stepSystem( boundaryCondition ); 
+        //continueStepping = solver.stepSystem( boundaryCondition ); 
+        continueStepping = solver.stepSystemWithRestart( boundaryCondition, N_restart ); 
 
         if ( nSteps % parms._subSteps == 0 ) 
         {

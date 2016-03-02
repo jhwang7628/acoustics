@@ -88,6 +88,8 @@ class MAC_Grid {
         // puts it in to a matrix
         void sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData );
 
+        void SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3);
+
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn)
         { 
