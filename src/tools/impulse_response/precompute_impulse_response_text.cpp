@@ -440,8 +440,8 @@ int main( int argc, char **argv )
     while ( continueStepping )
     {
         //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
-        //continueStepping = solver.stepSystem( boundaryCondition ); 
-        continueStepping = solver.stepSystemWithRestart( boundaryCondition, N_restart ); 
+        continueStepping = solver.stepSystem( boundaryCondition ); 
+        //continueStepping = solver.stepSystemWithRestart( boundaryCondition, N_restart ); 
 
         if ( nSteps % parms._subSteps == 0 ) 
         {
