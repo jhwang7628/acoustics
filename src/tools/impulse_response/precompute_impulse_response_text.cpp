@@ -205,6 +205,40 @@ REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int
     return bcResult;
 }
 
+REAL boundaryEval_HarmonicPulsation(const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id, const REAL &w, const REAL &phase)
+{
+    REAL bcResult = 0.0;
+
+    TRACE_ASSERT( obj_id == 0 );
+
+    return cos(w*t + phase); 
+
+
+
+    //if ( t <= 2.0 * interp->supportLength() )
+    //{
+    //    bcResult = interp->evaluate( t, interp->supportLength() );
+
+    //    if ( field_id <= 2 )
+    //    {
+    //        bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
+    //    }
+    //    else
+    //    {
+    //        bcResult *= n.dotProduct(
+    //                        ( x - CENTER_OF_MASS ).crossProduct(
+    //                                                    ACCELERATION_DIRECTIONS[ field_id ] ) );
+    //    }
+
+    //    if ( ZERO_BC )
+    //    {
+    //        ZERO_BC = false;
+    //        cout << "Non-zero boundary condition!" << endl;
+    //    }
+    //}
+
+    return bcResult;
+}
 
 void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, const char * pattern, REAL endTime, int n);
 
@@ -296,7 +330,10 @@ int main( int argc, char **argv )
 
     // for boundary interpolation : not used
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
-    boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
+    //boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
+    const REAL w = 2*M_PI*1000; // 1kHz source
+    const REAL phase = 0.0; // zero phase shift
+    boundaryCondition = boost::bind( boundaryEval_HarmonicPulsation, _1, _2, _3, _4, _5, w, phase ); 
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
@@ -347,7 +384,7 @@ int main( int argc, char **argv )
 
     const REAL PML_width=11.0; 
     const REAL PML_strength=1000000.0; 
-    solver.SetExternalSource( &source ); 
+    //solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( PML_width, PML_strength );
     //solver.setPMLBoundaryWidth( 10.0, 100000.0 );
     //solver.setPMLBoundaryWidth( 20.0, 100000.0 );

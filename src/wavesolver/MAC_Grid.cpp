@@ -608,7 +608,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
                     Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                     Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
 
-                    normal[ dimension ] = -1.0;
+                    // TODO debug: check if this is correct.
+                    //normal[ dimension ] = -1.0;
+                    normal[ dimension ] = 1.0;
                     gradient.normalize();
 
                     REAL coefficient = normal.dotProduct( gradient );
@@ -768,7 +770,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                 Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
 
-                normal[ dimension ] = -1.0;
+                // TODO debug: check if this is correct
+                normal[ dimension ] = 1.0;
+                //normal[ dimension ] = -1.0;
                 gradient.normalize();
 
                 REAL coefficient = normal.dotProduct( gradient );
