@@ -12,12 +12,13 @@ cmake_minimum_required(VERSION 3.0.2)
 # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
+SET(CMAKE_CXX_FLAGS "-std=c++11")
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # compile option
-option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
+option(USE_QT5 "Turn on for QT5. Turn off for QT4" ON)
 option(USE_DEBUG "Turn on the debug mode" ON)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
@@ -131,7 +132,7 @@ if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 endif ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
 
 # LibConfig needed for configuration files in certain projects
-find_package(LibConfig 1.0 REQUIRED)
+find_package(LibConfig++ 1.0 REQUIRED)
 
 # Whether or not we need the GNU triangulated surface (GTS) package
 if ( BUILD_PAN_PRECOMPUTE_GUI

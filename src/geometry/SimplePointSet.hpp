@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#include "utils/IO.h"
+#include "utils/IO/IO.h"
 
 template<typename T> 
 class Vertex
@@ -59,7 +59,8 @@ class SimplePointSet
         void loadPointSet(const char * filename)
         {
             Eigen::MatrixXd tmp; 
-            IO::readMatrixXd(tmp, filename, BINARY_V3); 
+            IO::readMatrixXd(tmp,filename, IO::BINARY);
+            //IO::readMatrixXd(tmp, filename, BINARY_V3); 
             vlist.resize(tmp.rows()); 
 
             for (int ii=0; ii<tmp.rows(); ii++) 

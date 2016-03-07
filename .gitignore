@@ -1,6 +1,9 @@
 temp* 
 *data*
 
+*.avi
+*.mp4
+
 *.scpf
 
 *.swp 
@@ -26,6 +29,7 @@ temp*
 
 
 build*
+gcc-build
 work/impulse-response/test
 work/impulse-response/integral_freespace
 work/impulse-response/test2
@@ -36,6 +40,8 @@ work/head_test/*
 work/sphericalhead_test
 work/impulse-response/geometry
 work/impulse-response/*.xml
+
+work/plate_copy
 
 work/unit_testing*
 

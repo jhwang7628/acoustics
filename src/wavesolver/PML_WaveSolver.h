@@ -63,7 +63,6 @@ class PML_WaveSolver : public Solver {
                         const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
                         const DistanceField &distanceField,
-                        WaveSolverPointData * rawData,
                         REAL distanceTolerance = 0.0,
                         bool useBoundary = true,
                         const Vector3Array *listeningPositions = NULL,
@@ -255,7 +254,7 @@ class PML_WaveSolver : public Solver {
 
         WriteCallback           *_callback;
         WriteCallbackIndividual *_callbackInd;
-        WaveSolverPointData     *_rawData;
+        //WaveSolverPointData     *_rawData;
 
         Timer<false>             _gradientTimer;
         Timer<false>             _divergenceTimer;

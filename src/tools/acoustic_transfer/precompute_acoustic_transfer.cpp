@@ -204,7 +204,7 @@ int main( int argc, char **argv )
                    100000);
  #else
     PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
-            *mesh, *sdf),
+            *mesh, *sdf,
             0.0, /* distance tolerance */
             true, /* use boundary */
             &listeningPositions,

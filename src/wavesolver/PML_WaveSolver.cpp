@@ -84,7 +84,6 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 REAL cellSize,
                                 const TriMesh &mesh,
                                 const DistanceField &distanceField,
-                                WaveSolverPointData *rawData,
                                 REAL distanceTolerance,
                                 bool useBoundary,
                                 const Vector3Array *listeningPositions,
@@ -103,7 +102,6 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     _listeningPositions( listeningPositions ),
     _outputFile( outputFile ),
     _callback( callback ),
-    _rawData( rawData ),
     _zSlice( -1 )
 {
     cout << "CPU PML wavesolver starting (config 1)... " << endl;
@@ -306,7 +304,7 @@ void PML_WaveSolver::SetWaveSolverPointDataPosition()
     Eigen::Vector3i cellDivisions; 
     cellDivisions << div.x, div.y, div.z; 
 
-    _rawData->SetPosition( pos, cellIndex, cellDivisions );
+    //_rawData->SetPosition( pos, cellIndex, cellDivisions );
 
 }
 
