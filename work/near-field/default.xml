@@ -1,20 +1,22 @@
 <?xml version="1.0" ?>
 <impulse_response>
-    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/bowl/bowl.obj" scale="1.0" />
+    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_a0.1/small_ball_a0.1.obj" scale="1.0" />
 
     <solver
         stop_time="0.01"
-        distancefield="/home/jui-hsien/code/acoustics/work/meshes/bowl/bowl.obj.1m.dist"
+        distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_a0.1/small_ball_a0.1.obj.1m.dist"
         fieldresolution="100"
         gridresolution="100"
+        cellsize="0.01" 
         timestepfrequency="176400"
         substeps="4"
-        cellsize="0.01" 
 
-        output_pattern="data_HarmonicPulsation_bowl/test_%s"
+        f="500"
+        output_pattern="ball_experiment/a0.1/500Hz/test_%s"
 
         use_mesh="1"
         cornell_box_boundary_condition="0"
+
         /> 
 
     <volumetric_source> 

@@ -216,7 +216,7 @@ class Parser {
             int                             _gridResolution;
 
             // How much to scale the         bounding box of the object by
-            //REAL                            _gridScale;
+            REAL                            _gridScale;
 
             // Fix cell size (optional parameter)
             REAL                            _cellSize;
@@ -242,6 +242,7 @@ class Parser {
             //REAL                    _sourcePosition_x; 
             //REAL                    _sourcePosition_y; 
             //REAL                    _sourcePosition_z; 
+            REAL                    _f; 
 
 
             static std::vector<VolumetricSource> QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed); 

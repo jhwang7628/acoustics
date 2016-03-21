@@ -36,9 +36,19 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
 
     double cellSize;
     BoundingBox fieldBBox; 
+    BoundingBox solverBBox; 
     cellCount_[0] = solverParameters_._gridResolution; 
     cellCount_[1] = solverParameters_._gridResolution; 
     cellCount_[2] = solverParameters_._gridResolution; 
+
+    distanceField_.reset(
+            DistanceFieldBuilder::BuildSignedClosestPointField(
+                parser_->getMeshFileName().c_str(), 
+                solverParameters_._sdfResolution, 
+                solverParameters_._sdfFilePrefix.c_str()
+                )
+            ); 
+    fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
 
     if (solverParameters_._cellSize >= 1E-14) 
     {
@@ -46,29 +56,23 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
         const REAL fieldLength = cellSize*(REAL)solverParameters_._gridResolution; 
         const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
         const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
-        fieldBBox = BoundingBox(fieldMin, fieldMax); 
+        solverBBox = BoundingBox(fieldMin, fieldMax); 
 
-        distanceField_.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    parser_->getMeshFileName().c_str(), 
-                    solverParameters_._sdfResolution, 
-                    solverParameters_._sdfFilePrefix.c_str(),
-                    fieldMin, 
-                    fieldMax
-                    )
-                ); 
     }
     else 
     {
-        distanceField_.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    parser_->getMeshFileName().c_str(), 
-                    solverParameters_._sdfResolution, 
-                    solverParameters_._sdfFilePrefix.c_str()
-                    )
-                ); 
-        fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
-        cellSize = fieldBBox.minlength()/(REAL)solverParameters_._gridResolution; 
+        //distanceField_.reset(
+        //        DistanceFieldBuilder::BuildSignedClosestPointField(
+        //            parser_->getMeshFileName().c_str(), 
+        //            solverParameters_._sdfResolution, 
+        //            solverParameters_._sdfFilePrefix.c_str()
+        //            )
+        //        ); 
+        //fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
+        solverBBox  = BoundingBox(distanceField_->bmin(),distanceField_->bmax()); 
+        solverBBox *= solverParameters_._gridScale; 
+
+        cellSize = solverBBox.minlength()/(REAL)solverParameters_._gridResolution; 
     }
 
     if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
@@ -76,7 +80,7 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
     //fieldBBox *= solverParameters_._gridScale; 
 
 
-    minBound_ = Eigen::Vector3d(fieldBBox.minBound().x, fieldBBox.minBound().y, fieldBBox.minBound().z);
+    minBound_ = Eigen::Vector3d(solverBBox.minBound().x, solverBBox.minBound().y, solverBBox.minBound().z);
     maxBound_ = minBound_ + Eigen::Vector3d::Ones()*cellSize*(double)solverParameters_._gridResolution; 
 
     RecomputeCachedField(); 
@@ -109,12 +113,12 @@ void UniformGridWithObject::ClassifyCells()
     // first rasterize the geometry
     int N_solids = 0; 
     Vector3d position; 
-    for (int kk=0; kk<cellCount[2]; kk++) 
+    for (int kk=1; kk<cellCount[2]-1; kk++) 
     {
         std::cout << " classify bulk cells. progress: " << kk << "/" << cellCount[2]-1 << "\r" << std::flush;
-        for (int jj=0; jj<cellCount[1]; jj++) 
+        for (int jj=1; jj<cellCount[1]-1; jj++) 
         {
-            for (int ii=0; ii<cellCount[0]; ii++) 
+            for (int ii=1; ii<cellCount[0]-1; ii++) 
             {
                 GetCellCenterPosition(ii,jj,kk,position.x,position.y,position.z); 
                 if (distanceField_->distance(position) <= distanceTolerance_) 

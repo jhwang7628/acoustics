@@ -45,5 +45,6 @@ const REAL  EPS = 1e-10;
 
 // Usefull definition
 #define SDUMP(x)	" " << #x << "=[ " << x << " ] "
+#define COUT_SDUMP(x) std::cout << SDUMP(x) << std::endl
 
 #endif

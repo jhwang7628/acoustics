@@ -41,6 +41,10 @@ work/sphericalhead_test
 work/impulse-response/geometry
 work/impulse-response/*.xml
 
+work/near-field/ball_experiment
+work/near-field/not_scaled_omega_ball
+
+
 work/plate_copy
 
 work/unit_testing*

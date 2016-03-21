@@ -368,7 +368,7 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
     // Get grid parameters
     parms._gridResolution = queryRequiredInt( "impulse_response/solver", "gridresolution" );
     //parms._gridScale = 1.0;
-    //parms._gridScale = queryRequiredReal( "impulse_response/solver", "gridscale" );
+    parms._gridScale = queryOptionalReal( "impulse_response/solver", "gridscale", "1" );
 
     parms._cellSize = queryOptionalReal( "impulse_response/solver", "cellsize", "-1"); 
     //parms._fixedCellSize = ( queryOptionalInt( "impulse_response/solver", "fixedcellsize", "0" ) != 0 );
@@ -391,6 +391,9 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
     // can make it better
 
     parms._sources = ImpulseResponseParms::QueryVolumetricSource(document, this, "impulse_response/volumetric_source/source", parms._c); 
+
+
+    parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
     //std::vector<REAL> sourcesPosition_x = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_position_x" ); 
     //std::vector<REAL> sourcesWidthTime  = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_width_time" ); 
     //std::vector<REAL> sourcesPosition_y = queryRequiredRealMultiple("impulse_response/volumetric_source/source", "source_position_y" ); 

@@ -371,15 +371,39 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
             bcEval = bc( x, normal, objectID, t, i );
             bcEval *= coefficient;
 
+            //if (interfacial_cell_idx==5050 && dimension==2)
+            //{
+            //    COUT_SDUMP(x);
+            //    COUT_SDUMP(bcEval);
+            //}
+
+
             v( cell_idx, i ) += timeStep * bcEval;
+
+
+            //if (fabs(coefficient + 1) < 1E-1)
+//            if ((x - Vector3d(0.005, -0.05, 0.005)).length() < 1E-6)
+//            {
+//#pragma omp critical
+//                {
+//                std::cout << "------" << std::endl;
+//                std::cout << SDUMP(x) << std::endl;
+//                std::cout << SDUMP(bc( x, normal, objectID, t, i )) << std::endl;
+//                std::cout << SDUMP(bcEval) << std::endl; 
+//                std::cout << SDUMP(v(cell_idx, i)) << std::endl;
+//                }
+//            }
         }
+
+        //if (cell_idx == 509550)
+        //{
+        //    std::cout << SDUMP(x) << std::endl;
+        //}
     }
 }
 
 //////////////////////////////////////////////////////////////////////
 // Performs a pressure update for the given pressure direction,
-// as detailed by Liu et al. (equation (16))
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
                                    REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
@@ -437,13 +461,21 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
         }
 
 
-        if ( sourceEvaluator == nullptr ) continue; 
+        // evaluate external sources 
+        // Liu Eq (16) f6x term
+        //if ( sourceEvaluator != nullptr )
+        //{
+        //    for ( int i = 0; i < _N; i++ ) 
+        //    {
+        //        p( cell_idx, i ) += (*sourceEvaluator)( cell_position, simulationTime+0.5*timeStep ) / directionalCoefficient; 
+        //    }
+        //}
 
-        // for external sources.
-        for ( int i = 0; i < _N; i++ ) 
-        {
-            p( cell_idx, i ) += (*sourceEvaluator)( cell_position, simulationTime+0.5*timeStep ) / directionalCoefficient; 
-        }
+        // TODO debug
+        //if (cell_idx == 504450)
+        //{
+        //    std::cout << "found pressure cell" << SDUMP(cell_idx) << std::endl;
+        //}
 
     }
 }
@@ -780,6 +812,16 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+
+
+                // TODO debug
+                if (coefficient < -0.98 && dimension == 1) 
+                {
+                    std::cout << " find it : " << SDUMP(coefficient) << " " << SDUMP(_velocityInterfacialCells[dimension][_velocityInterfacialCells[dimension].size()-1]) << std::endl; 
+                    COUT_SDUMP(pressure_cell_idx1);
+                    COUT_SDUMP(pressure_cell_idx2);
+                    COUT_SDUMP(position);
+                }
             }
             else if ( !_isBulkCell[ pressure_cell_idx1 ]
                     && _isBulkCell[ pressure_cell_idx2 ] )
@@ -811,6 +853,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+
             }
         }
     }
@@ -835,8 +878,8 @@ void MAC_Grid::classifyCells( bool useBoundary )
 // FIXME: For now, we will use a quadratic profile here, though
 // we may need to try something more complex later on.
 //
-// the PML has been disabled except for the face at -z, because we 
-// want to make a acoustic cornell box (3/1, 2016)
+// if cornellBoxBoundary is on, the PML has been disabled except for the face at -z
+// , because we want to make a acoustic cornell box (3/1, 2016)
 //////////////////////////////////////////////////////////////////////
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth,
         int dimension )

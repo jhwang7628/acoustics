@@ -211,33 +211,10 @@ REAL boundaryEval_HarmonicPulsation(const Vector3d &x, const Vector3d &n, int ob
 
     TRACE_ASSERT( obj_id == 0 );
 
+    //return -1.0;
     return cos(w*t + phase); 
-
-
-
-    //if ( t <= 2.0 * interp->supportLength() )
-    //{
-    //    bcResult = interp->evaluate( t, interp->supportLength() );
-
-    //    if ( field_id <= 2 )
-    //    {
-    //        bcResult *= n.dotProduct( ACCELERATION_DIRECTIONS[ field_id ] );
-    //    }
-    //    else
-    //    {
-    //        bcResult *= n.dotProduct(
-    //                        ( x - CENTER_OF_MASS ).crossProduct(
-    //                                                    ACCELERATION_DIRECTIONS[ field_id ] ) );
-    //    }
-
-    //    if ( ZERO_BC )
-    //    {
-    //        ZERO_BC = false;
-    //        cout << "Non-zero boundary condition!" << endl;
-    //    }
-    //}
-
-    return bcResult;
+    //return cos(w*t); 
+    //return 1.0;
 }
 
 void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeStamp, const int & substep, const char * pattern, REAL endTime, int n);
@@ -261,7 +238,8 @@ int main( int argc, char **argv )
     Parser                  *parser = NULL;
     TriangleMesh<REAL>      *mesh   = NULL;
     ClosestPointField       *sdf    = NULL;
-    BoundingBox              fieldBBox;
+    BoundingBox              fieldBBox;  // bounding box for distance field
+    BoundingBox              solverBBox; // bounding box for wavesolver
     REAL                     cellSize;
     int                      cellDivisions;
     REAL                     endTime = -1.0;
@@ -294,6 +272,16 @@ int main( int argc, char **argv )
 
     cellDivisions = parms._gridResolution;
 
+
+    sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
+            parms._sdfResolution,
+            parms._sdfFilePrefix.c_str()
+            );
+    fieldBBox = BoundingBox(sdf->bmin(), sdf->bmax()); 
+
+
+
+
     if (parms._cellSize >= 1E-14)
     {
 
@@ -301,26 +289,30 @@ int main( int argc, char **argv )
         const REAL fieldLength = cellSize*(REAL)cellDivisions; 
         const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
         const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
-        fieldBBox = BoundingBox(fieldMin, fieldMax); 
+        solverBBox = BoundingBox(fieldMin, fieldMax); 
+        //fieldBBox = BoundingBox(fieldMin, fieldMax); 
 
-        sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
-                parms._sdfResolution,
-                parms._sdfFilePrefix.c_str(),
-                fieldMin, 
-                fieldMax
-                );
+        //sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
+        //        parms._sdfResolution,
+        //        parms._sdfFilePrefix.c_str(),
+        //        fieldMin, 
+        //        fieldMax
+        //        );
     }
     else
     {
-        sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
-                parms._sdfResolution,
-                parms._sdfFilePrefix.c_str() );
+        //sdf = DistanceFieldBuilder::BuildSignedClosestPointField( parser->getMeshFileName().c_str(),
+        //        parms._sdfResolution,
+        //        parms._sdfFilePrefix.c_str() );
 
-        // Scale this up to build a finite difference field
-        fieldBBox  = BoundingBox(sdf->bmin(),sdf->bmax());
+        //fieldBBox  = BoundingBox(sdf->bmin(),sdf->bmax());
         //fieldBBox *= parms._gridScale;
 
-        cellSize = fieldBBox.minlength(); // use min length to check the CFL = c0*dt/dx
+        // Scale this up to build a finite difference field
+        solverBBox = BoundingBox(sdf->bmin(),sdf->bmax()); 
+        solverBBox*= parms._gridScale; 
+
+        cellSize = solverBBox.minlength(); // use min length to check the CFL = c0*dt/dx
         cellSize /= (REAL)cellDivisions;
     }
 
@@ -331,15 +323,18 @@ int main( int argc, char **argv )
     // for boundary interpolation : not used
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
     //boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
-    const REAL w = 2*M_PI*1000; // 1kHz source
+    const REAL w = 2.0*M_PI*parms._f; // 1kHz source
     const REAL phase = 0.0; // zero phase shift
+    COUT_SDUMP(parms._f); 
+    COUT_SDUMP(w); 
+    COUT_SDUMP(phase); 
     boundaryCondition = boost::bind( boundaryEval_HarmonicPulsation, _1, _2, _3, _4, _5, w, phase ); 
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
 
     /// pass in listening position
-    PML_WaveSolver        solver( timeStep, fieldBBox, cellSize,
+    PML_WaveSolver        solver( timeStep, solverBBox, cellSize,
                                   *mesh, *sdf,
                                   0.0, /* distance tolerance */
                                   parms._useMesh, /* use boundary */
@@ -356,7 +351,7 @@ int main( int argc, char **argv )
 
 
     //AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
-    AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sources);
+    AdjustSourcePosition(solverBBox.minBound(), solverBBox.maxBound(), cellDivisions, sources);
     ///// initialize system with initial condition /////
     //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
@@ -408,8 +403,8 @@ int main( int argc, char **argv )
     std::shared_ptr<Eigen::MatrixXd> vertexPressure( new Eigen::MatrixXd(Ndivision, 1) ); // full pressure
     
     // for vtk dump
-    Eigen::Vector3d minBound = ToEigenVector3<double>(fieldBBox.minBound());
-    Eigen::Vector3d maxBound = ToEigenVector3<double>(fieldBBox.maxBound());
+    Eigen::Vector3d minBound = ToEigenVector3<double>(solverBBox.minBound());
+    Eigen::Vector3d maxBound = ToEigenVector3<double>(solverBBox.maxBound());
     Eigen::Vector3i cellCount= ToEigenVector3<int>(solver.fieldDivisions()); 
     std::shared_ptr<Eigen::MatrixXd> cellCenteredPosition(new Eigen::MatrixXd()); 
     UniformGrid::GetAllCellCenterPosition(minBound, maxBound, cellCount,*cellCenteredPosition); 
@@ -432,8 +427,8 @@ int main( int argc, char **argv )
             of << " normalize_constant = " << sources[ii].normalizeConstant << std::endl; 
         }
         //of << "[sourceposition] = " << sourcePosition << endl;
-        of << "fieldBBox.minBound = " << minBound << std::endl;
-        of << "fieldBBox.maxBound = " << maxBound << std::endl;
+        of << "solverBBox.minBound = " << minBound << std::endl;
+        of << "solverBBox.maxBound = " << maxBound << std::endl;
         of << "solver.fieldDivisions = " << cellCount.transpose() << std::endl;
         of << "cellSize = " << cellSize << std::endl; 
         of << "CFL = " << CFL << std::endl; 
@@ -449,7 +444,9 @@ int main( int argc, char **argv )
 
     Eigen::MatrixXd vertexPosition(Ndivision,3); 
     int count = 0;
-    Vector3d vPosition; for ( int kk=0; kk<maxDrawBound[2]; kk++ ) for ( int jj=0; jj<maxDrawBound[1]; jj++ )
+    Vector3d vPosition; 
+    for ( int kk=0; kk<maxDrawBound[2]; kk++ ) 
+        for ( int jj=0; jj<maxDrawBound[1]; jj++ )
             for ( int ii=0; ii<maxDrawBound[0]; ii++ )
             {
                 Tuple3i  vIndex( ii, jj, kk );
