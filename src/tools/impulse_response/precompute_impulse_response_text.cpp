@@ -174,6 +174,7 @@ REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &
         return numeric_limits<REAL>::quiet_NaN();
 }
 
+
 REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id, InterpolationFunction *interp )
 {
     REAL bcResult = 0.0;

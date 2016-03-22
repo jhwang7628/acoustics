@@ -5,14 +5,17 @@ from subprocess import call
 import xml.etree.ElementTree as ET
 
 
-def main(args):
+def main(args, redirect='N/A'):
 
     configFile = args[1]
 
-    if (len(args)==3 and int(args[2]) == 1): 
+    if (len(args)>=3 and int(args[2]) == 1): 
         forceCreate = True
     else: 
         forceCreate = False
+
+
+    
 
 
     tree = ET.parse(configFile)
@@ -35,7 +38,11 @@ def main(args):
     call('cp %s %s' %(configFile, outdir), shell=True)
 
     os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
-    os.system("precompute-impulse-response-text %s"%(configFile))
+
+    if redirect == 'N/A': 
+        os.system("precompute-impulse-response-text %s"%(configFile))
+    else: 
+        os.system("precompute-impulse-response-text %s > %s"%(configFile, redirect))
 
 # simple wrapper that deals with the directory check, etc
 if __name__ == '__main__':

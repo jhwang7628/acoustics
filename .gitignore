@@ -44,6 +44,8 @@ work/impulse-response/*.xml
 work/near-field/ball_experiment
 work/near-field/not_scaled_omega_ball
 
+work/near-field/solver_config*xml
+work/near-field/default_test.xml
 
 work/plate_copy
 
