@@ -37,6 +37,11 @@ class ScalarField {
 
         // Returns the flat cell index for the given x, y, z index
         int                      cellIndex( const Tuple3i &index ) const;
+        inline int               cellIndex( const int &x, const int &y, const int &z) const 
+        {
+            Tuple3i index(x,y,z); 
+            return cellIndex(index); 
+        }
 
         // Returns the x, y and z index for the given flat cell index
         Tuple3i                  cellIndex( int flatIndex ) const;
@@ -58,6 +63,13 @@ class ScalarField {
         {
             cellNeighbours( cellIndex( flatIndex ), neighbours );
         }
+
+        // all 26 of cell's neighbours
+        void                     cell26Neighbours( const int &flatIndex, IntArray &neighbours ) const; 
+
+        // add the neighbours on the eight orthogonal corners to the current cell. 
+        void                     AddCornerNeighbours( const int &flatIndex, IntArray &neighbours ) const; 
+
 
         // Returns the indices of all cells whose values contribute
         // to the given position, as well as trilinear interpolation

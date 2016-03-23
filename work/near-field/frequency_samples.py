@@ -16,9 +16,9 @@ def ConfigString(f, outputDirectory, endtime=0.01, timestepfrequency=176400, sub
     <solver
         stop_time="%f"
         distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
-        fieldresolution="150"
-        gridresolution="150"
-        cellsize="0.0066666666666666667" 
+        fieldresolution="100"
+        gridresolution="100"
+        cellsize="0.01" 
         timestepfrequency="%u"
         substeps="%u"
 
@@ -54,11 +54,11 @@ def main():
     
     for f in frequencySamples: 
     
-        outputDirectory = 'data_ball_experiment/res150/%uHz' %(f)
+        outputDirectory = 'data_ball_experiment/res100/%uHz' %(f)
    
 
         # debug f range
-        if os.path.isdir(outputDirectory): # and f < 10000: 
+        if os.path.isdir(outputDirectory) or f < 10000: 
             print 'directory %s exists, skipping' %(outputDirectory)
             continue
 
@@ -71,7 +71,7 @@ def main():
 
         # debug 
         timestepfrequency=max(f*40*4, 176400)
-        endtime=min(0.0007+1./f*10.,0.01)
+        endtime=min(0.0007+1./f*18.,0.01)
         of.write(ConfigString(f, outputDirectory, endtime=endtime, timestepfrequency=timestepfrequency, substeps=4 ))  # make sure all sine has at least 20 points
         of.close()
 

@@ -45,8 +45,8 @@ int main(int argc, char ** argv) {
 
     //COUT_SDUMP(grid.GetCellCenterPosition(50,21,50)); 
     //COUT_SDUMP(grid.FlattenIndicies(50,21,50)); // 502150
-    COUT_SDUMP(grid.GetCellCenterPosition(100,42,100)); 
-    COUT_SDUMP(grid.FlattenIndicies(100,42,100)); // 502150
+    //COUT_SDUMP(grid.GetCellCenterPosition(100,42,100)); 
+    //COUT_SDUMP(grid.FlattenIndicies(100,42,100)); // 502150
 
     std::vector<std::string> filenames, filenamesAll; 
     IO::listDirectoryMatch(datadir, ".*pressure_[[:digit:]]*\\.dat", filenamesAll); 

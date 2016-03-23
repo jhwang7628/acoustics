@@ -8,6 +8,9 @@
 #include <utils/IO.h>
 #include <utils/trace.h>
 
+#include <math/LeastSquareSurface.h>
+#include <utils/STL_Wrapper.h> 
+
 #ifdef USE_OPENMP
 #include <omp.h>
 #endif
@@ -275,6 +278,10 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                                         = _interfacialBoundaryCoefficients[ dimension ];
 
 
+    // TODO debug quick fix for getting the acceleration
+    MATRIX v_old = v; 
+
+
     // Handle all bulk cells
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
@@ -357,8 +364,8 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         REAL                 bcEval;
         REAL                 coefficient;
 
-        Vector3d             normal( 0.0, 0.0, 0.0 );
-        Vector3d             x = field.cellPosition( cell_idx );
+        Vector3d             normal( 0.0, 0.0, 0.0 ); // normal of the interfacial cell boundary
+        Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
 
         normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
 
@@ -366,10 +373,135 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 
         objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
 
+
+
+        // TODO debug
+        REAL                 bcEvalOld; 
+
+
+
+        // compute the closest point to the interfacial face center. 
+        // TODO this part can be optimized easily debug
+        Vector3d             closestPoint;
+        const ClosestPointField *csdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[objectID]); 
+        csdf->closestPoint(x, closestPoint); 
+
+        IntArray             neighbourIndices; 
+        IntArray             neighbourIndicesTrimmed; 
+
+
         for ( int i = 0; i < _N; i++ )
         {
-            bcEval = bc( x, normal, objectID, t, i );
-            bcEval *= coefficient;
+            bcEvalOld = bc( x, normal, objectID, t, i );
+            bcEvalOld *= coefficient;
+
+              
+            // evaluate the boundary condition on the closest point -> exact 
+            bcEval = bc( closestPoint, normal, objectID, t, i );
+            bcEval *= coefficient; // TODO this part still cast away the tangential component
+
+            // search for local neighbors
+            //field.cell26Neighbours(cell_idx, neighbourIndices); 
+            field.cellNeighbours(cell_idx, neighbourIndices); 
+
+            // first filter out all interfacial ones, only keep the bulk cells
+            for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
+            {
+                if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
+                    continue; 
+                neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
+            }
+
+            // currently cannot handling underdetermined system
+            if (neighbourIndicesTrimmed.size() < 3) 
+            {
+                field.AddCornerNeighbours(cell_idx, neighbourIndices); 
+                neighbourIndicesTrimmed.clear(); 
+                for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
+                {
+                    if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
+                        continue; 
+                    neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
+                }
+                if (neighbourIndicesTrimmed.size() < 3) 
+                    throw std::runtime_error("**ERROR** have less than 3 bulk neighbours in interfacial interpolation. this will cause underdetermined system"); 
+            }
+
+            const int N_neighbours = neighbourIndicesTrimmed.size(); 
+            //const int N_neighbours = 5; 
+            // forming the least-square matrix and sample values. the last row
+            // will store the boundary velocity samples
+            Eigen::MatrixXd samplePoints(N_neighbours+1, 3); 
+            Eigen::VectorXd sampleValues(N_neighbours+1); 
+
+            Vector3d neighbourPositionBuffer; 
+            int      neighbourIndexBuffer; 
+
+            // TODO debug
+            //std::random_shuffle(neighbourIndicesTrimmed.begin(), neighbourIndicesTrimmed.end()); 
+            for (int jj=0; jj<N_neighbours; jj++) 
+            //for (int jj=0; jj<3; jj++) 
+            {
+
+                neighbourIndexBuffer = neighbourIndicesTrimmed[jj]; 
+
+                neighbourPositionBuffer = field.cellPosition(neighbourIndexBuffer); 
+
+                samplePoints(jj,0) = neighbourPositionBuffer.x; 
+                samplePoints(jj,1) = neighbourPositionBuffer.y; 
+                samplePoints(jj,2) = neighbourPositionBuffer.z; 
+
+                // TODO debug
+                sampleValues(jj)    = v(neighbourIndexBuffer, i) - v_old(neighbourIndexBuffer, i) / timeStep; 
+            }
+
+            samplePoints(N_neighbours,0) = closestPoint.x; 
+            samplePoints(N_neighbours,1) = closestPoint.y; 
+            samplePoints(N_neighbours,2) = closestPoint.z; 
+            sampleValues(N_neighbours)   = bcEval; 
+
+
+            LeastSquareSurfaceLinear3D surface; 
+            surface.ComputeCoefficients(samplePoints, sampleValues); 
+
+            // TODO god damn debug
+            Eigen::Vector3d xEigen; 
+            xEigen(0) = x.x; 
+            xEigen(1) = x.y; 
+            xEigen(2) = x.z; 
+
+
+            // TODO debug
+            Eigen::VectorXd difference(samplePoints.rows()); 
+            for (int jj=0; jj<samplePoints.rows(); jj++)
+            {
+                Eigen::Vector3d diff;
+                diff[0] = samplePoints(jj,0) - xEigen(0); 
+                diff[1] = samplePoints(jj,1) - xEigen(1); 
+                diff[2] = samplePoints(jj,2) - xEigen(2); 
+                
+                difference(jj) = diff.norm(); 
+            }
+
+
+            bcEval = surface.Evaluate(xEigen); 
+
+
+            // TODO debug
+            if (interfacial_cell_idx == 111) 
+            {
+
+                COUT_SDUMP(coefficient);
+                COUT_SDUMP(x);
+                COUT_SDUMP(difference.transpose()); 
+                COUT_SDUMP(sampleValues.transpose()); 
+                // debug
+                std::cout << "bcEval: " << bcEval << std::endl; 
+                std::cout << "bcEvalOld: " << bcEvalOld << std::endl;
+                std::cout << "difference least square makes: " << bcEval - bcEvalOld << std::endl; 
+            }
+
+
 
             v( cell_idx, i ) += timeStep * bcEval;
         }
@@ -767,6 +899,13 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 Vector3d normal( 0.0, 0.0, 0.0 );
                 Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                 Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+
+                //Vector3d closestPoint;
+
+                //const ClosestPointField *sdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[boundaryObject]); 
+                //sdf->closestPoint( position, closestPoint ); 
+                //COUT_SDUMP(position-closestPoint); 
+                //COUT_SDUMP((position-closestPoint).length()); 
 
                 //normal[ dimension ] = -1.0;
                 gradient.normalize();

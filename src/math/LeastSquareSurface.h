@@ -28,13 +28,20 @@ class LeastSquareSurfaceBase
 class LeastSquareSurfaceLinear3D : public LeastSquareSurfaceBase
 {
 
-    Eigen::Vector4d coefficients; // the coefficients a_0, a_1, a_2, a_3
+    public: 
+        enum WeightingType{ UNIFORM, GAUSSIAN, FLEISHMAN }; 
+
+    private: 
+        Eigen::Vector4d coefficients; // the coefficients a_0, a_1, a_2, a_3
+        Eigen::VectorXd weights; 
 
     public: 
         virtual void ComputeCoefficients(const Eigen::MatrixXd &samplePoints, const Eigen::VectorXd &sampleValues); 
         virtual double Evaluate(const Eigen::Vector3d &evaluatePosition); 
         
 };
+
+
 
 
 #endif

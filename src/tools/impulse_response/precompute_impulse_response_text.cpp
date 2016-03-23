@@ -280,7 +280,8 @@ int main( int argc, char **argv )
             );
     fieldBBox = BoundingBox(sdf->bmin(), sdf->bmax()); 
 
-
+    
+    std::srand ( unsigned ( std::time(0) ) );
 
 
     if (parms._cellSize >= 1E-14)

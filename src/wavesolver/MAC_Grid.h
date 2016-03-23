@@ -7,6 +7,7 @@
 #define MAC_GRID_H
 
 #include <distancefield/distanceField.h>
+#include <distancefield/closestPointField.h>
 
 #include <field/ScalarField.h>
 

@@ -261,30 +261,30 @@ int ClosestPointField::save(const std::string& filename, bool doublePrecision)
 	cout << ", " << f2.gamma << endl;;
 	cout << "Testing my patience AGAIN..." << endl;
 
-	return 0;
-}
+        return 0;
+    }
 
-void ClosestPointField::getClosestPointData(float ** floatBuffer)
-{
-	unsigned int size = 3 * (resolution+1) * (resolution+1) * (resolution+1);
-	*floatBuffer = (float*) malloc (sizeof(float) * size);
-	memcpy(*floatBuffer, closestPointData, sizeof(float) * size);
-}
+    void ClosestPointField::getClosestPointData(float ** floatBuffer)
+    {
+        unsigned int size = 3 * (resolution+1) * (resolution+1) * (resolution+1);
+        *floatBuffer = (float*) malloc (sizeof(float) * size);
+        memcpy(*floatBuffer, closestPointData, sizeof(float) * size);
+    }
 
-void ClosestPointField::closestPoint(const Vector3d &pos, Vector3d &result)
+    void ClosestPointField::closestPoint(const Vector3d &pos, Vector3d &result) const 
 {
     float result_float[3]; 
-    float position_float[3] = {(float)pos[0], (float)pos[1], (float)pos[2]}; 
+        float position_float[3] = {(float)pos[0], (float)pos[1], (float)pos[2]}; 
 
-    closestPoint(position_float, result_float); 
+        closestPoint(position_float, result_float); 
 
-    result[0] = (double) result_float[0]; 
-    result[1] = (double) result_float[1]; 
+        result[0] = (double) result_float[0]; 
+        result[1] = (double) result_float[1]; 
     result[2] = (double) result_float[2]; 
 
 }
 
-void ClosestPointField::closestPoint(float pos[3], float result[3])
+void ClosestPointField::closestPoint(float pos[3], float result[3]) const 
 {
 	int i,j,k;
 

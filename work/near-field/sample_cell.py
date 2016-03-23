@@ -26,12 +26,14 @@ for d in sorted(sys.argv[1:]):
     print 'processing %s' %(d) 
 
     tokens = d.split('_')
+    print tokens
     for t in tokens: 
-        if t.find('Hz'): 
+        if t.find('Hz') >= 0: 
+            print t
             f = float(t[:-2])
 
-    # if f>22100 or f<5000: 
-    #     continue 
+    if f<10000: 
+        continue 
 
     frequency[count2] = f
 
@@ -47,9 +49,9 @@ for d in sorted(sys.argv[1:]):
     ##  -----------------
     ## velocity interfacial cell: 509550 -> 0.005 -0.05 0.005
     ##                            504450 -> pressure cell right next to it
-    # cell_id = 505850 # -0.005,-0.285,-0.005
+    cell_id = 505850 # -0.005,-0.285,-0.005
     # cell_id = 255050 # for 100
-    cell_id = 866325 # for 150
+    # cell_id = 866325 # for 150
     # cell_id = 502150 # -0.005,-0.285,-0.005
     # cell_id = 4008500 # 0.0025, -0.2875, 0.0025
     signal=np.zeros(len(filenames))
@@ -83,8 +85,8 @@ for d in sorted(sys.argv[1:]):
     plt.plot(t, signal, label=d)
     count2 += 1
 
-# plt.plot(t, -analytical, 'k--', label='analytical')
 plt.legend()
+# plt.plot(t, -analytical, 'k--', label='analytical')
 
 plt.figure()
 plt.subplot(2,1,1)
@@ -96,15 +98,17 @@ plt.plot(frequency, analytical2, 'xk', label='analytical')
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('pressure magnitude (Pa)') 
 plt.grid()
+plt.legend()
 
 
 # plt.plot(frequency, analytical, 'k--', label='analytical')
 plt.subplot(2,1,2)
 plt.loglog(frequency, magnitude, 'o', label='numerical log') 
-plt.loglog(frequency, analytical2, 'xk', label='analytical')
+plt.loglog(frequency, analytical2, 'xk', label='analytical log')
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('pressure magnitude (Pa)') 
 plt.grid()
+plt.legend()
 
 plt.figure()
 plt.plot(frequency, (magnitude-analytical2)/analytical2, 'o', label='relative error')

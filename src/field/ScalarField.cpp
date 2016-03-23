@@ -152,6 +152,64 @@ void ScalarField::cellNeighbours( const Tuple3i &index, IntArray &neighbours ) c
     }
 }
 
+void ScalarField::AddCornerNeighbours( const int &flatIndex, IntArray &neighbours ) const
+{
+    const Tuple3i index = cellIndex(flatIndex); 
+
+    Tuple3i neighbourIndex = index;
+    neighbours.push_back(cellIndex(index[0]-1, index[1]-1, index[1]-1)); 
+    neighbours.push_back(cellIndex(index[0]-1, index[1]-1, index[1]+1)); 
+    neighbours.push_back(cellIndex(index[0]-1, index[1]+1, index[1]-1)); 
+    neighbours.push_back(cellIndex(index[0]-1, index[1]+1, index[1]+1)); 
+    neighbours.push_back(cellIndex(index[0]+1, index[1]+1, index[1]-1)); 
+    neighbours.push_back(cellIndex(index[0]+1, index[1]+1, index[1]+1)); 
+}
+
+
+void ScalarField::cell26Neighbours( const int &flatIndex, IntArray &neighbours) const 
+{
+    neighbours.clear();
+
+    const Tuple3i index = cellIndex(flatIndex); 
+
+
+    Tuple3i neighbourIndex = index;
+    for (int kk=-1; kk<=1; kk++) 
+        for (int jj=-1; jj<=1; jj++) 
+            for (int ii=-1; ii<=1; ii++) 
+            {
+                neighbourIndex[0] = index[0]+ii;
+                neighbourIndex[1] = index[1]+jj;
+                neighbourIndex[2] = index[2]+kk;
+
+                if (neighbourIndex[0] < 0 || neighbourIndex[0] >= _divisions[0] || 
+                    neighbourIndex[1] < 0 || neighbourIndex[1] >= _divisions[1] ||
+                    neighbourIndex[2] < 0 || neighbourIndex[2] >= _divisions[2] ||
+                    (ii==0 && jj==0 && kk==0)                                     )
+                    continue; 
+
+                neighbours.push_back(cellIndex(neighbourIndex)); 
+            }
+
+    //for ( int dimension = 0; dimension < 3; dimension++ )
+    //{
+    //    Tuple3i                  neighbourIndex = index;
+
+    //    for ( int idx = -1; idx <= 1; idx ++ )
+    //    {
+    //        neighbourIndex[ dimension ] = index[ dimension ] + idx;
+
+    //        if ( neighbourIndex[ dimension ] >= 0
+    //                && neighbourIndex[ dimension ] < _divisions[ dimension ])
+    //        {
+    //            intBuffer = cellIndex(neighbourIndex); 
+    //            if (intBuffer != flatIndex)
+    //                neighbours.push_back( cellIndex( neighbourIndex ) );
+    //        }
+    //    }
+    //}
+}
+
 //////////////////////////////////////////////////////////////////////
 // Returns the indices of all cells whose values contribute
 // to the given position, as well as trilinear interpolation

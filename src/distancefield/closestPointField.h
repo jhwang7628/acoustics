@@ -55,10 +55,10 @@ public:
 					 float * distanceData, float * closestPointData,
 					 Feature *closestFeatureData);
 
-    void closestPoint(const Vector3d &position, Vector3d &result); 
-	void closestPoint(float pos[3], float result[3]);
+    void closestPoint(const Vector3d &position, Vector3d &result) const ; 
+	void closestPoint(float pos[3], float result[3]) const ;
 
-	inline void closestPoint(int i, int j, int k, float result[3])
+	inline void closestPoint(int i, int j, int k, float result[3]) const 
 	{
 		int pos = 3*((k * (resolution+1) + j ) * (resolution+1) + i);
 		result[0] = closestPointData[pos];

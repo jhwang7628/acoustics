@@ -57,3 +57,6 @@ double LeastSquareSurfaceLinear3D::Evaluate(const Eigen::Vector3d &evaluatePosit
 {
     return coefficients[0] + coefficients[1]*evaluatePosition[0] + coefficients[2]*evaluatePosition[1] + coefficients[3]*evaluatePosition[2]; 
 }
+
+
+
