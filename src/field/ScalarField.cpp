@@ -156,7 +156,6 @@ void ScalarField::AddCornerNeighbours( const int &flatIndex, IntArray &neighbour
 {
     const Tuple3i index = cellIndex(flatIndex); 
 
-    Tuple3i neighbourIndex = index;
     neighbours.push_back(cellIndex(index[0]-1, index[1]-1, index[1]-1)); 
     neighbours.push_back(cellIndex(index[0]-1, index[1]-1, index[1]+1)); 
     neighbours.push_back(cellIndex(index[0]-1, index[1]+1, index[1]-1)); 
@@ -190,24 +189,29 @@ void ScalarField::cell26Neighbours( const int &flatIndex, IntArray &neighbours) 
 
                 neighbours.push_back(cellIndex(neighbourIndex)); 
             }
+}
 
-    //for ( int dimension = 0; dimension < 3; dimension++ )
-    //{
-    //    Tuple3i                  neighbourIndex = index;
+void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighbours) const 
+{
 
-    //    for ( int idx = -1; idx <= 1; idx ++ )
-    //    {
-    //        neighbourIndex[ dimension ] = index[ dimension ] + idx;
+    neighbours.clear(); 
 
-    //        if ( neighbourIndex[ dimension ] >= 0
-    //                && neighbourIndex[ dimension ] < _divisions[ dimension ])
-    //        {
-    //            intBuffer = cellIndex(neighbourIndex); 
-    //            if (intBuffer != flatIndex)
-    //                neighbours.push_back( cellIndex( neighbourIndex ) );
-    //        }
-    //    }
-    //}
+    const Vector3d diff = position - _bbox.minBound(); 
+
+    // compute the lower corner and clamp it to the (boundary - 1) cell
+    const int x = min( max( (int) (diff.x/_cellSize), 1), _divisions[0]-2 ); 
+    const int y = min( max( (int) (diff.y/_cellSize), 1), _divisions[1]-2 ); 
+    const int z = min( max( (int) (diff.z/_cellSize), 1), _divisions[2]-2 ); 
+
+    neighbours.push_back( cellIndex(x+0,y+0,z+0) ); 
+    neighbours.push_back( cellIndex(x+0,y+0,z+1) ); 
+    neighbours.push_back( cellIndex(x+0,y+1,z+0) ); 
+    neighbours.push_back( cellIndex(x+0,y+1,z+1) ); 
+    neighbours.push_back( cellIndex(x+1,y+0,z+0) ); 
+    neighbours.push_back( cellIndex(x+1,y+0,z+1) ); 
+    neighbours.push_back( cellIndex(x+1,y+1,z+0) ); 
+    neighbours.push_back( cellIndex(x+1,y+1,z+1) ); 
+
 }
 
 //////////////////////////////////////////////////////////////////////

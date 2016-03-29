@@ -32,6 +32,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 int subSteps, int N,
                                 REAL endTime )
 : 
+    WAVE_SPEED(343),
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
     _timeStep( timeStep ),
     _timeIndex( 0 ),
@@ -92,6 +93,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 int subSteps, int N,
                                 REAL endTime )
 : 
+    WAVE_SPEED(343),
     _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
     _timeStep( timeStep ),
     _timeIndex( 0 ),
@@ -156,6 +158,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
         int subSteps, int N,
         REAL endTime )
 : 
+    WAVE_SPEED(343),
     _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
     _timeStep( timeStep ),
     _timeIndex( 0 ),
@@ -635,6 +638,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _divergenceTimer.pause();
     printf( "pressure %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 
+
     _algebraTimer.start();
 #if 0
     _pFull.copyInplace( _p[ 0 ] );
@@ -648,6 +652,14 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 #endif
     _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
     _algebraTimer.pause();
+
+
+
+    // Update the ghost pressures for the velocity update in the next step
+    _grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, PML_WaveSolver::WAVE_SPEED, bcEvaluator, _currentTime); 
+
+
+
 
     _currentTime += _timeStep;
 

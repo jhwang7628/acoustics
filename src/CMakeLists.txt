@@ -25,6 +25,7 @@ add_subdirectory(deformable)
 add_subdirectory(io)
 add_subdirectory(rigid)
 add_subdirectory(field)
+add_subdirectory(graph)
 
 add_subdirectory(wavesolver)
 

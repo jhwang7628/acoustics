@@ -20,6 +20,9 @@
 
 #include <utils/Evaluator.h>
 
+#include <Eigen/Dense> 
+#include <Eigen/Sparse>
+
 #include <TYPES.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -84,6 +87,9 @@ class MAC_Grid {
                                  const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime,
                                  REAL density = 1.0
                                  );
+
+        // Performs a pressure update for the ghost cells. 
+        void PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density = 1.0 ); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
@@ -260,6 +266,14 @@ class MAC_Grid {
             return ( -1.0 * density * c * c / directionalCoefficient );
         }
 
+
+        // find image point for the ghost-cell method
+        inline void FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal); 
+
+        // fill the Vandermonde matrix 
+        inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
+        inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
+
         
 
     private:
@@ -287,9 +301,13 @@ class MAC_Grid {
 
         IntArray                 _velocityInterfacialCells[ 3 ];
 
+        IntArray                 _pressureGhostCells;
+
         IntArray                 _interfacialBoundaryIDs[ 3 ];
         FloatArray               _interfacialBoundaryDirections[ 3 ];
         FloatArray               _interfacialBoundaryCoefficients[ 3 ];
+
+        IntArray                 _containingObject;
 
         // Dimensionality of the data we are working with
         int                      _N;

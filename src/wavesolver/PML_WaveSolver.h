@@ -213,7 +213,7 @@ class PML_WaveSolver : public Solver {
 
 
     private:
-        static constexpr REAL        WAVE_SPEED = 343.0;
+        REAL                     WAVE_SPEED;
 
         // Discretization for the domain
         MAC_Grid                 _grid;

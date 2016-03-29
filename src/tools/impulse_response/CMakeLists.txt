@@ -191,6 +191,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	            ${CUDA_LIBRARIES})
 	    else(USE_CUDA)
 	    	add_executable(precompute-impulse-response-text
+                ${GRAPH_SRC} 
 	            ${IR_PRECOMPUTE_SRCS}
                 ${GRID_SOURCES}
                 ${LEASTSQUARESURFACE_SOURCES}
@@ -209,7 +210,8 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
                 ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
 	            ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
 	            ${GSL_LIBRARY}                  boost_thread
-	            boost_system                    boost_regex)
+	            boost_system                    boost_regex
+                boost_timer)
 	    endif(USE_CUDA)
 
         set_target_properties(precompute-impulse-response-text PROPERTIES LINK_FLAGS ${LINK_FLAGS})

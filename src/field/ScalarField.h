@@ -70,6 +70,8 @@ class ScalarField {
         // add the neighbours on the eight orthogonal corners to the current cell. 
         void                     AddCornerNeighbours( const int &flatIndex, IntArray &neighbours ) const; 
 
+        // find the enclosing (8) neighbours for a given point in space
+        void                     enclosingNeighbours(const Vector3d &position, IntArray &neighbours) const; 
 
         // Returns the indices of all cells whose values contribute
         // to the given position, as well as trilinear interpolation

@@ -6,11 +6,18 @@ if (BUILD_UNIT_TESTING)
     # Dependencies
     # ===================
 
+    set(GENERAL_TESTING_SRCS
+        testing.h) 
+
     set(GRID_TESTING_SRCS 
         test_GridWithObject.cpp)
 
     set(LEASTSQUARESURFACE_TESTING_SRCS 
         test_LeastSquareSurface.cpp)
+
+    set(GRAPH_TESTING_SRCS
+        test_Graph.cpp) 
+
     # set(TURBSOUND_INCLUDE_DIR
     #     /home/jui-hsien/code/turbsound_postfluid/src
     #     /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -31,10 +38,12 @@ if (BUILD_UNIT_TESTING)
     #     )
 
     add_executable(unit_testing_leastSquareSurface
+        ${GENERAL_TESTING_SRCS}
         ${LEASTSQUARESURFACE_TESTING_SRCS}
         ${LEASTSQUARESURFACE_SOURCES}
         )
     add_executable(unit_testing_grid
+        ${GENERAL_TESTING_SRCS}
         ${GRID_TESTING_SRCS}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
@@ -47,7 +56,14 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
         )
 
+    add_executable(unit_testing_graph
+        ${GENERAL_TESTING_SRCS}
+        ${GRAPH_TESTING_SRCS}
+        ${GRAPH_SRC} 
+        ) 
+
     target_link_libraries(unit_testing_grid
+        ${GENERAL_TESTING_SRCS}
         ${MKL_LIBRARY}
         ${LEASTSQUARESURFACE_SOURCES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}

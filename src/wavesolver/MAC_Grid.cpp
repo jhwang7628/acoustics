@@ -10,6 +10,12 @@
 
 #include <math/LeastSquareSurface.h>
 #include <utils/STL_Wrapper.h> 
+#include <boost/timer/timer.hpp>
+
+#include <distancefield/trilinearInterpolation.h> 
+#include <graph/UndirectedGraph.h> 
+
+#include <unistd.h> 
 
 #ifdef USE_OPENMP
 #include <omp.h>
@@ -277,10 +283,8 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     const FloatArray      &interfaceBoundaryCoefficients
                                         = _interfacialBoundaryCoefficients[ dimension ];
 
-
-    // TODO debug quick fix for getting the acceleration
-    MATRIX v_old = v; 
-
+    //// TODO debug quick fix for getting the acceleration
+    //MATRIX v_old = v; 
 
     // Handle all bulk cells
 #ifdef USE_OPENMP
@@ -386,6 +390,8 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 
         // attempt to do interpolation/extrapolation on acceleration // 
           
+
+
           
         //// TODO debug
         //REAL                 bcEvalOld; 
@@ -600,7 +606,161 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
         }
 
     }
+
 }
+
+void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
+{
+
+    boost::timer::auto_cpu_timer timer("GC update takes %w sec\n"); 
+
+    std::cout << "pressure update for the ghost cells" << std::endl;
+
+
+    UndirectedGraph ghostCellConnectivity(numPressureCells()); 
+    // use a graph Laplacian to store which ghost cells are coupled
+    //typedef Eigen::SparseMatrix<int> SparseMatrix; //typedef Eigen::Triplet<int> Triplet; 
+    //SparseMatrix ghostCellLaplacian(numPressureCells(), numPressureCells()); 
+    //std::vector<Triplet> tripletList; 
+    //tripletList.reserve(_ghostCells.size()); 
+
+    // loop through all ghost cells to get the uncoupled ghost cell values. 
+    // construct the graph for the coupled ghost cells 
+    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+    {
+
+        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
+        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
+        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
+        const int       boundaryObject = _containingObject[cellIndex]; 
+
+        // find point BI and IP in the formulation
+        Vector3d boundaryPoint, imagePoint, erectedNormal; 
+        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+
+        // get the box enclosing the image point; 
+        IntArray neighbours; 
+        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+
+        assert(neighbours.size()==8);
+
+        // hasGC  : has self as interpolation stencil
+        // coupled: if at least one interpolation stencil is another ghost-cell 
+        int hasGC=-1; 
+        int coupled=0; 
+
+
+        for (size_t ii=0; ii<neighbours.size(); ii++) 
+        {
+            if (neighbours[ii] == cellIndex) 
+            {
+                hasGC = ii;
+            }
+            else  
+            {
+                // if not itself but a ghost cell then add an edge to graph
+                // adjacency matrix
+                if (_isGhostCell[neighbours[ii]]) 
+                {
+                    coupled += 1;
+
+                    // assume symmetry
+                    ghostCellConnectivity.AddEdgeToStage(cellIndex, neighbours[ii]); 
+                    //tripletList.push_back(Triplet(cellIndex,neighbours[ii],1)); 
+                    //tripletList.push_back(Triplet(neighbours[ii],cellIndex,1));
+                }
+            }
+        }
+
+        
+        //std::cout << "for ghost cell " << cellIndex << " at position " << cellPosition << ": \n"; 
+        //std::cout << "hasGC=" << hasGC << std::endl; 
+        //if (coupled != 0)
+        //{
+        //    std::cout << "for ghost cell " << cellIndex << " at position " << cellPosition << ": \n"; 
+        //    std::cout << "coupled=" << coupled << std::endl << std::endl; 
+        //}
+
+        // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
+        Eigen::MatrixXd V(8,8); 
+        Tuple3i     indicesBuffer;
+        Vector3d    positionBuffer; 
+        Eigen::VectorXd pressureNeighbours(8); 
+
+        // FIXME need to pass in boundary evaluator
+        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0);  // evaluate at boundarPoint
+
+        for (size_t row=0; row<neighbours.size(); row++) 
+        {
+            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+            
+            if ((int)row!=hasGC)
+            {
+                FillVandermondeRegular(row,positionBuffer, V);
+                pressureNeighbours(row) = p(neighbours[row],0); 
+            }
+            else 
+            {
+                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                pressureNeighbours(row) = bcEval; 
+            }
+        }
+
+        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
+        Eigen::MatrixXd b(1,8); // row vector
+
+        FillVandermondeRegular(0,imagePoint,b); 
+        b.transposeInPlace();  // column vector
+        V.transposeInPlace(); 
+        Eigen::VectorXd beta = V.householderQr().solve(b);  // this gives beta=V^-T b
+
+        if (coupled == 0) // not coupled, can solve now and we are done
+        {
+            p(cellIndex, 0) = beta.dot(pressureNeighbours) - (cellPosition - imagePoint).length() * bcEval; 
+        } 
+
+    }
+
+    // set the off-diagonal term of the laplacian 
+    ghostCellConnectivity.ConstructEdges(); 
+
+    //ghostCellLaplacian.setFromTriplets(tripletList.begin(), tripletList.end()); 
+
+    //COUT_SDUMP(ghostCellLaplacian.cols()); 
+    //COUT_SDUMP(ghostCellLaplacian.outerSize()); 
+
+    //// checking the sparse laplacian 
+    //{
+    //    boost::timer::auto_cpu_timer t("iterate through the matrix columns %w sec\n"); 
+    //    for (int col=0; col<ghostCellLaplacian.outerSize(); col++) 
+    //    {
+    //        //const SparseMatrix colVector = ghostCellLaplacian.block(0,col,numPressureCells(),1); 
+    //        //const int nnz = colVector.nonZeros(); 
+    //        //if (nnz != 0) 
+    //        //{
+    //        //    std::cout << "column " << col << " for the sparse matrix has " << nnz << " non-zero entries" << std::endl;
+    //        //}
+
+    //        for (SparseMatrix::InnerIterator it(ghostCellLaplacian,col); it; ++it)
+    //        {
+    //            std::cout << " [" << it.row() << "," << it.col() << "] = " << it.value() << std::endl;
+    //        }
+
+
+    //    }
+    //}
+
+
+
+
+
+
+
+
+}
+
+
 
 //////////////////////////////////////////////////////////////////////
 // Samples data from a z slice of the finite difference grid and
@@ -646,8 +806,8 @@ void MAC_Grid::classifyCells( bool useBoundary )
 {
     int                        numPressureCells = _pressureField.numCells();
     int                        numVcells[] = { _velocityField[ 0 ].numCells(),
-                                               _velocityField[ 1 ].numCells(),
-                                               _velocityField[ 2 ].numCells() };
+        _velocityField[ 1 ].numCells(),
+        _velocityField[ 2 ].numCells() };
     Vector3d                   cellPos;
     IntArray                   neighbours;
 
@@ -692,7 +852,11 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _interfacialBoundaryCoefficients[ 1 ].clear();
     _interfacialBoundaryCoefficients[ 2 ].clear();
 
-    IntArray                   containingObject( numPressureCells, -1 );
+    _containingObject.clear(); 
+
+    _containingObject.resize(numPressureCells, -1);
+
+    //IntArray                   containingObject( numPressureCells, -1 );
 
     if ( !useBoundary )
     {
@@ -716,7 +880,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
                 // We will assume that boundary cells are not interfacial
                 if (  cell_coordinates[ dimension ] == 0 || 
-                      cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
+                        cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
                 {
                     _isVelocityBulkCell[ dimension ][ cell_idx ] = true;
                     _velocityBulkCells[ dimension ].push_back( cell_idx );
@@ -731,7 +895,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
 
                 if ( _isBulkCell[ pressure_cell_idx1 ] && 
-                     _isBulkCell[ pressure_cell_idx2 ] )
+                        _isBulkCell[ pressure_cell_idx2 ] )
                 {
                     // Both pressure cell neighbours are bulk cells, so this is
                     // a bulk cell too
@@ -740,14 +904,14 @@ void MAC_Grid::classifyCells( bool useBoundary )
                     _velocityBulkCells[ dimension ].push_back( cell_idx );
                 }
                 else if (  _isBulkCell[ pressure_cell_idx1 ] && 
-                          !_isBulkCell[ pressure_cell_idx2 ] )
+                        !_isBulkCell[ pressure_cell_idx2 ] )
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
                     _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                     // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = containingObject[ pressure_cell_idx2 ];
+                    int boundaryObject = _containingObject[ pressure_cell_idx2 ];
 
                     TRACE_ASSERT( boundaryObject >= 0 );
 
@@ -772,14 +936,14 @@ void MAC_Grid::classifyCells( bool useBoundary )
                     _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
                 }
                 else if ( !_isBulkCell[ pressure_cell_idx1 ] && 
-                           _isBulkCell[ pressure_cell_idx2 ] )
+                        _isBulkCell[ pressure_cell_idx2 ] )
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
                     _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                     // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = containingObject[ pressure_cell_idx1 ];
+                    int boundaryObject = _containingObject[ pressure_cell_idx1 ];
 
                     TRACE_ASSERT( boundaryObject >= 0 );
 
@@ -822,7 +986,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                     <= _distanceTolerance )
             {
                 _isBulkCell[ cell_idx ] = false;
-                containingObject[ cell_idx ] = field_idx;
+                _containingObject[ cell_idx ] = field_idx;
                 break;
             }
         }
@@ -855,6 +1019,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // We have a neighbour outside of the interior object, so
                 // this is a ghost cell
                 _isGhostCell[ cell_idx ] = true;
+                _ghostCells.push_back(cell_idx); 
 
                 break;
             }
@@ -907,7 +1072,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                 // Get the object ID for the boundary that we are adjacent to
-                int boundaryObject = containingObject[ pressure_cell_idx2 ];
+                int boundaryObject = _containingObject[ pressure_cell_idx2 ];
 
                 TRACE_ASSERT( boundaryObject >= 0 );
 
@@ -948,7 +1113,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                 // Get the object ID for the boundary that we are adjacent to
-                int boundaryObject = containingObject[ pressure_cell_idx1 ];
+                int boundaryObject = _containingObject[ pressure_cell_idx1 ];
 
                 TRACE_ASSERT( boundaryObject >= 0 );
 
@@ -975,8 +1140,18 @@ void MAC_Grid::classifyCells( bool useBoundary )
         }
     }
 
+
+    // debug
+    //for (size_t ii=0; ii<_ghostCells.size(); ii++) 
+    //{
+    //    const Vector3d cellPosition = _pressureField.cellPosition(_pressureField.cellIndex(_ghostCells[ii])); 
+    //    COUT_SDUMP(ii); 
+    //    COUT_SDUMP(cellPosition);
+    //}
+
     printf( "MAC_Grid: classifyCells:\n" );
     printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
+    printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
     printf( "\tFound %d v_x interfacial cells\n",
             (int)_velocityInterfacialCells[ 0 ].size() );
     printf( "\tFound %d v_y interfacial cells\n",
@@ -1039,3 +1214,78 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
 
     return 0.0;
 }
+
+void MAC_Grid::FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal)
+{
+    // FIXME reinterpret
+    const ClosestPointField *csdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[boundaryObjectID]); 
+    csdf->closestPoint(cellPosition, closestPoint); 
+
+    Vector3d sdfNormal = csdf->gradient(closestPoint); 
+    sdfNormal.normalize();
+
+    erectedNormal = (closestPoint - cellPosition); 
+    const double angle = acos(sdfNormal.dotProduct(erectedNormal)/erectedNormal.length())*180./M_PI; 
+
+    if (angle > 10)
+        std::cerr << "**WARNING** angle between the erected normal and true normal is greater than 10 degrees, might be inaccurate. angle = " << angle << " for ghost cell at : " << cellPosition.x << "," << cellPosition.y << "," << cellPosition.z << std::endl;
+
+
+    imagePoint = cellPosition + erectedNormal*2.0; 
+
+    if (csdf->distance(imagePoint) < 0)
+        std::cerr << "**WARNING** image point is still inside the object, could be that object is severely underresolved." << std::endl;
+
+
+}
+
+
+void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V)
+{
+    assert(row<8); 
+
+    const double &x = cellPosition.x; 
+    const double &y = cellPosition.y; 
+    const double &z = cellPosition.z; 
+
+    V(row,0) = x*y*z; 
+    V(row,1) = x*y  ; 
+    V(row,2) = x  *z; 
+    V(row,3) =   y*z; 
+    V(row,4) = x    ; 
+    V(row,5) =   y  ; 
+    V(row,6) =     z; 
+    V(row,7) =     1; 
+}
+
+void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V)
+{
+    assert(row<8); 
+
+    const double &x = boundaryPosition.x; 
+    const double &y = boundaryPosition.y; 
+    const double &z = boundaryPosition.z; 
+
+    const double &nx= boundaryNormal.x; 
+    const double &ny= boundaryNormal.y; 
+    const double &nz= boundaryNormal.z; 
+
+    V(row,0) = nx*y*z + ny*x*z + nz*x*y; 
+    V(row,1) = nx*y + ny*x; 
+    V(row,2) = nx*z + nz*x; 
+    V(row,3) = ny*z + nz*y; 
+    V(row,4) = nx; 
+    V(row,5) = ny; 
+    V(row,6) = nz; 
+    V(row,7) = 0; 
+
+}
+
+
+
+
+
+
+
+
+
