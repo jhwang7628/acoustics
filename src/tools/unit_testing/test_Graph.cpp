@@ -9,7 +9,7 @@ int main() {
 
     std::cout << "testing on undrected graph class \n"; 
 
-    UndirectedGraph graph(10); 
+    UndirectedGraph graph(40); 
 
     graph.AddEdgeToStage(0,1); 
     graph.AddEdgeToStage(0,2); 
@@ -22,7 +22,10 @@ int main() {
 
     graph.AddEdgeToStage(8,9);
 
-    graph.AddEdgeToStage(9,1); 
+
+
+    //graph.AddEdgeToStage(40,5); 
+    graph.AddEdgeToStage(39,1); 
 
     graph.ConstructEdges(); 
 

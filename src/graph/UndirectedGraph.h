@@ -57,6 +57,13 @@ class UndirectedGraph
                 _belongComponent.resize(N); 
             }
 
+
+
+        //// debugging tools ////
+
+        void GetAllComponentsVerbose(std::vector<std::vector<int> > &allComponents); 
+
+
 }; 
 
 

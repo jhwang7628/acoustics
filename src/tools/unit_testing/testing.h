@@ -9,5 +9,8 @@
 #define COUT_SDUMP(x) std::cout << SDUMP(x) << std::endl
 #endif
 
+#ifndef COUT_SDUMP_MAT
+#define COUT_SDUMP_MAT(x) std::cout << #x << "=\n" << x << " " << std::endl
+#endif
 
 #endif 

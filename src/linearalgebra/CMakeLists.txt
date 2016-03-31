@@ -11,3 +11,9 @@ set(LINEARALGEBRA_BLAS_LAPACK_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/SPARSE_MATRIX.h ${CMAKE_CURRENT_SOURCE_DIR}/SPARSE_MATRIX.cpp
 
     CACHE FILE "Linear algebra lapack source")
+
+set(SPARSE_LINEAR_ALGEBRA_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/SparseLinearSystemSolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SparseLinearSystemSolver.cpp
+    CACHE FILE "Sparse linear algebra source") 
+

@@ -18,6 +18,9 @@ if (BUILD_UNIT_TESTING)
     set(GRAPH_TESTING_SRCS
         test_Graph.cpp) 
 
+    set(SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS
+        test_SparseLinearSystem.cpp) 
+
     # set(TURBSOUND_INCLUDE_DIR
     #     /home/jui-hsien/code/turbsound_postfluid/src
     #     /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -61,6 +64,17 @@ if (BUILD_UNIT_TESTING)
         ${GRAPH_TESTING_SRCS}
         ${GRAPH_SRC} 
         ) 
+
+    add_executable(unit_testing_sparseLinearSystemSolver
+        ${GENERAL_TESTING_SRCS}
+        ${SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS}
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ) 
+    target_link_libraries(unit_testing_sparseLinearSystemSolver
+        boost_timer
+        boost_thread
+        boost_system                    
+        boost_regex) 
 
     target_link_libraries(unit_testing_grid
         ${GENERAL_TESTING_SRCS}

@@ -192,6 +192,7 @@ class MAC_Grid {
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
+        void visualizeClassifiedCells(); 
 
 
         // Returns the absorption coefficient along a certain

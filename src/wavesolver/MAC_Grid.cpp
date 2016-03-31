@@ -13,6 +13,7 @@
 #include <boost/timer/timer.hpp>
 
 #include <distancefield/trilinearInterpolation.h> 
+#include <linearalgebra/SparseLinearSystemSolver.h>
 #include <graph/UndirectedGraph.h> 
 
 #include <unistd.h> 
@@ -617,12 +618,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
     std::cout << "pressure update for the ghost cells" << std::endl;
 
 
-    UndirectedGraph ghostCellConnectivity(numPressureCells()); 
+
     // use a graph Laplacian to store which ghost cells are coupled
-    //typedef Eigen::SparseMatrix<int> SparseMatrix; //typedef Eigen::Triplet<int> Triplet; 
-    //SparseMatrix ghostCellLaplacian(numPressureCells(), numPressureCells()); 
-    //std::vector<Triplet> tripletList; 
-    //tripletList.reserve(_ghostCells.size()); 
+    UndirectedGraph ghostCellCoupling(numPressureCells()); 
 
     // loop through all ghost cells to get the uncoupled ghost cell values. 
     // construct the graph for the coupled ghost cells 
@@ -665,7 +663,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
                     coupled += 1;
 
                     // assume symmetry
-                    ghostCellConnectivity.AddEdgeToStage(cellIndex, neighbours[ii]); 
+                    ghostCellCoupling.AddEdgeToStage(cellIndex, neighbours[ii]); 
                     //tripletList.push_back(Triplet(cellIndex,neighbours[ii],1)); 
                     //tripletList.push_back(Triplet(neighbours[ii],cellIndex,1));
                 }
@@ -723,7 +721,57 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
     }
 
     // set the off-diagonal term of the laplacian 
-    ghostCellConnectivity.ConstructEdges(); 
+    ghostCellCoupling.ConstructEdges(); 
+
+    std::vector<std::vector<int> > allComponents; 
+    ghostCellCoupling.GetAllComponentsVerbose(allComponents); 
+
+
+    Vector3d positionBuffer; 
+    const int numberComponents = allComponents.size(); 
+    for (int component=0; component<numberComponents; component++) 
+    {
+        std::ofstream of(("component_"+to_string(component)+".csv").c_str()); 
+        for (size_t ii=0; ii<allComponents[component].size(); ii++) 
+        {
+            positionBuffer = _pressureField.cellPosition(_pressureField.cellIndex(allComponents[component][ii])); 
+            of << positionBuffer.x << ", " << positionBuffer.y << ", " << positionBuffer.z << std::endl; 
+        }
+        of.close();
+    }
+
+    // FIXME debug
+    std::vector<int> decoupledIndex; 
+    for (size_t jj=0; jj<_ghostCells.size(); jj++)
+    {
+
+        bool coupled = false; 
+
+        for (int component=0; component<numberComponents; component++) 
+        {
+            for (size_t ii=0; ii<allComponents[component].size(); ii++) 
+            {
+                if (_ghostCells[jj] == allComponents[component][ii]) 
+                    coupled = true; 
+            }
+        }
+
+        if (!coupled)
+            decoupledIndex.push_back(_ghostCells[jj]); 
+    }
+
+    std::ofstream of("decoupled_component.csv"); 
+    for (int &p : decoupledIndex)
+    {
+        positionBuffer = _pressureField.cellPosition(_pressureField.cellIndex(p)); 
+        of << positionBuffer.x << ", " << positionBuffer.y << ", " << positionBuffer.z << std::endl; 
+    }
+    of.close();
+
+
+    usleep(1000);
+
+
 
     //ghostCellLaplacian.setFromTriplets(tripletList.begin(), tripletList.end()); 
 
@@ -1161,6 +1209,34 @@ void MAC_Grid::classifyCells( bool useBoundary )
     printf( "\tFound %d v_x bulk cells\n", (int)_velocityBulkCells[ 0 ].size() );
     printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
     printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
+
+
+    visualizeClassifiedCells(); 
+}
+
+void MAC_Grid::visualizeClassifiedCells()
+{
+
+    std::ofstream of("ghost_cell.csv"); 
+    Vector3d position; 
+
+    for (size_t gg=0; gg<_ghostCells.size(); gg++)
+    {
+        position = _pressureField.cellPosition(_pressureField.cellIndex(_ghostCells[gg])); 
+        of << position.x << ", " << position.y << ", " << position.z << std::endl; 
+    }
+
+
+    std::ofstream of2("bulk_cell.csv"); 
+    for (size_t bb=0; bb<_ghostCells.size(); bb++) 
+    {
+        position = _pressureField.cellPosition(_pressureField.cellIndex(_bulkCells[bb])); 
+        of2 << position.x << ", " << position.y << ", " << position.z << std::endl; 
+    }
+
+
+    of.close(); 
+    of2.close();
 }
 
 //////////////////////////////////////////////////////////////////////

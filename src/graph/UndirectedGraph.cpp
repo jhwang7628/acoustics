@@ -1,9 +1,10 @@
 #include <graph/UndirectedGraph.h>
+#include <utils/STL_Wrapper.h> 
 
 
 void UndirectedGraph::AddEdgeToStage(const int &x_i, const int &x_j)
 {
-    if (x_i > _N || x_j > _N) throw std::runtime_error("**ERROR** requested node out-of-bounds"); 
+    if (x_i >= _N || x_j >= _N) throw std::runtime_error("**ERROR** requested node out-of-bounds"); 
     _stagedEdges.push_back(TripletInt(x_i, x_j, 1)); 
     _stagedEdges.push_back(TripletInt(x_j, x_i, 1)); 
 }
@@ -115,6 +116,21 @@ void UndirectedGraph::GetComponent(const int &root, std::vector<int> &component,
         }
         
     }
+
+}
+
+void UndirectedGraph::GetAllComponentsVerbose(std::vector<std::vector<int> > &allComponents)
+{
+    GetAllComponents(allComponents); 
+
+    std::cout << "there are " << allComponents.size() << " connected components found in the graph" << std::endl; 
+    for (size_t ii=0; ii<allComponents.size(); ii++) 
+    {
+        std::cout << "component " << ii << " : "; 
+        STL_Wrapper::PrintVectorContent(std::cout, allComponents[ii]); 
+    }
+
+
 
 }
 

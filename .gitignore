@@ -27,6 +27,8 @@ CMakeFiles*
 
 temp*
 
+*.csv
+
 
 build*
 gcc-build
