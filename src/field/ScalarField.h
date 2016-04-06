@@ -126,6 +126,7 @@ class ScalarField {
             return isBoundaryCell( cellIndex( index ) );
         }
 
+
     public:
         static const int         NUM_NEIGHBOURS;
 

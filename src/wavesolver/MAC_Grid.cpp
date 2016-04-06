@@ -14,7 +14,7 @@
 
 #include <distancefield/trilinearInterpolation.h> 
 #include <linearalgebra/SparseLinearSystemSolver.h>
-#include <graph/UndirectedGraph.h> 
+//#include <graph/UndirectedGraph.h> 
 
 #include <unistd.h> 
 
@@ -35,6 +35,7 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
     : 
       _distanceTolerance( distanceTolerance ),
       _pressureField( bbox, cellSize ),
+      _ghostCellsInverseComputed(false),
       _N( N ),
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
@@ -72,6 +73,7 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
       _boundaryMeshes( meshes ),
       _distanceTolerance(distanceTolerance),
       _pressureField( bbox, cellSize ),
+      _ghostCellsInverseComputed(false),
       _N( N ),
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
@@ -275,14 +277,12 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                                    MATRIX &v, int dimension,
                                    REAL t, REAL timeStep, REAL density )
 {
-    const IntArray        &bulkCells = _velocityBulkCells[ dimension ];
-    const IntArray        &interfacialCells = _velocityInterfacialCells[ dimension ];
-    const ScalarField     &field = _velocityField[ dimension ];
-    const IntArray        &interfaceBoundaryIDs = _interfacialBoundaryIDs[ dimension ];
-    const FloatArray      &interfaceBoundaryDirections
-                                        = _interfacialBoundaryDirections[ dimension ];
-    const FloatArray      &interfaceBoundaryCoefficients
-                                        = _interfacialBoundaryCoefficients[ dimension ];
+    const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
+    const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
+    const ScalarField     &field                        = _velocityField[ dimension ];
+    const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
+    const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
+    const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
 
     //// TODO debug quick fix for getting the acceleration
     //MATRIX v_old = v; 
@@ -353,188 +353,272 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         }
     }
 
+
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    // with ghost-cell approach the interfacial cell can be treated as regular
+    // cell 
+    for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size();
+            interfacial_cell_idx++ )
+    {
+        int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
+        int                  neighbour_idx;
+        Tuple3i              cell_indices = field.cellIndex( cell_idx );
+        Vector3d             cell_position = field.cellPosition( cell_indices );
+        REAL                 absorptionCoefficient;
+        REAL                 updateCoefficient;
+        REAL                 gradientCoefficient;
+
+        absorptionCoefficient = PML_absorptionCoefficient( cell_position,
+                _PML_absorptionWidth,
+                dimension );
+        updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient,
+                timeStep );
+        gradientCoefficient = PML_pressureGradientCoefficient(
+                absorptionCoefficient,
+                timeStep,
+                _pressureField.cellSize(),
+                density );
+
+
+
+
+
+        for ( int i = 0; i < _N; i++ )
+        {
+            v( cell_idx, i ) *= updateCoefficient;
+        }
+
+        // If we're on a boundary, then set the derivative to zero (since
+        // we should have d_n p = 0 on the boundary
+        if ( cell_indices[ dimension ] == 0
+                || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
+        {
+            for ( int i = 0; i < _N; i++ )
+            {
+                v( cell_idx, i ) = 0.0;
+            }
+
+            continue;
+        }
+
+
+        // Sample the derivative of the pressure field in the necessary
+        // direction
+        neighbour_idx = _pressureField.cellIndex( cell_indices );
+
+        for ( int i = 0; i < _N; i++ )
+        {
+            v( cell_idx, i )
+                += gradientCoefficient * p( neighbour_idx, i );
+            /// _pressureField.cellSize();
+        }
+
+
+        cell_indices[ dimension ] -= 1;
+        neighbour_idx = _pressureField.cellIndex( cell_indices );
+
+        for ( int i = 0; i < _N; i++ )
+        {
+            v( cell_idx, i )
+                -= gradientCoefficient * p( neighbour_idx, i );
+            /// _pressureField.cellSize();
+        }
+
+
+        // this is the cell 0.05 0.005 0.005
+        //if (cell_idx==555050 && dimension==0)
+        //{
+        //    COUT_SDUMP(v(cell_idx,0)); 
+        //    COUT_SDUMP(pressure_right); 
+        //    COUT_SDUMP(p(neighbour_idx,0)); 
+        //}
+    }
+
     // Handle boundary cells.
     //
     // Note: we assume here that all boundary cells have zero absorption
     // coefficient
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for ( size_t interfacial_cell_idx = 0;
-            interfacial_cell_idx < interfacialCells.size();
-            interfacial_cell_idx++ )
-    {
-        int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
-        int                  objectID;
-        REAL                 bcEval;
-        REAL                 coefficient;
-
-        Vector3d             normal( 0.0, 0.0, 0.0 ); // normal of the interfacial cell boundary
-        Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
-
-        normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
-
-        coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
-
-        objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
-
-        for ( int i = 0; i < _N; i++ )
-        {
-            bcEval = bc( x, normal, objectID, t, i );
-            bcEval *= coefficient;
-
-            v( cell_idx, i ) += timeStep * bcEval;
-        }
-
-
-
-
-        // attempt to do interpolation/extrapolation on acceleration // 
-          
-
-
-          
-        //// TODO debug
-        //REAL                 bcEvalOld; 
-
-        //// compute the closest point to the interfacial face center. 
-        //// TODO this part can be optimized easily debug
-        //Vector3d             closestPoint;
-        //const ClosestPointField *csdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[objectID]); 
-        //csdf->closestPoint(x, closestPoint); 
-
-        //IntArray             neighbourIndices; 
-        //IntArray             neighbourIndicesTrimmed; 
-
-
-        //for ( int i = 0; i < _N; i++ )
-        //{
-        //    bcEvalOld = bc( x, normal, objectID, t, i );
-        //    bcEvalOld *= coefficient;
-
-        //      
-        //    // evaluate the boundary condition on the closest point -> exact 
-        //    bcEval = bc( closestPoint, normal, objectID, t, i );
-        //    bcEval *= coefficient; // TODO this part still cast away the tangential component
-
-        //    // search for local neighbors
-        //    //field.cell26Neighbours(cell_idx, neighbourIndices); 
-        //    field.cellNeighbours(cell_idx, neighbourIndices); 
-
-        //    // first filter out all interfacial ones, only keep the bulk cells
-        //    for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
-        //    {
-        //        if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
-        //            continue; 
-        //        neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
-        //    }
-
-        //    // currently cannot handling underdetermined system
-        //    if (neighbourIndicesTrimmed.size() < 3) 
-        //    {
-        //        field.AddCornerNeighbours(cell_idx, neighbourIndices); 
-        //        neighbourIndicesTrimmed.clear(); 
-        //        for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
-        //        {
-        //            if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
-        //                continue; 
-        //            neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
-        //        }
-        //        if (neighbourIndicesTrimmed.size() < 3) 
-        //            throw std::runtime_error("**ERROR** have less than 3 bulk neighbours in interfacial interpolation. this will cause underdetermined system"); 
-        //    }
-
-        //    const int N_neighbours = neighbourIndicesTrimmed.size(); 
-        //    //const int N_neighbours = 5; 
-        //    // forming the least-square matrix and sample values. the last row
-        //    // will store the boundary velocity samples
-        //    Eigen::MatrixXd samplePoints(N_neighbours+1, 3); 
-        //    Eigen::VectorXd sampleValues(N_neighbours+1); 
-
-        //    Vector3d neighbourPositionBuffer; 
-        //    int      neighbourIndexBuffer; 
-
-        //    // TODO debug
-        //    //std::random_shuffle(neighbourIndicesTrimmed.begin(), neighbourIndicesTrimmed.end()); 
-        //    for (int jj=0; jj<N_neighbours; jj++) 
-        //    //for (int jj=0; jj<3; jj++) 
-        //    {
-
-        //        neighbourIndexBuffer = neighbourIndicesTrimmed[jj]; 
-
-        //        neighbourPositionBuffer = field.cellPosition(neighbourIndexBuffer); 
-
-        //        samplePoints(jj,0) = neighbourPositionBuffer.x; 
-        //        samplePoints(jj,1) = neighbourPositionBuffer.y; 
-        //        samplePoints(jj,2) = neighbourPositionBuffer.z; 
-
-        //        // TODO debug
-        //        sampleValues(jj)    = v(neighbourIndexBuffer, i) - v_old(neighbourIndexBuffer, i) / timeStep; 
-        //    }
-
-        //    samplePoints(N_neighbours,0) = closestPoint.x; 
-        //    samplePoints(N_neighbours,1) = closestPoint.y; 
-        //    samplePoints(N_neighbours,2) = closestPoint.z; 
-        //    sampleValues(N_neighbours)   = bcEval; 
-
-
-        //    WeightedLeastSquareSurfaceLinear3D surface; 
-        //    //LeastSquareSurfaceLinear3D surface; 
-        //    //surface.ComputeCoefficients(samplePoints, sampleValues); 
-
-        //    // TODO god damn debug
-        //    Eigen::Vector3d xEigen; 
-        //    xEigen(0) = x.x; 
-        //    xEigen(1) = x.y; 
-        //    xEigen(2) = x.z; 
-
-
-        //    //bcEval = surface.Evaluate(xEigen); 
-        //    
-        //    // manually set weights
-        //    Eigen::VectorXd weights = Eigen::VectorXd::Ones(samplePoints.rows()); 
-        //    weights(N_neighbours) = 5;
-        //    surface.SetGaussianSpacing(0.02); 
-        //    surface.SetWeights(weights);
-        //    //surface.SetInverseQuadraticEps(0.1);
-        //    bcEval = surface.Evaluate(samplePoints, sampleValues, xEigen); 
-
-
-
-        //    // TODO debug
-        //    Eigen::VectorXd difference(samplePoints.rows()); 
-        //    for (int jj=0; jj<samplePoints.rows(); jj++)
-        //    {
-        //        Eigen::Vector3d diff;
-        //        diff[0] = samplePoints(jj,0) - xEigen(0); 
-        //        diff[1] = samplePoints(jj,1) - xEigen(1); 
-        //        diff[2] = samplePoints(jj,2) - xEigen(2); 
-        //        
-        //        difference(jj) = diff.norm(); 
-        //    }
-
-
-
-        //    // TODO debug
-        //    if (interfacial_cell_idx == 111) 
-        //    {
-
-        //        COUT_SDUMP(coefficient);
-        //        COUT_SDUMP(x);
-        //        COUT_SDUMP(difference.transpose()); 
-        //        COUT_SDUMP(sampleValues.transpose()); 
-        //        // debug
-        //        std::cout << "weights = " << surface.GetWeights().transpose() << std::endl;; 
-        //        std::cout << "bcEval: " << bcEval << std::endl; 
-        //        std::cout << "bcEvalOld: " << bcEvalOld << std::endl;
-        //        std::cout << "difference least square makes: " << bcEval - bcEvalOld << std::endl; 
-        //    }
-
-
-
-        //    v( cell_idx, i ) += timeStep * bcEval;
-        //}
-    }
+//#ifdef USE_OPENMP
+//#pragma omp parallel for schedule(static) default(shared)
+//#endif
+//    for ( size_t interfacial_cell_idx = 0;
+//            interfacial_cell_idx < interfacialCells.size();
+//            interfacial_cell_idx++ )
+//    {
+//        int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
+//        int                  objectID;
+//        REAL                 bcEval;
+//        REAL                 coefficient;
+//
+//        Vector3d             normal( 0.0, 0.0, 0.0 ); // normal of the interfacial cell boundary
+//        Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
+//
+//        normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
+//
+//        coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
+//
+//        objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
+//
+//        for ( int i = 0; i < _N; i++ )
+//        {
+//            bcEval = bc( x, normal, objectID, t, i );
+//            bcEval *= coefficient;
+//
+//            v( cell_idx, i ) += timeStep * bcEval;
+//        }
+//
+//
+//
+//
+//        // attempt to do interpolation/extrapolation on acceleration // 
+//          
+//
+//
+//          
+//        //// TODO debug
+//        //REAL                 bcEvalOld; 
+//
+//        //// compute the closest point to the interfacial face center. 
+//        //// TODO this part can be optimized easily debug
+//        //Vector3d             closestPoint;
+//        //const ClosestPointField *csdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[objectID]); 
+//        //csdf->closestPoint(x, closestPoint); 
+//
+//        //IntArray             neighbourIndices; 
+//        //IntArray             neighbourIndicesTrimmed; 
+//
+//
+//        //for ( int i = 0; i < _N; i++ )
+//        //{
+//        //    bcEvalOld = bc( x, normal, objectID, t, i );
+//        //    bcEvalOld *= coefficient;
+//
+//        //      
+//        //    // evaluate the boundary condition on the closest point -> exact 
+//        //    bcEval = bc( closestPoint, normal, objectID, t, i );
+//        //    bcEval *= coefficient; // TODO this part still cast away the tangential component
+//
+//        //    // search for local neighbors
+//        //    //field.cell26Neighbours(cell_idx, neighbourIndices); 
+//        //    field.cellNeighbours(cell_idx, neighbourIndices); 
+//
+//        //    // first filter out all interfacial ones, only keep the bulk cells
+//        //    for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
+//        //    {
+//        //        if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
+//        //            continue; 
+//        //        neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
+//        //    }
+//
+//        //    // currently cannot handling underdetermined system
+//        //    if (neighbourIndicesTrimmed.size() < 3) 
+//        //    {
+//        //        field.AddCornerNeighbours(cell_idx, neighbourIndices); 
+//        //        neighbourIndicesTrimmed.clear(); 
+//        //        for (size_t jj=0; jj<neighbourIndices.size(); jj++) 
+//        //        {
+//        //            if (_isVelocityInterfacialCell[dimension][neighbourIndices[jj]])
+//        //                continue; 
+//        //            neighbourIndicesTrimmed.push_back(neighbourIndices[jj]); 
+//        //        }
+//        //        if (neighbourIndicesTrimmed.size() < 3) 
+//        //            throw std::runtime_error("**ERROR** have less than 3 bulk neighbours in interfacial interpolation. this will cause underdetermined system"); 
+//        //    }
+//
+//        //    const int N_neighbours = neighbourIndicesTrimmed.size(); 
+//        //    //const int N_neighbours = 5; 
+//        //    // forming the least-square matrix and sample values. the last row
+//        //    // will store the boundary velocity samples
+//        //    Eigen::MatrixXd samplePoints(N_neighbours+1, 3); 
+//        //    Eigen::VectorXd sampleValues(N_neighbours+1); 
+//
+//        //    Vector3d neighbourPositionBuffer; 
+//        //    int      neighbourIndexBuffer; 
+//
+//        //    // TODO debug
+//        //    //std::random_shuffle(neighbourIndicesTrimmed.begin(), neighbourIndicesTrimmed.end()); 
+//        //    for (int jj=0; jj<N_neighbours; jj++) 
+//        //    //for (int jj=0; jj<3; jj++) 
+//        //    {
+//
+//        //        neighbourIndexBuffer = neighbourIndicesTrimmed[jj]; 
+//
+//        //        neighbourPositionBuffer = field.cellPosition(neighbourIndexBuffer); 
+//
+//        //        samplePoints(jj,0) = neighbourPositionBuffer.x; 
+//        //        samplePoints(jj,1) = neighbourPositionBuffer.y; 
+//        //        samplePoints(jj,2) = neighbourPositionBuffer.z; 
+//
+//        //        // TODO debug
+//        //        sampleValues(jj)    = v(neighbourIndexBuffer, i) - v_old(neighbourIndexBuffer, i) / timeStep; 
+//        //    }
+//
+//        //    samplePoints(N_neighbours,0) = closestPoint.x; 
+//        //    samplePoints(N_neighbours,1) = closestPoint.y; 
+//        //    samplePoints(N_neighbours,2) = closestPoint.z; 
+//        //    sampleValues(N_neighbours)   = bcEval; 
+//
+//
+//        //    WeightedLeastSquareSurfaceLinear3D surface; 
+//        //    //LeastSquareSurfaceLinear3D surface; 
+//        //    //surface.ComputeCoefficients(samplePoints, sampleValues); 
+//
+//        //    // TODO god damn debug
+//        //    Eigen::Vector3d xEigen; 
+//        //    xEigen(0) = x.x; 
+//        //    xEigen(1) = x.y; 
+//        //    xEigen(2) = x.z; 
+//
+//
+//        //    //bcEval = surface.Evaluate(xEigen); 
+//        //    
+//        //    // manually set weights
+//        //    Eigen::VectorXd weights = Eigen::VectorXd::Ones(samplePoints.rows()); 
+//        //    weights(N_neighbours) = 5;
+//        //    surface.SetGaussianSpacing(0.02); 
+//        //    surface.SetWeights(weights);
+//        //    //surface.SetInverseQuadraticEps(0.1);
+//        //    bcEval = surface.Evaluate(samplePoints, sampleValues, xEigen); 
+//
+//
+//
+//        //    // TODO debug
+//        //    Eigen::VectorXd difference(samplePoints.rows()); 
+//        //    for (int jj=0; jj<samplePoints.rows(); jj++)
+//        //    {
+//        //        Eigen::Vector3d diff;
+//        //        diff[0] = samplePoints(jj,0) - xEigen(0); 
+//        //        diff[1] = samplePoints(jj,1) - xEigen(1); 
+//        //        diff[2] = samplePoints(jj,2) - xEigen(2); 
+//        //        
+//        //        difference(jj) = diff.norm(); 
+//        //    }
+//
+//
+//
+//        //    // TODO debug
+//        //    if (interfacial_cell_idx == 111) 
+//        //    {
+//
+//        //        COUT_SDUMP(coefficient);
+//        //        COUT_SDUMP(x);
+//        //        COUT_SDUMP(difference.transpose()); 
+//        //        COUT_SDUMP(sampleValues.transpose()); 
+//        //        // debug
+//        //        std::cout << "weights = " << surface.GetWeights().transpose() << std::endl;; 
+//        //        std::cout << "bcEval: " << bcEval << std::endl; 
+//        //        std::cout << "bcEvalOld: " << bcEvalOld << std::endl;
+//        //        std::cout << "difference least square makes: " << bcEval - bcEvalOld << std::endl; 
+//        //    }
+//
+//
+//
+//        //    v( cell_idx, i ) += timeStep * bcEval;
+//        //}
+//    }
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -610,20 +694,67 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
 
 }
 
+
+// TODO can optimize the sparse linear system setup
+//
+// The ghost-cell pressure update has several steps: 
+//
+//  1. Detect all ghost-cells, whose definition is cells that are solid but
+//     has at least one fluid cell neighbours
+//
+//  2. For each ghost-cell GC, find the closest point on the boundary, BI, and
+//     then compute an image point by extending BI, call this point IP. Note
+//     that IP should be inside the fluid domain.
+//
+//     Ideally, GC-BI should be orthogonal to the level-set, in practice our
+//     implementation does not guarantee that. Instead, for now I check the
+//     orthogonality and throw an runtime error if angle is less than 80
+//     degree. 
+//
+//  3. Compute interpolant to get pressure values at IP. Trilinear interpolant
+//     is used if all eight neighbours are well-defined (uncoupled, not GC
+//     itself). If one of the interpolation stencil is GC, replace a row of
+//     Vandermonde matrix to incorporate the Neumann boundary condition sample.
+//     Note that if the stencil is coupled to other ghost-cells, the inverse
+//     of the Vandermonde can still be computed.
+//
+//     C = V^-1 p, C is the coefficient to the trilinear interpolant
+//
+//     p(x,y,z) = C^T b(x,y,z)
+//
+//     where 
+//
+//     b(x,y,z) = [xyz, xy, xz, yz, x, y, z, 1]^T
+//
+//  4. Finally we can compute beta's, such that 
+//
+//     p_IP = beta^T p_samples
+//
+//     p_samples are pressure values of eight neighbours. If i-th neighbour is
+//     the GC cell itself, then the i-th component of p_samples is the Neumann
+//     condition. 
+//
+//  5. We then enforce Neumann condition on the probe GC-BI-IP by
+//     finite-difference. i.e., 
+//
+//     p_IP - p_GC = dl * dp/dn(BI)
+//
+//     dl is the length from GC-IP. 
+//
+//  6. Because the ghost-cells might be coupled, each evaluation of 5. is put
+//     into a sparse matrix, and solved outside the loop. 
+//
+//  7. Update the pressure at ghost-cell indices. 
+//
 void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
 {
 
-    boost::timer::auto_cpu_timer timer("GC update takes %w sec\n"); 
+    // for the ghost-cell coupling
+    SparseLinearSystemSolver solver(_ghostCells.size()); 
 
-    std::cout << "pressure update for the ghost cells" << std::endl;
-
-
-
-    // use a graph Laplacian to store which ghost cells are coupled
-    UndirectedGraph ghostCellCoupling(numPressureCells()); 
-
-    // loop through all ghost cells to get the uncoupled ghost cell values. 
-    // construct the graph for the coupled ghost cells 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
     for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
     {
 
@@ -635,6 +766,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+        erectedNormal.normalize(); 
+
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -645,7 +778,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         // hasGC  : has self as interpolation stencil
         // coupled: if at least one interpolation stencil is another ghost-cell 
         int hasGC=-1; 
-        int coupled=0; 
+        //int coupled=0; 
+
+        std::vector<int> coupledGhostCells; 
+        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
+        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
 
 
         for (size_t ii=0; ii<neighbours.size(); ii++) 
@@ -660,33 +797,21 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
                 // adjacency matrix
                 if (_isGhostCell[neighbours[ii]]) 
                 {
-                    coupled += 1;
-
-                    // assume symmetry
-                    ghostCellCoupling.AddEdgeToStage(cellIndex, neighbours[ii]); 
-                    //tripletList.push_back(Triplet(cellIndex,neighbours[ii],1)); 
-                    //tripletList.push_back(Triplet(neighbours[ii],cellIndex,1));
+                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
+                    coupledGhostCellsNeighbours.push_back(ii); 
                 }
+                else
+                    uncoupledGhostCellsNeighbours.push_back(ii);
             }
         }
-
-        
-        //std::cout << "for ghost cell " << cellIndex << " at position " << cellPosition << ": \n"; 
-        //std::cout << "hasGC=" << hasGC << std::endl; 
-        //if (coupled != 0)
-        //{
-        //    std::cout << "for ghost cell " << cellIndex << " at position " << cellPosition << ": \n"; 
-        //    std::cout << "coupled=" << coupled << std::endl << std::endl; 
-        //}
 
         // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
         Eigen::MatrixXd V(8,8); 
         Tuple3i     indicesBuffer;
         Vector3d    positionBuffer; 
-        Eigen::VectorXd pressureNeighbours(8); 
+        Eigen::VectorXd pressureNeighbours(8);  // right hand side
 
-        // FIXME need to pass in boundary evaluator
-        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0);  // evaluate at boundarPoint
+        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -711,101 +836,82 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         FillVandermondeRegular(0,imagePoint,b); 
         b.transposeInPlace();  // column vector
         V.transposeInPlace(); 
-        Eigen::VectorXd beta = V.householderQr().solve(b);  // this gives beta=V^-T b
 
-        if (coupled == 0) // not coupled, can solve now and we are done
+        // TODO svd solve is needed? can I use QR? 
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::VectorXd beta = svd.solve(b); 
+        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+        //if (conditionNumber > 1E5 && replaced) 
+        //{
+        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
+        //              << "            the solution can be inaccurate.\n"
+        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
+        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
+        //              << "problematic matrix: \n"
+        //              << V << std::endl;
+        //}
+        //
+#pragma omp critical
         {
-            p(cellIndex, 0) = beta.dot(pressureNeighbours) - (cellPosition - imagePoint).length() * bcEval; 
-        } 
 
-    }
+            // fill in the sparse matrix
+            
+            // start by filling the diagonal entry
+            solver.StageEntry(ghost_cell_idx, ghost_cell_idx, 1.0);
 
-    // set the off-diagonal term of the laplacian 
-    ghostCellCoupling.ConstructEdges(); 
+            // next fill the off-diagonal terms by iterating through the coupled
+            // ghost cells for this row. its coefficient is defined by the i-th
+            // entry of beta. i=1,...,8 are the index of the neighbour
+            for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
+                solver.StageEntry(ghost_cell_idx, coupledGhostCells[cc], -beta(coupledGhostCellsNeighbours[cc])); 
 
-    std::vector<std::vector<int> > allComponents; 
-    ghostCellCoupling.GetAllComponentsVerbose(allComponents); 
+            // next we compute the right-hand-side (RHS) of the equation. looking
+            // at the equation, it will be the neumann condition + any uncoupled
+            // betas (see google doc for eqution)
+            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
+            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
+                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
 
-
-    Vector3d positionBuffer; 
-    const int numberComponents = allComponents.size(); 
-    for (int component=0; component<numberComponents; component++) 
-    {
-        std::ofstream of(("component_"+to_string(component)+".csv").c_str()); 
-        for (size_t ii=0; ii<allComponents[component].size(); ii++) 
-        {
-            positionBuffer = _pressureField.cellPosition(_pressureField.cellIndex(allComponents[component][ii])); 
-            of << positionBuffer.x << ", " << positionBuffer.y << ", " << positionBuffer.z << std::endl; 
-        }
-        of.close();
-    }
-
-    // FIXME debug
-    std::vector<int> decoupledIndex; 
-    for (size_t jj=0; jj<_ghostCells.size(); jj++)
-    {
-
-        bool coupled = false; 
-
-        for (int component=0; component<numberComponents; component++) 
-        {
-            for (size_t ii=0; ii<allComponents[component].size(); ii++) 
+            // if GC itself is coupled, need to add this to the RHS
+            if (hasGC != -1) 
             {
-                if (_ghostCells[jj] == allComponents[component][ii]) 
-                    coupled = true; 
+                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
             }
+
+            // finally we fill the rhs of the sparse linear system
+            solver.FillInRHS(ghost_cell_idx, RHS); 
         }
 
-        if (!coupled)
-            decoupledIndex.push_back(_ghostCells[jj]); 
+
     }
 
-    std::ofstream of("decoupled_component.csv"); 
-    for (int &p : decoupledIndex)
+    // actually fill-in all the staged entry of the sparse matrix. after this
+    // step the matrix is ready for solve. 
     {
-        positionBuffer = _pressureField.cellPosition(_pressureField.cellIndex(p)); 
-        of << positionBuffer.x << ", " << positionBuffer.y << ", " << positionBuffer.z << std::endl; 
+        boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
+        solver.FillIn(); 
     }
-    of.close();
+
+    // the actual solve. unfortunately eigen supports only dense RHS solve. 
+    Eigen::VectorXd x; 
+    {
+        boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
+        solver.Solve(x); 
+        //solver.DenseSolve(x); 
+    }
 
 
-    usleep(1000);
+    //COUT_SDUMP(x.maxCoeff());
+    //COUT_SDUMP(x.minCoeff());
+    //solver.PrintMatrixDense(std::cout); 
+    //solver.PrintVectorDense(std::cout);
 
-
-
-    //ghostCellLaplacian.setFromTriplets(tripletList.begin(), tripletList.end()); 
-
-    //COUT_SDUMP(ghostCellLaplacian.cols()); 
-    //COUT_SDUMP(ghostCellLaplacian.outerSize()); 
-
-    //// checking the sparse laplacian 
-    //{
-    //    boost::timer::auto_cpu_timer t("iterate through the matrix columns %w sec\n"); 
-    //    for (int col=0; col<ghostCellLaplacian.outerSize(); col++) 
-    //    {
-    //        //const SparseMatrix colVector = ghostCellLaplacian.block(0,col,numPressureCells(),1); 
-    //        //const int nnz = colVector.nonZeros(); 
-    //        //if (nnz != 0) 
-    //        //{
-    //        //    std::cout << "column " << col << " for the sparse matrix has " << nnz << " non-zero entries" << std::endl;
-    //        //}
-
-    //        for (SparseMatrix::InnerIterator it(ghostCellLaplacian,col); it; ++it)
-    //        {
-    //            std::cout << " [" << it.row() << "," << it.col() << "] = " << it.value() << std::endl;
-    //        }
-
-
-    //    }
-    //}
-
-
-
-
-
-
-
-
+    // put the solution into matrix p
+    {
+        boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
+        for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+            p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
+    }
 }
 
 
@@ -844,6 +950,16 @@ void MAC_Grid::SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, R
     p3 *= w3; 
     p3.parallelAxpy( w1, p1 ); 
     p3.parallelAxpy( w2, p2 );
+}
+
+
+void MAC_Grid::ComputeGhostCellInverseMap()
+{
+    _ghostCellsInverse.clear(); 
+    for (size_t ii=0; ii<_ghostCells.size(); ii++)
+        _ghostCellsInverse[_ghostCells[ii]] = ii; 
+
+    _ghostCellsInverseComputed = true; 
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1212,6 +1328,8 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
 
     visualizeClassifiedCells(); 
+    ComputeGhostCellInverseMap(); 
+
 }
 
 void MAC_Grid::visualizeClassifiedCells()
@@ -1354,6 +1472,33 @@ void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryP
     V(row,5) = ny; 
     V(row,6) = nz; 
     V(row,7) = 0; 
+
+}
+
+
+//// debug methods //// 
+void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldName) 
+{
+
+    REAL minField = std::numeric_limits<REAL>::max(); 
+    REAL maxField = std::numeric_limits<REAL>::min(); 
+
+    for (int col=0; col<field.cols(); col++) 
+        for (int row=0; row<field.rows(); row++) 
+        {
+            minField = std::min<REAL>(minField, field(row,col)); 
+            maxField = std::max<REAL>(maxField, field(row,col)); 
+        }
+
+
+    std::cout   << " ----------------------------- \n"
+                << " INFORMATION FOR FIELD : " << fieldName << "\n" 
+                << " ----------------------------- \n"
+                << "   min: " << minField << "\n"
+                << "   max: " << maxField << "\n" ; 
+
+
+    std::cout << std::flush; 
 
 }
 

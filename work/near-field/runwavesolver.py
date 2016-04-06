@@ -37,7 +37,8 @@ def main(args, redirect='N/A'):
 
     call('cp %s %s' %(configFile, outdir), shell=True)
 
-    os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
+    # os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build/bin")
+    os.environ["PATH"] += os.pathsep + ("/home/jui-hsien/code/acoustics/build_test/bin")
 
     if redirect == 'N/A': 
         os.system("precompute-impulse-response-text %s"%(configFile))

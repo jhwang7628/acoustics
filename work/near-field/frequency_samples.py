@@ -47,6 +47,7 @@ def main():
 
     # frequencySamples = range(500,22100,500)
 
+    # frequencySamples = np.logspace(np.log10(1000),np.log10(8000),2)
     frequencySamples = np.logspace(np.log10(100),np.log10(22100),30)
     frequencySamples = frequencySamples.astype(int)
     print 'frequency samples: ', frequencySamples
@@ -54,11 +55,11 @@ def main():
     
     for f in frequencySamples: 
     
-        outputDirectory = 'data_ball_experiment/res100/%uHz' %(f)
+        outputDirectory = 'data_ball_experiment/ghost_cell_res100/%uHz' %(f)
    
 
         # debug f range
-        if os.path.isdir(outputDirectory) or f < 10000: 
+        if os.path.isdir(outputDirectory):# or f < 10000: 
             print 'directory %s exists, skipping' %(outputDirectory)
             continue
 

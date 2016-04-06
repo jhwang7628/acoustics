@@ -21,6 +21,9 @@ if (BUILD_UNIT_TESTING)
     set(SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS
         test_SparseLinearSystem.cpp) 
 
+    set(TRILINEAR_TESTING_SRCS
+        test_Trilinear.cpp)
+
     # set(TURBSOUND_INCLUDE_DIR
     #     /home/jui-hsien/code/turbsound_postfluid/src
     #     /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -70,6 +73,11 @@ if (BUILD_UNIT_TESTING)
         ${SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS}
         ${SPARSE_LINEAR_ALGEBRA_SRC} 
         ) 
+
+    add_executable(unit_testing_trilinear
+        ${TRILINEAR_TESTING_SRCS}
+        ) 
+
     target_link_libraries(unit_testing_sparseLinearSystemSolver
         boost_timer
         boost_thread

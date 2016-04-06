@@ -97,6 +97,8 @@ class MAC_Grid {
 
         void SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3);
 
+        void ComputeGhostCellInverseMap();
+
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn)
         { 
@@ -185,6 +187,11 @@ class MAC_Grid {
         {
             return _N;
         }
+
+
+        //// debug methods //// 
+
+        void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
 
     protected:
 
@@ -297,6 +304,9 @@ class MAC_Grid {
 
         IntArray                 _bulkCells;
         IntArray                 _ghostCells;
+
+        bool                     _ghostCellsInverseComputed; 
+        std::map<int,int>        _ghostCellsInverse; 
 
         IntArray                 _velocityBulkCells[ 3 ];
 

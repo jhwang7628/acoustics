@@ -129,6 +129,11 @@ void SparseLinearSystemSolver::GetComponent(const int &root, std::vector<int> &c
 
 }
 
+void SparseLinearSystemSolver::Solve(Eigen::VectorXd &x)
+{
+    BiCGStabSolve(x);
+}
+
 void SparseLinearSystemSolver::DecoupledSolve(Eigen::VectorXd &x) 
 {
 
@@ -253,8 +258,8 @@ void SparseLinearSystemSolver::PrintMatrixDense(std::ostream &os)
 
 void SparseLinearSystemSolver::PrintVectorDense(std::ostream &os)
 {
-    Eigen::VectorXd denseVector = Eigen::VectorXd(_b); 
-    os << "b=\n" << denseVector << std::endl;
+    //Eigen::VectorXd denseVector = Eigen::VectorXd(_b); 
+    os << "b=\n" << _bDense << std::endl;
 }
 
 

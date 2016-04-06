@@ -50,7 +50,6 @@ class SparseLinearSystemSolver
         inline bool HasUnstaged()   { return (_stagedEntries.size()==0 ? false : true); }
         inline int  NumberNodes()   { return _N; } 
         inline int  NumberEntries() { return _M; } 
-        inline void Solve(Eigen::VectorXd &x) { BiCGStabSolve(x); } 
 
         void StageEntry(const int &x_i, const int &x_j, const double &e_ij); 
 
@@ -68,6 +67,7 @@ class SparseLinearSystemSolver
         void GetComponent(const int &root, std::vector<int> &component, const int &componentID=-1); 
 
 
+        void Solve(Eigen::VectorXd &x); 
         void DecoupledSolve(Eigen::VectorXd &x); 
         void SparseSolve(Eigen::VectorXd &x); 
         void BiCGStabSolve(Eigen::VectorXd &x); 
@@ -76,7 +76,7 @@ class SparseLinearSystemSolver
             _N(N)
             {
                 _A.resize(N,N); 
-                _bDense.resize(N);
+                _bDense = Eigen::VectorXd::Zero(N);
                 //_b.resize(N);
                 _belongComponent.resize(N); 
 

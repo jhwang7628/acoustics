@@ -196,12 +196,14 @@ void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighb
 
     neighbours.clear(); 
 
-    const Vector3d diff = position - _bbox.minBound(); 
+    Vector3d diff = position - _bbox.minBound(); 
+    diff -= _cellSize/2.0; 
 
     // compute the lower corner and clamp it to the (boundary - 1) cell
     const int x = min( max( (int) (diff.x/_cellSize), 1), _divisions[0]-2 ); 
     const int y = min( max( (int) (diff.y/_cellSize), 1), _divisions[1]-2 ); 
     const int z = min( max( (int) (diff.z/_cellSize), 1), _divisions[2]-2 ); 
+
 
     neighbours.push_back( cellIndex(x+0,y+0,z+0) ); 
     neighbours.push_back( cellIndex(x+0,y+0,z+1) ); 

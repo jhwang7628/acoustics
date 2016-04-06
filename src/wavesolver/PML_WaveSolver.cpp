@@ -623,6 +623,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2,
                               _currentTime, _timeStep );
     _gradientTimer.pause();
+    printf( "velocity update at step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 #if 0
     printf( "Max v_x: %f\n", _v[ 0 ].frobeniusNorm() );
     printf( "Max v_y: %f\n", _v[ 1 ].frobeniusNorm() );
@@ -636,7 +637,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
     _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, WAVE_SPEED, _sourceEvaluator, _currentTime );
     _divergenceTimer.pause();
-    printf( "pressure %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    printf( "pressure update at step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
 
 
     _algebraTimer.start();
@@ -656,10 +657,13 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
 
     // Update the ghost pressures for the velocity update in the next step
+    start = omp_get_wtime();
     _grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, PML_WaveSolver::WAVE_SPEED, bcEvaluator, _currentTime); 
-
-
-
+    printf( "ghost-cell update at step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
+    //_grid.PrintFieldExtremum(_pFull,"_pFull"); 
+    //_grid.PrintFieldExtremum(_v[0],"_v[0]"); 
+    //_grid.PrintFieldExtremum(_v[1],"_v[1]"); 
+    //_grid.PrintFieldExtremum(_v[2],"_v[2]"); 
 
     _currentTime += _timeStep;
 
@@ -668,9 +672,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     //cout << SDUMP( MaxCFL ) << endl; 
     
 
-#if 0
-    printf( "Max pressure: %f\n", _pFull.frobeniusNorm() );
-#endif
+    //printf( "Max pressure: %f\n", _pFull.frobeniusNorm() );
 
     _writeTimer.start();
     start = omp_get_wtime();

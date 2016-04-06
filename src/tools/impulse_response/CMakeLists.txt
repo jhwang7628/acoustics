@@ -192,6 +192,7 @@ if (BUILD_PRECOMPUTE_IMPULSE_RESPONSE)
 	    else(USE_CUDA)
 	    	add_executable(precompute-impulse-response-text
                 ${GRAPH_SRC} 
+                ${SPARSE_LINEAR_ALGEBRA_SRC} 
 	            ${IR_PRECOMPUTE_SRCS}
                 ${GRID_SOURCES}
                 ${LEASTSQUARESURFACE_SOURCES}

@@ -32,13 +32,13 @@ for d in sorted(sys.argv[1:]):
             print t
             f = float(t[:-2])
 
-    if f<8000 or f>9000: 
-        continue 
+    # if f>500:# or f>9000: 
+    #     continue 
 
     frequency[count2] = f
 
     filenames = glob.glob('%s/*pressure*.dat' %(d))
-    filenames = sorted(filenames)[50:]
+    filenames = sorted(filenames)
  
     ## debug for the ball 100^3
     ##        509550   509450
@@ -78,18 +78,18 @@ for d in sorted(sys.argv[1:]):
         # analytical[count] = 0.05**2/np.sqrt(0.365**2*3)
         # analytical[count] = 0.05**2/np.sqrt(0.2875**2+2.*0.0025**2)
         count += 1
-
+    print signal
     magnitude[count2] = max(signal)
 
     t = range(len(filenames))
     plt.plot(t, signal, label=d)
     count2 += 1
 
-plt.legend()
+plt.legend(loc=1)
 # plt.plot(t, -analytical, 'k--', label='analytical')
 
 plt.figure()
-plt.subplot(2,1,1)
+plt.subplot(3,1,1)
 plt.plot(frequency, magnitude, 'o', label='numerical') 
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('pressure magnitude (Pa)') 
@@ -98,25 +98,27 @@ plt.plot(frequency, analytical2, 'xk', label='analytical')
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('pressure magnitude (Pa)') 
 plt.grid()
-plt.legend()
+plt.legend(loc=1)
 
 
 # plt.plot(frequency, analytical, 'k--', label='analytical')
-plt.subplot(2,1,2)
+plt.subplot(3,1,2)
+print magnitude
 plt.loglog(frequency, magnitude, 'o', label='numerical log') 
 plt.loglog(frequency, analytical2, 'xk', label='analytical log')
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('pressure magnitude (Pa)') 
 plt.grid()
-plt.legend()
+plt.legend(loc=1)
 
-plt.figure()
+
+# plt.figure()
+plt.subplot(3,1,3)
 plt.plot(frequency, (magnitude-analytical2)/analytical2, 'o', label='relative error')
 plt.xlabel('frequency (Hz)') 
 plt.ylabel('numerical - analytical / analytical') 
 plt.grid()
-
-plt.legend()
+plt.legend(loc=1)
 
 plt.show()
 
