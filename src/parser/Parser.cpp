@@ -386,6 +386,7 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
 
     parms._useMesh = (queryOptionalInt("impulse_response/solver", "use_mesh", "1")==0) ? false : true; 
     parms._cornellBoxBoundaryCondition = (queryOptionalInt("impulse_response/solver", "cornell_box_boundary_condition", "0")==1) ? true : false; 
+    parms._useGhostCellBoundary = (queryOptionalInt("impulse_response/solver", "use_ghost_cell", "1")==1) ? true : false; 
 
     // TODO very ineffective way to parse it but easier to implement for now,
     // can make it better

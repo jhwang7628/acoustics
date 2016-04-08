@@ -235,6 +235,7 @@ class Parser {
 
             bool                            _useMesh; 
             bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
+            bool                            _useGhostCellBoundary; // if on then ghost cell will be used, otherwise rasterized boundary
 
 
             //REAL                    _sourceWidthTime; 

@@ -105,6 +105,11 @@ class MAC_Grid {
             _cornellBoxBoundaryCondition = isOn; 
         } 
 
+        inline void SetGhostCellBoundary(const bool &isOn) 
+        {
+            _useGhostCellBoundary = isOn; 
+        }
+
         inline int               numPressureCells() const
         {
             return _pressureField.numCells();
@@ -192,6 +197,7 @@ class MAC_Grid {
         //// debug methods //// 
 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
+        void visualizeClassifiedCells(); 
 
     protected:
 
@@ -199,7 +205,6 @@ class MAC_Grid {
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
-        void visualizeClassifiedCells(); 
 
 
         // Returns the absorption coefficient along a certain
@@ -327,6 +332,7 @@ class MAC_Grid {
         REAL                     _PML_absorptionStrength;
 
         bool                     _cornellBoxBoundaryCondition; // see readme in the solver
+        bool                     _useGhostCellBoundary; // see readme in the solver
 
 };
 

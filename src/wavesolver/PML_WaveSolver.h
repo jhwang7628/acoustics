@@ -97,11 +97,20 @@ class PML_WaveSolver : public Solver {
         void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
         inline void SetExternalSource( ExternalSourceEvaluator *sourceEvaluator ){ _sourceEvaluator = sourceEvaluator; } 
 
+        inline bool GetCornellBoxBoundaryCondition(){ return _cornellBoxBoundaryCondition; } 
+        inline bool GetGhostCellBoundary(){ return _useGhostCellBoundary; } 
+
         inline void SetCornellBoxBoundaryCondition(const bool &isOn)
         { 
             _cornellBoxBoundaryCondition = isOn; 
             _grid.SetCornellBoxBoundaryCondition(isOn); 
 
+        } 
+
+        inline void SetGhostCellBoundary(const bool &isOn) 
+        {
+            _useGhostCellBoundary = isOn; 
+            _grid.SetGhostCellBoundary(isOn); 
         } 
 
         void SetWaveSolverPointDataPosition(); 
@@ -273,6 +282,9 @@ class PML_WaveSolver : public Solver {
         // if on then PML is activated on only one face, the others will be set
         // to hard-wall
         bool                     _cornellBoxBoundaryCondition; 
+
+        // if on then ghost cell boundary treatment, otherwise rasterized
+        bool                     _useGhostCellBoundary; 
 
 
 

@@ -56,6 +56,61 @@ Eigen::Matrix<T,3,1> ToEigenVector3(const Vector3<T> &vec)
     return Eigen::Matrix<T,3,1>(vec.x,vec.y,vec.z); 
 }
 
+
+
+void TestSignedDistanceField(ClosestPointField *sdf) 
+{
+
+    // sweep a z-plane
+    const double z = 0.0; 
+    const int N = 800;
+    const Eigen::Vector3d cellCount(N,N,1); 
+    Eigen::MatrixXd grid(N*N,3); 
+    Eigen::MatrixXd normal(N*N,3); 
+    Eigen::MatrixXd data(N*N,1); 
+
+    Vector3d position; 
+    Vector3d normalBuffer; 
+
+    for (int jj=0; jj<N; jj++) 
+        for (int ii=0; ii<N; ii++) 
+        {
+
+            const int index = jj*N+ii;
+            grid(index,0) = -0.5 + (double)ii/(double)N; 
+            grid(index,1) = -0.5 + (double)jj/(double)N; 
+            grid(index,2) = 0.0; 
+
+            position.x = grid(index,0); 
+            position.y = grid(index,1); 
+            position.z = grid(index,2); 
+
+            normalBuffer = sdf->gradient(position); 
+            normalBuffer.normalize(); 
+
+            normal(index,0) = normalBuffer.x; 
+            normal(index,1) = normalBuffer.y; 
+            normal(index,2) = normalBuffer.z; 
+
+            //std::cout << grid.row(jj*N+ii).transpose() << std::endl;
+            data(jj*N+ii,0) = sdf->distance(position); 
+        }
+
+
+    VTKConverter::VTKStructureGridWithScalarFromEigen(grid, data, "sdf.vtk", "sdf", VTKConverter::BINARY, cellCount);
+    VTKConverter::VTKStructureGridWithScalarFromEigen(grid, normal.col(0), "normal_x.vtk", "normal_x", VTKConverter::BINARY, cellCount);
+    VTKConverter::VTKStructureGridWithScalarFromEigen(grid, normal.col(1), "normal_y.vtk", "normal_y", VTKConverter::BINARY, cellCount);
+    VTKConverter::VTKStructureGridWithScalarFromEigen(grid, normal.col(2), "normal_z.vtk", "normal_z", VTKConverter::BINARY, cellCount);
+
+
+
+
+
+
+
+
+}
+
 /* Gaussian */
 REAL Gaussian_3D( const Vector3d &evaluatePosition, const Vector3d &sourcePosition, const REAL stddev )
 {
@@ -278,6 +333,11 @@ int main( int argc, char **argv )
             parms._sdfResolution,
             parms._sdfFilePrefix.c_str()
             );
+
+
+    TestSignedDistanceField(sdf);
+
+
     fieldBBox = BoundingBox(sdf->bmin(), sdf->bmax()); 
 
     
@@ -324,13 +384,13 @@ int main( int argc, char **argv )
 
     // for boundary interpolation : not used
     InterpolationFunction * interp = new InterpolationMitchellNetravali( 0.1 );
-    //boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
-    const REAL w = 2.0*M_PI*parms._f; // 1kHz source
-    const REAL phase = 0.0; // zero phase shift
-    COUT_SDUMP(parms._f); 
-    COUT_SDUMP(w); 
-    COUT_SDUMP(phase); 
-    boundaryCondition = boost::bind( boundaryEval_HarmonicPulsation, _1, _2, _3, _4, _5, w, phase ); 
+    boundaryCondition = boost::bind( boundaryEval, _1, _2, _3, _4, _5, interp );
+    //const REAL w = 2.0*M_PI*parms._f; // 1kHz source
+    //const REAL phase = 0.0; // zero phase shift
+    //COUT_SDUMP(parms._f); 
+    //COUT_SDUMP(w); 
+    //COUT_SDUMP(phase); 
+    //boundaryCondition = boost::bind( boundaryEval_HarmonicPulsation, _1, _2, _3, _4, _5, w, phase ); 
 
     /* Callback function for logging pressure at each time step. */
     PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
@@ -381,8 +441,9 @@ int main( int argc, char **argv )
 
     const REAL PML_width=11.0; 
     const REAL PML_strength=1000000.0; 
-    //solver.SetExternalSource( &source ); 
+    solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( PML_width, PML_strength );
+    solver.SetGhostCellBoundary(parms._useGhostCellBoundary); 
     //solver.setPMLBoundaryWidth( 10.0, 100000.0 );
     //solver.setPMLBoundaryWidth( 20.0, 100000.0 );
 
@@ -414,8 +475,8 @@ int main( int argc, char **argv )
     printf("writing solver settings\n"); 
     {
 
-        char buffer[100]; 
-        snprintf( buffer, 100, pattern, "solver_setting.txt"); 
+        char buffer[500]; 
+        snprintf( buffer, 500, pattern, "solver_setting.txt"); 
         ofstream of(buffer); 
 
         of << std::setprecision(16) << std::fixed;
@@ -464,8 +525,8 @@ int main( int argc, char **argv )
     printf("writing pressure vertex position\n");
     {
     
-        char buffer[100];
-        snprintf( buffer,100,pattern,"vertex_position.dat");
+        char buffer[500];
+        snprintf( buffer,500,pattern,"vertex_position.dat");
         IO::writeMatrixXd( vertexPosition, buffer, IO::BINARY );
     }
 
@@ -499,11 +560,11 @@ int main( int argc, char **argv )
 
             printf( "writing pressure %u\n", nSteps/parms._subSteps );
             {
-                char buf[100]; 
-                char pressure_buf[100]; 
+                char buf[500]; 
+                char pressure_buf[500]; 
 
-                snprintf( pressure_buf, 100, "pressure_%05u.dat", nSteps/parms._subSteps ); 
-                snprintf( buf, 100, pattern, pressure_buf );
+                snprintf( pressure_buf, 500, "pressure_%05u.dat", nSteps/parms._subSteps ); 
+                snprintf( buf, 500, pattern, pressure_buf );
                 IO::writeMatrixXd( *vertexPressure, buf, IO::BINARY );
 
                 //snprintf( pressure_buf, 100, "pressure_%05u.vtk", nSteps/parms._subSteps ); 
