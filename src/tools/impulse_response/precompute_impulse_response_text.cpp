@@ -103,12 +103,6 @@ void TestSignedDistanceField(ClosestPointField *sdf)
     VTKConverter::VTKStructureGridWithScalarFromEigen(grid, normal.col(2), "normal_z.vtk", "normal_z", VTKConverter::BINARY, cellCount);
 
 
-
-
-
-
-
-
 }
 
 /* Gaussian */
@@ -335,7 +329,7 @@ int main( int argc, char **argv )
             );
 
 
-    TestSignedDistanceField(sdf);
+    //TestSignedDistanceField(sdf);
 
 
     fieldBBox = BoundingBox(sdf->bmin(), sdf->bmax()); 

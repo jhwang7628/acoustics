@@ -39,6 +39,13 @@ class MAC_Grid {
     private:
         typedef TriangleMesh<REAL>  TriMesh;
 
+        struct JacobiIterationData
+        {
+            std::vector<int>    nnzIndex; 
+            std::vector<double> nnzValue; 
+            double              RHS; 
+        };
+
     public:
         // Provide the size of the domain, finite difference division
         // size, and a signed distance function for the interior boundary
@@ -90,6 +97,7 @@ class MAC_Grid {
 
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density = 1.0 ); 
+        void PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density = 1.0 ); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
@@ -333,6 +341,10 @@ class MAC_Grid {
 
         bool                     _cornellBoxBoundaryCondition; // see readme in the solver
         bool                     _useGhostCellBoundary; // see readme in the solver
+
+
+        // for jacobi iteration on ghost-cell value solve
+        std::vector<JacobiIterationData>    _ghostCellCoupledData; 
 
 };
 

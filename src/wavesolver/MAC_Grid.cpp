@@ -715,57 +715,223 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
             for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
                 solver.StageEntry(ghost_cell_idx, coupledGhostCells[cc], -beta(coupledGhostCellsNeighbours[cc])); 
 
+
+            // FIXME debug
+            //double offdiagonalSum=0.0; 
+            //for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
+            //    offdiagonalSum += fabs(beta(coupledGhostCellsNeighbours[cc])); 
+
+            //if (offdiagonalSum>1.0)
+            //    std::cerr << "**WARNING** not diagonally dominant\n"; 
+
             // next we compute the right-hand-side (RHS) of the equation. looking
             // at the equation, it will be the neumann condition + any uncoupled
-            // betas (see google doc for eqution)
-            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
-            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
-                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
+                // betas (see google doc for eqution)
+                double RHS = - (imagePoint - cellPosition).length() * bcEval; 
+                for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
+                    RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
 
-            // if GC itself is coupled, need to add this to the RHS
-            if (hasGC != -1) 
-            {
-                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
+                // if GC itself is coupled, need to add this to the RHS
+                if (hasGC != -1) 
+                {
+                    RHS += beta(hasGC)*pressureNeighbours(hasGC); 
+                }
+
+                // finally we fill the rhs of the sparse linear system
+                solver.FillInRHS(ghost_cell_idx, RHS); 
             }
 
-            // finally we fill the rhs of the sparse linear system
-            solver.FillInRHS(ghost_cell_idx, RHS); 
+
+        }
+
+        //reinterpret_cast<std::ofstream*>(of_image)->close();
+        //reinterpret_cast<std::ofstream*>(of_boundary)->close();
+        //exit(1);
+
+        // actually fill-in all the staged entry of the sparse matrix. after this
+        // step the matrix is ready for solve. 
+        {
+            boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
+            solver.FillIn(); 
+        }
+
+        // the actual solve. unfortunately eigen supports only dense RHS solve. 
+        Eigen::VectorXd x; 
+        {
+            boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
+            solver.Solve(x); 
+            //solver.DenseSolve(x); 
         }
 
 
+        //COUT_SDUMP(x.maxCoeff());
+        //COUT_SDUMP(x.minCoeff());
+        //solver.PrintMatrixDense(std::cout); 
+        //solver.PrintVectorDense(std::cout);
+
+        // put the solution into matrix p
+        {
+            boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
+            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+                p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
+    }
+}
+
+void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
+{
+
+    _ghostCellCoupledData.clear(); 
+    _ghostCellCoupledData.resize(_ghostCells.size()); 
+
+    //std::ostream *of_image = new std::ofstream("image_points.csv"); 
+    //std::ostream *of_boundary = new std::ofstream("boundary_points.csv"); 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+    {
+
+        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
+        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
+        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
+        const int       boundaryObject = _containingObject[cellIndex]; 
+
+        // find point BI and IP in the formulation
+        Vector3d boundaryPoint, imagePoint, erectedNormal; 
+
+        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+        //*of_boundary << boundaryPoint.x << "," << boundaryPoint.y << "," << boundaryPoint.z << std::endl;
+        //*of_image << imagePoint[0] << "," << imagePoint[1] << "," << imagePoint[2] << std::endl;
+
+
+        // get the box enclosing the image point; 
+        IntArray neighbours; 
+        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+
+        assert(neighbours.size()==8);
+
+        // hasGC  : has self as interpolation stencil
+        // coupled: if at least one interpolation stencil is another ghost-cell 
+        int hasGC=-1; 
+        //int coupled=0; 
+
+        std::vector<int> coupledGhostCells; 
+        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
+        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
+
+
+        for (size_t ii=0; ii<neighbours.size(); ii++) 
+        {
+            if (neighbours[ii] == cellIndex) 
+            {
+                hasGC = ii;
+            }
+            else  
+            {
+                // if not itself but a ghost cell then add an edge to graph
+                // adjacency matrix
+                if (_isGhostCell[neighbours[ii]]) 
+                {
+                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
+                    coupledGhostCellsNeighbours.push_back(ii); 
+                }
+                else
+                    uncoupledGhostCellsNeighbours.push_back(ii);
+            }
+        }
+
+        // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
+        Eigen::MatrixXd V(8,8); 
+        Tuple3i     indicesBuffer;
+        Vector3d    positionBuffer; 
+        Eigen::VectorXd pressureNeighbours(8);  // right hand side
+
+        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+
+        for (size_t row=0; row<neighbours.size(); row++) 
+        {
+            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+            
+            if ((int)row!=hasGC)
+            {
+                FillVandermondeRegular(row,positionBuffer, V);
+                pressureNeighbours(row) = p(neighbours[row],0); 
+            }
+            else 
+            {
+                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                pressureNeighbours(row) = bcEval; 
+            }
+        }
+
+        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
+        Eigen::MatrixXd b(1,8); // row vector
+
+        FillVandermondeRegular(0,imagePoint,b); 
+        b.transposeInPlace();  // column vector
+        V.transposeInPlace(); 
+
+        // TODO svd solve is needed? can I use QR? 
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::VectorXd beta = svd.solve(b); 
+        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+        //if (conditionNumber > 1E5 && replaced) 
+        //{
+        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
+        //              << "            the solution can be inaccurate.\n"
+        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
+        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
+        //              << "problematic matrix: \n"
+        //              << V << std::endl;
+        //}
+        
+        JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
+        for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
+        {
+            //if (fabs(beta(coupledGhostCellsNeighbours[cc])) > 1E-8)
+            //{
+                jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
+                jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
+            //}
+        } 
+
+        // RHS always exists even when no off-diagonal elements 
+        double &RHS = jacobiIterationData.RHS; 
+        RHS = - (imagePoint - cellPosition).length() * bcEval; 
+        for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
+            RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
+
+        // if GC itself is coupled, need to add this to the RHS
+        if (hasGC != -1) 
+        {
+            RHS += beta(hasGC)*pressureNeighbours(hasGC); 
+        }
+
     }
 
-
-    //reinterpret_cast<std::ofstream*>(of_image)->close();
-    //reinterpret_cast<std::ofstream*>(of_boundary)->close();
-    //exit(1);
-
-    // actually fill-in all the staged entry of the sparse matrix. after this
-    // step the matrix is ready for solve. 
     {
-        boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
-        solver.FillIn(); 
-    }
-
-    // the actual solve. unfortunately eigen supports only dense RHS solve. 
-    Eigen::VectorXd x; 
-    {
-        boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
-        solver.Solve(x); 
-        //solver.DenseSolve(x); 
-    }
+        boost::timer::auto_cpu_timer t(" Jacobi solve takes %w sec\n");
 
 
-    //COUT_SDUMP(x.maxCoeff());
-    //COUT_SDUMP(x.minCoeff());
-    //solver.PrintMatrixDense(std::cout); 
-    //solver.PrintVectorDense(std::cout);
+        const int maxIteration = 10;
 
-    // put the solution into matrix p
-    {
-        boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
-        for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-            p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
+        for (int iteration=0; iteration<maxIteration; iteration++) 
+        {
+            #ifdef USE_OPENMP
+            #pragma omp parallel for schedule(static) default(shared)
+            #endif
+            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+            {
+                const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
+                // if there are nnz, update them 
+                p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
+                for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
+                    p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
+            }
+        }
+
+
     }
 }
 

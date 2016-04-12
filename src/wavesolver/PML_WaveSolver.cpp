@@ -660,7 +660,8 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     {
         // Update the ghost pressures for the velocity update in the next step
         start = omp_get_wtime();
-        _grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, PML_WaveSolver::WAVE_SPEED, bcEvaluator, _currentTime); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, PML_WaveSolver::WAVE_SPEED, bcEvaluator, _currentTime); 
+        //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, PML_WaveSolver::WAVE_SPEED, bcEvaluator, _currentTime); 
         printf( "ghost-cell update at step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
         //_grid.PrintFieldExtremum(_pFull,"_pFull"); 
         //_grid.PrintFieldExtremum(_v[0],"_v[0]"); 
