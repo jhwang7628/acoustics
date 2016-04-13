@@ -13,7 +13,7 @@
         substeps="4" 
         timestepfrequency="176400" 
         use_mesh="1" 
-        use_ghost_cell="0" 
+        use_ghost_cell="1" 
         /> 
     <!--
     <volumetric_source> 

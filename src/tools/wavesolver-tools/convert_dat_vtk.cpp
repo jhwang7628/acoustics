@@ -43,11 +43,6 @@ int main(int argc, char ** argv) {
 
     grid.GetAllCellCenterPosition(centroids); 
 
-    //COUT_SDUMP(grid.GetCellCenterPosition(50,21,50)); 
-    //COUT_SDUMP(grid.FlattenIndicies(50,21,50)); // 502150
-    //COUT_SDUMP(grid.GetCellCenterPosition(100,42,100)); 
-    //COUT_SDUMP(grid.FlattenIndicies(100,42,100)); // 502150
-
     std::vector<std::string> filenames, filenamesAll; 
     IO::listDirectoryMatch(datadir, ".*pressure_[[:digit:]]*\\.dat", filenamesAll); 
 
@@ -61,19 +56,29 @@ int main(int argc, char ** argv) {
     }
 
     const int N_files = filenames.size(); 
-    std::shared_ptr<Eigen::MatrixXd> dataBuffer(new Eigen::MatrixXd(grid.N_cells(), 3)); 
-    grid.InsertCellCenteredData("dataBuffer", dataBuffer); 
 
     STL_Wrapper::PrintVectorContent(std::cout, filenames, 6);
+    int count=0;
 
-    std::string absFilePath; 
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
     for (int ii=0; ii<N_files; ii++) 
     {
-        absFilePath = IO::AssembleFilePath(std::string(datadir), filenames[ii]); 
+        UniformGridWithObject gridThread(grid);
+        std::shared_ptr<Eigen::MatrixXd> dataBuffer(new Eigen::MatrixXd(grid.N_cells(), 3)); 
+        gridThread.InsertCellCenteredData("dataBuffer", dataBuffer); 
+        const std::string absFilePath = IO::AssembleFilePath(std::string(datadir), filenames[ii]); 
         IO::readMatrixX<double>(*dataBuffer, absFilePath.c_str(), IO::BINARY, 0); 
-        std::cout << " max: " << dataBuffer->maxCoeff() << std::endl;
-        grid.WriteVTKCellCentered(absFilePath, "dataBuffer", "pressure");
+        //std::cout << " max: " << dataBuffer->maxCoeff() << std::endl;
+        gridThread.WriteVTKCellCentered(absFilePath, "dataBuffer", "pressure");
+        #pragma omp critical
+        {
+            std::cout << count << " " << std::flush;
+            ++count;
+        }
     }
+    std::cout << std::endl;
 
     return 0;
 }

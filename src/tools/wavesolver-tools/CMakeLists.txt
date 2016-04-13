@@ -10,7 +10,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
         ${DISTANCEFIELD_SRC}              ${MATH_SRC}
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}  ${GEOMETRY_SRC}
-        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${FIELD_SRC}                      
         ${UTILS_SRC}                      ${PARSER_SRC}
         ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
@@ -23,6 +23,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         boost_thread
+        boost_timer
         boost_system                    
         boost_regex) 
 endif ( BUILD_WAVESOLVER_TOOLS )

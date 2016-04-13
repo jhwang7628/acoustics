@@ -66,7 +66,7 @@ class VTKConverter
          */
         static void VTKStructureGridFromEigen( const Eigen::MatrixXd & data, const string & filename, const DataType & type, const Eigen::Vector3i & dimension, const string & vtkname="Example" ) 
         {
-            printf( "write vtk structured grid from eigen matrix to file %s\n", filename.c_str() );
+            //printf( "write vtk structured grid from eigen matrix to file %s\n", filename.c_str() );
 
             std::ofstream vtkstream(filename.c_str(), std::ios::out | std::ios::trunc);
             int Npoints = data.rows();
