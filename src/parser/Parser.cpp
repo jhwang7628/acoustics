@@ -359,7 +359,8 @@ Parser::ImpulseResponseParms Parser::getImpulseResponseParms()
     ImpulseResponseParms       parms;
 
     parms._c = queryOptionalReal( "impulse_response/solver", "c", "343.0" );
-    parms._density = queryOptionalReal( "impulse_response/solver", "density", "1.22521" );
+    //parms._density = queryOptionalReal( "impulse_response/solver", "density", "1.22521" );
+    parms._density = queryOptionalReal( "impulse_response/solver", "density", "1" );
 
     // Get SDF parameters
     parms._sdfResolution = queryRequiredInt( "impulse_response/solver", "fieldresolution" );

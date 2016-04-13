@@ -53,7 +53,7 @@ class Solver {
         virtual Vector3d fieldPosition( int index ) const = 0;
         virtual const Vector3Array *listeningPositions() const = 0;
         virtual REAL fieldDiameter() const = 0;
-        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) = 0;
+        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const = 0;
         virtual int numCells() const = 0;
         virtual REAL currentSimTime() const = 0;
         virtual Vector3d sceneCenter() const = 0;
@@ -238,8 +238,7 @@ class WaveSolver : public Solver {
         const Vector3Array      *_listeningPositions;
         const char              *_outputFile;
 
-        std::vector<std::vector<FloatArray> >
-            _waveOutput;
+        std::vector<std::vector<FloatArray> > _waveOutput;
 
         VECTOR                   _listenerOutput;
 

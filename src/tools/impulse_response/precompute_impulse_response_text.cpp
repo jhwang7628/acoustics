@@ -79,7 +79,7 @@ void TestSignedDistanceField(ClosestPointField *sdf)
             const int index = jj*N+ii;
             grid(index,0) = -0.5 + (double)ii/(double)N; 
             grid(index,1) = -0.5 + (double)jj/(double)N; 
-            grid(index,2) = 0.0; 
+            grid(index,2) = z; 
 
             position.x = grid(index,0); 
             position.y = grid(index,1); 
@@ -201,29 +201,6 @@ void AdjustSourcePosition( const Vector3d &minBound, const Vector3d &maxBound, c
 
 
 
-/* 
- * Harmonic Source with frequency w and velocity strength Sw, 
- * the pressure source strength will then be
- *
- * p = (-i*w) * rho * a^2/r * Sw * exp(-i*w*t)
- *
- * Modeled by a small ball radius given. (should be much smaller compared to
- * any length scale in the system)
- *
- */ 
-REAL Harmonic_Source( const REAL &t, const Vector3d &sPosition, const Vector3d &tPosition, const REAL w, const REAL Sw, const REAL ballRadius, const REAL rho_0, const REAL phase)  
-{
-
-    const REAL r = (sPosition - tPosition).norm();  
-    const REAL EPS = 1E-10;
-
-    if ( r <= ballRadius && r > EPS)  // prevent singularity
-        return -rho_0 *ballRadius *ballRadius / 4.0 / PI / r  * Sw * w * cos(w*t + phase);
-    else 
-        return numeric_limits<REAL>::quiet_NaN();
-}
-
-
 REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id, InterpolationFunction *interp )
 {
     REAL bcResult = 0.0;
@@ -257,9 +234,9 @@ REAL boundaryEval( const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int
 
 REAL boundaryEval_HarmonicPulsation(const Vector3d &x, const Vector3d &n, int obj_id, REAL t, int field_id, const REAL &w, const REAL &phase)
 {
-    REAL bcResult = 0.0;
+    //REAL bcResult = 0.0;
 
-    TRACE_ASSERT( obj_id == 0 );
+    //TRACE_ASSERT( obj_id == 0 );
 
     //return -1.0;
     return cos(w*t + phase); 
@@ -315,7 +292,6 @@ int main( int argc, char **argv )
     //sourcePosition.x = parms._sourcePosition_x; 
     //sourcePosition.y = parms._sourcePosition_y; 
     //sourcePosition.z = parms._sourcePosition_z; 
-    SourceVector &sources = parms._sources; 
 
     const char *pattern = parms._outputPattern.c_str();
 
@@ -386,28 +362,27 @@ int main( int argc, char **argv )
     //COUT_SDUMP(phase); 
     //boundaryCondition = boost::bind( boundaryEval_HarmonicPulsation, _1, _2, _3, _4, _5, w, phase ); 
 
-    /* Callback function for logging pressure at each time step. */
-    PML_WaveSolver::WriteCallbackIndividual dacallback = boost::bind(writeData, _1, _2, _3, parms._subSteps, pattern, endTime, listeningPositions.size());
-
     /// pass in listening position
     PML_WaveSolver        solver( timeStep, solverBBox, cellSize,
                                   *mesh, *sdf,
+                                  parms._c,
+                                  parms._density,
                                   0.0, /* distance tolerance */
                                   parms._useMesh, /* use boundary */
                                   &listeningPositions,
                                   NULL, /* No output file */
                                   NULL, /* Write callback */
-                                  NULL,// uncomment this if don't want to listen and comment the next one
                                   //&dacallback, /* Write callback */
                                   parms._subSteps,
                                   1, /* acceleration directions */
-                                  endTime );
+                                  endTime);
 
     solver.SetCornellBoxBoundaryCondition(parms._cornellBoxBoundaryCondition); 
 
 
-    //AdjustSourcePosition(fieldBBox.minBound(), fieldBBox.maxBound(), cellDivisions, sourcePosition);
+    SourceVector &sources = parms._sources; 
     AdjustSourcePosition(solverBBox.minBound(), solverBBox.maxBound(), cellDivisions, sources);
+    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time_multiple, _1, _2, sources); 
     ///// initialize system with initial condition /////
     //const REAL ic_stddev = 0.005; 
     //const Vector3d sourcePosition(sound_source); 
@@ -430,7 +405,6 @@ int main( int argc, char **argv )
     ////const REAL widthSpace = 0.2; 
     //const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     //ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
-    ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time_multiple, _1, _2, sources); 
 
 
     const REAL PML_width=11.0; 
@@ -448,8 +422,6 @@ int main( int argc, char **argv )
     //const REAL ballRadius = cellSize*3; // threshold for discretizing point source position
     //cout << SDUMP(ballRadius) << endl;
     //const REAL phase = 0;
-    //HarmonicSourceEvaluator sourceFunction = boost::bind( Harmonic_Source, _1, sourcePosition, _2, w, Sw, ballRadius, parms._density, phase ); 
-    //solver.setHarmonicSource( &sourceFunction );  // WILL NEGATE ALL INITIALIZATION! 
  
 
     /// write grid and pressure value
@@ -527,10 +499,9 @@ int main( int argc, char **argv )
     /// time step system
     bool continueStepping = true; 
     int nSteps = 0; 
-    const int N_restart = 10; 
+    //const int N_restart = 10; 
     while ( continueStepping )
     {
-        //continueStepping = solver.stepSystem( boundaryCondition, &sourceFunction ); 
         continueStepping = solver.stepSystem( boundaryCondition ); 
         //continueStepping = solver.stepSystemWithRestart( boundaryCondition, N_restart ); 
 

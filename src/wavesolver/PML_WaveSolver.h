@@ -35,43 +35,82 @@
 // of the pressure and particle velocity equations.
 //
 //////////////////////////////////////////////////////////////////////
-class PML_WaveSolver : public Solver {
+class PML_WaveSolver : public Solver 
+{
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
-        typedef boost::function<void (const vector<REAL>&w, const REAL &t, const int &i)> WriteCallbackIndividual;
 
+    private:
+        REAL                     _waveSpeed;
+        REAL                     _density; 
+
+        // Discretization for the domain
+        MAC_Grid                 _grid;
+
+        // Pretty self-explanatory
+        const REAL               _cellSize; 
+        int                      _subSteps;
+        REAL                     _endTime;
+        REAL                     _timeStep;
+        REAL                     _currentTime;
+        int                      _timeIndex;
+
+        // Number of acceleration fields to solve for
+        int                      _N;
+
+        // Leapfrog variables for a MAC grid
+        // PML requires a separate pressure for each direction
+        MATRIX                   _v[ 3 ];
+        MATRIX                   _p[ 3 ];
+        MATRIX                   _pFull;
+
+        MATRIX                   _pLastTimestep;      // for restarting
+        MATRIX                   _pThisTimestep;      // for restarting
+        MATRIX                   _vThisTimestep[ 3 ]; // for restarting
+
+        Timer<false>             _gradientTimer;
+        Timer<false>             _divergenceTimer;
+        Timer<false>             _stepTimer;
+        Timer<false>             _algebraTimer;
+        Timer<false>             _memoryTimer;
+        Timer<false>             _writeTimer;
+        Timer<false>             _ghostCellTimer;
+
+        // Optionally write a 2D slice out of the finite difference grid
+        int                      _zSlice;
+        MATRIX                   _sliceData;
+        VECTOR                   _listenerOutput;
+        const Vector3Array      *_listeningPositions;
+        const char              *_outputFile;
+        WriteCallback           *_callback;
+        std::vector<std::vector<FloatArray> > _waveOutput;
+
+        // if on then PML is activated on only one face, the others will be set to hard-wall
+        bool                     _cornellBoxBoundaryCondition; 
+        // if on then ghost cell boundary treatment, otherwise rasterized
+        bool                     _useGhostCellBoundary; 
+
+        // volumetric pressure point source
+        ExternalSourceEvaluator *_sourceEvaluator; 
+
+    public: 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
-        // and the write function pointer.
         PML_WaveSolver( REAL timeStep,
                         const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
                         const DistanceField &distanceField,
+                        REAL waveSpeed, 
+                        REAL density, 
                         REAL distanceTolerance = 0.0,
                         bool useBoundary = true,
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
-                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
-                        REAL endTime = -1.0 );
-
-        // Provide the size of the domain (bbox), finite difference division
-        // size, and a signed distance function for the interior boundary.
-        PML_WaveSolver( REAL timeStep,
-                        const BoundingBox &bbox, REAL cellSize,
-                        const TriMesh &mesh,
-                        const DistanceField &distanceField,
-                        REAL distanceTolerance = 0.0,
-                        bool useBoundary = true,
-                        const Vector3Array *listeningPositions = NULL,
-                        const char *outputFile = NULL,
-                        WriteCallback *callback = NULL,
-                        int subSteps = 1,
-                        int N = 1,
-                        REAL endTime = -1.0 );
-
+                        REAL endTime = -1.0
+                        );
 
         // Provide the size of the domain (bbox), finite difference division
         // size, and a list of SDFs for the interior boundary
@@ -79,53 +118,51 @@ class PML_WaveSolver : public Solver {
                         const BoundingBox &bbox, REAL cellSize,
                         std::vector<const TriMesh *> &meshes,
                         std::vector<const DistanceField *> &boundaryFields,
+                        REAL waveSpeed, 
+                        REAL density,
                         REAL distanceTolerance = 0.0,
                         bool useBoundary = true,
                         const Vector3Array *listeningPositions = NULL,
                         const char *outputFile = NULL,
                         WriteCallback *callback = NULL,
-                        WriteCallbackIndividual *callbacki = NULL,
                         int subSteps = 1,
                         int N = 1,
-                        REAL endTime = -1.0 );
+                        REAL endTime = -1.0
+                        );
 
+        // to prevent repeated lines in constructor.
+        void Reinitialize_PML_WaveSolver(const bool &useBoundary); 
 
         // Destructor
-        virtual ~PML_WaveSolver();
-
-        void setPMLBoundaryWidth( REAL width, REAL strength );
-        void setHarmonicSource( const HarmonicSourceEvaluator * hs_eval ); 
-        inline void SetExternalSource( ExternalSourceEvaluator *sourceEvaluator ){ _sourceEvaluator = sourceEvaluator; } 
-
-        inline bool GetCornellBoxBoundaryCondition(){ return _cornellBoxBoundaryCondition; } 
-        inline bool GetGhostCellBoundary(){ return _useGhostCellBoundary; } 
-
-        inline void SetCornellBoxBoundaryCondition(const bool &isOn)
-        { 
-            _cornellBoxBoundaryCondition = isOn; 
-            _grid.SetCornellBoxBoundaryCondition(isOn); 
-
-        } 
-
-        inline void SetGhostCellBoundary(const bool &isOn) 
-        {
-            _useGhostCellBoundary = isOn; 
-            _grid.SetGhostCellBoundary(isOn); 
-        } 
-
-        void SetWaveSolverPointDataPosition(); 
-        void AddCurrentPressureToWaveSolverPointData(); 
+        virtual ~PML_WaveSolver(){};
 
 
-        // Time steps the system in the given interval
-        void solveSystem( REAL startTime, REAL endTime,
-                const BoundaryEvaluator &bcEvaluator );
+        inline bool GetCornellBoxBoundaryCondition()                { return _cornellBoxBoundaryCondition; } 
+        inline bool GetGhostCellBoundary()                          { return _useGhostCellBoundary; } 
+        inline void setPMLBoundaryWidth( REAL width, REAL strength ){ _grid.setPMLBoundaryWidth( width, strength ); }
+        inline void setZSlice( int slice )                          { _zSlice = slice; }
+        inline void SetExternalSource(ExternalSourceEvaluator *sourceEvaluator){ _sourceEvaluator = sourceEvaluator; } 
+
+        virtual inline       int            numCells()                          const { return _grid.numPressureCells(); }
+        virtual inline       int            N()                                 const { return _N; }
+        virtual inline       REAL           fieldDiameter()                     const { return _grid.fieldDiameter(); }
+        virtual inline       REAL           currentSimTime()                    const { return _timeStep * (REAL)_timeIndex; }
+        virtual inline       Vector3d       fieldPosition(const Tuple3i &index) const { return _grid.pressureFieldPosition( index ); }
+        virtual inline       Vector3d       fieldPosition(int index)            const { return _grid.pressureFieldPosition( index ); }
+        virtual inline       Vector3d       sceneCenter()                       const { return _grid.pressureField().bbox().center(); }
+        virtual inline const Tuple3i       &fieldDivisions()                    const { return _grid.pressureFieldDivisions(); }
+        virtual inline const Vector3Array  *listeningPositions()                const { return _listeningPositions; }
+        virtual inline const vector<const TriMesh *>   &meshes()                const { return _grid.meshes(); }
+
+        void SetCornellBoxBoundaryCondition(const bool &isOn);
+        void SetGhostCellBoundary(const bool &isOn);
 
         void initSystem( REAL startTime );
-
+        // Initialize the field data using non-zero initial conditions. 
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
 
-
+        // Takes a single time step
+        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
         // Takes a single time step with restarting steps controlled by
         // N_restart. internally, smoothing is done using weighted average
         // method described in the paper: 
@@ -136,157 +173,20 @@ class PML_WaveSolver : public Solver {
         //
         // p_i <- 1/4 * p_{i-1} + 1/2 * p_i + 1/4 * p_{i+1}
         //
+        // TODO this currently produce bad results, maybe need to smooth velocity field as well
+        //
         virtual bool stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator, const int &N_restart); 
 
-        // Takes a single time step
-        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
-        // Takes a single time step with source function
-        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
-
         // Get vertex pressure for each field
-        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure );
-
+        virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
         virtual void writeWaveOutput() const;
 
-        virtual  const Tuple3i  &fieldDivisions() const
-        {
-            return _grid.pressureFieldDivisions();
-        }
-
-        // Test the max CFL condition based on particle velocity in the grid. 
-        virtual REAL GetMaxCFL();
-        
-
-
-        virtual Vector3d         fieldPosition( const Tuple3i &index ) const
-        {
-            return _grid.pressureFieldPosition( index );
-        }
-
-        virtual Vector3d         fieldPosition( int index ) const
-        {
-            return _grid.pressureFieldPosition( index );
-        }
-
-#if 0
-        inline const TriMesh    &mesh() const
-        {
-            return _grid.mesh();
-        }
-#endif
-        virtual const vector<const TriMesh *> &meshes() const
-        {
-            return _grid.meshes();
-        }
-
-        virtual int              numCells() const
-        {
-            return _grid.numPressureCells();
-        }
-
-        virtual const Vector3Array *listeningPositions() const
-        {
-            return _listeningPositions;
-        }
-
-        virtual REAL             fieldDiameter() const
-        {
-            return _grid.fieldDiameter();
-        }
-
-        virtual  int             N() const
-        {
-            return _N;
-        }
-
-        virtual REAL             currentSimTime() const
-        {
-            return _timeStep * (REAL)_timeIndex;
-        }
-
-        virtual Vector3d         sceneCenter() const
-        {
-            return _grid.pressureField().bbox().center();
-        }
-
-        void                     setZSlice( int slice )
-        {
-            _zSlice = slice;
-        }
-
-    protected:
+        //// debugging/testing methods ////
+        REAL GetMaxCFL();
+        void PrintAllFieldExtremum();
 
     private:
-        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
-        void                     stepLeapfrog( const BoundaryEvaluator &bcEvaluator, const HarmonicSourceEvaluator *hsEval );
-
-
-    private:
-        REAL                     WAVE_SPEED;
-
-        // Discretization for the domain
-        MAC_Grid                 _grid;
-
-        // Pretty self-explanatory
-        REAL                     _timeStep;
-        REAL                     _currentTime;
-        int                      _timeIndex;
-        int                      _subSteps;
-        REAL                     _endTime;
-
-        // Leapfrog variables for a MAC grid
-        //
-        // PML requires a separate pressure for each direction
-        MATRIX                   _v[ 3 ];
-        MATRIX                   _p[ 3 ];
-        MATRIX                   _pFull;
-
-        MATRIX                   _pLastTimestep; // for restarting
-        MATRIX                   _pThisTimestep; // for restarting
-        MATRIX                   _vThisTimestep[ 3 ]; // for restarting
-
-        // Number of fields to solve for
-        int                      _N;
-
-
-        const REAL               _cellSize; 
-        const Vector3Array      *_listeningPositions;
-        const char              *_outputFile;
-
-        std::vector<std::vector<FloatArray> >
-            _waveOutput;
-
-        // cells indexed by hsIndex is source cell that emits harmonic waves 
-        std::vector<int> hsIndex; 
-
-        VECTOR                   _listenerOutput;
-
-        WriteCallback           *_callback;
-        WriteCallbackIndividual *_callbackInd;
-        //WaveSolverPointData     *_rawData;
-
-        Timer<false>             _gradientTimer;
-        Timer<false>             _divergenceTimer;
-        Timer<false>             _stepTimer;
-        Timer<false>             _algebraTimer;
-        Timer<false>             _memoryTimer;
-        Timer<false>             _writeTimer;
-
-        // Optionally write a 2D slice out of the finite difference grid
-        int                      _zSlice;
-        MATRIX                   _sliceData;
-
-        // Evaluator 
-        ExternalSourceEvaluator *_sourceEvaluator; 
-
-        // if on then PML is activated on only one face, the others will be set
-        // to hard-wall
-        bool                     _cornellBoxBoundaryCondition; 
-
-        // if on then ghost cell boundary treatment, otherwise rasterized
-        bool                     _useGhostCellBoundary; 
-
-
+        void stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
 
 };
 

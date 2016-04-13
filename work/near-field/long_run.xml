@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<impulse_response>
+    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" scale="1.0" />
+
+    <solver 
+        cellsize="0.01" 
+        cornell_box_boundary_condition="0" 
+        distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist" 
+        fieldresolution="100" 
+        gridresolution="100" 
+        output_pattern="/home/jui-hsien/code/acoustics/work/near-field/data_long_run/small_ball/test_%s" 
+        stop_time="1" 
+        substeps="4" 
+        timestepfrequency="176400" 
+        use_mesh="1" 
+        use_ghost_cell="0" 
+        /> 
+    <!--
+    <volumetric_source> 
+        <source
+        source_width_time="0.00005"
+        source_position_x="0.0" 
+        source_position_y="0.0" 
+        source_position_z="0.0" 
+        />
+    </volumetric_source> 
+    -->
+    <volumetric_source> 
+        <source source_position_x="-0.029575" source_position_y="0.152152" source_position_z="0.000000" source_width_time="0.00005" />
+    </volumetric_source> 
+
+</impulse_response>
+
+
+<!--
+     <solver
+        stop_time="0.006803"
+        gridscale="1.0000000"
+        cellsize="0.0066666666666666667" 
+        />
+        <source
+        source_width_time="0.00005"
+        source_position_x="0.0" 
+        source_position_y="-0.1" 
+        source_position_z="0" 
+        source_sign_flip="1"
+        />
+        -->

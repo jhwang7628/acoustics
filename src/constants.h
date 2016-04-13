@@ -1,5 +1,5 @@
 #ifndef FRACTURE_SND_CONSTANTS_H
-#   define FRACTURE_SND_CONSTANTS_H
+#define FRACTURE_SND_CONSTANTS_H
 
 #include "config.h"
 

@@ -7,6 +7,7 @@
 
 #include <utils/IO.h>
 #include <utils/trace.h>
+#include <utils/SimpleTimer.h>
 
 #include <math/LeastSquareSurface.h>
 #include <utils/STL_Wrapper.h> 
@@ -22,17 +23,10 @@
 #include <omp.h>
 #endif
 
-//////////////////////////////////////////////////////////////////////
-// Constructor
-//
-// Provide the size of the domain, finite difference division
-// size, and a signed distance function for the interior boundary
-//////////////////////////////////////////////////////////////////////
 MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
                     const TriMesh &mesh,
                     const DistanceField &boundarySDF,
-                    REAL distanceTolerance, int N )
-    : 
+                    REAL distanceTolerance, int N ) : 
       _distanceTolerance( distanceTolerance ),
       _pressureField( bbox, cellSize ),
       _ghostCellsInverseComputed(false),
@@ -40,35 +34,16 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
 {
-    Vector3d                   xMin, yMin, zMin;
-    Tuple3i                    xDivs, yDivs, zDivs;
-
     _boundaryFields.push_back( &boundarySDF );
     _boundaryMeshes.push_back( &mesh );
 
-    // Put velocity values on the exterior boundary
-    xMin = bbox.minBound() - Vector3d( cellSize / 2.0, 0.0, 0.0 );
-    yMin = bbox.minBound() - Vector3d( 0.0, cellSize / 2.0, 0.0 );
-    zMin = bbox.minBound() - Vector3d( 0.0, 0.0, cellSize / 2.0 );
-
-    xDivs = _pressureField.cellDivisions() + Tuple3i( 1, 0, 0 );
-    yDivs = _pressureField.cellDivisions() + Tuple3i( 0, 1, 0 );
-    zDivs = _pressureField.cellDivisions() + Tuple3i( 0, 0, 1 );
-
-    _velocityField[ 0 ] = ScalarField( xMin, xDivs, cellSize );
-    _velocityField[ 1 ] = ScalarField( yMin, yDivs, cellSize );
-    _velocityField[ 2 ] = ScalarField( zMin, zDivs, cellSize );
-
-    printf( "Initialized MAC_Grid with %d cells\n", _pressureField.numCells() );
+    Reinitialize_MAC_Grid(bbox, cellSize); 
 }
 
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
 MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
                     vector<const TriMesh *> &meshes,
                     vector<const DistanceField *> &boundaryFields,
-                    REAL distanceTolerance, int N )
-    : 
+                    REAL distanceTolerance, int N ) : 
       _boundaryFields( boundaryFields ),
       _boundaryMeshes( meshes ),
       _distanceTolerance(distanceTolerance),
@@ -77,6 +52,11 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
       _N( N ),
       _PML_absorptionWidth( 1.0 ),
       _PML_absorptionStrength( 0.0 )
+{
+    Reinitialize_MAC_Grid(bbox, cellSize); 
+}
+
+void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSize)
 {
     Vector3d                   xMin, yMin, zMin;
     Tuple3i                    xDivs, yDivs, zDivs;
@@ -104,35 +84,22 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
     printf( "Initialized MAC_Grid with %d cells\n", _pressureField.numCells() );
 }
 
-//////////////////////////////////////////////////////////////////////
-// Destructor
-//////////////////////////////////////////////////////////////////////
 MAC_Grid::~MAC_Grid()
 {
 }
 
-//////////////////////////////////////////////////////////////////////
-// Initializes field using a rasterized version of the boundary
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::initFieldRasterized( bool useBoundary )
 {
     cout << "MAC_Grid::initFieldRasterized: Classifying cells" << endl << endl;
     classifyCells( useBoundary );
 }
 
-//////////////////////////////////////////////////////////////////////
-// Width is the number of cells we wish to absorb in
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
 {
     _PML_absorptionWidth = width * _pressureField.cellSize();
     _PML_absorptionStrength = strength;
 }
 
-//////////////////////////////////////////////////////////////////////
-// Gets the derivative for the given velocity field, based on the
-// input pressure value
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::velocityDerivative( const MATRIX &p,
                                    const BoundaryEvaluator &bc,
                                    MATRIX &dV_dt, int dimension,
@@ -217,10 +184,6 @@ void MAC_Grid::velocityDerivative( const MATRIX &p,
     }
 }
 
-//////////////////////////////////////////////////////////////////////
-// Gets the derivative of the pressure field using the current
-// velocity field values in each direction
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
                                    REAL alpha ) const
 {
@@ -269,10 +232,6 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
     }
 }
 
-//////////////////////////////////////////////////////////////////////
-// Performs a velocity update in the given direction, as detailed
-// by Liu et al. (equation (14))
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                                    MATRIX &v, int dimension,
                                    REAL t, REAL timeStep, REAL density )
@@ -283,9 +242,6 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
     const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
-
-    //// TODO debug quick fix for getting the acceleration
-    //MATRIX v_old = v; 
 
     // Handle all bulk cells
 #ifdef USE_OPENMP
@@ -302,21 +258,12 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         REAL                 updateCoefficient;
         REAL                 gradientCoefficient;
 
-        absorptionCoefficient = PML_absorptionCoefficient( cell_position,
-                _PML_absorptionWidth,
-                dimension );
-        updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient,
-                timeStep );
-        gradientCoefficient = PML_pressureGradientCoefficient(
-                absorptionCoefficient,
-                timeStep,
-                _pressureField.cellSize(),
-                density );
+        absorptionCoefficient = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
+        updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient, timeStep ); 
+        gradientCoefficient = PML_pressureGradientCoefficient( absorptionCoefficient, timeStep, _pressureField.cellSize(), density );
 
         for ( int i = 0; i < _N; i++ )
-        {
             v( cell_idx, i ) *= updateCoefficient;
-        }
 
         // If we're on a boundary, then set the derivative to zero (since
         // we should have d_n p = 0 on the boundary
@@ -324,9 +271,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                 || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
         {
             for ( int i = 0; i < _N; i++ )
-            {
                 v( cell_idx, i ) = 0.0;
-            }
 
             continue;
         }
@@ -336,28 +281,18 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         neighbour_idx = _pressureField.cellIndex( cell_indices );
 
         for ( int i = 0; i < _N; i++ )
-        {
-            v( cell_idx, i )
-                += gradientCoefficient * p( neighbour_idx, i );
-            /// _pressureField.cellSize();
-        }
+            v( cell_idx, i ) += gradientCoefficient * p( neighbour_idx, i );
 
         cell_indices[ dimension ] -= 1;
         neighbour_idx = _pressureField.cellIndex( cell_indices );
 
         for ( int i = 0; i < _N; i++ )
-        {
-            v( cell_idx, i )
-                -= gradientCoefficient * p( neighbour_idx, i );
-            /// _pressureField.cellSize();
-        }
+            v( cell_idx, i ) -= gradientCoefficient * p( neighbour_idx, i );
     }
 
-
-
+    // Handle interfacial cells
     if (_useGhostCellBoundary)
     {
-
         // with ghost-cell approach the interfacial cell can be treated as regular
         // cell 
         #ifdef USE_OPENMP
@@ -374,21 +309,12 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
             REAL                 updateCoefficient;
             REAL                 gradientCoefficient;
 
-            absorptionCoefficient = PML_absorptionCoefficient( cell_position,
-                    _PML_absorptionWidth,
-                    dimension );
-            updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient,
-                    timeStep );
-            gradientCoefficient = PML_pressureGradientCoefficient(
-                    absorptionCoefficient,
-                    timeStep,
-                    _pressureField.cellSize(),
-                    density );
+            absorptionCoefficient = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
+            updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient, timeStep ); 
+            gradientCoefficient = PML_pressureGradientCoefficient( absorptionCoefficient, timeStep, _pressureField.cellSize(), density );
 
             for ( int i = 0; i < _N; i++ )
-            {
                 v( cell_idx, i ) *= updateCoefficient;
-            }
 
             // If we're on a boundary, then set the derivative to zero (since
             // we should have d_n p = 0 on the boundary
@@ -396,35 +322,23 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
                     || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
             {
                 for ( int i = 0; i < _N; i++ )
-                {
                     v( cell_idx, i ) = 0.0;
-                }
 
                 continue;
             }
-
 
             // Sample the derivative of the pressure field in the necessary
             // direction
             neighbour_idx = _pressureField.cellIndex( cell_indices );
 
             for ( int i = 0; i < _N; i++ )
-            {
-                v( cell_idx, i )
-                    += gradientCoefficient * p( neighbour_idx, i );
-                /// _pressureField.cellSize();
-            }
-
+                v( cell_idx, i ) += gradientCoefficient * p( neighbour_idx, i );
 
             cell_indices[ dimension ] -= 1;
             neighbour_idx = _pressureField.cellIndex( cell_indices );
 
             for ( int i = 0; i < _N; i++ )
-            {
-                v( cell_idx, i )
-                    -= gradientCoefficient * p( neighbour_idx, i );
-                /// _pressureField.cellSize();
-            }
+                v( cell_idx, i ) -= gradientCoefficient * p( neighbour_idx, i );
 
         }
     }
@@ -450,9 +364,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
             Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
 
             normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
-
             coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
-
             objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
 
             for ( int i = 0; i < _N; i++ )
@@ -466,77 +378,51 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     }
 }
 
-//////////////////////////////////////////////////////////////////////
-// Performs a pressure update for the given pressure direction,
-void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
-                                   REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
+void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
+    const size_t bulkCellSize = _bulkCells.size();
+    const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+
     // We only have to worry about bulk cells here
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
-            bulk_cell_idx++ )
+    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCellSize;
+            ++bulk_cell_idx )
     {
-        int                      cell_idx = _bulkCells[ bulk_cell_idx ];
-        int                      neighbour_idx;
-        Tuple3i                  cell_indices;
-        Vector3d                 cell_position;
-        REAL                     absorptionCoefficient;
-        REAL                     directionalCoefficient;
-        REAL                     updateCoefficient;
-        REAL                     divergenceCoefficient;
+        const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
+        const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+        const REAL      absorptionCoefficient   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
+        const REAL      directionalCoefficient  = PML_directionalCoefficient( absorptionCoefficient, timeStep );
+        const REAL      updateCoefficient       = PML_pressureUpdateCoefficient( absorptionCoefficient, timeStep, directionalCoefficient );
+        const REAL      divergenceCoefficient   = PML_divergenceCoefficient( density, c, directionalCoefficient );
 
-        cell_indices = _pressureField.cellIndex( cell_idx );
-        cell_position = _pressureField.cellPosition( cell_idx );
-        absorptionCoefficient = PML_absorptionCoefficient( cell_position,
-                _PML_absorptionWidth,
-                dimension );
-        directionalCoefficient = PML_directionalCoefficient( absorptionCoefficient,
-                timeStep );
-        updateCoefficient = PML_pressureUpdateCoefficient( absorptionCoefficient,
-                timeStep,
-                directionalCoefficient );
-        divergenceCoefficient = PML_divergenceCoefficient( density, c,
-                directionalCoefficient );
+        Tuple3i   cell_indices                  = _pressureField.cellIndex( cell_idx );
+        int       neighbour_idx;
 
         // Scale the existing pressure value
         for ( int i = 0; i < _N; i++ )
-        {
             p( cell_idx, i ) *= updateCoefficient;
-        }
+
 
         cell_indices[ dimension ] += 1;
         neighbour_idx = _velocityField[ dimension ].cellIndex( cell_indices );
 
         for ( int i = 0; i < _N; i++ )
-        {
-            p( cell_idx, i ) += divergenceCoefficient * v( neighbour_idx, i )
-                / _velocityField[ dimension ].cellSize();
-        }
+            p( cell_idx, i ) += divergenceCoefficient * v( neighbour_idx, i ) / _velocityField[ dimension ].cellSize();
 
         cell_indices[ dimension ] -= 1;
         neighbour_idx = _velocityField[ dimension ].cellIndex( cell_indices );
 
         for ( int i = 0; i < _N; i++ )
-        {
-            p( cell_idx, i ) -= divergenceCoefficient * v( neighbour_idx, i )
-                / _velocityField[ dimension ].cellSize();
-        }
-
+            p( cell_idx, i ) -= divergenceCoefficient * v( neighbour_idx, i ) / _velocityField[ dimension ].cellSize();
 
         // evaluate external sources 
         // Liu Eq (16) f6x term
-        if ( sourceEvaluator != nullptr )
-        {
+        if (evaluateExternalSource)
             for ( int i = 0; i < _N; i++ ) 
-            {
                 p( cell_idx, i ) += (*sourceEvaluator)( cell_position, simulationTime+0.5*timeStep ) / directionalCoefficient; 
-            }
-        }
-
     }
-
 }
 
 
@@ -593,10 +479,6 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
 //
 void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
 {
-
-    //std::ostream *of_image = new std::ofstream("image_points.csv"); 
-    //std::ostream *of_boundary = new std::ofstream("boundary_points.csv"); 
-
     // for the ghost-cell coupling
     SparseLinearSystemSolver solver(_ghostCells.size()); 
 
@@ -615,9 +497,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
 
         FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        //*of_boundary << boundaryPoint.x << "," << boundaryPoint.y << "," << boundaryPoint.z << std::endl;
-        //*of_image << imagePoint[0] << "," << imagePoint[1] << "," << imagePoint[2] << std::endl;
-
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -626,14 +505,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         assert(neighbours.size()==8);
 
         // hasGC  : has self as interpolation stencil
-        // coupled: if at least one interpolation stencil is another ghost-cell 
         int hasGC=-1; 
-        //int coupled=0; 
 
         std::vector<int> coupledGhostCells; 
         std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
         std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
-
 
         for (size_t ii=0; ii<neighbours.size(); ii++) 
         {
@@ -689,7 +565,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
         // TODO svd solve is needed? can I use QR? 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::VectorXd beta = svd.solve(b); 
+        Eigen::VectorXd beta = svd.solve(b);
+        //Eigen::VectorXd beta = V.householderQr().solve(b); 
         //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
         //if (conditionNumber > 1E5 && replaced) 
         //{
@@ -726,27 +603,20 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
             // next we compute the right-hand-side (RHS) of the equation. looking
             // at the equation, it will be the neumann condition + any uncoupled
-                // betas (see google doc for eqution)
-                double RHS = - (imagePoint - cellPosition).length() * bcEval; 
-                for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
-                    RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
+            // betas (see google doc for eqution)
+            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
+            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
+                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
 
-                // if GC itself is coupled, need to add this to the RHS
-                if (hasGC != -1) 
-                {
-                    RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-                }
-
-                // finally we fill the rhs of the sparse linear system
-                solver.FillInRHS(ghost_cell_idx, RHS); 
+            // if GC itself is coupled, need to add this to the RHS
+            if (hasGC != -1) 
+            {
+                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
             }
 
-
+            // finally we fill the rhs of the sparse linear system
+            solver.FillInRHS(ghost_cell_idx, RHS); 
         }
-
-        //reinterpret_cast<std::ofstream*>(of_image)->close();
-        //reinterpret_cast<std::ofstream*>(of_boundary)->close();
-        //exit(1);
 
         // actually fill-in all the staged entry of the sparse matrix. after this
         // step the matrix is ready for solve. 
@@ -762,18 +632,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
             solver.Solve(x); 
             //solver.DenseSolve(x); 
         }
-
-
-        //COUT_SDUMP(x.maxCoeff());
-        //COUT_SDUMP(x.minCoeff());
-        //solver.PrintMatrixDense(std::cout); 
-        //solver.PrintVectorDense(std::cout);
-
         // put the solution into matrix p
         {
             boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
             for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
                 p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
+        }
     }
 }
 
@@ -783,8 +647,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(_ghostCells.size()); 
 
-    //std::ostream *of_image = new std::ofstream("image_points.csv"); 
-    //std::ostream *of_boundary = new std::ofstream("boundary_points.csv"); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -798,11 +660,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
 
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
-
         FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        //*of_boundary << boundaryPoint.x << "," << boundaryPoint.y << "," << boundaryPoint.z << std::endl;
-        //*of_image << imagePoint[0] << "," << imagePoint[1] << "," << imagePoint[2] << std::endl;
-
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -818,7 +676,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         std::vector<int> coupledGhostCells; 
         std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
         std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
-
 
         for (size_t ii=0; ii<neighbours.size(); ii++) 
         {
@@ -875,6 +732,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         // TODO svd solve is needed? can I use QR? 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Eigen::VectorXd beta = svd.solve(b); 
+        //Eigen::VectorXd beta = V.householderQr().solve(b); 
         //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
         //if (conditionNumber > 1E5 && replaced) 
         //{
@@ -889,11 +747,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
         for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
         {
-            //if (fabs(beta(coupledGhostCellsNeighbours[cc])) > 1E-8)
-            //{
-                jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
-                jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
-            //}
+            if (fabs(beta(coupledGhostCellsNeighbours[cc])) > 1E-14)
+            {
+              jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
+              jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
+            }
         } 
 
         // RHS always exists even when no off-diagonal elements 
@@ -904,43 +762,27 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
 
         // if GC itself is coupled, need to add this to the RHS
         if (hasGC != -1) 
-        {
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-        }
-
     }
 
+
+    const int maxIteration = 10;
+    for (int iteration=0; iteration<maxIteration; iteration++) 
     {
-        boost::timer::auto_cpu_timer t(" Jacobi solve takes %w sec\n");
-
-
-        const int maxIteration = 10;
-
-        for (int iteration=0; iteration<maxIteration; iteration++) 
+        #ifdef USE_OPENMP
+        #pragma omp parallel for schedule(static) default(shared)
+        #endif
+        for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
         {
-            #ifdef USE_OPENMP
-            #pragma omp parallel for schedule(static) default(shared)
-            #endif
-            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-            {
-                const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
-                // if there are nnz, update them 
-                p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
-                for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
-                    p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
-            }
+            const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
+            // if there are nnz, update them 
+            p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
+            for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
+                p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
         }
-
-
     }
 }
 
-
-
-//////////////////////////////////////////////////////////////////////
-// Samples data from a z slice of the finite difference grid and
-// puts it in to a matrix
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
 {
     const Tuple3i             &divs = _pressureField.cellDivisions();
@@ -963,16 +805,12 @@ void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
 }
 
 
-//////////////////////////////////////////////////////////////////////
-// Smooth field given weights
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3)
 {
     p3 *= w3; 
     p3.parallelAxpy( w1, p1 ); 
     p3.parallelAxpy( w2, p2 );
 }
-
 
 void MAC_Grid::ComputeGhostCellInverseMap()
 {
@@ -983,18 +821,13 @@ void MAC_Grid::ComputeGhostCellInverseMap()
     _ghostCellsInverseComputed = true; 
 }
 
-//////////////////////////////////////////////////////////////////////
-// Classifies cells as either a bulk cell, ghost cell, or
-// interfacial cell
-//////////////////////////////////////////////////////////////////////
 void MAC_Grid::classifyCells( bool useBoundary )
 {
-    int                        numPressureCells = _pressureField.numCells();
-    int                        numVcells[] = { _velocityField[ 0 ].numCells(),
-        _velocityField[ 1 ].numCells(),
-        _velocityField[ 2 ].numCells() };
-    Vector3d                   cellPos;
-    IntArray                   neighbours;
+
+    int      numPressureCells = _pressureField.numCells();
+    int      numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
+    Vector3d cellPos;
+    IntArray neighbours;
 
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
@@ -1038,122 +871,26 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _interfacialBoundaryCoefficients[ 2 ].clear();
 
     _containingObject.clear(); 
-
     _containingObject.resize(numPressureCells, -1);
-
-    //IntArray                   containingObject( numPressureCells, -1 );
 
     if ( !useBoundary )
     {
-        std::cout << "classifying cells: not using boundary\n"; 
+        std::cout << "No classification (not using boundary)\n"; 
         for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
         {
             _isBulkCell[ cell_idx ] = true;
             _bulkCells.push_back( cell_idx );
         }
 
-        // Classify interfacial cells in each velocity field
         for ( int dimension = 0; dimension < 3; dimension++ )
         {
             for ( int cell_idx = 0; cell_idx < _velocityField[ dimension ].numCells(); cell_idx++ )
             {
-                Tuple3i                cell_coordinates;
-                int                    pressure_cell_idx1;
-                int                    pressure_cell_idx2;
-
-                cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
-
-                // We will assume that boundary cells are not interfacial
-                if (  cell_coordinates[ dimension ] == 0 || 
-                        cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
-                {
-                    _isVelocityBulkCell[ dimension ][ cell_idx ] = true;
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
-
-                    continue;
-                }
-
-                // Look at our neighbours in the pressure field
-                cell_coordinates[ dimension ] -= 1;
-                pressure_cell_idx1 = _pressureField.cellIndex( cell_coordinates );
-                cell_coordinates[ dimension ] += 1;
-                pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
-
-                if ( _isBulkCell[ pressure_cell_idx1 ] && 
-                        _isBulkCell[ pressure_cell_idx2 ] )
-                {
-                    // Both pressure cell neighbours are bulk cells, so this is
-                    // a bulk cell too
-                    _isVelocityBulkCell[ dimension ][ cell_idx ] = true;
-
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
-                }
-                else if (  _isBulkCell[ pressure_cell_idx1 ] && 
-                        !_isBulkCell[ pressure_cell_idx2 ] )
-                {
-                    // Only one neighbour is inside the domain, so this must
-                    // be an interfacial cell
-                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
-
-                    // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = _containingObject[ pressure_cell_idx2 ];
-
-                    TRACE_ASSERT( boundaryObject >= 0 );
-
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
-                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
-
-                    // Determine a scaling coefficient based on the angle between
-                    // the boundary normal and the rasterized boundary normal
-                    Vector3d normal( 0.0, 0.0, 0.0 );
-                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                    Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
-
-                    normal[ dimension ] = 1.0;
-                    gradient.normalize();
-
-                    REAL coefficient = normal.dotProduct( gradient );
-
-                    //TRACE_ASSERT( coefficient >= 0.0 );
-
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-                }
-                else if ( !_isBulkCell[ pressure_cell_idx1 ] && 
-                        _isBulkCell[ pressure_cell_idx2 ] )
-                {
-                    // Only one neighbour is inside the domain, so this must
-                    // be an interfacial cell
-                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
-
-                    // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = _containingObject[ pressure_cell_idx1 ];
-
-                    TRACE_ASSERT( boundaryObject >= 0 );
-
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
-
-                    // Determine a scaling coefficient based on the angle between
-                    // the boundary normal and the rasterized boundary normal
-                    Vector3d normal( 0.0, 0.0, 0.0 );
-                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                    Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
-
-                    normal[ dimension ] = 1.0;
-                    gradient.normalize();
-
-                    REAL coefficient = normal.dotProduct( gradient );
-
-                    //TRACE_ASSERT( coefficient >= 0.0 );
-
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-                }
+                _isVelocityBulkCell[dimension][cell_idx] = true; 
+                _isVelocityInterfacialCell[dimension][cell_idx] = false; 
+                _velocityBulkCells[dimension].push_back(cell_idx); 
             }
         }
-
         return;
     }
 
@@ -1272,14 +1009,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                 Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
 
-                //Vector3d closestPoint;
-
-                //const ClosestPointField *sdf = reinterpret_cast<const ClosestPointField*>(_boundaryFields[boundaryObject]); 
-                //sdf->closestPoint( position, closestPoint ); 
-                //COUT_SDUMP(position-closestPoint); 
-                //COUT_SDUMP((position-closestPoint).length()); 
-
-                //normal[ dimension ] = -1.0;
                 gradient.normalize();
 
                 REAL coefficient = normal.dotProduct( gradient );
@@ -1326,14 +1055,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
     }
 
 
-    // debug
-    //for (size_t ii=0; ii<_ghostCells.size(); ii++) 
-    //{
-    //    const Vector3d cellPosition = _pressureField.cellPosition(_pressureField.cellIndex(_ghostCells[ii])); 
-    //    COUT_SDUMP(ii); 
-    //    COUT_SDUMP(cellPosition);
-    //}
-
     printf( "MAC_Grid: classifyCells:\n" );
     printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
     printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
@@ -1378,16 +1099,6 @@ void MAC_Grid::visualizeClassifiedCells()
     of2.close();
 }
 
-//////////////////////////////////////////////////////////////////////
-// Returns the absorption coefficient along a certain
-// dimension for a point in space.
-//
-// FIXME: For now, we will use a quadratic profile here, though
-// we may need to try something more complex later on.
-//
-// if cornellBoxBoundary is on, the PML has been disabled except for the face at -z
-// , because we want to make a acoustic cornell box (3/1, 2016)
-//////////////////////////////////////////////////////////////////////
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth,
         int dimension )
 {
@@ -1415,12 +1126,6 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
     {
         REAL                     dist = absorptionWidth - h;
 
-#if 0
-        cout << "returning "
-            << _PML_absorptionStrength * ( absorptionWidth - h )
-            / absorptionWidth << endl;
-#endif
-        //return _PML_absorptionStrength * ( absorptionWidth - h ) / absorptionWidth;
         if (_cornellBoxBoundaryCondition)
             return 0.0; // skip face at +z face
         else 
@@ -1501,14 +1206,12 @@ void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryP
     V(row,5) = ny; 
     V(row,6) = nz; 
     V(row,7) = 0; 
-
 }
 
 
 //// debug methods //// 
 void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldName) 
 {
-
     REAL minField = std::numeric_limits<REAL>::max(); 
     REAL maxField = std::numeric_limits<REAL>::min(); 
 
@@ -1519,16 +1222,13 @@ void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldN
             maxField = std::max<REAL>(maxField, field(row,col)); 
         }
 
-
     std::cout   << " ----------------------------- \n"
                 << " INFORMATION FOR FIELD : " << fieldName << "\n" 
                 << " ----------------------------- \n"
                 << "   min: " << minField << "\n"
                 << "   max: " << maxField << "\n" ; 
 
-
     std::cout << std::flush; 
-
 }
 
 
