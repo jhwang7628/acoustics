@@ -142,6 +142,11 @@ class MAC_Grid
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
 
+        // Helper function to minimize repeated code
+        void PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &bc,
+                                    MATRIX &v, int dimension,
+                                    REAL t, REAL timeStep, REAL density, const IntArray &bulkCells);
+
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
         void PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,

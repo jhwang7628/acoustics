@@ -232,9 +232,7 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
     }
 }
 
-void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
-                                   MATRIX &v, int dimension,
-                                   REAL t, REAL timeStep, REAL density )
+void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
 {
     const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
     const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
@@ -244,103 +242,12 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
-            bulk_cell_idx++ )
-    {
-        int                  cell_idx = bulkCells[ bulk_cell_idx ];
-        int                  neighbour_idx;
-        Tuple3i              cell_indices = field.cellIndex( cell_idx );
-        Vector3d             cell_position = field.cellPosition( cell_indices );
-        REAL                 absorptionCoefficient;
-        REAL                 updateCoefficient;
-        REAL                 gradientCoefficient;
-
-        absorptionCoefficient = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
-        updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient, timeStep ); 
-        gradientCoefficient = PML_pressureGradientCoefficient( absorptionCoefficient, timeStep, _pressureField.cellSize(), density );
-
-        for ( int i = 0; i < _N; i++ )
-            v( cell_idx, i ) *= updateCoefficient;
-
-        // If we're on a boundary, then set the derivative to zero (since
-        // we should have d_n p = 0 on the boundary
-        if ( cell_indices[ dimension ] == 0
-                || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
-        {
-            for ( int i = 0; i < _N; i++ )
-                v( cell_idx, i ) = 0.0;
-
-            continue;
-        }
-
-        // Sample the derivative of the pressure field in the necessary
-        // direction
-        neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-        for ( int i = 0; i < _N; i++ )
-            v( cell_idx, i ) += gradientCoefficient * p( neighbour_idx, i );
-
-        cell_indices[ dimension ] -= 1;
-        neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-        for ( int i = 0; i < _N; i++ )
-            v( cell_idx, i ) -= gradientCoefficient * p( neighbour_idx, i );
-    }
+    PML_velocityUpdateAux(p,bc,v,dimension,t,timeStep,density,bulkCells); 
 
     // Handle interfacial cells
     if (_useGhostCellBoundary)
     {
-        // with ghost-cell approach the interfacial cell can be treated as regular
-        // cell 
-        #ifdef USE_OPENMP
-        #pragma omp parallel for schedule(static) default(shared)
-        #endif
-        for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size();
-                interfacial_cell_idx++ )
-        {
-            int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
-            int                  neighbour_idx;
-            Tuple3i              cell_indices = field.cellIndex( cell_idx );
-            Vector3d             cell_position = field.cellPosition( cell_indices );
-            REAL                 absorptionCoefficient;
-            REAL                 updateCoefficient;
-            REAL                 gradientCoefficient;
-
-            absorptionCoefficient = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
-            updateCoefficient = PML_velocityUpdateCoefficient( absorptionCoefficient, timeStep ); 
-            gradientCoefficient = PML_pressureGradientCoefficient( absorptionCoefficient, timeStep, _pressureField.cellSize(), density );
-
-            for ( int i = 0; i < _N; i++ )
-                v( cell_idx, i ) *= updateCoefficient;
-
-            // If we're on a boundary, then set the derivative to zero (since
-            // we should have d_n p = 0 on the boundary
-            if ( cell_indices[ dimension ] == 0
-                    || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
-            {
-                for ( int i = 0; i < _N; i++ )
-                    v( cell_idx, i ) = 0.0;
-
-                continue;
-            }
-
-            // Sample the derivative of the pressure field in the necessary
-            // direction
-            neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-            for ( int i = 0; i < _N; i++ )
-                v( cell_idx, i ) += gradientCoefficient * p( neighbour_idx, i );
-
-            cell_indices[ dimension ] -= 1;
-            neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-            for ( int i = 0; i < _N; i++ )
-                v( cell_idx, i ) -= gradientCoefficient * p( neighbour_idx, i );
-
-        }
+        PML_velocityUpdateAux(p,bc,v,dimension,t,timeStep,density,interfacialCells); 
     }
     else
     {
@@ -351,9 +258,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         #ifdef USE_OPENMP
         #pragma omp parallel for schedule(static) default(shared)
         #endif
-        for ( size_t interfacial_cell_idx = 0;
-                interfacial_cell_idx < interfacialCells.size();
-                interfacial_cell_idx++ )
+        for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size(); interfacial_cell_idx++ )
         {
             int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
             int                  objectID;
@@ -377,6 +282,78 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     }
 }
 
+void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &bc, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density, const IntArray &bulkCells )
+{
+    const ScalarField     &field                        = _velocityField[ dimension ];
+    const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
+    const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
+    const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
+
+    const REAL n_dt_over_dx_rho = -timeStep/(_pressureField.cellSize()*density);
+    const int bulkCellSize = bulkCells.size(); 
+
+    // Handle all bulk cells
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (int bulk_cell_idx = 0; bulk_cell_idx < bulkCellSize; ++bulk_cell_idx)
+    {
+        const int       cell_idx                = bulkCells[bulk_cell_idx];
+        Tuple3i cell_indices = field.cellIndex( cell_idx );
+        const Vector3d cell_position = field.cellPosition(cell_indices);
+        const REAL      absorptionCoefficient   = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
+        const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
+
+
+        // If we're on a boundary, then set the derivative to zero (since
+        // we should have d_n p = 0 on the boundary
+        if (cell_indices[dimension] == 0 || cell_indices[dimension] == field.cellDivisions()[dimension] - 1)
+        {
+            for ( int i = 0; i < _N; i++ )
+                v( cell_idx, i ) = 0.0;
+            continue;
+        }
+
+        if (inPML) 
+        {
+            const REAL updateCoefficient    = PML_velocityUpdateCoefficient(absorptionCoefficient, timeStep);
+            const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, timeStep, _pressureField.cellSize(), density);
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) *= updateCoefficient;
+
+            // Sample the derivative of the pressure field in the necessary
+            // direction
+            int     neighbour_idx;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) += gradientCoefficient*p(neighbour_idx, i);
+
+            cell_indices[ dimension ] -= 1;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) -= gradientCoefficient*p(neighbour_idx, i);
+        }
+        else // can collapse a lot of the terms
+        {
+            // updateCoefficient   = 1
+            // gradientCoefficient = -dt/(dx*rho)
+            int neighbour_idx;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) += n_dt_over_dx_rho*p(neighbour_idx, i);
+
+            cell_indices[dimension] -= 1;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) -= n_dt_over_dx_rho*p(neighbour_idx, i);
+        }
+    }
+}
+
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
     const size_t bulkCellSize = _bulkCells.size();
@@ -385,9 +362,9 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
     const REAL v_cellSize_inv = 1./_velocityField[dimension].cellSize();
 
     // We only have to worry about bulk cells here
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
     for (size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCellSize; ++bulk_cell_idx)
     {
         const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
@@ -1123,8 +1100,7 @@ void MAC_Grid::visualizeClassifiedCells()
     of2.close();
 }
 
-REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth,
-        int dimension )
+REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension )
 {
     //return 0.0;
 

@@ -118,14 +118,19 @@ Tuple3i ScalarField::cellIndex( int flatIndex ) const
 Vector3d ScalarField::cellPosition( const Tuple3i &index ) const
 {
     Vector3d                 pos;
-
-    for ( int dimension = 0; dimension < 3; dimension++ )
-    {
-        pos[ dimension ] = _bbox.minBound()[ dimension ];
-        pos[ dimension ] += ( 0.5 + (REAL)index[ dimension ] ) * _cellSize;
-    }
-
+    cellPosition(index,pos);
     return pos;
+}
+
+void ScalarField::cellPosition( const Tuple3i &index, Vector3d &pos ) const
+{
+    //Vector3d                 pos;
+
+    for ( int dimension = 0; dimension < 3; ++dimension )
+    {
+        pos[dimension] = _bbox.minBound()[ dimension ];
+        pos[dimension] += ( 0.5 + (REAL)index[ dimension ] ) * _cellSize;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////

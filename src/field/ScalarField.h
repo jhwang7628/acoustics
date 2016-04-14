@@ -48,6 +48,7 @@ class ScalarField {
 
         // Cell center for the given index
         Vector3d                 cellPosition( const Tuple3i &index ) const;
+        void                     cellPosition( const Tuple3i &index, Vector3d &pos ) const;
 
         inline Vector3d          cellPosition( int flatIndex ) const
         {
