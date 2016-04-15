@@ -154,6 +154,13 @@ class MAC_Grid
                                  const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime,
                                  REAL density);
 
+        // Performs a pressure update for the given pressure direction,
+        // as detailed by Liu et al. (equation (16))
+        void PML_pressureUpdateUnidirectional( const MATRIX *v, MATRIX &p,
+                                               const REAL &timeStep, const REAL &c, 
+                                               const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime,
+                                               const REAL &density);
+
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density); 
         void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density); 

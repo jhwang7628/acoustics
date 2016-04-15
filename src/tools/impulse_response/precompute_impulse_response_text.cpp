@@ -168,7 +168,8 @@ REAL Gaussian_3D_erf_time_multiple( const Vector3d &evaluatePosition, const REAL
     REAL returnValue=0; 
     for (size_t ii=0; ii<sources.size(); ii++)
     {
-        returnValue += Gaussian_3D_erf_time(evaluatePosition, evaluateTime, sources[ii].position, sources[ii].widthSpace, sources[ii].widthTime, sources[ii].offsetTime, sources[ii].normalizeConstant); 
+        if ((evaluatePosition - sources[ii].position).length() < sources[ii].widthSpace*3.0)
+            returnValue += Gaussian_3D_erf_time(evaluatePosition, evaluateTime, sources[ii].position, sources[ii].widthSpace, sources[ii].widthTime, sources[ii].offsetTime, sources[ii].normalizeConstant); 
     }
 
     return returnValue; 
@@ -406,9 +407,8 @@ int main( int argc, char **argv )
     //const REAL normalizeConstant = 1.0 / pow(sqrt_2_pi*widthSpace,3); // for normalizing the gaussian 
     //ExternalSourceEvaluator source = boost::bind(Gaussian_3D_erf_time, _1, _2, sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant); 
 
-
-    const REAL PML_width=11.0; 
-    const REAL PML_strength=1000000.0; 
+    const REAL PML_width=10.0; 
+    const REAL PML_strength=100000.0; 
     solver.SetExternalSource( &source ); 
     solver.setPMLBoundaryWidth( PML_width, PML_strength );
     solver.SetGhostCellBoundary(parms._useGhostCellBoundary); 

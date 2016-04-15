@@ -426,6 +426,81 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
     }
 }
 
+void MAC_Grid::PML_pressureUpdateUnidirectional(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
+{
+    const size_t numberBulkCell = _bulkCells.size();
+    const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+    const REAL n_rho_c_square_dt = -density*c*c*timeStep;
+    const REAL v_cellSize_inv[3] = {1./_velocityField[0].cellSize(),1./_velocityField[1].cellSize(),1./_velocityField[2].cellSize()};
+
+    // We only have to worry about bulk cells here
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (size_t bulk_cell_idx = 0; bulk_cell_idx < numberBulkCell; ++bulk_cell_idx)
+    {
+        const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
+        const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+        for (int dimension=0; dimension<3; ++dimension) 
+        {
+            const REAL      absorptionCoefficient = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
+            const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
+            const MATRIX   &v = vArray[dimension];
+
+            if (inPML) 
+            {
+                const REAL      directionalCoefficient  = PML_directionalCoefficient( absorptionCoefficient, timeStep );
+                const REAL      updateCoefficient       = PML_pressureUpdateCoefficient( absorptionCoefficient, timeStep, directionalCoefficient );
+                const REAL      divergenceCoefficient   = PML_divergenceCoefficient( density, c, directionalCoefficient );
+
+                Tuple3i   cell_indices                  = _pressureField.cellIndex( cell_idx );
+                int       neighbour_idx;
+
+                // Scale the existing pressure value
+                for ( int i = 0; i < _N; i++ )
+                    p(cell_idx, i) *= updateCoefficient;
+
+                cell_indices[dimension] += 1;
+                neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
+
+                for ( int i = 0; i < _N; i++ )
+                    p(cell_idx, i) += divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
+
+                cell_indices[dimension] -= 1;
+                neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
+
+                for ( int i = 0; i < _N; i++ )
+                    p(cell_idx, i) -= divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
+            }
+            else  // can collapse a lot of the terms 
+            {
+                // directionCoefficient = 1/dt
+                // updateCoefficient    = 1
+                // divergenceCoefficient= -rho c^2 *dt (cached)
+                Tuple3i   cell_indices = _pressureField.cellIndex(cell_idx);
+                int       neighbour_idx;
+
+                cell_indices[dimension] += 1;
+                neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
+
+                for (int i=0; i<_N; i++)
+                    p(cell_idx, i) += n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv[dimension];
+
+                cell_indices[dimension] -= 1;
+                neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
+
+                for (int i=0; i<_N; i++)
+                    p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv[dimension];
+
+                // evaluate external sources only happens not in PML
+                // Liu Eq (16) f6x term
+                if (evaluateExternalSource)
+                    for (int i = 0; i<_N; i++) 
+                        p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
+            }
+        }
+    }
+}
 
 // TODO can optimize the sparse linear system setup
 //

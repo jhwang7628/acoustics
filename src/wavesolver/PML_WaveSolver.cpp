@@ -219,16 +219,16 @@ bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
     _timeIndex += 1;
     _stepTimer.pause();
 
-    printf( "Average time step cost: %f ms\n", _stepTimer.getMsPerCycle() );
+    printf( "Average time step cost: %f sec\n", _stepTimer.getMsPerCycle() );
 
-    printf( " - Algebra took %f ms\n",              _algebraTimer.getMsPerCycle() );
-    printf( " - Memory operations took %f ms\n",    _memoryTimer.getMsPerCycle() );
-    printf( " - Writing took %f ms\n",              _writeTimer.getMsPerCycle() );
-    printf( " - Velocity update took %f ms\n",      _gradientTimer.getMsPerCycle() );
-    printf( " - Pressure update took %f ms\n",      _divergenceTimer.getMsPerCycle() );
+    printf( " - Algebra             took %f sec\n", _algebraTimer.getMsPerCycle() );
+    printf( " - Memory operations   took %f sec\n", _memoryTimer.getMsPerCycle() );
+    printf( " - Writing             took %f sec\n", _writeTimer.getMsPerCycle() );
+    printf( " - Velocity update     took %f sec\n", _gradientTimer.getMsPerCycle() );
+    printf( " - Pressure update     took %f sec\n", _divergenceTimer.getMsPerCycle() );
 
     if (_useGhostCellBoundary) 
-        printf( " - Ghost-cell update took %f ms\n",  _ghostCellTimer.getMsPerCycle() );
+        printf( " - Ghost-cell update took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
 
     if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
         return false;
@@ -266,13 +266,17 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdateUnidirectional( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     _divergenceTimer.pause();
 
     _algebraTimer.start();
-    _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
+    //_pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
     _algebraTimer.pause();
 
     if (_useGhostCellBoundary)
