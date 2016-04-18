@@ -41,7 +41,10 @@
 #define REAL            double
 #define REAL_INFINITY   1e50
 
-const REAL  EPS = 1e-10;
+#include <limits>
+const REAL  EPS   = 1e-10;
+const REAL  F_LOW = std::numeric_limits<REAL>::lowest(); 
+const REAL  F_MAX = std::numeric_limits<REAL>::max(); 
 
 // Usefull definition
 #define SDUMP(x)	" " << #x << "=[ " << x << " ] "

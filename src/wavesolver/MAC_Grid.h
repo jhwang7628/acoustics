@@ -156,7 +156,7 @@ class MAC_Grid
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
-        void PML_pressureUpdateUnidirectional( const MATRIX *v, MATRIX &p,
+        void PML_pressureUpdateFull( const MATRIX *v, MATRIX &p,
                                                const REAL &timeStep, const REAL &c, 
                                                const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime,
                                                const REAL &density);

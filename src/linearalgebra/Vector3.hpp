@@ -212,7 +212,7 @@ class Vector3 : public Tuple3<T>
             T nz = (b * f - a * d * e) * x + (a * d * f + b * e) * y + a * c * z;
             x = nx; y = ny; z = nz;
         }
-       
+        
 }; // end of Vector3
 
 typedef class Vector3<float>    Vector3f;

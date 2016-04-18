@@ -284,11 +284,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 
 void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &bc, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density, const IntArray &bulkCells )
 {
-    const ScalarField     &field                        = _velocityField[ dimension ];
-    const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
-    const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
-    const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
-
+    const ScalarField &field = _velocityField[ dimension ];
     const REAL n_dt_over_dx_rho = -timeStep/(_pressureField.cellSize()*density);
     const int bulkCellSize = bulkCells.size(); 
 
@@ -426,7 +422,7 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
     }
 }
 
-void MAC_Grid::PML_pressureUpdateUnidirectional(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
+void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
 {
     const size_t numberBulkCell = _bulkCells.size();
     const bool evaluateExternalSource = (sourceEvaluator != nullptr);

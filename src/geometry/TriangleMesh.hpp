@@ -537,9 +537,11 @@ T TriangleMesh<T>::boundingSphereRadius( const Point3<T> &center ) const
 template <typename T>
 void TriangleMesh<T>::bounding_box(Point3<T>& low, Point3<T>& up) const
 {
-    const T inf = std::numeric_limits<T>::infinity();
-    low.set(inf, inf, inf);
-    up.set(-inf, -inf, -inf);
+    //const T inf = std::numeric_limits<T>::infinity();
+    const T maxValue = std::numeric_limits<T>::max(); 
+    const T minValue = std::numeric_limits<T>::min(); 
+    low = Point3<T>(maxValue, maxValue, maxValue);
+    up  = Point3<T>(minValue, minValue, minValue);
 
     const typename std::vector< Point3<T> >::const_iterator end = m_vertices.end();
     for(typename std::vector< Point3<T> >::const_iterator it = m_vertices.begin();

@@ -3,6 +3,9 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.cpp       ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.cpp ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.cpp     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.h
+
 
     CACHE FILE "Wave solver sources")
 

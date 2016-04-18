@@ -266,10 +266,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    _grid.PML_pressureUpdateUnidirectional( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdateFull( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     //_grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     //_grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     //_grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );

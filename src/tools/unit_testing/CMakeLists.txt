@@ -24,6 +24,9 @@ if (BUILD_UNIT_TESTING)
     set(TRILINEAR_TESTING_SRCS
         test_Trilinear.cpp)
 
+    set(FDTD_RIGID_OBJECT_TESTING_SRCS
+        test_FDTD_RigidObject.cpp)
+
     # set(TURBSOUND_INCLUDE_DIR
     #     /home/jui-hsien/code/turbsound_postfluid/src
     #     /home/jui-hsien/code/turbsound_postfluid/tools)
@@ -78,6 +81,20 @@ if (BUILD_UNIT_TESTING)
         ${TRILINEAR_TESTING_SRCS}
         ) 
 
+    add_executable(unit_testing_FDTD_RigidObject
+        ${GENERAL_TESTING_SRCS}
+        ${FDTD_RIGID_OBJECT_TESTING_SRCS}
+        ${GENERIC_SRC}                    ${IO_SRC}
+        ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
+        ${DISTANCEFIELD_SRC}              ${MATH_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  ${GEOMETRY_SRC}
+        ${FIELD_SRC}                      ${WAVESOLVER_SRC}
+        ${UTILS_SRC}                      ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ) 
+
     target_link_libraries(unit_testing_sparseLinearSystemSolver
         boost_timer
         boost_thread
@@ -85,7 +102,6 @@ if (BUILD_UNIT_TESTING)
         boost_regex) 
 
     target_link_libraries(unit_testing_grid
-        ${GENERAL_TESTING_SRCS}
         ${MKL_LIBRARY}
         ${LEASTSQUARESURFACE_SOURCES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
@@ -93,6 +109,17 @@ if (BUILD_UNIT_TESTING)
         ${GSL_LIBRARY}                  
         boost_thread
         boost_system                    
+        boost_regex) 
+
+    target_link_libraries(unit_testing_FDTD_RigidObject
+        ${MKL_LIBRARY}
+        ${LEASTSQUARESURFACE_SOURCES}
+        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        boost_thread
+        boost_system                    
+        boost_timer
         boost_regex) 
 
 endif ( BUILD_UNIT_TESTING )

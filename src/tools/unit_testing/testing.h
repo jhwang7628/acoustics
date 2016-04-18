@@ -1,6 +1,9 @@
 #ifndef _TESTING_H
 #define _TESTING_H
 
+#include <iostream> 
+#include <utils/SimpleTimer.h>
+
 #ifndef SDUMP
 #define SDUMP(x)	" " << #x << "=[ " << x << " ] "
 #endif 

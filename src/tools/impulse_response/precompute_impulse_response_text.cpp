@@ -25,7 +25,7 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
-#include "wavesolver/ImpulseResponseTypesAndConstants.h" 
+#include <wavesolver/ImpulseResponseTypesAndConstants.h>
 
 #include <grid/Grid.h>
 
@@ -37,6 +37,7 @@
 #include <unistd.h> 
 
 #include "vtkConverter/vtkConverter.h" 
+
 
 #if 1  
     #define _GNU_SOURCE 1  
