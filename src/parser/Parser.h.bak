@@ -31,26 +31,14 @@
             childVar; \
             childVar = childVar->NextSiblingElement(childValue) )
 
-// nodePtr is assumed to be declared, parentPtr will be checked
-// nodePtr and parentPtr has type TiXmlElement*
-// nodeName has type const char 
-#define GET_FIRST_CHILD_ELEMENT_GUARD(nodePtr, parentPtr, nodeName) \
-    assert(parentPtr!=nullptr); \
-    nodePtr = parentPtr->FirstChildElement(nodeName); \
-    if (!nodePtr) \
-        throw std::runtime_error("**ERROR** No node found");
-
 //////////////////////////////////////////////////////////////////////
 // Parser class
 //
 // A class which can parse input files and produce triangle meshes,
 // basis information, etc. for a given example
 //////////////////////////////////////////////////////////////////////
-class Parser
-{
+class Parser {
     public:
-
-        Parser(){} 
         static Parser *buildParser(std::string filename);
 
         // Construct a triangle mesh from information stored
@@ -60,6 +48,209 @@ class Parser
 
         // Mesh file name
         std::string getMeshFileName();
+
+#if 0
+        struct EquivalentSourceParms {
+            // The acceleration pulse function
+            Function               _acceleration;
+
+            int                    _multipoleTerms;
+
+            // Multipole pulse time scale
+            REAL                   _timeScale;
+
+            // Width between pulses
+            REAL                   _pulseInterval;
+
+            // Integration time step
+            REAL                   _timeStep;
+
+            // Speed of sound and density
+            REAL                   _c;
+            REAL                   _density;
+        };
+#endif
+
+#if 0
+        struct SourceTrainingParms {
+            // The acceleration pulse function
+            Function               _acceleration;
+
+            // Multipole pulse time scale
+            REAL                   _timeScale;
+
+            // Integration time step
+            REAL                   _timeStep;
+
+            // Speed of sound and density
+            REAL                   _c;
+            REAL                   _density;
+
+            /////////////////////////////////////////////////////
+            // SDF parms
+            /////////////////////////////////////////////////////
+            int                    _sdfResolution;
+
+            std::string            _sdfFilePrefix;
+
+            int                    _pointsPerVoxel;
+
+            /////////////////////////////////////////////////////
+            // Training parms
+            /////////////////////////////////////////////////////
+            int                    _sourcesPerIteration;
+
+            int                    _candidatesPerIteration;
+
+            int                    _maxSourcesPerBatch;
+
+            REAL                   _errorTolerance;
+
+            void printParms( ostream &os ) const
+            {
+                os << "Training parameters:" << endl;
+                os << SDUMP( _timeScale ) << endl;
+                os << SDUMP( _timeStep ) << endl;
+                os << SDUMP( _c ) << endl;
+                os << SDUMP( _density ) << endl;
+                os << SDUMP( _sdfResolution ) << endl;
+                os << SDUMP( _sdfFilePrefix ) << endl;
+                os << SDUMP( _pointsPerVoxel ) << endl;
+                os << SDUMP( _sourcesPerIteration ) << endl;
+                os << SDUMP( _candidatesPerIteration ) << endl;
+                os << SDUMP( _maxSourcesPerBatch ) << endl;
+                os << SDUMP( _errorTolerance ) << endl;
+                os << endl;
+            }
+
+        };
+#endif
+
+#if 0
+        struct SphericalImpactParms {
+            /////////////////////////////////////////////////////
+            // Speed of sound and density
+            /////////////////////////////////////////////////////
+            REAL                   _c;
+            REAL                   _density;
+
+            /////////////////////////////////////////////////////
+            // SDF parms
+            /////////////////////////////////////////////////////
+            int                    _sdfResolution;
+
+            std::string            _sdfFilePrefix;
+
+            /////////////////////////////////////////////////////
+            // Domain resolution and size
+            /////////////////////////////////////////////////////
+            int                    _gridResolution;
+
+            // How much to scale the bounding box of the object by
+            REAL                   _gridScale;
+
+            int                    _timeStepFrequency;
+
+            /////////////////////////////////////////////////////
+            // Boundary information
+            /////////////////////////////////////////////////////
+
+            // Radius of "sphere"
+            REAL                   _sphereRadius;
+
+            // Impact velocity
+            REAL                   _impactSpeed;
+
+            // Material parameters (Young's modulus and Poisson ratio)
+            REAL                   _boundary_E;
+            REAL                   _boundary_nu;
+
+            // Sphere mass
+            REAL                   _boundaryDensity;
+
+            /////////////////////////////////////////////////////
+            // Sound output parameters
+            /////////////////////////////////////////////////////
+            VEC3F                  _listeningPosition;
+            Vector3Array           _listeningPositions;
+
+            std::string            _outputFile;
+
+        };
+#endif
+
+        /////////////////////////////////////////////////////
+        // Parameters for impulse response
+        /////////////////////////////////////////////////////
+        struct ImpulseResponseParms 
+        {
+
+            struct VolumetricSource
+            {
+                // position of the impulse response source
+                Vector3d    position;  
+
+                // width of the impulse response source in space and time 
+                REAL        widthTime; 
+                REAL        widthSpace;  // optional, default to sound_speed*width_time
+
+                // offset of the source release. 
+                REAL        offsetTime;  // optional, default to 0.0
+
+                // extra normalization constant for this source 
+                REAL        normalizeConstant; //optional, default to 1/(sqrt(2pi)*width_space)^3, so that integral of gaussian is normalized to 1
+
+                // if true then flip sign of gaussian
+                bool        flipSign; // optional, default to false
+            }; 
+
+            // Speed of sound and density
+            REAL                            _c;
+            REAL                            _density;
+
+            // SDF parms
+            int                             _sdfResolution;
+            std::string                     _sdfFilePrefix;
+
+            // Domain resolution and         size
+            int                             _gridResolution;
+
+            // How much to scale the         bounding box of the object by
+            REAL                            _gridScale;
+
+            // Fix cell size (optional parameter)
+            REAL                            _cellSize;
+
+            int                             _timeStepFrequency;
+            int                             _subSteps;
+            
+            REAL                            _stopTime; 
+
+            // Output parameters
+            std::string                     _outputPattern; 
+
+            std::string                     _listeningFile; 
+
+            std::vector<VolumetricSource>   _sources; 
+
+            bool                            _useMesh; 
+            bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
+            bool                            _useGhostCellBoundary; // if on then ghost cell will be used, otherwise rasterized boundary
+
+
+            //REAL                    _sourceWidthTime; 
+
+            //REAL                    _sourcePosition_x; 
+            //REAL                    _sourcePosition_y; 
+            //REAL                    _sourcePosition_z; 
+            REAL                    _f; 
+
+
+            static std::vector<VolumetricSource> QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed); 
+            void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
+
+        };
+
 
         /////////////////////////////////////////////////////
         // Parameters for acceleration pulse precomputation
@@ -403,6 +594,9 @@ class Parser
         AcousticTransferParms getAcousticTransferParms();
         AccelerationPulseParms getAccelerationPulseParms();
 
+        /* Fetch parameters for impulse response computation. */
+        ImpulseResponseParms getImpulseResponseParms(); 
+
 #if 0
         // Fetches parameters for setting up the input to an acoustic
         // scattering calculation due to rigid body acceleration
@@ -420,10 +614,6 @@ class Parser
         static REAL queryRequiredReal( TiXmlElement* node, const std::string &attr )
         {
             return atof(queryRequiredAttr(node, attr).c_str());
-        }
-        static REAL queryRequiredInt( TiXmlElement* node, const std::string &attr )
-        {
-            return atoi(queryRequiredAttr(node, attr).c_str());
         }
 
         // If the attribute DNE, it will return the given defaultValue
@@ -469,12 +659,12 @@ class Parser
             return atof( queryRequiredAttr( path, attr ).c_str() );
         }
 
-        int queryOptionalInt( const char* path, const char* attr,
+        REAL queryOptionalInt( const char* path, const char* attr,
                 const char* defaultVal )
         {
             return atoi( queryOptionalAttr( path, attr, defaultVal ).c_str() );
         }
-        int queryRequiredInt( const char* path, const char* attr )
+        REAL queryRequiredInt( const char* path, const char* attr )
         {
             return atoi( queryRequiredAttr( path, attr ).c_str() );
         }
@@ -489,7 +679,7 @@ class Parser
 
         virtual ~Parser();
 
-    protected:
+    private:
         // Gets a list of listening positions from the given input element
         void getListeningPositions( const char *inputElement,
                                     Vector3Array &positions );

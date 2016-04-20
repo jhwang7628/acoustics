@@ -1,11 +1,20 @@
 set(WAVESOLVER_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Laplacian.cpp      ${CMAKE_CURRENT_SOURCE_DIR}/Laplacian.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.cpp       ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.cpp ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.cpp     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Laplacian.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Laplacian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.h
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Wavesolver_ConstantsAndTypes.h
 
     CACHE FILE "Wave solver sources")
 

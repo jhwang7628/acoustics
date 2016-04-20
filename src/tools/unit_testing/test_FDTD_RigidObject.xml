@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+<impulse_response>
+    <rigid_object> 
+        <mesh_list> 
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj" 
+                id="small_ball_3" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj.1m.dist"
+                fieldresolution="10"
+                scale="1.0" 
+                />
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj" 
+                id="small_ball_2" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj.1m.dist"
+                fieldresolution="10"
+                scale="1.0" 
+                />
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj" 
+                id="small_ball_3" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj.1m.dist"
+                fieldresolution="10"
+                scale="1.0" 
+                />
+            <!--
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_y0p3.obj" 
+                id="small_ball_y0p3" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_y0p3.obj.1m.dist"
+                fieldresolution="10"
+                scale="1.0" 
+                />
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj" 
+                id="small_ball_yn0p3" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj.1m.dist"
+                fieldresolution="10"
+                scale="1.0" 
+                />
+                -->
+        </mesh_list> 
+    </rigid_object> 
+    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
+
+    <solver
+        stop_time="0.006"
+        gridresolution="100"
+        timestepfrequency="44100"
+        substeps="1"
+        cellsize="0.01" 
+
+        output_pattern="data_1m_cornell_box_100_large_timestep_smoothing_10/test_%s"
+
+        use_mesh="0"
+        cornell_box_boundary_condition="0"
+        /> 
+
+    <volumetric_source> 
+        <source
+        source_width_time="0.00005"
+        source_position_x="0.0" 
+        source_position_y="0.0" 
+        source_position_z="0.0" 
+        />
+    </volumetric_source> 
+
+</impulse_response>
+
+
+<!--
+     <solver
+        stop_time="0.006803"
+        gridscale="1.0000000"
+        />
+        <source
+        source_width_time="0.00005"
+        source_position_x="0.0" 
+        source_position_y="-0.1" 
+        source_position_z="0" 
+        source_sign_flip="1"
+        />
+        -->

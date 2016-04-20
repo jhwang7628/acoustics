@@ -109,17 +109,6 @@ find_package(Eigen REQUIRED)
 #   -DSUPERLU_INCLUDES=<SuperLU include directory>
 find_package(SuperLU REQUIRED)
 
-# SuperLU is also required for the eigensolver
-#
-# The prepackaged version that can be installed with Ubuntu doesn't
-# seem to work.  Try downloading and compiling the new version (v4.3).
-# 
-# When setting up the cmake project, use the flag
-#   -DSUPERLU_LIBRARIES=<path to version 4.3 SuperLU library>
-#     NOTE: for now, includes aren't needed
-#   -DSUPERLU_INCLUDES=<SuperLU include directory>
-find_package(SuperLU REQUIRED)
-
 if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     # package for opengl and glut
     find_package(OpenGL REQUIRED)

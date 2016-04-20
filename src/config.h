@@ -17,7 +17,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 #ifndef CONFIG_H
-#   define CONFIG_H
+#define CONFIG_H
 
 /*
  * Determine to use hash_map or unordered_map

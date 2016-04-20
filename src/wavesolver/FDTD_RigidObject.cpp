@@ -1,6 +1,7 @@
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <io/TglMeshReader.hpp>
 #include <utils/SimpleTimer.h>
+#include <utils/Conversions.h>
 
 //##############################################################################
 //##############################################################################
@@ -57,24 +58,22 @@ DistanceToMesh(const double &x, const double &y, const double &z)
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position;
 
-    return _signedDistanceField->distance(position); 
+    return _signedDistanceField->distance(position[0],position[1],position[2]); 
 }
 
 //##############################################################################
 //##############################################################################
-void FDTD_RigidObject::
+bool FDTD_RigidObject::
 NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal)
 {
     if (!_signedDistanceField)
         throw std::runtime_error("**ERROR** distance field not built.");
-
     if (!_bboxWorld.Inside(x,y,z,1.1))
-        return std::numeric_limits<REAL>::lowest();
-
+        return false;
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position;
-
-    queriedNormal = _signedDistanceField->gradient(position);
+    queriedNormal = _signedDistanceField->gradient(Conversions::ToVector3<double>(position));
+    return true; 
 }
 
 //##############################################################################

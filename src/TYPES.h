@@ -25,7 +25,6 @@ typedef std::vector<int>			        IntArray;
 typedef std::vector<bool>			        BoolArray;
 typedef std::vector<Vector3<REAL> >         Vector3Array;
 typedef std::vector<REAL>			        FloatArray;
-
 typedef std::vector<Tuple3i>	            Tuple3Array;
 
 typedef std::pair<int,int>                  IndexRange;

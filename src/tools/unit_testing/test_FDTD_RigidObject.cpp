@@ -1,8 +1,25 @@
 #include <tools/unit_testing/testing.h>
 #include <wavesolver/FDTD_RigidObject.h>
+#include <wavesolver/FDTD_Objects.h> 
+#include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
 
-int main()
+//##############################################################################
+// Submodules 
+//##############################################################################
+void TestParseMeshList()
+{
+    const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+
+    FDTD_Objects objectsInTheScene; 
+    ImpulseResponseParser parser(xmlName); 
+
+    parser.GetObjects("test", objectsInTheScene); 
+    std::cout << objectsInTheScene << std::endl;
+}
+
+//##############################################################################
+void TestBoundingBox()
 {
     const std::string meshFileName("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj");
     const std::string sdfFilePrefix("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist");
@@ -52,5 +69,13 @@ int main()
 
     COUT_SDUMP(p_return); 
     COUT_SDUMP(n_return); 
+}
+
+//##############################################################################
+int main()
+{
+    //TestBoundingBox();
+    TestParseMeshList(); 
+
     return 0;
 }

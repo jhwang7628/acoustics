@@ -25,7 +25,7 @@
 
 #include <wavesolver/PML_WaveSolver.h>
 #include <wavesolver/WaveSolver.h>
-#include <wavesolver/ImpulseResponseTypesAndConstants.h>
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 
 #include <grid/Grid.h>
 

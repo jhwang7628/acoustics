@@ -1,8 +1,8 @@
 #ifndef FDTD_RIGID_OBJECT_H 
 #define FDTD_RIGID_OBJECT_H 
 
-#include <config.h>
 #include <TYPES.h>
+#include <config.h>
 #include <distancefield/closestPointField.h>
 #include <distancefield/FieldBuilder.h>
 #include <parser/Parser.h>
@@ -60,6 +60,7 @@ class FDTD_RigidObject
     private: 
         int                                 _meshID; 
         REAL                                _meshScale; 
+        std::string                         _meshName;
         std::string                         _meshFileName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
 
@@ -81,35 +82,37 @@ class FDTD_RigidObject
     public: 
         FDTD_RigidObject()
             : _meshScale(1.0), 
+              _meshName("NOT_IDENTIFIED"),
               _modelingTransform(Affine3::Identity()), 
               _modelingTransformInverse(Affine3::Identity()), 
               _parsed(false) 
-        {}
+        {
+        }
 
-        FDTD_RigidObject(const std::string &fileName, const int &resolution, const std::string &filePrefix)
-            : _meshScale(1.0), 
+        FDTD_RigidObject(const std::string &fileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+            : _meshScale(scale), 
+              _meshName(meshName),
               _meshFileName(fileName), 
               _signedDistanceFieldResolution(resolution), 
-              _signedDistanceFieldFilePrefix(filePrefix)
+              _signedDistanceFieldFilePrefix(sdfFilePrefix)
         {
             _parsed = true; 
         }
 
         inline bool Exist(){return (_mesh!=0);}
-
+        inline std::string &GetMeshName(){return _meshName;} 
         void Initialize(); 
         void UpdateBoundingBox(); 
         // in-place query for object sdf distance from world x,y,z
         REAL DistanceToMesh(const double &x, const double &y, const double &z); 
         // in-place query for object sdf normal from world x,y,z
-        void NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
-
+        // return success or not (could be that query point is outside of bbox,
+        //
+        // then normal is not defined
+        bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
 
         //// debug methods //// 
         void PrintBoundingBox(); 
-
-
-    friend Parser; 
 };
 //##############################################################################
 

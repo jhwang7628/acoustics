@@ -40,15 +40,7 @@ add_subdirectory(transfer)
 
 # For regular grid finite difference 
 add_subdirectory(grid) 
-
-# tinyXML-based Parser
-set(PARSER_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/parser/Parser.cpp                   ${CMAKE_CURRENT_SOURCE_DIR}/parser/Parser.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinystr.cpp                 ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinystr.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinyxml.cpp                 ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinyxmlerror.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinyxml.h                   ${CMAKE_CURRENT_SOURCE_DIR}/tinyxml/tinyxmlparser.cpp
-
-    CACHE FILE "Parser sources")
+add_subdirectory(parser) 
 
 # Sound generation sources
 add_subdirectory(sndgen)
