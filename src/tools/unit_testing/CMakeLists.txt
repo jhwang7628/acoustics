@@ -24,18 +24,12 @@ if (BUILD_UNIT_TESTING)
     set(TRILINEAR_TESTING_SRCS
         test_Trilinear.cpp)
 
-    set(FDTD_RIGID_OBJECT_TESTING_SRCS
-        test_FDTD_RigidObject.cpp)
+    set(FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS
+        test_FDTD_AcousticSimulator.cpp)
 
     set(TEST_INCLUDE
         /home/jui-hsien/code/acoustics/src/TYPES.h
         )
-
-
-    # set(TURBSOUND_INCLUDE_DIR
-    #     /home/jui-hsien/code/turbsound_postfluid/src
-    #     /home/jui-hsien/code/turbsound_postfluid/tools)
-
 
     # ===================
     # Settings
@@ -83,31 +77,11 @@ if (BUILD_UNIT_TESTING)
         ${TRILINEAR_TESTING_SRCS}
         ) 
 
-    # message(${GENERAL_TESTING_SRCS}           "\n")
-    # message(${FDTD_RIGID_OBJECT_TESTING_SRCS} "\n")
-    # message(${GENERIC_SRC}                    "\n")
-    # message(${IO_SRC}                         "\n")
-    # message(${LOGGING_SRC}                    "\n")
-    # message(${LINEARALGEBRA_SRC}              "\n")
-    # message(${DISTANCEFIELD_SRC}              "\n")
-    # message(${MATH_SRC}                       "\n")
-    # message(${LINEARALGEBRA_BLAS_LAPACK_SRC}  "\n")
-    # message(${GEOMETRY_SRC}                   "\n")
-    # message(${FIELD_SRC}                      "\n")
-    # message(${WAVESOLVER_SRC}                 "\n")
-    # message(${UTILS_SRC}                      "\n")
-    # message(${PARSER_SRC}                     "\n")
-    # message(${GTS_GEOMETRY_SRC}               "\n")
-    # message(${CGAL_GEOMETRY_SRC}              "\n")
-    # message(${TRANSFER_SRC}                   "\n")
-    # message(${WAVELET_TRANSFER_SRC}           "\n")
-    # message(${SPARSE_LINEAR_ALGEBRA_SRC}      "\n")
-
-    add_executable(unit_testing_FDTD_RigidObject
+    add_executable(unit_testing_FDTD_AcousticSimulator
         ${DISTANCEFIELD_SRC}              
         ${WAVESOLVER_SRC} 
         ${GENERAL_TESTING_SRCS} 
-        ${FDTD_RIGID_OBJECT_TESTING_SRCS} 
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
         ${GENERIC_SRC}                    
         ${IO_SRC} 
         ${LOGGING_SRC}                    
@@ -141,7 +115,7 @@ if (BUILD_UNIT_TESTING)
         boost_system                    
         boost_regex) 
 
-    target_link_libraries(unit_testing_FDTD_RigidObject
+    target_link_libraries(unit_testing_FDTD_AcousticSimulator
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
@@ -150,10 +124,5 @@ if (BUILD_UNIT_TESTING)
         boost_system                    
         boost_timer
         boost_regex) 
-
-    # include_directories(${isostuffer_SOURCE_DIR}/src) 
-    # target_include_directories(
-    #     unit_testing_FDTD_RigidObject2
-    #     PUBLIC ${isostuffer_SOURCE_DIR}/src) 
 
 endif ( BUILD_UNIT_TESTING )

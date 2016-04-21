@@ -4,7 +4,7 @@
         <mesh_list> 
             <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj" 
-                id="small_ball_3" 
+                id="small_ball_1" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball.obj.1m.dist"
                 fieldresolution="10"
                 scale="1.0" 

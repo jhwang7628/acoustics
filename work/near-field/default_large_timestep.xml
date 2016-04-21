@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 <impulse_response>
     <rigid_object> 
+        <mesh_list> 
+        </mesh_list> 
     </rigid_object> 
     <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
 

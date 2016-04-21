@@ -75,7 +75,7 @@ class ImpulseResponseParser : public Parser
         inline TiXmlDocument *GetDocument(){return document;}
         // Fetch parameters for impulse response computation.
         ImpulseResponseParms Parse(); 
-        void GetObjects(const std::string &inputElement, FDTD_Objects &objects); 
+        void GetObjects(FDTD_Objects &objects); 
         //void getMeshes( const std::string &inputElement, vector<TriangleMesh<REAL> *> &meshes, 
         //                vector<string> &rigidFilePrefixes, vector<string> &sdfFileNames, 
         //                IntArray &sdfResolutions, vector<string> &pulseModelFileNames, 

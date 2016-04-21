@@ -82,7 +82,7 @@ Parse()
 // parse meshes from xml into objects 
 //##############################################################################
 void ImpulseResponseParser::
-GetObjects(const std::string &inputElement, FDTD_Objects &objects) 
+GetObjects(FDTD_Objects &objects) 
 {
     // get the root node
     TiXmlElement *root, *inputRoot, *listNode;
@@ -91,102 +91,23 @@ GetObjects(const std::string &inputElement, FDTD_Objects &objects)
     GET_FIRST_CHILD_ELEMENT_GUARD(listNode, inputRoot, "mesh_list"); 
     const std::string meshNodeName("mesh"); 
 
-    // first parse rigid objects
-    //const int N_rigid = objects.N(); 
-    //for (int ii=0; ii<N_rigid; ++ii)
-    //{
-        TiXmlElement *meshNode;
-        GET_FIRST_CHILD_ELEMENT_GUARD(meshNode, listNode, meshNodeName.c_str()); 
+    TiXmlElement *meshNode;
+    GET_FIRST_CHILD_ELEMENT_GUARD(meshNode, listNode, meshNodeName.c_str()); 
+    while ( meshNode != NULL )
+    {
+        const std::string meshFileName = queryRequiredAttr(meshNode, "file");
+        const std::string meshName = queryRequiredAttr(meshNode, "id");
+        const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
+        const int sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(meshNode, "scale", 1.0); 
 
-        //inputRoot = root->FirstChildElement("rigid_object");
-        //if ( !root )
-        //    throw std::runtime_error("**ERROR** No rigid object node found"); 
+        RigidObjectPtr object(new FDTD_RigidObject(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale));
+        object->Initialize(); 
 
+        objects.AddObject(meshName,object); 
 
-        //listNode = inputRoot->FirstChildElement( "meshList" );
-        //if ( !listNode )
-        //{
-        //    cerr << "Error: No listening position list found" << endl;
-        //    abort();
-        //}
-
-        //meshNode = listNode->FirstChildElement( "mesh" );
-
-        while ( meshNode != NULL )
-        {
-
-            std::string  meshFileName;
-            std::string  meshName;
-            std::string  sdfFilePrefix;
-            int          sdfResolutionValue;
-            REAL         scale;
-
-            meshFileName = queryRequiredAttr(meshNode, "file");
-            meshName = queryRequiredAttr(meshNode, "id");
-            sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
-            sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
-            scale = queryOptionalReal(meshNode, "scale", 1.0); 
-
-            RigidObjectPtr object(new FDTD_RigidObject(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale));
-            object->Initialize(); 
-
-            objects.AddObject(meshName,object); 
-
-            meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());
-
-
-            
-
-
-
-            //// We also get a scale value from this tag (but don't
-            //// require it)
-            //if (meshNode->QueryRealAttribute("scale", &scale) != TIXML_SUCCESS)
-            //{
-            //    // Assume no additional scaling
-            //    scale = 1.0;
-            //}
-
-            //printf( "Assigning index %d to mesh %s\n", (int)meshes.size(),
-            //        meshID.c_str() );
-            //meshIDMap[ meshID ] = (int)meshes.size();
-
-#if 0
-            if ( pulseModelFileName != "null" && compressedFields ) {
-                pulseModelFileName += "_comp";
-            }
-#endif
-
-            //// Construct the mesh and attempt to read it from the given file
-            //TriangleMesh<REAL> *mesh = new TriangleMesh<REAL>();
-
-            //if ( MeshObjReader::read( meshFileName.c_str(), *mesh,
-            //            false, false, scale ) == SUCC_RETURN )
-            //{
-            //    // Prepare the mesh for rendering, etc.
-            //    mesh->generate_normals();
-            //} else {
-            //    cerr << "Error reading mesh from " << meshFileName << endl;
-
-            //    // Unsuccessful
-            //    delete mesh;
-
-            //    abort();
-            //}
-
-            //meshes.push_back( mesh );
-            //rigidFilePrefixes.push_back( rigidFilePrefix );
-            //sdfFileNames.push_back( sdfFileName );
-            //sdfResolutions.push_back( atoi( sdfResolutionValue.c_str() ) );
-            //pulseModelFileNames.push_back( pulseModelFileName );
-            //densities.push_back( atof( densityValue.c_str() ) );
-
-        }
-    //}
-
-
-
-
+        meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());
+    }
 }
 
 

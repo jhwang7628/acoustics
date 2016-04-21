@@ -573,7 +573,7 @@ void writeData(const vector<REAL> & w, const REAL & timeStep, const int & timeSt
 
 
 
-void UnitTesting(const char* filename)
+    void UnitTesting(const char* filename)
 {
     Parser  *parser = nullptr; 
 
