@@ -10,6 +10,7 @@
 #include <wavesolver/VolumetricSource.h> 
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
+#include <wavesolver/PML_WaveSolver_Settings.h> 
 
 //##############################################################################
 // Parameters for impulse response wave solve
@@ -57,32 +58,22 @@ class ImpulseResponseParser : public Parser
             void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
         };
 
-
-    private: 
-
+    private:
+        TiXmlDocument _document; 
 
     public: 
         ImpulseResponseParser(){}
         ImpulseResponseParser(const std::string &documentName)
         {
-            TiXmlDocument *document = new TiXmlDocument(); 
-            document->LoadFile(documentName.c_str()); 
-            SetDocument(document); 
+            _document.LoadFile(documentName.c_str()); 
         }
 
         static std::vector<VolumetricSource> QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed); 
-        inline void SetDocument(TiXmlDocument *document){this->document = document;}
-        inline TiXmlDocument *GetDocument(){return document;}
-        // Fetch parameters for impulse response computation.
-        ImpulseResponseParms Parse(); 
-        void GetObjects(FDTD_Objects &objects); 
-        //void getMeshes( const std::string &inputElement, vector<TriangleMesh<REAL> *> &meshes, 
-        //                vector<string> &rigidFilePrefixes, vector<string> &sdfFileNames, 
-        //                IntArray &sdfResolutions, vector<string> &pulseModelFileNames, 
-        //                FloatArray &densities, map<std::string, int> &meshIDMap, bool compressedFields ); 
-
-
-
+        inline void SetDocument(const TiXmlDocument &document){this->_document = document;}
+        inline TiXmlDocument &GetDocument(){return _document;}
+        void GetObjects(std::shared_ptr<FDTD_Objects> objects); 
+        void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
+        void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings); 
 }; 
 
 #endif 

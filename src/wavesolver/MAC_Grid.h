@@ -18,6 +18,9 @@
 #include <geometry/BoundingBox.h>
 #include <geometry/TriangleMesh.hpp>
 
+#include <wavesolver/PML_WaveSolver_Settings.h> 
+#include <wavesolver/FDTD_Objects.h>
+
 #include <utils/Evaluator.h>
 #include <utils/timer.hpp>
 
@@ -99,7 +102,11 @@ class MAC_Grid
         // for jacobi iteration on ghost-cell value solve
         std::vector<JacobiIterationData>    _ghostCellCoupledData; 
 
+        // handles all the objects in the scene
+        std::shared_ptr<FDTD_Objects>       _objects; 
+
     public:
+        MAC_Grid(){}
         // Provide the size of the domain, finite difference division
         // size, and a signed distance function for the interior boundary
         MAC_Grid( const BoundingBox &bbox, REAL cellSize,
@@ -113,6 +120,9 @@ class MAC_Grid
                   std::vector<const DistanceField *> &boundaryFields,
                   REAL distanceTolerance = 0.0,
                   int N = 1 );
+
+        // initialize the grid by a boundingbox and cellsize
+        MAC_Grid(const BoundingBox &bbox, const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects);
 
         void Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSize); 
 
@@ -201,6 +211,7 @@ class MAC_Grid
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
+        void classifyCellsDynamic(const bool &useBoundary, const bool &verbose=false);
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.

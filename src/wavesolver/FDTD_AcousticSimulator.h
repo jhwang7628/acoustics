@@ -2,6 +2,12 @@
 #define FDTD_ACOUTSIC_SIMULATOR_H 
 
 #include <string> 
+#include <parser/ImpulseResponseParser.h> 
+#include <wavesolver/PML_WaveSolver.h> 
+#include <wavesolver/PML_WaveSolver_Settings.h> 
+#include <wavesolver/VibrationalSource.h> 
+#include <wavesolver/HarmonicVibrationalSource.h>
+#include <wavesolver/FDTD_Objects.h> 
 
 //##############################################################################
 // A managing class to coordinate wavesolver, rigid body simulator, parser, 
@@ -15,10 +21,10 @@ class FDTD_AcousticSimulator
 {
     private: 
         // meta objects
-        ImpulseResponseParser   _parser; 
-        PML_WaveSolver          _acousticSolver; 
-        PML_WaveSolver_Settings _acousticSolverSettings; 
-        FDTD_Objects            _sceneObjects; 
+        std::shared_ptr<ImpulseResponseParser>      _parser; 
+        std::shared_ptr<PML_WaveSolver>             _acousticSolver; 
+        std::shared_ptr<PML_WaveSolver_Settings>    _acousticSolverSettings; 
+        std::shared_ptr<FDTD_Objects>               _sceneObjects; 
 
         // state representation
         bool                    _canInitializeSolver; 
@@ -27,12 +33,11 @@ class FDTD_AcousticSimulator
         std::string             _configFile; 
 
     private: 
-        void GetBasicSolverSettings();
-        void GetOptionalSolverSettings();
-        void ReadMesh(); 
+        void _GetSolverSettings();
+        void _SetBoundaryConditions(); 
 
     public: 
-        //FDTD_AcousticSimulator(){}
+        FDTD_AcousticSimulator(){}
         FDTD_AcousticSimulator(const std::string &configFile)
             : _configFile(configFile)
         {} 

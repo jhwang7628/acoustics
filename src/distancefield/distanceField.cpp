@@ -444,14 +444,14 @@ REAL DistanceField::distance(const Vector3d &pos) const
     return (REAL)( distance( v_pos ) );
 }
 
-float DistanceField::distance(Vec3d pos, int constrainToBox) const
+float DistanceField::distance(const double &x, const double &y, const double &z, int constrainToBox) const
 {
     int i,j,k;
 
     // get the index coordinate of the lower-right-bottom corner of the voxel containing 'pos'
-    i = (int)((pos[0] - bmin_[0]) * invGridX);
-    j = (int)((pos[1] - bmin_[1]) * invGridY);
-    k = (int)((pos[2] - bmin_[2]) * invGridZ);
+    i = (int)((x - bmin_[0]) * invGridX);
+    j = (int)((y - bmin_[1]) * invGridY);
+    k = (int)((z - bmin_[2]) * invGridZ);
 
     if (((i<0) || (i>=resolution) || (j<0) || (j>=resolution) || (k<0) || (k>=resolution)) && (!constrainToBox))
     {
@@ -477,17 +477,18 @@ float DistanceField::distance(Vec3d pos, int constrainToBox) const
             k = 0;
     }
 
-    //printf("I=%d J=%d K=%d\n", i,j,k);
-    //printf("remx=%f remy=%f remz=%f\n", pos[0] - bmin_[0] - gridX * i,
-    //           pos[1] - bmin_[1] - gridY * j,pos[2] - bmin_[2] - gridZ * k);
-
     double wx,wy,wz;
-    wx = ((pos[0]-bmin_[0]) / gridX) - i;
-    wy = ((pos[1]-bmin_[1]) / gridY) - j;
-    wz = ((pos[2]-bmin_[2]) / gridZ) - k;
+    wx = ((x-bmin_[0]) / gridX) - i;
+    wy = ((y-bmin_[1]) / gridY) - j;
+    wz = ((z-bmin_[2]) / gridZ) - k;
 
     return TRILINEAR_INTERPOLATION(wx,wy,wz,distance(i,j,k),distance(i+1,j,k),distance(i+1,j+1,k),distance(i,j+1,k),
             distance(i,j,k+1),distance(i+1,j,k+1),distance(i+1,j+1,k+1),distance(i,j+1,k+1));
+}
+
+float DistanceField::distance(Vec3d pos, int constrainToBox) const
+{
+    distance(pos[0],pos[1],pos[2],constrainToBox); 
 }
 
 float DistanceField::maxValue()

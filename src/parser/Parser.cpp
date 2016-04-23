@@ -54,7 +54,8 @@ Parser::Parser(TiXmlDocument *document)
 //////////////////////////////////////////////////////////////////////
 Parser::~Parser()
 {
-    delete document;
+    if (document) 
+        delete document;
 }
 
 TriangleMesh<REAL> *Parser::getMesh()

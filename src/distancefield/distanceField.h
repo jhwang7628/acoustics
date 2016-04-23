@@ -134,6 +134,7 @@ class DistanceField
         REAL distance(const Vector3d &pos) const;
         // computes distance and gradient at arbitrary position
         float distance(Vec3d pos, int constrainToBox=0) const;
+        float distance(const double &x, const double &y, const double &z, int constrainToBox=0) const;
         // gradient is computed with respect to trilinear interpolation
         // note: gradient is discontinuous at the cell boundaries
         Vec3d gradient(Vec3d pos) const;

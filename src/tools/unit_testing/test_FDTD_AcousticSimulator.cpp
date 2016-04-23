@@ -1,6 +1,7 @@
 #include <tools/unit_testing/testing.h>
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/FDTD_Objects.h> 
+#include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
 
@@ -11,11 +12,17 @@ void TestParseMeshList()
 {
     const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
 
-    FDTD_Objects objectsInTheScene; 
+    std::shared_ptr<FDTD_Objects> objectsInTheScene = std::make_shared<FDTD_Objects>(); 
     ImpulseResponseParser parser(xmlName); 
 
-    parser.GetObjects("test", objectsInTheScene); 
-    std::cout << objectsInTheScene << std::endl;
+    parser.GetObjects(objectsInTheScene); 
+    // FIXME debug
+    if (objectsInTheScene)
+        std::cout << "objects fine\n"; 
+    else 
+        std::cout << "screwed up\n"; 
+    std::cout << *objectsInTheScene << std::endl;
+    //objectsInTheScene->TestObjectDistanceField(0);
 }
 
 //##############################################################################
@@ -72,10 +79,19 @@ void TestBoundingBox()
 }
 
 //##############################################################################
+void TestAcousticSimulatorInitialize()
+{
+    const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+    FDTD_AcousticSimulator simulator(xmlName);
+    simulator.InitializeSolver(); 
+}
+
+//##############################################################################
 int main()
 {
     //TestBoundingBox();
-    TestParseMeshList(); 
+    //TestParseMeshList(); 
+    TestAcousticSimulatorInitialize(); 
 
     return 0;
 }

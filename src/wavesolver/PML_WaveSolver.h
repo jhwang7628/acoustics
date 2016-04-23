@@ -22,6 +22,7 @@
 
 #include "MAC_Grid.h"
 #include "WaveSolver.h"
+#include <wavesolver/PML_WaveSolver_Settings.h> 
 
 #include <TYPES.h>
 
@@ -93,7 +94,15 @@ class PML_WaveSolver : public Solver
         // volumetric pressure point source
         ExternalSourceEvaluator *_sourceEvaluator; 
 
+        // objects in the scene 
+        std::shared_ptr<FDTD_Objects> _objects; 
+
     public: 
+        PML_WaveSolver() 
+            : _cellSize(0.0), _listeningPositions(nullptr), _outputFile(nullptr)
+        {}
+
+
         // Provide the size of the domain (bbox), finite difference division
         // size, and a signed distance function for the interior boundary.
         PML_WaveSolver( REAL timeStep,
@@ -129,6 +138,9 @@ class PML_WaveSolver : public Solver
                         int N = 1,
                         REAL endTime = -1.0
                         );
+
+        // initialize from settings parsed from xml
+        PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
         void Reinitialize_PML_WaveSolver(const bool &useBoundary); 

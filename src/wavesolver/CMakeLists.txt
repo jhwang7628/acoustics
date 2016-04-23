@@ -5,11 +5,15 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/MAC_Grid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PML_WaveSolver_Settings.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Source.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/VibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.h

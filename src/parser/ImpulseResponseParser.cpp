@@ -41,59 +41,28 @@ QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &pa
 }
 
 //##############################################################################
-//##############################################################################
-ImpulseResponseParser::ImpulseResponseParms ImpulseResponseParser::
-Parse()
-{
-    ImpulseResponseParms       parms;
-
-    // Get SDF parameters
-    parms._sdfResolution = queryRequiredInt(  "impulse_response/solver", "fieldresolution" );
-    parms._sdfFilePrefix = queryRequiredAttr( "impulse_response/solver", "distancefield" );
-
-    // Get grid parameters
-    parms._gridResolution   = queryRequiredInt( "impulse_response/solver", "gridresolution" );
-    parms._gridScale        = queryOptionalReal( "impulse_response/solver", "gridscale", "1" );
-
-    // Solver settings 
-    parms._timeStepFrequency = queryRequiredInt( "impulse_response/solver", "timestepfrequency" );
-    parms._subSteps = queryRequiredInt( "impulse_response/solver", "substeps" );
-    parms._stopTime = queryRequiredReal( "impulse_response/solver", "stop_time" ); 
-    parms._cellSize = queryOptionalReal( "impulse_response/solver", "cellsize", "-1"); 
-
-    parms._outputPattern = queryRequiredAttr( "impulse_response/solver", "output_pattern" );
-    parms._listeningFile = queryOptionalAttr( "impulse_response/solver", "listening_file", "none" );
-
-    // optional parameters 
-    parms._c        = queryOptionalReal( "impulse_response/solver", "c", "343.0" );
-    parms._density  = queryOptionalReal( "impulse_response/solver", "density", "1" );
-    parms._useMesh = (queryOptionalInt("impulse_response/solver", "use_mesh", "1")==0) ? false : true; 
-    parms._cornellBoxBoundaryCondition = (queryOptionalInt("impulse_response/solver", "cornell_box_boundary_condition", "0")==1) ? true : false; 
-    parms._useGhostCellBoundary = (queryOptionalInt("impulse_response/solver", "use_ghost_cell", "1")==1) ? true : false; 
-    parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
-
-    // set sources 
-    parms._sources = QueryVolumetricSource(document, this, "impulse_response/volumetric_source/source", parms._c); 
-
-    return parms;
-}
-
-//##############################################################################
 // parse meshes from xml into objects 
 //##############################################################################
 void ImpulseResponseParser::
-GetObjects(FDTD_Objects &objects) 
+GetObjects(std::shared_ptr<FDTD_Objects> objects) 
 {
+    if (!objects) 
+        throw std::runtime_error("**ERROR** passed in pointer null for GetObjects"); 
+
     // get the root node
+    TiXmlDocument *document2 = &_document; 
     TiXmlElement *root, *inputRoot, *listNode;
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    if (!document2)
+        throw std::runtime_error("**ERROR** document null"); 
+
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response"); 
     GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "rigid_object"); 
     GET_FIRST_CHILD_ELEMENT_GUARD(listNode, inputRoot, "mesh_list"); 
     const std::string meshNodeName("mesh"); 
 
     TiXmlElement *meshNode;
     GET_FIRST_CHILD_ELEMENT_GUARD(meshNode, listNode, meshNodeName.c_str()); 
-    while ( meshNode != NULL )
+    while (meshNode != NULL)
     {
         const std::string meshFileName = queryRequiredAttr(meshNode, "file");
         const std::string meshName = queryRequiredAttr(meshNode, "id");
@@ -101,19 +70,76 @@ GetObjects(FDTD_Objects &objects)
         const int sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
         const REAL scale = queryOptionalReal(meshNode, "scale", 1.0); 
 
-        RigidObjectPtr object(new FDTD_RigidObject(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale));
+        RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->Initialize(); 
 
-        objects.AddObject(meshName,object); 
+        objects->AddObject(meshName,object); 
 
         meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());
     }
 }
 
+//##############################################################################
+// parse solver settings from xml into struct
+//##############################################################################
+void ImpulseResponseParser::
+GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings) 
+{
+    if (!settings) 
+        throw std::runtime_error("**ERROR** pointer null for GetSolverSettings"); 
+    
+    // get the element nodes required
+    TiXmlElement *root, *solverNode;
+    TiXmlDocument *document = &_document;
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
 
+    // Physical paramters 
+    settings->soundSpeed = queryOptionalReal(solverNode,"sound_speed", 343.0);
+    settings->airDensity = queryOptionalReal(solverNode,"density", 1.0);
 
+    // discretization settings 
+    settings->cellSize           = queryRequiredReal(solverNode, "cellsize"); 
+    settings->cellDivisions      = queryRequiredInt (solverNode, "gridresolution"); 
+    settings->timeEnd            = queryRequiredReal(solverNode, "stop_time"); 
+    settings->timeSavePerStep    = queryRequiredInt (solverNode, "substeps"); 
+    const REAL timeStepFrequency= queryRequiredReal(solverNode, "timestepfrequency"); 
+    settings->timeStepSize = 1.0/timeStepFrequency; 
 
+    // IO settings
+    settings->outputPattern      = queryRequiredAttr(solverNode, "output_pattern"); 
 
+    // Boundary settings
+    settings->PML_width          = queryRequiredReal(solverNode, "PML_width"); 
+    settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 
 
+    // Optional settings
+    settings->listeningFile              = queryOptionalAttr(solverNode, "listening_file", "NOT_SPECIFIED" );
+    settings->useMesh                    = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
+    settings->useGhostCell               = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
+    settings->cornellBoxBoundaryCondition= (queryOptionalInt(solverNode, "cornell_box_boundary_condition", "0")==1) ? true : false; 
 
+    // set sources 
+    //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
+    //parms._sources = QueryVolumetricSource(document, this, "impulse_response/volumetric_source/source", parms._c); 
+}
 
+//##############################################################################
+// parse solver settings from xml into struct
+//##############################################################################
+void ImpulseResponseParser::
+GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings) 
+{
+    if (!settings) 
+        throw std::runtime_error("**ERROR** pointer null for GetSources"); 
+   
+    // TODO {
+      
+    //// get the element nodes required
+    //TiXmlElement *root, *solverNode;
+    //TiXmlDocument *document = &_document;
+    //GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    //GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
+
+    // } TODO
+}

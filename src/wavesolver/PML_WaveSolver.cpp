@@ -8,6 +8,7 @@
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
 
+#include <wavesolver/FDTD_Objects.h> 
 #include "PML_WaveSolver.h"
 #include "utils/Evaluator.h"
 
@@ -24,20 +25,20 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const char *outputFile,
                                 WriteCallback *callback,
                                 int subSteps, int N,
-                                REAL endTime) : 
-    _waveSpeed(waveSpeed),
-    _density(density),
-    _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
-    _cellSize(cellSize),
-    _subSteps( subSteps ),
-    _endTime( endTime ),
-    _timeStep( timeStep ),
-    _timeIndex( 0 ),
-    _N( N ),
-    _zSlice( -1 ),
-    _listeningPositions( listeningPositions ),
-    _outputFile( outputFile ),
-    _callback( callback )
+                                REAL endTime) 
+    : _waveSpeed(waveSpeed),
+      _density(density),
+      _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
+      _cellSize(cellSize),
+      _subSteps( subSteps ),
+      _endTime( endTime ),
+      _timeStep( timeStep ),
+      _timeIndex( 0 ),
+      _N( N ),
+      _zSlice( -1 ),
+      _listeningPositions( listeningPositions ),
+      _outputFile( outputFile ),
+      _callback( callback )
 { 
     Reinitialize_PML_WaveSolver(useBoundary);
 }
@@ -54,22 +55,43 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const char *outputFile,
                                 WriteCallback *callback,
                                 int subSteps, int N,
-                                REAL endTime) :
-    _waveSpeed(waveSpeed),
-    _density(density),
-    _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
-    _cellSize(cellSize),
-    _subSteps( subSteps ),
-    _endTime( endTime ),
-    _timeStep( timeStep ),
-    _timeIndex( 0 ),
-    _N( N ),
-    _zSlice( -1 ),
-    _listeningPositions( listeningPositions ),
-    _outputFile( outputFile ),
-    _callback( callback )
+                                REAL endTime) 
+    : _waveSpeed(waveSpeed),
+      _density(density),
+      _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
+      _cellSize(cellSize),
+      _subSteps( subSteps ),
+      _endTime( endTime ),
+      _timeStep( timeStep ),
+      _timeIndex( 0 ),
+      _N( N ),
+      _zSlice( -1 ),
+      _listeningPositions( listeningPositions ),
+      _outputFile( outputFile ),
+      _callback( callback )
 { 
     Reinitialize_PML_WaveSolver(useBoundary);
+}
+
+PML_WaveSolver::PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects)
+    : _waveSpeed(settings.soundSpeed), 
+      _density(settings.airDensity), 
+      _grid(BoundingBox(settings.cellSize,settings.cellDivisions),settings,objects),
+      _cellSize(settings.cellSize), 
+      _subSteps(settings.timeSavePerStep), 
+      _endTime(settings.timeEnd), 
+      _timeStep(settings.timeStepSize), 
+      _timeIndex(0), 
+      _N(1),
+      _zSlice(-1),
+      _listeningPositions(nullptr), 
+      _outputFile(nullptr), 
+      _callback(nullptr),
+      _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
+      _useGhostCellBoundary(settings.useGhostCell),
+      _objects(objects)
+{
+    Reinitialize_PML_WaveSolver(settings.useMesh); 
 }
 
 void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)

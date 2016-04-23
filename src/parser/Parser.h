@@ -38,7 +38,7 @@
     assert(parentPtr!=nullptr); \
     nodePtr = parentPtr->FirstChildElement(nodeName); \
     if (!nodePtr) \
-        throw std::runtime_error("**ERROR** No node found");
+        throw std::runtime_error("**ERROR** No node "+std::string(nodeName)+" found");
 
 //////////////////////////////////////////////////////////////////////
 // Parser class
@@ -50,7 +50,9 @@ class Parser
 {
     public:
 
-        Parser(){} 
+        Parser() 
+            : document(nullptr) 
+        {} 
         static Parser *buildParser(std::string filename);
 
         // Construct a triangle mesh from information stored
@@ -430,7 +432,10 @@ class Parser
         static std::string queryOptionalAttr( TiXmlElement* node, std::string attr,
                 std::string defaultValue );
         static REAL queryOptionalReal( TiXmlElement* node, const std::string &attr, const REAL &defaultValue );
-
+        static int queryOptionalInt(TiXmlElement *node, const std::string &attr, const std::string &defaultValue)
+        {
+            return atoi(queryOptionalAttr(node, attr, defaultValue).c_str()); 
+        }
 
         // Lame implementation of simple xpath. Uses the first child if there are
         // multiple elements matching a given name.
