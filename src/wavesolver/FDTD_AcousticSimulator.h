@@ -35,6 +35,7 @@ class FDTD_AcousticSimulator
     private: 
         void _GetSolverSettings();
         void _SetBoundaryConditions(); 
+        void _SetPressureSources(); 
 
     public: 
         FDTD_AcousticSimulator(){}
@@ -53,6 +54,7 @@ class FDTD_AcousticSimulator
         void Draw(); 
 
         //// debug method //// 
+        void TestAllComponents(); 
 };
 
 #endif

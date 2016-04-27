@@ -1,4 +1,5 @@
 #include <tools/unit_testing/testing.h>
+#include <wavesolver/FDTD_MovableObject.h>
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h> 
@@ -84,6 +85,8 @@ void TestAcousticSimulatorInitialize()
     const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
+    simulator.Run();
+    simulator.TestAllComponents();
 }
 
 //##############################################################################

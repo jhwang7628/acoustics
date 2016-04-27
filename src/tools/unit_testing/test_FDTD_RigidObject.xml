@@ -21,8 +21,8 @@
         cellsize="0.01" 
         gridresolution="100"
         stop_time="0.006"
-        substeps="1"
-        timestepfrequency="44100"
+        substeps="4"
+        timestepfrequency="176400"
 
         output_pattern="data_1m_cornell_box_100_large_timestep_smoothing_10/test_%s"
 
@@ -34,14 +34,20 @@
         cornell_box_boundary_condition="0"
         /> 
 
-    <volumetric_source> 
-        <source
+    <pressure_source> 
+        <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.0" 
         source_position_y="0.0" 
         source_position_z="0.0" 
         />
-    </volumetric_source> 
+        <gaussian_pressure_source
+        source_width_time="0.005"
+        source_position_x="1.0" 
+        source_position_y="2.0" 
+        source_position_z="3.0" 
+        />
+    </pressure_source> 
 
 </impulse_response>
 

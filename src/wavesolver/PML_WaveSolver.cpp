@@ -185,7 +185,7 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
 }
 
 // TODO this currently produce bad results, maybe need to smooth velocity field as well
-bool PML_WaveSolver::stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator, const int &N_restart)
+bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 {
     _stepTimer.start();
     bool restartStep = false; 
@@ -206,7 +206,7 @@ bool PML_WaveSolver::stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator,
         _pThisTimestep.parallelCopy(_pFull); 
     }
 
-    stepLeapfrog(bcEvaluator);  // now _pFull stores i+1 step pressure
+    stepLeapfrog();  // now _pFull stores i+1 step pressure
 
     if (restartStep) 
     {
@@ -234,10 +234,15 @@ bool PML_WaveSolver::stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator,
 
 }
 
-bool PML_WaveSolver::stepSystem( const BoundaryEvaluator &bcEvaluator )
+bool PML_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
+{
+    return false; 
+}
+
+bool PML_WaveSolver::stepSystem()
 {
     _stepTimer.start();
-    stepLeapfrog( bcEvaluator );
+    stepLeapfrog();
     _timeIndex += 1;
     _stepTimer.pause();
 
@@ -277,13 +282,13 @@ void PML_WaveSolver::writeWaveOutput() const
     ( *_callback )( _waveOutput );
 }
 
-void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
+void PML_WaveSolver::stepLeapfrog()
 {
     // Update velocity in each direction
     _gradientTimer.start();
-    _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 0 ], 0, _currentTime, _timeStep, _density );
-    _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 1 ], 1, _currentTime, _timeStep, _density );
-    _grid.PML_velocityUpdate( _pFull, bcEvaluator, _v[ 2 ], 2, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
     _gradientTimer.pause();
 
     // Use the new velocity to update pressure
@@ -302,7 +307,7 @@ void PML_WaveSolver::stepLeapfrog( const BoundaryEvaluator &bcEvaluator )
     {
         // Update the ghost pressures for the velocity update in the next step
         _ghostCellTimer.start(); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
         //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime); 
         _ghostCellTimer.pause(); 
     }

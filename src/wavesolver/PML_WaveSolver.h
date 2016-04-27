@@ -174,7 +174,8 @@ class PML_WaveSolver : public Solver
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
 
         // Takes a single time step
-        virtual bool stepSystem( const BoundaryEvaluator &bcEvaluator );
+        virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);
+        virtual bool stepSystem();
         // Takes a single time step with restarting steps controlled by
         // N_restart. internally, smoothing is done using weighted average
         // method described in the paper: 
@@ -187,7 +188,7 @@ class PML_WaveSolver : public Solver
         //
         // TODO this currently produce bad results, maybe need to smooth velocity field as well
         //
-        virtual bool stepSystemWithRestart(const BoundaryEvaluator &bcEvaluator, const int &N_restart); 
+        virtual bool stepSystemWithRestart(const int &N_restart); 
 
         // Get vertex pressure for each field
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
@@ -198,7 +199,7 @@ class PML_WaveSolver : public Solver
         void PrintAllFieldExtremum();
 
     private:
-        void stepLeapfrog( const BoundaryEvaluator &bcEvaluator );
+        void stepLeapfrog();
 
 };
 

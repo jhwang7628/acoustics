@@ -3,6 +3,7 @@
 
 #include <TYPES.h> 
 #include <linearalgebra/Vector3.hpp> 
+#include <wavesolver/Source.h> 
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 
@@ -10,7 +11,7 @@
 // Represents the surface acceleration that causes sound. 
 //##############################################################################
 class FDTD_RigidObject; 
-class VibrationalSource
+class VibrationalSource : public Source
 {
     protected:
         std::shared_ptr<FDTD_RigidObject> _owner; 

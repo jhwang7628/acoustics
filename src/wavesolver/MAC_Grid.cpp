@@ -263,22 +263,22 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
     }
 }
 
-void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
+void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
 {
     const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
     const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
     const ScalarField     &field                        = _velocityField[ dimension ];
-    const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
+    //const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
     const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
-    PML_velocityUpdateAux(p,bc,v,dimension,t,timeStep,density,bulkCells); 
+    PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,bulkCells); 
 
     // Handle interfacial cells
     if (_useGhostCellBoundary)
     {
-        PML_velocityUpdateAux(p,bc,v,dimension,t,timeStep,density,interfacialCells); 
+        PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,interfacialCells); 
     }
     else
     {
@@ -292,7 +292,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
         for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size(); interfacial_cell_idx++ )
         {
             int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
-            int                  objectID;
+            //int                  objectID;
             REAL                 bcEval;
             REAL                 coefficient;
 
@@ -301,11 +301,12 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
 
             normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
             coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
-            objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
+            //objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
 
             for ( int i = 0; i < _N; i++ )
             {
-                bcEval = bc( x, normal, objectID, t, i );
+                bcEval = _objects->EvaluateVibrationalSources(x,normal,t); 
+                //bcEval = bc( x, normal, objectID, t, i );
                 bcEval *= coefficient;
                 v( cell_idx, i ) += timeStep * bcEval;
             }
@@ -313,7 +314,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
     }
 }
 
-void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &bc, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density, const IntArray &bulkCells )
+void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density, const IntArray &bulkCells )
 {
     const ScalarField &field = _velocityField[ dimension ];
     const REAL n_dt_over_dx_rho = -timeStep/(_pressureField.cellSize()*density);
@@ -384,7 +385,8 @@ void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
     const size_t bulkCellSize = _bulkCells.size();
-    const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+    //const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+    const bool evaluateExternalSource = _objects->HasExternalPressureSources();
     const REAL n_rho_c_square_dt = -density*c*c*timeStep;
     const REAL v_cellSize_inv = 1./_velocityField[dimension].cellSize();
 
@@ -447,8 +449,9 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
             if (evaluateExternalSource)
-                for (int i = 0; i<_N; i++) 
-                    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
+                p(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+                //for (int i = 0; i<_N; i++) 
+                //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
         }
     }
 }
@@ -456,7 +459,8 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
 {
     const size_t numberBulkCell = _bulkCells.size();
-    const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+    //const bool evaluateExternalSource = (sourceEvaluator != nullptr);
+    const bool evaluateExternalSource = _objects->HasExternalPressureSources();
     const REAL n_rho_c_square_dt = -density*c*c*timeStep;
     const REAL v_cellSize_inv[3] = {1./_velocityField[0].cellSize(),1./_velocityField[1].cellSize(),1./_velocityField[2].cellSize()};
 
@@ -522,8 +526,9 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
                 // evaluate external sources only happens not in PML
                 // Liu Eq (16) f6x term
                 if (evaluateExternalSource)
-                    for (int i = 0; i<_N; i++) 
-                        p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
+                    p(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+                    //for (int i = 0; i<_N; i++) 
+                    //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
             }
         }
     }
@@ -580,7 +585,7 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 //
 //  7. Update the pressure at ghost-cell indices. 
 //
-void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
+void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
     // for the ghost-cell coupling
     SparseLinearSystemSolver solver(_ghostCells.size()); 
@@ -598,7 +603,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
-
         FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
 
         // get the box enclosing the image point; 
@@ -640,7 +644,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
         Vector3d    positionBuffer; 
         Eigen::VectorXd pressureNeighbours(8);  // right hand side
 
-        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+        const double bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -744,7 +750,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
     }
 }
 
-void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density)
+void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
 
     _ghostCellCoupledData.clear(); 
@@ -759,11 +765,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
         const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
         const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
-        const int       boundaryObject = _containingObject[cellIndex]; 
+        //const int       boundaryObject = _containingObject[cellIndex]; 
 
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
-        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+        REAL accumulatedBoundaryConditionValue; 
+        //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 1);
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -805,8 +813,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Tuple3i     indicesBuffer;
         Vector3d    positionBuffer; 
         Eigen::VectorXd pressureNeighbours(8);  // right hand side
-
-        const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+ 
+        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+        const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -859,7 +869,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
 
         // RHS always exists even when no off-diagonal elements 
         double &RHS = jacobiIterationData.RHS; 
-        RHS = - (imagePoint - cellPosition).length() * bcEval; 
+        RHS = accumulatedBoundaryConditionValue;
+        //RHS = - (imagePoint - cellPosition).length() * bcEval; 
         for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
             RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
 

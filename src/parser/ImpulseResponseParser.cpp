@@ -1,43 +1,36 @@
+#include <wavesolver/GaussianPressureSource.h>
 #include <parser/ImpulseResponseParser.h> 
 
 //##############################################################################
 //##############################################################################
-std::vector<VolumetricSource> ImpulseResponseParser::
-QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed)
+void ImpulseResponseParser::
+GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources)
 {
-    if (!document) throw std::runtime_error("**ERROR** document not established"); 
-    
-    std::vector<VolumetricSource> sources; 
-    
-    TiXmlNode *node = document; 
-    node = parser->getNodeByPath(path); 
-    while (node) 
+    // get the element nodes required
+    TiXmlElement *root, *pressureSourceNode, *gaussianSourceNode;
+    TiXmlDocument *document = &_document;
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(pressureSourceNode, root, "pressure_source"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source"); 
+    while (gaussianSourceNode) 
     {
-        VolumetricSource source; 
+        const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time"); 
+        const REAL widthSpace        = queryOptionalReal(gaussianSourceNode, "source_width_space", soundSpeed*widthTime); 
+        const REAL offsetTime        = queryOptionalReal(gaussianSourceNode, "source_offset_time", 0.0); 
+        const bool flipSign = (queryOptionalReal(gaussianSourceNode, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
+        const REAL scaleSign = (flipSign) ? -1.0 : 1.0; 
+        const REAL normalizeConstant = queryOptionalReal(gaussianSourceNode, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*widthSpace,3))*scaleSign; 
 
-        TiXmlElement *elm        = node->ToElement(); 
-        source.widthTime         = parser->queryRequiredReal(elm, "source_width_time"); 
-        source.widthSpace        = parser->queryOptionalReal(elm, "source_width_space", soundSpeed*source.widthTime); 
-        source.offsetTime        = parser->queryOptionalReal(elm, "source_offset_time", 0.0); 
-        source.normalizeConstant = parser->queryOptionalReal(elm, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*source.widthSpace,3)); 
-        source.position.x = parser->queryRequiredReal(elm, "source_position_x"); 
-        source.position.y = parser->queryRequiredReal(elm, "source_position_y"); 
-        source.position.z = parser->queryRequiredReal(elm, "source_position_z"); 
+        Vector3d sourcePosition; 
+        sourcePosition.x = queryRequiredReal(gaussianSourceNode, "source_position_x"); 
+        sourcePosition.y = queryRequiredReal(gaussianSourceNode, "source_position_y"); 
+        sourcePosition.z = queryRequiredReal(gaussianSourceNode, "source_position_z"); 
 
-        std::cout << SDUMP(source.position) << std::endl;
+        PressureSourcePtr sourcePtr(new GaussianPressureSource(sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant)); 
+        pressureSources.push_back(std::move(sourcePtr)); 
 
-        source.flipSign = (parser->queryOptionalReal(elm, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
-        source.normalizeConstant *= (source.flipSign) ? -1.0 : 1.0;
-
-        sources.push_back(source); 
-
-        node = parser->getNextSiblingNode(node); 
+        gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source"); 
     }
-
-    if (sources.size()==0) 
-        throw std::runtime_error("**ERROR** no sources found in the configuration file"); 
-
-    return sources;
 }
 
 //##############################################################################
@@ -127,19 +120,19 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings)
 //##############################################################################
 // parse solver settings from xml into struct
 //##############################################################################
-void ImpulseResponseParser::
-GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings) 
-{
-    if (!settings) 
-        throw std::runtime_error("**ERROR** pointer null for GetSources"); 
-   
-    // TODO {
-      
-    //// get the element nodes required
-    //TiXmlElement *root, *solverNode;
-    //TiXmlDocument *document = &_document;
-    //GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
-    //GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
-
-    // } TODO
-}
+//void ImpulseResponseParser::
+//GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings) 
+//{
+//    if (!settings) 
+//        throw std::runtime_error("**ERROR** pointer null for GetSources"); 
+//   
+//    // TODO {
+//      
+//    //// get the element nodes required
+//    //TiXmlElement *root, *solverNode;
+//    //TiXmlDocument *document = &_document;
+//    //GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+//    //GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
+//
+//    // } TODO
+//}

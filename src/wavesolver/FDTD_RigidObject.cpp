@@ -96,12 +96,40 @@ EvaluateBoundaryCondition(const Vector3d &boundaryPoint, const Vector3d &boundar
 }
 
 //##############################################################################
+// Reflect the given point against the boundary. check if the reflected point 
+// is indeed outside the boundary (of current object). 
+//
+// produce warning if the following scenario occurs 
+//  1. erected normal deviates from the boundary normal by too much. 
+//  2. image point is still inside the geometry. 
 //##############################################################################
-void FDTD_RigidObject::
-PrintBoundingBox()
+bool FDTD_RigidObject::
+ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    std::cout << "minBound = " << _bboxWorld.minBound << std::endl; 
-    std::cout << "maxBound = " << _bboxWorld.maxBound << std::endl; 
+    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<0));
+
+    erectedNormal = _signedDistanceField->gradient(originalPoint); 
+    erectedNormal.normalize(); 
+    distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
+    boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
+    reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
+    const bool reflectSuccess = (_signedDistanceField->distance(reflectedPoint) > DISTANCE_TOLERANCE); 
+
+    if (true) 
+    {
+        Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
+        boundaryNormal.normalize(); 
+        if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
+        {
+            std::cerr << "**WARNING** erected normal and true normal deviates. This might cause inaccuracy for the imposed Neumann boundary condition at original point : " 
+                      << originalPoint 
+                      << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
+        }
+        if (!reflectSuccess)
+            std::cerr << "**ERROR** reflected point still inside object" << std::endl; 
+    }
+
+    return reflectSuccess;
 }
 
 //##############################################################################
@@ -133,10 +161,8 @@ TestObjectBoundaryCondition()
     const int N = 20000;
     for (int ii=0; ii<N; ii++)
     {
-        std::cout << "---\n";
-        COUT_SDUMP((double)ii*dt);
         const REAL result = EvaluateBoundaryCondition(boundaryPoint, boundaryNormal, (double)ii*dt); 
-        COUT_SDUMP(result);
+        std::cout << "result at time " << (double)ii*dt << " is " << result << std::endl;
     }
 }
 

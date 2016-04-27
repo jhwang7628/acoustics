@@ -148,12 +148,12 @@ class MAC_Grid
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
-        void PML_velocityUpdate( const MATRIX &p, const BoundaryEvaluator &bc,
+        void PML_velocityUpdate( const MATRIX &p,
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
 
         // Helper function to minimize repeated code
-        void PML_velocityUpdateAux( const MATRIX &p, const BoundaryEvaluator &bc,
+        void PML_velocityUpdateAux( const MATRIX &p,
                                     MATRIX &v, int dimension,
                                     REAL t, REAL timeStep, REAL density, const IntArray &bulkCells);
 
@@ -172,8 +172,8 @@ class MAC_Grid
                                                const REAL &density);
 
         // Performs a pressure update for the ghost cells. 
-        void PML_pressureUpdateGhostCells(MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density); 
-        void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, const REAL &timeStep, const REAL &c, const BoundaryEvaluator &bc, const REAL &simulationTime, const REAL density); 
+        void PML_pressureUpdateGhostCells(MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+        void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix

@@ -9,13 +9,17 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaveSolver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Source.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/VolumetricSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/PressureSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/GaussianPressureSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/GaussianPressureSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/VibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_MovableObject.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_MovableObject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_AcousticSimulator.h

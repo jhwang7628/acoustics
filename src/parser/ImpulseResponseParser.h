@@ -7,7 +7,7 @@
 #include <tinyxml/tinyxml.h> 
 #include <tinyxml/tinystr.h> 
 #include <parser/Parser.h>
-#include <wavesolver/VolumetricSource.h> 
+#include <wavesolver/PressureSource.h> 
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 #include <wavesolver/PML_WaveSolver_Settings.h> 
@@ -47,7 +47,7 @@ class ImpulseResponseParser : public Parser
 
             std::string                     _listeningFile; 
 
-            std::vector<VolumetricSource>   _sources; 
+            //std::vector<VolumetricSource>   _sources; 
 
             bool                            _useMesh; 
             bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
@@ -55,7 +55,7 @@ class ImpulseResponseParser : public Parser
 
             REAL                            _f; 
 
-            void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
+            //void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
         };
 
     private:
@@ -68,12 +68,12 @@ class ImpulseResponseParser : public Parser
             _document.LoadFile(documentName.c_str()); 
         }
 
-        static std::vector<VolumetricSource> QueryVolumetricSource(TiXmlNode *document, Parser *parser, const std::string &path, const REAL &soundSpeed); 
         inline void SetDocument(const TiXmlDocument &document){this->_document = document;}
         inline TiXmlDocument &GetDocument(){return _document;}
         void GetObjects(std::shared_ptr<FDTD_Objects> objects); 
-        void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
+        //void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
         void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings); 
+        void GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources); 
 }; 
 
 #endif 
