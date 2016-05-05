@@ -80,7 +80,7 @@ void TestBoundingBox()
 }
 
 //##############################################################################
-void TestAcousticSimulatorInitialize()
+void TestAcousticSimulatorRun()
 {
     const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
     FDTD_AcousticSimulator simulator(xmlName);
@@ -94,7 +94,7 @@ int main()
 {
     //TestBoundingBox();
     //TestParseMeshList(); 
-    TestAcousticSimulatorInitialize(); 
+    TestAcousticSimulatorRun(); 
 
     return 0;
 }
