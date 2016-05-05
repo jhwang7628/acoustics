@@ -488,7 +488,7 @@ float DistanceField::distance(const double &x, const double &y, const double &z,
 
 float DistanceField::distance(Vec3d pos, int constrainToBox) const
 {
-    distance(pos[0],pos[1],pos[2],constrainToBox); 
+    return distance(pos[0],pos[1],pos[2],constrainToBox); 
 }
 
 float DistanceField::maxValue()
