@@ -54,16 +54,20 @@ class FDTD_RigidObject : public FDTD_MovableObject
         }
 
         inline bool Exist(){return (_mesh!=0);}
+        inline std::shared_ptr<TriangleMesh<REAL>> GetMeshPtr(){return _mesh;} 
+        inline std::shared_ptr<ClosestPointField> GetSignedDistanceFieldPtr(){return _signedDistanceField;} 
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
         void Initialize(); 
         virtual void UpdateBoundingBox(); 
         // in-place query for object sdf distance from world x,y,z
         REAL DistanceToMesh(const double &x, const double &y, const double &z); 
+        REAL DistanceToMesh(const Vector3d &position); 
         // in-place query for object sdf normal from world x,y,z
         // return success or not (could be that query point is outside of bbox,
         // then normal is not defined
         bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
+        bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
         REAL EvaluateBoundaryCondition(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
 

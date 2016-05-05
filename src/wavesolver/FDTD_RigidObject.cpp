@@ -12,7 +12,6 @@ Initialize()
 
     // building mesh 
     _mesh.reset(new TriangleMesh<REAL>()); 
-    std::cout << _meshScale << std::endl;
     if (MeshObjReader::read(_meshFileName.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
         _mesh->generate_normals(); 
     else 
@@ -36,8 +35,26 @@ UpdateBoundingBox()
 {
     if (_mesh)
     {
-        Point3<double> minBound, maxBound; 
-        _mesh->bounding_box(minBound, maxBound); 
+        Point3<REAL> minBound(D_INF, D_INF, D_INF); 
+        Point3<REAL> maxBound(-D_INF, -D_INF, -D_INF); 
+        Eigen::Vector3d pointBuffer; 
+        std::vector<Point3<REAL>> &meshVertices = _mesh->vertices(); 
+        const typename std::vector<Point3<REAL>>::const_iterator end = meshVertices.end();
+        for(typename std::vector<Point3<REAL>>::const_iterator it=meshVertices.begin(); it!=end; ++it)
+        {
+            pointBuffer[0] = it->x; 
+            pointBuffer[1] = it->y; 
+            pointBuffer[2] = it->z; 
+            pointBuffer = _modelingTransform * pointBuffer; 
+
+            minBound.x = min(minBound.x, pointBuffer[0]);
+            minBound.y = min(minBound.y, pointBuffer[1]);
+            minBound.z = min(minBound.z, pointBuffer[2]);
+
+            maxBound.x = max(maxBound.x, pointBuffer[0]);
+            maxBound.y = max(maxBound.y, pointBuffer[1]);
+            maxBound.z = max(maxBound.z, pointBuffer[2]);
+        }
         _bboxWorld.Update(minBound,maxBound); 
     }
     else 
@@ -51,13 +68,20 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 {
     if (!_signedDistanceField)
         throw std::runtime_error("**ERROR** distance field not built.");
-
     if (!_bboxWorld.Inside(x,y,z,1.1))
-        return std::numeric_limits<REAL>::lowest();
+        return std::numeric_limits<REAL>::max();
 
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position;
     return _signedDistanceField->distance(position[0],position[1],position[2]); 
+}
+
+//##############################################################################
+//##############################################################################
+REAL FDTD_RigidObject::
+DistanceToMesh(const Vector3d &position)
+{
+    return DistanceToMesh(position.x, position.y, position.z); 
 }
 
 //##############################################################################
@@ -67,6 +91,9 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 //  For points: vec2 = transformation          * vec1
 //  For vector: vec2 = transformation.linear() * vec1
 //
+//  TODO 
+//  too many conversions in this call
+//
 //##############################################################################
 bool FDTD_RigidObject::
 NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal)
@@ -74,11 +101,27 @@ NormalToMesh(const double &x, const double &y, const double &z, Vector3d &querie
     if (!_signedDistanceField)
         throw std::runtime_error("**ERROR** distance field not built.");
     if (!_bboxWorld.Inside(x,y,z,1.1))
+    {
+        const REAL limit = std::numeric_limits<REAL>::max(); 
+        queriedNormal = Vector3d(limit, limit, limit); 
         return false;
+    }
+
     Eigen::Vector3d position(x,y,z); 
-    position = _modelingTransformInverse.linear()*position;
+    position = _modelingTransformInverse*position;
     queriedNormal = _signedDistanceField->gradient(Conversions::ToVector3<double>(position));
+    Eigen::Vector3d normal = Conversions::ToEigen<double>(queriedNormal); 
+    normal = _modelingTransform.linear()*normal; 
+    queriedNormal = Conversions::ToVector3(normal); 
     return true; 
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_RigidObject::
+NormalToMesh(const Vector3d &position, Vector3d &queriedNormal)
+{
+    return NormalToMesh(position.x, position.y, position.z, queriedNormal);
 }
 
 //##############################################################################
@@ -108,16 +151,20 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 {
     assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<0));
 
-    erectedNormal = _signedDistanceField->gradient(originalPoint); 
+    //erectedNormal = _signedDistanceField->gradient(originalPoint); 
+    NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
-    distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
+    //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
+    distanceTravelled = -1.0 * DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const bool reflectSuccess = (_signedDistanceField->distance(reflectedPoint) > DISTANCE_TOLERANCE); 
 
     if (true) 
     {
-        Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
+        Vector3d boundaryNormal;
+        NormalToMesh(boundaryPoint.x, boundaryPoint.y, boundaryPoint.z, boundaryNormal); 
+        //Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
         boundaryNormal.normalize(); 
         if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
         {

@@ -539,7 +539,7 @@ void TriangleMesh<T>::bounding_box(Point3<T>& low, Point3<T>& up) const
 {
     //const T inf = std::numeric_limits<T>::infinity();
     const T maxValue = std::numeric_limits<T>::max(); 
-    const T minValue = std::numeric_limits<T>::min(); 
+    const T minValue = std::numeric_limits<T>::lowest(); 
     low = Point3<T>(maxValue, maxValue, maxValue);
     up  = Point3<T>(minValue, minValue, minValue);
 

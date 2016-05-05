@@ -39,6 +39,17 @@ ObjectDistance(const int &objectIndex, const Vector3d &positionWorld)
 
 //##############################################################################
 //##############################################################################
+REAL FDTD_Objects::
+LowestObjectDistance(const Vector3d &positionWorld) 
+{
+    REAL distance = std::numeric_limits<REAL>::max(); 
+    for (int ii=0; ii<N(); ++ii) 
+        distance = std::min<REAL>(distance, _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z)); 
+    return distance; 
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_Objects::
 ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal) 
 {
@@ -155,7 +166,24 @@ TestObjectDistanceField(const size_t &ind)
 
 //##############################################################################
 //##############################################################################
-std::ostream &operator<<(std::ostream &os, const FDTD_Objects &objects) 
+void FDTD_Objects::
+PrintAllSources(std::ostream &os)
+{
+    os << "--------------------------------------------------------------------------------\n" 
+       << "Function FDTD_Objects::PrintAllSources \n" 
+       << "--------------------------------------------------------------------------------\n"
+       << " number of sources = " << N_sources() << "\n"
+       << " source list BEGIN\n"; 
+    for (const auto &p : _pressureSources) 
+        p->PrintSourceInfo(os);
+    os << " source list END\n"
+       << "--------------------------------------------------------------------------------\n"; 
+    os << std::flush;
+}
+
+//##############################################################################
+//##############################################################################
+std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects) 
 {
     os << "--------------------------------------------------------------------------------\n" 
        << "Class FDTD_Objects\n" 

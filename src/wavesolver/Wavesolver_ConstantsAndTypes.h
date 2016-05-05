@@ -18,6 +18,8 @@ class PressureSource;
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288419716939937510582
 #endif
+//##############################################################################
+#define PRINT_EIGEN_VECTOR3(x) std::cout << x[0] << ", " << x[1] << ", " << x[2] << std::endl
 
 //##############################################################################
 // Typedefs 
@@ -35,6 +37,8 @@ typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator;
 const double sqrt_2_pi = sqrt(2.0*M_PI); 
 const double sqrt_2 = sqrt(2.0); 
 const double DISTANCE_TOLERANCE = 1E-12; 
+const double GAUSSIAN_CHECK_BOUND = 3.0; // for pressure sources only check within
+const REAL D_INF = std::numeric_limits<REAL>::infinity(); 
 
 //##############################################################################
 // Enum

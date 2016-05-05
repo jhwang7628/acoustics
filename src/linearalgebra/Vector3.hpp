@@ -89,6 +89,11 @@ class Vector3 : public Tuple3<T>
             return Vector3<T>(x + rhs.x, y + rhs.y, z + rhs.z);
         }
 
+        Vector3<T> operator + (const T &rhs) const
+        {
+            return Vector3<T>(x+rhs, y+rhs, z+rhs); 
+        }
+
         Vector3<T> operator - (const Vector3<T>& rhs) const 
         {
             return Vector3<T>(x - rhs.x, y - rhs.y, z - rhs.z);
@@ -97,6 +102,11 @@ class Vector3 : public Tuple3<T>
         Vector3<T> operator - () const
         {
             return Vector3<T>(-x, -y, -z);
+        }
+
+        Vector3<T> operator - (const T &rhs) const
+        {
+            return Vector3<T>(x-rhs, y-rhs, z-rhs); 
         }
 
         /*! Multiplication operator */

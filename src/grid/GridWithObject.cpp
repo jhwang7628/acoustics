@@ -3,14 +3,12 @@
 #include "signalprocessing/FilterDesign.h" 
 #include "geometry/AffineTransformation.h" 
 #include "geometry/BoundingBox.h" 
-
 #include "distancefield/trilinearInterpolation.h"
-
 #include "IO/IO.h"
-
 #include "utils/STL_Wrapper.h" 
-
 #include "math/LeastSquareSurface.h"
+#include "wavesolver/PML_WaveSolver.h"
+#include "wavesolver/FDTD_RigidObject.h"
 
 template<typename T> 
 void SetEigenVector3(const T &x, const T &y, const T &z, Eigen::Matrix<T,3,1> &vec3)
@@ -23,65 +21,104 @@ void SetEigenVector3(const T &x, const T &y, const T &z, Eigen::Matrix<T,3,1> &v
 // recover the geometry parameters from the wave solver config file 
 void UniformGridWithObject::Reinitialize(const std::string &configFile)
 {
-    std::cout << "config file : " << configFile << std::endl;
+    parser_ = std::make_shared<ImpulseResponseParser>(configFile); 
+    std::shared_ptr<PML_WaveSolver_Settings> settings = std::make_shared<PML_WaveSolver_Settings>(); 
 
-    // parse config file to get geometry parameters 
-    parser_.reset(Parser::buildParser( configFile )); 
-    if ( !parser_ ) throw std::runtime_error("**ERROR** Could not build parser from "+configFile);
+    parser_->GetSolverSettings(settings); 
+    parser_->GetObjects(objects_); 
 
-    mesh_.reset(parser_->getMesh("impulse_response")); 
-    if ( !mesh_ ) throw std::runtime_error("**ERROR** Could not build mesh");
-
-    solverParameters_ = parser_->getImpulseResponseParms();
-
-    double cellSize;
-    BoundingBox fieldBBox; 
-    BoundingBox solverBBox; 
-    cellCount_[0] = solverParameters_._gridResolution; 
-    cellCount_[1] = solverParameters_._gridResolution; 
-    cellCount_[2] = solverParameters_._gridResolution; 
-
-    distanceField_.reset(
-            DistanceFieldBuilder::BuildSignedClosestPointField(
-                parser_->getMeshFileName().c_str(), 
-                solverParameters_._sdfResolution, 
-                solverParameters_._sdfFilePrefix.c_str()
-                )
-            ); 
-    fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
-
-    if (solverParameters_._cellSize >= 1E-14) 
-    {
-        cellSize = solverParameters_._cellSize; 
-        const REAL fieldLength = cellSize*(REAL)solverParameters_._gridResolution; 
-        const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
-        const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
-        solverBBox = BoundingBox(fieldMin, fieldMax); 
-
-    }
-    else 
-    {
-        //distanceField_.reset(
-        //        DistanceFieldBuilder::BuildSignedClosestPointField(
-        //            parser_->getMeshFileName().c_str(), 
-        //            solverParameters_._sdfResolution, 
-        //            solverParameters_._sdfFilePrefix.c_str()
-        //            )
-        //        ); 
-        //fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
-        solverBBox  = BoundingBox(distanceField_->bmin(),distanceField_->bmax()); 
-        solverBBox *= solverParameters_._gridScale; 
-
-        cellSize = solverBBox.minlength()/(REAL)solverParameters_._gridResolution; 
-    }
-
-    if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
-
-    //fieldBBox *= solverParameters_._gridScale; 
-
-
+    PML_WaveSolver solver(*settings, objects_); 
+    BoundingBox solverBBox = solver.GetGrid().PressureBoundingBox(); 
     minBound_ = Eigen::Vector3d(solverBBox.minBound().x, solverBBox.minBound().y, solverBBox.minBound().z);
-    maxBound_ = minBound_ + Eigen::Vector3d::Ones()*cellSize*(double)solverParameters_._gridResolution; 
+    maxBound_ = minBound_ + Eigen::Vector3d::Ones()*settings->cellSize*(double)settings->cellDivisions; 
+    cellCount_[0] = settings->cellDivisions; 
+    cellCount_[1] = settings->cellDivisions; 
+    cellCount_[2] = settings->cellDivisions; 
+    if (objects_->N()>0) 
+    {
+        distanceField_ = objects_->GetPtr(0)->GetSignedDistanceFieldPtr(); 
+        mesh_ = objects_->GetPtr(0)->GetMeshPtr(); 
+    }
+
+
+
+
+    // TODO TODO 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    std::cout << "config file : " << configFile << std::endl;
+//
+//    // parse config file to get geometry parameters 
+//    parser_.reset(Parser::buildParser( configFile )); 
+//    if ( !parser_ ) throw std::runtime_error("**ERROR** Could not build parser from "+configFile);
+//
+//    mesh_.reset(parser_->getMesh("impulse_response")); 
+//    if ( !mesh_ ) throw std::runtime_error("**ERROR** Could not build mesh");
+//
+//    solverParameters_ = parser_->getImpulseResponseParms();
+//
+//    double cellSize;
+//    BoundingBox fieldBBox; 
+//    BoundingBox solverBBox; 
+//    cellCount_[0] = solverParameters_._gridResolution; 
+//    cellCount_[1] = solverParameters_._gridResolution; 
+//    cellCount_[2] = solverParameters_._gridResolution; 
+//
+//    distanceField_.reset(
+//            DistanceFieldBuilder::BuildSignedClosestPointField(
+//                parser_->getMeshFileName().c_str(), 
+//                solverParameters_._sdfResolution, 
+//                solverParameters_._sdfFilePrefix.c_str()
+//                )
+//            ); 
+//    fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
+//
+//    if (solverParameters_._cellSize >= 1E-14) 
+//    {
+//        cellSize = solverParameters_._cellSize; 
+//        const REAL fieldLength = cellSize*(REAL)solverParameters_._gridResolution; 
+//        const Vec3d fieldMin(-fieldLength/2.0, -fieldLength/2.0, -fieldLength/2.0); 
+//        const Vec3d fieldMax(+fieldLength/2.0, +fieldLength/2.0, +fieldLength/2.0); 
+//        solverBBox = BoundingBox(fieldMin, fieldMax); 
+//
+//    }
+//    else 
+//    {
+//        //distanceField_.reset(
+//        //        DistanceFieldBuilder::BuildSignedClosestPointField(
+//        //            parser_->getMeshFileName().c_str(), 
+//        //            solverParameters_._sdfResolution, 
+//        //            solverParameters_._sdfFilePrefix.c_str()
+//        //            )
+//        //        ); 
+//        //fieldBBox = BoundingBox(distanceField_->bmin(), distanceField_->bmax()); 
+//        solverBBox  = BoundingBox(distanceField_->bmin(),distanceField_->bmax()); 
+//        solverBBox *= solverParameters_._gridScale; 
+//
+//        cellSize = solverBBox.minlength()/(REAL)solverParameters_._gridResolution; 
+//    }
+//
+//    if (!distanceField_) throw std::runtime_error("**ERROR** Could not construct distance field"); 
+//
+//    //fieldBBox *= solverParameters_._gridScale; 
+//
+//
+//    minBound_ = Eigen::Vector3d(solverBBox.minBound().x, solverBBox.minBound().y, solverBBox.minBound().z);
+//    maxBound_ = minBound_ + Eigen::Vector3d::Ones()*cellSize*(double)solverParameters_._gridResolution; 
 
     RecomputeCachedField(); 
 
@@ -121,7 +158,7 @@ void UniformGridWithObject::ClassifyCells()
             for (int ii=1; ii<cellCount[0]-1; ii++) 
             {
                 GetCellCenterPosition(ii,jj,kk,position.x,position.y,position.z); 
-                if (distanceField_->distance(position) <= distanceTolerance_) 
+                if (objects_->LowestObjectDistance(position) <= distanceTolerance_)
                 {
                     cellTypes_[FlattenIndicies(ii,jj,kk)] |= IS_SOLID; 
 
@@ -237,23 +274,32 @@ bool UniformGridWithObject::FlattenIndiciesWithReflection(const int &ii, const i
 
     Vector3d position; 
     Vector3d closestPoint;
+    Vector3d normal;
 
     GetCellCenterPosition(ii,jj,kk,position[0],position[1],position[2]); 
 
     //std::cout << "inside object, position: " << position << std::endl;
 
-    distanceField_->closestPoint(position, closestPoint);  // FIXME can I assume this point always lies on the cut? 
-    Vector3d normal = distanceField_->gradient(position); 
+    assert(objects_->N()>0); 
+    FDTD_RigidObject &object = objects_->Get(0); 
+    double distance = object.DistanceToMesh(position); 
+    object.NormalToMesh(position, normal); 
+    normal.normalize(); 
+    closestPoint = position - normal*distance; 
+    //distanceField_->closestPoint(position, closestPoint);  // FIXME can I assume this point always lies on the cut? 
+    //Vector3d normal = distanceField_->gradient(position); 
 
     Vector3d reflectedPosition;
     Geometry::Reflection(position, normal, closestPoint, reflectedPosition); 
 
     // reflection until get out of the boundary
     int iteration = 0; 
-    while(distanceField_->distance(reflectedPosition) <= distanceTolerance_ && iteration++ < maxIteration)
+    while(object.DistanceToMesh(reflectedPosition) <= distanceTolerance_ && iteration++ < maxIteration)
     {
-        distanceField_->closestPoint(reflectedPosition, closestPoint); 
-        normal = distanceField_->gradient(reflectedPosition); 
+        distance = object.DistanceToMesh(reflectedPosition); 
+        object.NormalToMesh(reflectedPosition, normal); 
+        normal.normalize(); 
+        closestPoint = position - normal*distance; 
         Geometry::Reflection(reflectedPosition, normal, closestPoint, reflectedPosition);  // direct overwrite
     }
 
@@ -264,7 +310,7 @@ bool UniformGridWithObject::FlattenIndiciesWithReflection(const int &ii, const i
 
    
     // cannot find it then fallback to the cell index.
-    if (distanceField_->distance(reflectedPosition)<=distanceTolerance_)
+    if (object.DistanceToMesh(reflectedPosition)<=distanceTolerance_)
     {
         nearestCellIndex = indexBuffer; 
         return false; 
@@ -379,10 +425,10 @@ void UniformGridWithObject::ComputeFiniteDifferenceStencils()
     int N_success = 0; 
     int count = 0; 
 
-    #pragma omp parallel for 
+#pragma omp parallel for 
     for (int kk=0; kk<cellCount_[2]; kk++) 
     {
-        #pragma omp critical
+#pragma omp critical
         {
             std::cout << " progress : " << count << "/" << cellCount_[2]-1 << "\r" << std::flush;
             count ++; 
@@ -415,7 +461,7 @@ void UniformGridWithObject::ComputeFiniteDifferenceStencils()
                     stencilIndex = cellIndex; 
                 }
 
-                #pragma omp critical 
+#pragma omp critical 
                 finiteDifferenceStencils_[cellIndex] = stencilIndex; 
             }
         }
@@ -560,13 +606,15 @@ void UniformGridWithObject::Test_Reflection()
     Eigen::MatrixXd allFailurePositions(N_failure,3); 
 
     Vector3d fail; 
+    assert(objects_->N()>0); 
+    FDTD_RigidObject &object = objects_->Get(0); 
     for (int ii=0; ii<N_failure; ii++) 
     {
 
         fail.x=failureReflections[ii](0); 
         fail.y=failureReflections[ii](1); 
         fail.z=failureReflections[ii](2); 
-        std::cout << "failure point " << ii << " has distance : " << distanceField_->distance(fail) << std::endl;
+        std::cout << "failure point " << ii << " has distance : " << object.DistanceToMesh(fail) << std::endl;
         allFailurePositions.row(ii) = failureReflections[ii]; 
     }
 
@@ -616,6 +664,9 @@ void UniformGridWithObject::WriteCellTypes(const std::string &filename, const in
 
     std::shared_ptr<Eigen::MatrixXd> distanceField(new Eigen::MatrixXd(N_cells(),1)); 
 
+    assert(objects_->N()>0); 
+    FDTD_RigidObject &object = objects_->Get(0); 
+
     Eigen::Vector3d positionBuffer; 
     int indBuffer=0; 
     for (int kk=0; kk<cellCount_[2]; kk++) 
@@ -638,9 +689,7 @@ void UniformGridWithObject::WriteCellTypes(const std::string &filename, const in
                 else if ((cellTypes_[indBuffer] & Z_SOLID_ON_RIGHT)==0 && (cellTypes_[indBuffer] & IS_INTERFACE)) (*zInterface)(indBuffer,0) =+1.0; 
 
 
-                (*distanceField)(indBuffer,0) = distanceField_->distance(Vector3d(positionBuffer(0),positionBuffer(1),positionBuffer(2))); 
-
-
+                (*distanceField)(indBuffer,0) = object.DistanceToMesh(Vector3d(positionBuffer(0),positionBuffer(1),positionBuffer(2))); 
             }
 
     InsertCellCenteredData("Solid", isSolid); 

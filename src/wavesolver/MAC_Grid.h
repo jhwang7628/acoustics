@@ -188,25 +188,26 @@ class MAC_Grid
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 
         inline void SetGhostCellBoundary(const bool &isOn) { _useGhostCellBoundary = isOn; }
-        inline int                   N() const { return _N; }
-        inline int                   numPressureCells()     const { return _pressureField.numCells(); }
-        inline int                   numVelocityCellsX()    const { return _velocityField[ 0 ].numCells(); }
-        inline int                   numVelocityCellsY()    const { return _velocityField[ 1 ].numCells(); }
-        inline int                   numVelocityCellsZ()    const { return _velocityField[ 2 ].numCells(); }
-        inline REAL                  fieldDiameter()        const { return _pressureField.bbox().maxlength(); }
-        inline const ScalarField    &pressureField()        const { return _pressureField; }
-        inline Vector3d              pressureFieldPosition(const Tuple3i &index)    const { return _pressureField.cellPosition( index ); }
-        inline Vector3d              pressureFieldPosition(int index)               const { return _pressureField.cellPosition( index ); }
-        inline int                   pressureFieldVertexIndex(const Tuple3i &index) const { return _pressureField.cellIndex( index ); }
-        inline Tuple3i               pressureFieldVertexIndex( int index )          const { return _pressureField.cellIndex( index ); }
-        inline const Tuple3i        &pressureFieldDivisions()                       const { return _pressureField.cellDivisions(); }
-        inline const IntArray       &ghostCells()       const { return _ghostCells; }
-        inline const vector<const TriMesh *> &meshes()  const { return _boundaryMeshes; }
+        inline int N() const { return _N; }
+        inline int numPressureCells() const { return _pressureField.numCells(); }
+        inline int numVelocityCellsX() const { return _velocityField[ 0 ].numCells(); }
+        inline int numVelocityCellsY() const { return _velocityField[ 1 ].numCells(); }
+        inline int numVelocityCellsZ() const { return _velocityField[ 2 ].numCells(); }
+        inline REAL fieldDiameter() const { return _pressureField.bbox().maxlength(); }
+        inline BoundingBox PressureBoundingBox() const {return _pressureField.bbox();}
+        inline const ScalarField &pressureField() const { return _pressureField; }
+        inline const ScalarField &velocityField(const int &ind) const { return _velocityField[ind]; }
+        inline Vector3d pressureFieldPosition(const Tuple3i &index) const { return _pressureField.cellPosition( index ); }
+        inline Vector3d pressureFieldPosition(int index) const { return _pressureField.cellPosition( index ); }
+        inline int pressureFieldVertexIndex(const Tuple3i &index) const { return _pressureField.cellIndex( index ); }
+        inline Tuple3i pressureFieldVertexIndex( int index ) const { return _pressureField.cellIndex( index ); }
+        inline const Tuple3i &pressureFieldDivisions() const { return _pressureField.cellDivisions(); }
+        inline const IntArray &ghostCells() const { return _ghostCells; }
+        inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void visualizeClassifiedCells(); 
-
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
@@ -280,6 +281,8 @@ class MAC_Grid
         // fill the Vandermonde matrix 
         inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
+
+    friend std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid); 
 };
 
 #endif

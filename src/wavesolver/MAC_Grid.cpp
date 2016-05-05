@@ -60,12 +60,11 @@ MAC_Grid::MAC_Grid(const BoundingBox &bbox, const PML_WaveSolver_Settings &setti
     : _pressureField(bbox,settings.cellSize), 
       _ghostCellsInverseComputed(false), 
       _N(1), // no longer supports multiple fields, 
-      _PML_absorptionWidth(settings.PML_width), 
-      _PML_absorptionStrength(settings.PML_strength), 
       _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
       _useGhostCellBoundary(settings.useGhostCell),
       _objects(objects)
 {
+    setPMLBoundaryWidth(settings.PML_width, settings.PML_strength);
     Reinitialize_MAC_Grid(bbox,settings.cellSize); 
 }
 
@@ -446,6 +445,7 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
             for (int i=0; i<_N; i++)
                 p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
 
+
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
             if (evaluateExternalSource)
@@ -458,6 +458,8 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 
 void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
 {
+//    SimpleTimer timer[4];
+
     const size_t numberBulkCell = _bulkCells.size();
     //const bool evaluateExternalSource = (sourceEvaluator != nullptr);
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
@@ -470,14 +472,15 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
     #endif
     for (size_t bulk_cell_idx = 0; bulk_cell_idx < numberBulkCell; ++bulk_cell_idx)
     {
+//timer[0].Start(); 
         const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
         const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+//timer[0].Pause(); 
         for (int dimension=0; dimension<3; ++dimension) 
         {
             const REAL      absorptionCoefficient = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
             const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
             const MATRIX   &v = vArray[dimension];
-
             if (inPML) 
             {
                 const REAL      directionalCoefficient  = PML_directionalCoefficient( absorptionCoefficient, timeStep );
@@ -505,12 +508,15 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
             }
             else  // can collapse a lot of the terms 
             {
+//timer[1].Start(); 
                 // directionCoefficient = 1/dt
                 // updateCoefficient    = 1
                 // divergenceCoefficient= -rho c^2 *dt (cached)
                 Tuple3i   cell_indices = _pressureField.cellIndex(cell_idx);
                 int       neighbour_idx;
+//timer[1].Pause(); 
 
+//timer[2].Start(); 
                 cell_indices[dimension] += 1;
                 neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
@@ -522,16 +528,25 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 
                 for (int i=0; i<_N; i++)
                     p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv[dimension];
+//timer[2].Pause(); 
 
+//timer[3].Start(); 
                 // evaluate external sources only happens not in PML
                 // Liu Eq (16) f6x term
                 if (evaluateExternalSource)
                     p(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+//timer[3].Pause(); 
                     //for (int i = 0; i<_N; i++) 
                     //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
             }
         }
     }
+
+
+//std::cout << "  - allocation: " << timer[0].Duration() << std::endl; 
+//std::cout << "  - cell indices lookup: " << timer[1].Duration() << std::endl; 
+//std::cout << "  - pressure field adding: " << timer[2].Duration() << std::endl; 
+//std::cout << "  - external source iteration: " << timer[3].Duration() << std::endl; 
 }
 
 // TODO can optimize the sparse linear system setup
@@ -1572,6 +1587,36 @@ void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldN
     std::cout << std::flush; 
 }
 
+std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
+{
+    const Vector3d pressure_minBound = grid.pressureField().minBound(); 
+    const Vector3d pressure_maxBound = grid.pressureField().maxBound(); 
+    const Vector3d velocity_x_minBound = grid.velocityField(0).minBound(); 
+    const Vector3d velocity_x_maxBound = grid.velocityField(0).maxBound(); 
+    const Vector3d velocity_y_minBound = grid.velocityField(1).minBound(); 
+    const Vector3d velocity_y_maxBound = grid.velocityField(1).maxBound(); 
+    const Vector3d velocity_z_minBound = grid.velocityField(2).minBound(); 
+    const Vector3d velocity_z_maxBound = grid.velocityField(2).maxBound(); 
+    
+    os << "--------------------------------------------------------------------------------\n" 
+       << "Class MAC_Grid\n" 
+       << "--------------------------------------------------------------------------------\n"
+       << " pressure field min     : " << pressure_minBound.x << ", " << pressure_minBound.y << ", " << pressure_minBound.z << "\n"
+       << " pressure field max     : " << pressure_maxBound.x << ", " << pressure_maxBound.y << ", " << pressure_maxBound.z << "\n"
+       << " velocity field min x   : " << velocity_x_minBound.x << ", " << velocity_x_minBound.y << ", " << velocity_x_minBound.z << "\n"
+       << " velocity field max x   : " << velocity_x_maxBound.x << ", " << velocity_x_maxBound.y << ", " << velocity_x_maxBound.z << "\n"
+       << " velocity field min y   : " << velocity_y_minBound.x << ", " << velocity_y_minBound.y << ", " << velocity_y_minBound.z << "\n"
+       << " velocity field max y   : " << velocity_y_maxBound.x << ", " << velocity_y_maxBound.y << ", " << velocity_y_maxBound.z << "\n"
+       << " velocity field min z   : " << velocity_z_minBound.x << ", " << velocity_z_minBound.y << ", " << velocity_z_minBound.z << "\n"
+       << " velocity field max z   : " << velocity_z_maxBound.x << ", " << velocity_z_maxBound.y << ", " << velocity_z_maxBound.z << "\n"
+       << " number pressure cells  : " << grid.numPressureCells() << "\n"
+       << " number velocity cells x: " << grid.numVelocityCellsX() << "\n"
+       << " number velocity cells y: " << grid.numVelocityCellsY() << "\n"
+       << " number velocity cells z: " << grid.numVelocityCellsZ() << "\n"
+       << "--------------------------------------------------------------------------------" 
+       << std::flush; 
+    return os; 
+}
 
 
 

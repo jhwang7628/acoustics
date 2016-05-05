@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
+#include <utils/IO/IO.h>
 
 //##############################################################################
 //##############################################################################
@@ -20,17 +21,17 @@ void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
     // TODO debug: for now, attach a harmonic vibrational to all objects in the scene
-    const int N_objects = _sceneObjects->N();
-    const REAL omega = 2.0*M_PI*500.0;
-    const REAL phase = 0.0;
-    for (int index=0; index<N_objects; ++index)
-    {
-        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        //VibrationalSourcePtr sourcePtr = std::make_unique<HarmonicVibrationalSource>(objectPtr, omega, phase); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
-        //objectPtr->TestObjectBoundaryCondition();
-    }
+    //const int N_objects = _sceneObjects->N();
+//    const REAL omega = 2.0*M_PI*500.0;
+//    const REAL phase = 0.0;
+//    for (int index=0; index<N_objects; ++index)
+//    {
+//        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+//        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+//        //VibrationalSourcePtr sourcePtr = std::make_unique<HarmonicVibrationalSource>(objectPtr, omega, phase); 
+//        objectPtr->AddVibrationalSource(sourcePtr); 
+//        //objectPtr->TestObjectBoundaryCondition();
+//    }
     // TODO {
     // parser-based 
     // } TODO 
@@ -43,6 +44,79 @@ _SetPressureSources()
 {
     std::vector<PressureSourcePtr> &scenePressureSources = _sceneObjects->GetPressureSources(); 
     _parser->GetPressureSources(_acousticSolverSettings->soundSpeed, scenePressureSources); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+_SaveSolverSettings(const std::string &filename)
+{
+    char buffer[512]; 
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    std::ofstream of(buffer); 
+    of << *_acousticSolver << std::endl;
+    of << _acousticSolver->GetGrid() << std::endl;
+    _sceneObjects->PrintAllSources(of);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+_SavePressureCellPositions(const std::string &filename)
+{
+    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const int N_cells = _acousticSolver->numCells();
+    Eigen::MatrixXd vertexPosition(N_cells,3); 
+    int count = 0;
+    Vector3d vPosition; 
+    for (int kk=0; kk<N_cellsEachDimension; kk++)
+        for (int jj=0; jj<N_cellsEachDimension; jj++)
+            for (int ii=0; ii<N_cellsEachDimension; ii++)
+            {
+                Tuple3i  vIndex(ii, jj, kk);
+                vPosition = _acousticSolver->fieldPosition(vIndex);
+                vertexPosition(count, 0) = vPosition[0];
+                vertexPosition(count, 1) = vPosition[1];
+                vertexPosition(count, 2) = vPosition[2];
+                count ++;
+            }
+
+    char buffer[512];
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    IO::writeMatrixXd(vertexPosition, buffer, IO::BINARY);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+_SavePressureTimestep(const std::string &filename)
+{
+    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const int N_cells = _acousticSolver->numCells();
+    int count = 0;
+    std::shared_ptr<Eigen::MatrixXd> vertexPressure(new Eigen::MatrixXd(N_cells, 1)); 
+    for (int kk=0; kk<N_cellsEachDimension; kk++)
+        for (int jj=0; jj<N_cellsEachDimension; jj++)
+            for (int ii=0; ii<N_cellsEachDimension; ii++)
+            {
+                Tuple3i  vIndex( ii, jj, kk );
+                VECTOR vPressure;
+                _acousticSolver->vertexPressure( vIndex, vPressure );
+                (*vertexPressure)(count, 0) = vPressure[0];
+                count ++; 
+            }
+
+    char buffer[512];
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    IO::writeMatrixXd(*vertexPressure, buffer, IO::BINARY);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+_SaveProbeData(const std::string &filename)
+{
+    // TODO
 }
 
 //##############################################################################
@@ -65,13 +139,23 @@ Run()
 {
     bool continueStepping = true; 
     int stepIndex = 0; 
+    SaveSolverResult();
+
     while(continueStepping) 
     {
         continueStepping = _acousticSolver->stepSystem();
         if (stepIndex % _acousticSolverSettings->timeSavePerStep == 0)
         {
-            SaveSolverResult(); 
+            const int timeIndex = stepIndex/_acousticSolverSettings->timeSavePerStep; 
+            std::ostringstream oss; 
+            oss << std::setw(6) << std::setfill('0'); 
+            oss << timeIndex; 
+            const std::string filename("pressure_"+oss.str()+".dat"); 
+            _SavePressureTimestep(filename); 
         }
+#ifdef DEBUG
+        _acousticSolver->PrintAllFieldExtremum();
+#endif
         stepIndex++;
     }
 }
@@ -81,7 +165,8 @@ Run()
 void FDTD_AcousticSimulator::
 SaveSolverResult()
 {
-    std::cout << "save routine\n"; 
+    _SaveSolverSettings("solver_settings.txt");
+    _SavePressureCellPositions("vertex_position.dat"); 
 }
 
 

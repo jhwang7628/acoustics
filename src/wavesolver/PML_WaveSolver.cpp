@@ -386,5 +386,26 @@ void PML_WaveSolver::PrintAllFieldExtremum()
     _grid.PrintFieldExtremum(_v[2],"_v[2]"); 
 }
 
+std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
+{
+    const REAL CFL = solver._waveSpeed*solver._timeStep/solver._cellSize; 
+    os << "--------------------------------------------------------------------------------\n" 
+       << "Class PML_WaveSolver\n" 
+       << "--------------------------------------------------------------------------------\n"
+       << " wave speed      : " << solver._waveSpeed << "\n"
+       << " density         : " << solver._density << "\n"
+       << " cell size       : " << solver._cellSize << "\n"
+       << " save per steps  : " << solver._subSteps << "\n"
+       << " start time(TEMP): " << 0.0 << "\n"
+       << " stop time       : " << solver._endTime << "\n" 
+       << " time step size  : " << solver._timeStep << "\n"
+       << " CFL             : " << CFL << "\n"
+       << " cornell box boundary condition  : " << solver._cornellBoxBoundaryCondition << "\n"
+       << " ghost cell boundary condition   : " << solver._useGhostCellBoundary << "\n"
+       << "--------------------------------------------------------------------------------" 
+       << std::flush; 
+    return os; 
+}
+
 
 

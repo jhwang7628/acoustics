@@ -51,6 +51,13 @@ class Point3 : public Tuple3<T>
         template <typename FromT>
         Point3(const Tuple3<FromT>& src):Tuple3<T>(src) {}
 
+        inline void Set(const T &rhs_x, const T &rhs_y, const T &rhs_z) 
+        {
+            x = rhs_x;
+            y = rhs_y;
+            z = rhs_z;
+        }
+
         Point3<T>& operator = (const Tuple3<T>& rhs) 
         {
             x = rhs.x;

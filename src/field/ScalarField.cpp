@@ -50,11 +50,10 @@ ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
 // Builds a scalar field starting at the given minimum bound,
 // and with the specified number of cell divisions and cell size
 //////////////////////////////////////////////////////////////////////
-ScalarField::ScalarField( const Vector3d &minBound, const Tuple3i &divisions,
-        REAL cellSize )
-: _divisions( divisions ),
-    _cellSize( cellSize ),
-    _fieldValues( NULL )
+ScalarField::ScalarField( const Vector3d &minBound, const Tuple3i &divisions, REAL cellSize )
+    : _divisions( divisions ),
+      _cellSize( cellSize ),
+      _fieldValues( NULL )
 {
     Vector3d                 maxBound;
 

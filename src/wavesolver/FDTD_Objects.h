@@ -32,6 +32,7 @@ class FDTD_Objects
         // to numerical errors), return the first in the vector
         int OccupyByObject(const Vector3d &positionWorld); 
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
+        REAL LowestObjectDistance(const Vector3d &positionWorld); 
         void ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal); 
         void AddVibrationalSourceToObject(const int &objectIndex, VibrationalSourcePtr &sourcePtr);
         void AddPressureSource(PressureSourcePtr &sourcePtr); 
@@ -41,6 +42,7 @@ class FDTD_Objects
 
         //// debug methods ////
         void TestObjectDistanceField(const size_t &ind); 
+        void PrintAllSources(std::ostream &os); 
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
 };

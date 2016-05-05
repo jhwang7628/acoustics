@@ -19,13 +19,10 @@ class GaussianPressureSource : public PressureSource
         // width of the impulse response source in space and time 
         REAL        _widthSpace;  // optional, default to sound_speed*width_tim
         REAL        _widthTime; 
-
         // offset of the source release. 
         REAL        _offsetTime;  // optional, default to 0.0
-
         // extra normalization constant for this source 
         REAL        _normalizeConstant; //optional, default to 1/(sqrt(2pi)*width_space)^3, so that integral of gaussian is normalized to 1
-
         // if true then flip sign of gaussian
         bool        _flipSign; // optional, default to false
 
@@ -38,7 +35,7 @@ class GaussianPressureSource : public PressureSource
               _offsetTime(offsetTime), 
               _normalizeConstant(normalizeConstant)
         {
-            _bboxWorld = BoundingBox(sourcePosition, sourcePosition, Vector3d(0,0,0), sourcePosition);
+            _bboxWorld = BoundingBox(sourcePosition-widthSpace*GAUSSIAN_CHECK_BOUND, sourcePosition+widthSpace*GAUSSIAN_CHECK_BOUND);
         }
              
         inline const Vector3d &SourcePosition() const {return _bboxWorld.centroid;} 

@@ -38,6 +38,13 @@ class FDTD_MovableObject
                   centroid(i_centroid)
             {
             }
+            BoundingBox(const Vector3d &i_minBound, const Vector3d &i_maxBound) 
+                : minBound(i_minBound), 
+                  maxBound(i_maxBound), 
+                  dimension(Vector3d(maxBound.x-minBound.x, maxBound.y-minBound.z, maxBound.z-minBound.z)), 
+                  centroid(Vector3d((maxBound.x+minBound.x)/2.0, (maxBound.y+minBound.y)/2.0, (maxBound.z+minBound.z)/2.0)) 
+            {
+            }
 
             inline bool Inside(const double &x, const double &y, const double &z)
             {
@@ -78,6 +85,7 @@ class FDTD_MovableObject
         }
 
         virtual void UpdateBoundingBox()=0; 
+        virtual void ApplyTranslation(const double &x, const double &y, const double &z);
 
         //// debug methods //// 
         void PrintBoundingBox(); 

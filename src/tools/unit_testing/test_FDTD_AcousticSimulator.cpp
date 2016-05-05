@@ -86,7 +86,7 @@ void TestAcousticSimulatorInitialize()
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
     simulator.Run();
-    simulator.TestAllComponents();
+    //simulator.TestAllComponents();
 }
 
 //##############################################################################

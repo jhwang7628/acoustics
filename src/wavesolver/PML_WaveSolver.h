@@ -149,22 +149,23 @@ class PML_WaveSolver : public Solver
         virtual ~PML_WaveSolver(){};
 
 
-        inline bool GetCornellBoxBoundaryCondition()                { return _cornellBoxBoundaryCondition; } 
-        inline bool GetGhostCellBoundary()                          { return _useGhostCellBoundary; } 
+        inline bool GetCornellBoxBoundaryCondition() { return _cornellBoxBoundaryCondition; } 
+        inline bool GetGhostCellBoundary() { return _useGhostCellBoundary; } 
+        inline MAC_Grid &GetGrid() {return _grid;}
         inline void setPMLBoundaryWidth( REAL width, REAL strength ){ _grid.setPMLBoundaryWidth( width, strength ); }
-        inline void setZSlice( int slice )                          { _zSlice = slice; }
+        inline void setZSlice( int slice ) { _zSlice = slice; }
         inline void SetExternalSource(ExternalSourceEvaluator *sourceEvaluator){ _sourceEvaluator = sourceEvaluator; } 
 
-        virtual inline       int            numCells()                          const { return _grid.numPressureCells(); }
-        virtual inline       int            N()                                 const { return _N; }
-        virtual inline       REAL           fieldDiameter()                     const { return _grid.fieldDiameter(); }
-        virtual inline       REAL           currentSimTime()                    const { return _timeStep * (REAL)_timeIndex; }
-        virtual inline       Vector3d       fieldPosition(const Tuple3i &index) const { return _grid.pressureFieldPosition( index ); }
-        virtual inline       Vector3d       fieldPosition(int index)            const { return _grid.pressureFieldPosition( index ); }
-        virtual inline       Vector3d       sceneCenter()                       const { return _grid.pressureField().bbox().center(); }
-        virtual inline const Tuple3i       &fieldDivisions()                    const { return _grid.pressureFieldDivisions(); }
-        virtual inline const Vector3Array  *listeningPositions()                const { return _listeningPositions; }
-        virtual inline const vector<const TriMesh *>   &meshes()                const { return _grid.meshes(); }
+        virtual inline int numCells() const { return _grid.numPressureCells(); }
+        virtual inline int N() const { return _N; }
+        virtual inline REAL fieldDiameter() const { return _grid.fieldDiameter(); }
+        virtual inline REAL currentSimTime() const { return _timeStep * (REAL)_timeIndex; }
+        virtual inline Vector3d fieldPosition(const Tuple3i &index) const { return _grid.pressureFieldPosition( index ); }
+        virtual inline Vector3d fieldPosition(int index) const { return _grid.pressureFieldPosition( index ); }
+        virtual inline Vector3d sceneCenter() const { return _grid.pressureField().bbox().center(); }
+        virtual inline const Tuple3i &fieldDivisions() const { return _grid.pressureFieldDivisions(); }
+        virtual inline const Vector3Array *listeningPositions() const { return _listeningPositions; }
+        virtual inline const vector<const TriMesh *> &meshes() const { return _grid.meshes(); }
 
         void SetCornellBoxBoundaryCondition(const bool &isOn);
         void SetGhostCellBoundary(const bool &isOn);
@@ -201,6 +202,7 @@ class PML_WaveSolver : public Solver
     private:
         void stepLeapfrog();
 
+    friend std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver); 
 };
 
 #endif

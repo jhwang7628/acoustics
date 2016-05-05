@@ -13,12 +13,14 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${FIELD_SRC}                      
         ${UTILS_SRC}                      ${PARSER_SRC}
         ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
+        ${WAVESOLVER_SRC}
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${LEASTSQUARESURFACE_SOURCES}
         convert_dat_vtk.cpp) 
 
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
-        ${LEASTSQUARESURFACE_SOURCES}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  

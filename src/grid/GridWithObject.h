@@ -5,7 +5,10 @@
 #include <iostream> 
 
 #include "Grid.h"
-#include "parser/Parser.h"
+#include <parser/Parser.h>
+#include <parser/ImpulseResponseParser.h>
+#include <wavesolver/PML_WaveSolver_Settings.h>
+#include <wavesolver/FDTD_Objects.h>
 #include <distancefield/closestPointField.h> 
 #include <distancefield/FieldBuilder.h>
 
@@ -41,11 +44,12 @@ class UniformGridWithObject : public UniformGrid
 
     protected: 
         std::string                             meshName_; 
+        std::shared_ptr<FDTD_Objects>           objects_; 
+        // active managed object
         std::shared_ptr<ClosestPointField>      distanceField_; 
         std::shared_ptr<TriangleMesh<double>>   mesh_; 
-        std::shared_ptr<Parser>                 parser_; 
-        Parser::ImpulseResponseParms            solverParameters_; 
-
+        std::shared_ptr<ImpulseResponseParser>  parser_; 
+        //Parser::ImpulseResponseParms            solverParameters_; 
 
         std::vector<CellType>                   cellTypes_;  
         std::vector<int>                        finiteDifferenceStencils_;  // see readme for routine ComputeInterfaceStencils
@@ -67,16 +71,14 @@ class UniformGridWithObject : public UniformGrid
         // return a valid index points to cell not enclosed by the object
         bool FlattenIndiciesWithReflection(const int &ii, const int &jj, const int &kk, int &nearestCell, Eigen::Vector3d &reflectedPositionOut) const;
 
-
         int FindKNearestFluidCells(const int &K, const Eigen::Vector3d &centerPosition, std::vector<int> &nearestNeighbors) const;  
 
         // the interfacial cells is needed for finite-difference, however its
         // value is undefined. so we need to do an even extension on the
         // interfacial cells to figure out what value to fetch. 
-        //
-        // this is used for nearest neighbor search
         void ComputeFiniteDifferenceStencils(); 
 
+        // this is used for nearest neighbor search
         void WriteCellTypes(const std::string &filename, const int &verbosity); 
 
         void InterfacialGradientSmoothing();

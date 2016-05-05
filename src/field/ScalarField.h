@@ -127,6 +127,8 @@ class ScalarField {
             return isBoundaryCell( cellIndex( index ) );
         }
 
+        inline Vector3d minBound() const {return cellPosition(0);}
+        inline Vector3d maxBound() const {return cellPosition(numCells()-1);}
 
     public:
         static const int         NUM_NEIGHBOURS;

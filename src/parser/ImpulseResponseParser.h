@@ -70,9 +70,9 @@ class ImpulseResponseParser : public Parser
 
         inline void SetDocument(const TiXmlDocument &document){this->_document = document;}
         inline TiXmlDocument &GetDocument(){return _document;}
-        void GetObjects(std::shared_ptr<FDTD_Objects> objects); 
+        void GetObjects(std::shared_ptr<FDTD_Objects> &objects); 
         //void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
-        void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings); 
+        void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings); 
         void GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources); 
 }; 
 

@@ -37,10 +37,13 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
 // parse meshes from xml into objects 
 //##############################################################################
 void ImpulseResponseParser::
-GetObjects(std::shared_ptr<FDTD_Objects> objects) 
+GetObjects(std::shared_ptr<FDTD_Objects> &objects) 
 {
     if (!objects) 
-        throw std::runtime_error("**ERROR** passed in pointer null for GetObjects"); 
+    {
+        std::cerr << "**WARNING** passed in pointer null for GetObjects. Initialize new object.\n"; 
+        objects = std::make_shared<FDTD_Objects>();
+    }
 
     // get the root node
     TiXmlDocument *document2 = &_document; 
@@ -62,12 +65,14 @@ GetObjects(std::shared_ptr<FDTD_Objects> objects)
         const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
         const int sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
         const REAL scale = queryOptionalReal(meshNode, "scale", 1.0); 
+        const REAL initialPosition_x = queryOptionalReal(meshNode, "initial_position_x", 0.0); 
+        const REAL initialPosition_y = queryOptionalReal(meshNode, "initial_position_y", 0.0); 
+        const REAL initialPosition_z = queryOptionalReal(meshNode, "initial_position_z", 0.0); 
 
         RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->Initialize(); 
-
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
-
         meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());
     }
 }
@@ -76,10 +81,13 @@ GetObjects(std::shared_ptr<FDTD_Objects> objects)
 // parse solver settings from xml into struct
 //##############################################################################
 void ImpulseResponseParser::
-GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> settings) 
+GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings) 
 {
     if (!settings) 
-        throw std::runtime_error("**ERROR** pointer null for GetSolverSettings"); 
+    {
+        std::cerr << "**WARNING** pointer null for GetSolverSettings. Initialize new object.\n"; 
+        settings = std::make_shared<PML_WaveSolver_Settings>(); 
+    }
     
     // get the element nodes required
     TiXmlElement *root, *solverNode;
