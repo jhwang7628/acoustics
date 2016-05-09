@@ -89,6 +89,7 @@ class FDTD_MovableObject
 
         //// debug methods //// 
         void PrintBoundingBox(); 
+        void PrintTransformation();
 
 };
 

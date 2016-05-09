@@ -158,7 +158,8 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     distanceTravelled = -1.0 * DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
-    const bool reflectSuccess = (_signedDistanceField->distance(reflectedPoint) > DISTANCE_TOLERANCE); 
+    const REAL newDistance = DistanceToMesh(reflectedPoint);
+    const bool reflectSuccess = (newDistance > -DISTANCE_TOLERANCE); 
 
     if (true) 
     {
@@ -173,7 +174,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
                       << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
         }
         if (!reflectSuccess)
-            std::cerr << "**ERROR** reflected point still inside object" << std::endl; 
+            std::cerr << "**ERROR** reflected point " << originalPoint << "->" << reflectedPoint << " still inside object : " << newDistance << std::endl; 
     }
 
     return reflectSuccess;
@@ -212,5 +213,4 @@ TestObjectBoundaryCondition()
         std::cout << "result at time " << (double)ii*dt << " is " << result << std::endl;
     }
 }
-
 

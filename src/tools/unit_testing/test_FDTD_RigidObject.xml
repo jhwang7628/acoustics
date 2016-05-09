@@ -6,20 +6,23 @@
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
                 id="small_ball_1" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
-                fieldresolution="100"
+                fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
-                initial_position_y="0.25"
+                initial_position_y="0.05"
+                initial_position_z="0.0"
+                />
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
+                id="small_ball_2" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="-0.05"
                 initial_position_z="0.0"
                 />
             <!--
-            <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_y0p3.obj" 
-                id="small_ball_2" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_y0p3.obj.1m.dist"
-                fieldresolution="100"
-                scale="1.0" 
-                />
             <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj" 
                 id="small_ball_3" 
@@ -43,10 +46,10 @@
         substeps="4"
         timestepfrequency="176400"
 
-        output_pattern="data_test2/test_%s"
+        output_pattern="work/near-field/data_ball_closeness_test/0_cell_apart/test_%s"
 
-        PML_width="10"
-        PML_strength="100000.0" 
+        PML_width="6"
+        PML_strength="1000000.0" 
 
         use_mesh="1"
         use_ghost_cell="1"
@@ -56,16 +59,18 @@
     <pressure_source> 
         <gaussian_pressure_source
         source_width_time="0.00005"
-        source_position_x="-0.2" 
-        source_position_y="-0.2" 
+        source_position_x="0.2" 
+        source_position_y="0.0" 
         source_position_z="0.0" 
         />
+    <!--
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 
         source_position_y="0.4" 
         source_position_z="0.0" 
         />
+        -->
     </pressure_source> 
 
 </impulse_response>

@@ -42,10 +42,11 @@ class FDTD_AcousticSimulator
         void _SaveProbeData(const std::string &filename);
 
     public: 
-        FDTD_AcousticSimulator() 
+        FDTD_AcousticSimulator()
+            : _canInitializeSolver(false)
         {}
         FDTD_AcousticSimulator(const std::string &configFile)
-            : _configFile(configFile)
+            : _canInitializeSolver(false), _configFile(configFile)
         {} 
 
         // parse, instance grid and solver, read mesh 

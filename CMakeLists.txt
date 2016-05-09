@@ -19,7 +19,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # compile option
 option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
-option(USE_DEBUG "Turn on the debug mode" ON)
+option(USE_DEBUG "Turn on the debug mode" OFF)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
 option(USE_CUDA "Use CUDA" OFF)
@@ -64,6 +64,7 @@ add_definitions(-DCGAL_INTERSECTION_VERSION=1)
 if ( USE_DEBUG )
     MESSAGE(STATUS "Using debug mode")
     add_definitions(-DDEBUG)
+    add_definitions(-Wall)
     set(CMAKE_BUILD_TYPE Debug)
 else ( USE_DEBUG )
     MESSAGE(STATUS "Using release mode")
@@ -161,10 +162,6 @@ if ( USE_GSL )
     find_package(GSL REQUIRED)
 endif ( USE_GSL )
 
-
-if (USE_DEBUG)
-    add_definitions(-Wall)
-endif (USE_DEBUG)
 
 if ( USE_OPENMP )
     find_package(OpenMP)

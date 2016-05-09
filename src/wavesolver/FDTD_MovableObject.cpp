@@ -18,3 +18,15 @@ PrintBoundingBox()
     std::cout << "minBound = " << _bboxWorld.minBound << std::endl; 
     std::cout << "maxBound = " << _bboxWorld.maxBound << std::endl; 
 }
+
+//##############################################################################
+//##############################################################################
+void FDTD_MovableObject::
+PrintTransformation()
+{
+    std::cout << "modeling matrix = \n"; 
+    std::cout << _modelingTransform.matrix() << std::endl;
+    std::cout << "inverse modeling matrix = \n"; 
+    std::cout << _modelingTransformInverse.matrix() << std::endl;
+}
+

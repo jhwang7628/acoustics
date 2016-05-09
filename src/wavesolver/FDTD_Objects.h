@@ -38,7 +38,7 @@ class FDTD_Objects
         void AddPressureSource(PressureSourcePtr &sourcePtr); 
         REAL EvaluateVibrationalSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         REAL EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
-        bool ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const int &maxIteration=100); 
+        bool ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const int &maxIteration=1); 
 
         //// debug methods ////
         void TestObjectDistanceField(const size_t &ind); 

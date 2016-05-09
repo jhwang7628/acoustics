@@ -17,11 +17,6 @@ void TestParseMeshList()
     ImpulseResponseParser parser(xmlName); 
 
     parser.GetObjects(objectsInTheScene); 
-    // FIXME debug
-    if (objectsInTheScene)
-        std::cout << "objects fine\n"; 
-    else 
-        std::cout << "screwed up\n"; 
     std::cout << *objectsInTheScene << std::endl;
     //objectsInTheScene->TestObjectDistanceField(0);
 }
@@ -80,9 +75,8 @@ void TestBoundingBox()
 }
 
 //##############################################################################
-void TestAcousticSimulatorRun()
+void TestAcousticSimulatorRun(const std::string &xmlName)
 {
-    const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
     simulator.Run();
@@ -90,11 +84,14 @@ void TestAcousticSimulatorRun()
 }
 
 //##############################################################################
-int main()
+int main(int argc, char ** argv)
 {
     //TestBoundingBox();
     //TestParseMeshList(); 
-    TestAcousticSimulatorRun(); 
+    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    if (argc>1) 
+        xmlName = std::string(argv[1]);
+    TestAcousticSimulatorRun(xmlName); 
 
     return 0;
 }

@@ -458,10 +458,7 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 
 void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
 {
-//    SimpleTimer timer[4];
-
     const size_t numberBulkCell = _bulkCells.size();
-    //const bool evaluateExternalSource = (sourceEvaluator != nullptr);
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
     const REAL n_rho_c_square_dt = -density*c*c*timeStep;
     const REAL v_cellSize_inv[3] = {1./_velocityField[0].cellSize(),1./_velocityField[1].cellSize(),1./_velocityField[2].cellSize()};
@@ -472,10 +469,8 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
     #endif
     for (size_t bulk_cell_idx = 0; bulk_cell_idx < numberBulkCell; ++bulk_cell_idx)
     {
-//timer[0].Start(); 
         const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
         const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
-//timer[0].Pause(); 
         for (int dimension=0; dimension<3; ++dimension) 
         {
             const REAL      absorptionCoefficient = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
@@ -508,15 +503,11 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
             }
             else  // can collapse a lot of the terms 
             {
-//timer[1].Start(); 
                 // directionCoefficient = 1/dt
                 // updateCoefficient    = 1
                 // divergenceCoefficient= -rho c^2 *dt (cached)
                 Tuple3i   cell_indices = _pressureField.cellIndex(cell_idx);
                 int       neighbour_idx;
-//timer[1].Pause(); 
-
-//timer[2].Start(); 
                 cell_indices[dimension] += 1;
                 neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
@@ -528,25 +519,13 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 
                 for (int i=0; i<_N; i++)
                     p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv[dimension];
-//timer[2].Pause(); 
-
-//timer[3].Start(); 
                 // evaluate external sources only happens not in PML
                 // Liu Eq (16) f6x term
                 if (evaluateExternalSource)
                     p(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
-//timer[3].Pause(); 
-                    //for (int i = 0; i<_N; i++) 
-                    //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
             }
         }
     }
-
-
-//std::cout << "  - allocation: " << timer[0].Duration() << std::endl; 
-//std::cout << "  - cell indices lookup: " << timer[1].Duration() << std::endl; 
-//std::cout << "  - pressure field adding: " << timer[2].Duration() << std::endl; 
-//std::cout << "  - external source iteration: " << timer[3].Duration() << std::endl; 
 }
 
 // TODO can optimize the sparse linear system setup
@@ -786,7 +765,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
         //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 1);
+        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 5);
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
