@@ -84,13 +84,16 @@ class FDTD_MovableObject
         {
         }
 
+        inline bool InsideBoundingBox(const double &x, const double &y, const double &z, const double &scale)
+        {
+            return _bboxWorld.Inside(x, y, z, scale);
+        }
         virtual void UpdateBoundingBox()=0; 
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
 
         //// debug methods //// 
         void PrintBoundingBox(); 
         void PrintTransformation();
-
 };
 
 #endif 

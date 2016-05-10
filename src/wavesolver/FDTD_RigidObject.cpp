@@ -68,7 +68,7 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 {
     if (!_signedDistanceField)
         throw std::runtime_error("**ERROR** distance field not built.");
-    if (!_bboxWorld.Inside(x,y,z,1.1))
+    if (!_bboxWorld.Inside(x, y, z, AABB_CHECK_TOLERANCE_SCALE))
         return std::numeric_limits<REAL>::max();
 
     Eigen::Vector3d position(x,y,z); 

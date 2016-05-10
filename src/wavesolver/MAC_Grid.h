@@ -213,6 +213,7 @@ class MAC_Grid
         // interfacial cell
         void classifyCells( bool useBoundary );
         void classifyCellsDynamic(const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose=false);
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.

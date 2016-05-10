@@ -6,22 +6,24 @@
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
                 id="small_ball_1" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
-                fieldresolution="400"
+                fieldresolution="200"
                 scale="1.0" 
                 initial_position_x="0.0"
                 initial_position_y="0.05"
                 initial_position_z="0.0"
                 />
+            <!--
             <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
                 id="small_ball_2" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
-                fieldresolution="400"
+                fieldresolution="100"
                 scale="1.0" 
                 initial_position_x="0.0"
                 initial_position_y="-0.05"
                 initial_position_z="0.0"
                 />
+                -->
             <!--
             <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj" 

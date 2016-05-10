@@ -1410,6 +1410,198 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
     }
 }
 
+//##############################################################################
+// Classify types of cells at each step using axis-aligned bounding box 
+//
+// Note: assumed cells has been classified properly and just need to be updated 
+// base on the new object positions. Therefore, not all cells will be checked.
+//
+//##############################################################################
+void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose)
+{
+    const int numPressureCells = _pressureField.numCells(); 
+    Vector3d cellPos;
+    IntArray neighbours;
+    neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
+
+    // if not using boundaries, return immediately
+    if (!useBoundary)
+        return;
+
+    // step 3
+    for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
+    {
+        cellPos = _pressureField.cellPosition( cell_idx );
+        // Check all boundary fields to see if this is a bulk cell
+        const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
+        if (indexOccupyObject>=0) 
+        {
+            _isBulkCell[cell_idx] = false; 
+            _containingObject[cell_idx] = indexOccupyObject; 
+        }
+        if ( _isBulkCell[ cell_idx ] )
+            _bulkCells.push_back( cell_idx );
+    }
+
+    // step 4a 
+    // TODO later we might want to do smart things like trying to figure out
+    // the update pattern based on rigid motion of objects. good for now. 
+    if (_useGhostCellBoundary) 
+    {
+        std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
+        _ghostCells.clear(); 
+        // examine ghost cells 
+        for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
+        {
+            if ( _isBulkCell[ cell_idx ] )
+                continue;
+            _pressureField.cellNeighbours( cell_idx, neighbours );
+            for (size_t neighbour_idx = 0; neighbour_idx<neighbours.size(); ++neighbour_idx)
+            {
+                if (_isBulkCell[neighbours[neighbour_idx]])
+                {
+                    // We have a neighbour outside of the interior object, so
+                    // this is a ghost cell
+                    _isGhostCell[ cell_idx ] = true;
+                    _ghostCells.push_back(cell_idx); 
+                    break;
+                }
+            }
+        }
+        ComputeGhostCellInverseMap(); 
+        // TODO can make smarter 
+        for (int dim=0; dim<3; ++dim)
+            for (int ii=0; ii<_velocityField[dim].numCells(); ++ii)
+                _velocityBulkCells[dim].push_back(ii);
+    }
+    // step 4b 
+    else
+    {
+        for (int dim=0; dim<3; ++dim)
+        {
+            std::fill(_isVelocityBulkCell[dim].begin(), _isVelocityBulkCell[dim].end(), true); 
+            std::fill(_isVelocityInterfacialCell[dim].begin(), _isVelocityInterfacialCell[dim].end(), false); 
+            _velocityInterfacialCells[dim].clear(); 
+            _interfacialBoundaryIDs[dim].clear(); 
+            _interfacialBoundaryDirections[dim].clear(); 
+            _interfacialBoundaryCoefficients[dim].clear(); 
+            _velocityBulkCells[dim].clear(); 
+        }
+        for (int dimension = 0; dimension < 3; dimension++)
+        {
+            for (int cell_idx = 0; cell_idx < _velocityField[dimension].numCells(); cell_idx++)
+            {
+                Tuple3i cell_coordinates;
+                int     pressure_cell_idx1;
+                int     pressure_cell_idx2;
+
+                cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
+
+                // We will assume that boundary cells are not interfacial
+                if ( cell_coordinates[ dimension ] == 0
+                  || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
+                {
+                    _velocityBulkCells[ dimension ].push_back( cell_idx );
+                    continue;
+                }
+
+                // Look at our neighbours in the pressure field
+                cell_coordinates[ dimension ] -= 1;
+                pressure_cell_idx1 = _pressureField.cellIndex( cell_coordinates );
+                cell_coordinates[ dimension ] += 1;
+                pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
+
+                if (_isBulkCell[ pressure_cell_idx1 ] && _isBulkCell[ pressure_cell_idx2 ])
+                {
+                    // Both pressure cell neighbours are bulk cells, so this is
+                    // a bulk cell too
+                    _velocityBulkCells[ dimension ].push_back( cell_idx );
+                }
+                else if ( _isBulkCell[ pressure_cell_idx1 ] 
+                        && !_isBulkCell[ pressure_cell_idx2 ] )
+                {
+                    // Only one neighbour is inside the domain, so this must
+                    // be an interfacial cell
+                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
+
+                    // Get the object ID for the boundary that we are adjacent to
+                    const int boundaryObject = _containingObject[ pressure_cell_idx2 ];
+
+                    TRACE_ASSERT( boundaryObject >= 0 );
+
+                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                    //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
+                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+
+                    // Determine a scaling coefficient based on the angle between
+                    // the boundary normal and the rasterized boundary normal
+                    Vector3d normal( 0.0, 0.0, 0.0 );
+                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
+                    Vector3d gradient; 
+                    _objects->ObjectNormal(boundaryObject, position, gradient); 
+                    gradient.normalize();
+                    //Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+
+                    normal[ dimension ] = 1.0;
+                    REAL coefficient = normal.dotProduct( gradient );
+
+                    //TRACE_ASSERT( coefficient >= 0.0 );
+
+                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                }
+                else if ( !_isBulkCell[ pressure_cell_idx1 ]
+                        && _isBulkCell[ pressure_cell_idx2 ] )
+                {
+                    // Only one neighbour is inside the domain, so this must
+                    // be an interfacial cell
+                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
+
+                    // Get the object ID for the boundary that we are adjacent to
+                    int boundaryObject = _containingObject[ pressure_cell_idx1 ];
+
+                    TRACE_ASSERT( boundaryObject >= 0 );
+
+                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+
+                    // Determine a scaling coefficient based on the angle between
+                    // the boundary normal and the rasterized boundary normal
+                    Vector3d normal( 0.0, 0.0, 0.0 );
+                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
+                    Vector3d gradient; 
+                    _objects->ObjectNormal(boundaryObject, position, gradient); 
+                    gradient.normalize();
+
+                    normal[ dimension ] = 1.0;
+                    REAL coefficient = normal.dotProduct( gradient );
+
+                    //TRACE_ASSERT( coefficient >= 0.0 );
+
+                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                }
+            }
+        }
+    }
+
+    if (verbose) 
+    {
+        printf( "MAC_Grid: classifyCellsDynamic:\n" );
+        printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
+        printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
+        printf( "\tFound %d v_x interfacial cells\n",
+                (int)_velocityInterfacialCells[ 0 ].size() );
+        printf( "\tFound %d v_y interfacial cells\n",
+                (int)_velocityInterfacialCells[ 1 ].size() );
+        printf( "\tFound %d v_z interfacial cells\n",
+                (int)_velocityInterfacialCells[ 2 ].size() );
+        printf( "\tFound %d v_x bulk cells\n", (int)_velocityBulkCells[ 0 ].size() );
+        printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
+        printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
+    }
+}
+
 void MAC_Grid::visualizeClassifiedCells()
 {
 
