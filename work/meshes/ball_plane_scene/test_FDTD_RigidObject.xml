@@ -3,16 +3,6 @@
     <rigid_object> 
         <mesh_list> 
             <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/plane.obj" 
-                id="plane_001" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/plane.obj.dist"
-                fieldresolution="400"
-                scale="1.0" 
-                initial_position_x="0.0"
-                initial_position_y="0.65"
-                initial_position_z="0.0"
-                />
-            <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p05.obj" 
                 id="small_ball_005" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p05.obj.dist"
@@ -43,6 +33,17 @@
                 initial_position_z="0.0"
                 />
             <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p10.obj" 
+                id="small_ball_010b" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p10.obj.dist"
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="+0.25"
+                initial_position_z="0.0"
+                />
+            <!--
+            <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p20.obj" 
                 id="small_ball_020" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p20.obj.dist"
@@ -52,6 +53,7 @@
                 initial_position_y="0.35"
                 initial_position_z="0.0"
                 />
+                -->
         </mesh_list> 
     </rigid_object> 
     <!--
@@ -63,13 +65,13 @@
         density="1.0" 
         cellsize="0.01" 
         gridresolution="100"
-        stop_time="0.005"
+        stop_time="0.01"
         substeps="4"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_scene_test/test_%s"
+        output_pattern="work/near-field/data_scene_test2/test_%s"
 
-        PML_width="6"
+        PML_width="10"
         PML_strength="1000000.0" 
 
         use_mesh="1"
@@ -81,7 +83,7 @@
         <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.0" 
-        source_position_y="-0.6" 
+        source_position_y="0.4" 
         source_position_z="0.0" 
         />
     <!--

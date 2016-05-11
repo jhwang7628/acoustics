@@ -22,8 +22,6 @@ OccupyByObject(const Vector3d &positionWorld)
     const int N_objects = N(); 
     for (int ii=0; ii<N_objects; ii++) 
     {
-        if (!_rigidObjects[ii]->InsideBoundingBox(positionWorld.x, positionWorld.y, positionWorld.z, AABB_CHECK_TOLERANCE_SCALE))
-            continue; 
         const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
         if (distance < -DISTANCE_TOLERANCE) 
             return ii; 

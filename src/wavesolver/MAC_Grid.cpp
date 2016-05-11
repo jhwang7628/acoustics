@@ -122,6 +122,7 @@ void MAC_Grid::initFieldRasterized( bool useBoundary )
 {
     cout << "MAC_Grid::initFieldRasterized: Classifying cells" << endl << endl;
     classifyCellsDynamic(useBoundary,true);
+    //classifyCellsDynamicAABB(useBoundary,true);
 }
 
 void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
@@ -458,7 +459,8 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 
 void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REAL &timeStep, const REAL &c, const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime, const REAL &density )
 {
-    const size_t numberBulkCell = _bulkCells.size();
+    const int numPressureCells = _pressureField.numCells(); 
+    //const int numPressureCells = _bulkCells.size(); 
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
     const REAL n_rho_c_square_dt = -density*c*c*timeStep;
     const REAL v_cellSize_inv[3] = {1./_velocityField[0].cellSize(),1./_velocityField[1].cellSize(),1./_velocityField[2].cellSize()};
@@ -467,10 +469,12 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
     #ifdef USE_OPENMP
     #pragma omp parallel for schedule(static) default(shared)
     #endif
-    for (size_t bulk_cell_idx = 0; bulk_cell_idx < numberBulkCell; ++bulk_cell_idx)
+    for (int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx)
     {
-        const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
-        const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+        if (!_isBulkCell[cell_idx])
+            continue; 
+        const Vector3d cell_position = _pressureField.cellPosition(cell_idx);
+        //const Vector3d cell_position = _pressureField.cellPosition(_bulkCells[cell_idx]);
         for (int dimension=0; dimension<3; ++dimension) 
         {
             const REAL      absorptionCoefficient = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
@@ -482,7 +486,7 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
                 const REAL      updateCoefficient       = PML_pressureUpdateCoefficient( absorptionCoefficient, timeStep, directionalCoefficient );
                 const REAL      divergenceCoefficient   = PML_divergenceCoefficient( density, c, directionalCoefficient );
 
-                Tuple3i   cell_indices                  = _pressureField.cellIndex( cell_idx );
+                Tuple3i   cell_indices                  = _pressureField.cellIndex(cell_idx);
                 int       neighbour_idx;
 
                 // Scale the existing pressure value
@@ -765,7 +769,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
         //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 5);
+        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 10);
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -1416,7 +1420,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 // Note: assumed cells has been classified properly and just need to be updated 
 // base on the new object positions. Therefore, not all cells will be checked.
 //
-//##############################################################################
+///##############################################################################
 void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose)
 {
     const int numPressureCells = _pressureField.numCells(); 
@@ -1424,58 +1428,82 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
     IntArray neighbours;
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
+    _ghostCells.clear();
+    // FIXME debug
+    // FIXME is it going to be a problem when bounding box overlaps?
+    std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
+    std::fill(_containingObject.begin(), _containingObject.end(), -1); 
+
     // if not using boundaries, return immediately
     if (!useBoundary)
         return;
 
-    // step 3
-    for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
+    // get all bounding box ranges 
+    const int N = _objects->N(); 
+    std::vector<ScalarField::RangeIndices> indices(N); 
+    for (int ii=0; ii<N; ++ii)
     {
-        cellPos = _pressureField.cellPosition( cell_idx );
-        // Check all boundary fields to see if this is a bulk cell
-        const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
-        if (indexOccupyObject>=0) 
+        const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(ii).GetUnionBBox();
+        _pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[ii]); 
+    } 
+
+    // classify only the subset indicated by bounding box
+    for (int bbox_id=0; bbox_id<N; ++bbox_id)
+    {
+        int ii,jj,kk; 
+        FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
         {
-            _isBulkCell[cell_idx] = false; 
-            _containingObject[cell_idx] = indexOccupyObject; 
+            const Tuple3i cellIndices(ii,jj,kk);
+            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            cellPos = _pressureField.cellPosition(cell_idx);
+            const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
+            if (indexOccupyObject>=0) 
+            {
+                _isBulkCell[cell_idx] = false; 
+                _containingObject[cell_idx] = indexOccupyObject; 
+            }
+            else 
+            {
+                _isBulkCell[cell_idx] = true; 
+            }
         }
-        if ( _isBulkCell[ cell_idx ] )
-            _bulkCells.push_back( cell_idx );
     }
 
     // step 4a 
-    // TODO later we might want to do smart things like trying to figure out
-    // the update pattern based on rigid motion of objects. good for now. 
     if (_useGhostCellBoundary) 
     {
-        std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
-        _ghostCells.clear(); 
-        // examine ghost cells 
-        for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
+        for (int bbox_id=0; bbox_id<N; ++bbox_id)
         {
-            if ( _isBulkCell[ cell_idx ] )
-                continue;
-            _pressureField.cellNeighbours( cell_idx, neighbours );
-            for (size_t neighbour_idx = 0; neighbour_idx<neighbours.size(); ++neighbour_idx)
+            int ii,jj,kk; 
+            FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
             {
-                if (_isBulkCell[neighbours[neighbour_idx]])
+                const Tuple3i cellIndices(ii,jj,kk);
+                const int cell_idx = _pressureField.cellIndex(cellIndices); 
+                if (_isBulkCell[cell_idx])
+                    continue; 
+                // FIXME this part might be slow due to reallocation of
+                // neighbours
+                _pressureField.cellNeighbours(cell_idx, neighbours);
+                const int neighbourSize = neighbours.size();
+                for (int neighbour_idx = 0; neighbour_idx<neighbourSize; ++neighbour_idx)
                 {
-                    // We have a neighbour outside of the interior object, so
-                    // this is a ghost cell
-                    _isGhostCell[ cell_idx ] = true;
-                    _ghostCells.push_back(cell_idx); 
-                    break;
+                    if (_isBulkCell[neighbours[neighbour_idx]])
+                    {
+                        // We have a neighbour outside of the interior object, so
+                        // this is a ghost cell
+                        _isGhostCell[cell_idx] = true;
+#pragma omp critical
+                        _ghostCells.push_back(cell_idx); 
+                        break;
+                    }
                 }
+                _isGhostCell[cell_idx] = false; 
             }
         }
         ComputeGhostCellInverseMap(); 
-        // TODO can make smarter 
-        for (int dim=0; dim<3; ++dim)
-            for (int ii=0; ii<_velocityField[dim].numCells(); ++ii)
-                _velocityBulkCells[dim].push_back(ii);
     }
     // step 4b 
-    else
+    else // FIXME not yet worked on for dynamic re-classification
     {
         for (int dim=0; dim<3; ++dim)
         {
@@ -1604,7 +1632,6 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
 
 void MAC_Grid::visualizeClassifiedCells()
 {
-
     std::ofstream of("ghost_cell.csv"); 
     Vector3d position; 
 
@@ -1614,14 +1641,15 @@ void MAC_Grid::visualizeClassifiedCells()
         of << position.x << ", " << position.y << ", " << position.z << std::endl; 
     }
 
-
     std::ofstream of2("bulk_cell.csv"); 
     for (int bb=0; bb<_pressureField.numCells(); bb++) 
     {
-        position = _pressureField.cellPosition(_pressureField.cellIndex(_bulkCells[bb])); 
+        if (!_isBulkCell[bb])
+            continue; 
+
+        position = _pressureField.cellPosition(_pressureField.cellIndex(bb)); 
         of2 << position.x << ", " << position.y << ", " << position.z << std::endl; 
     }
-
 
     of.close(); 
     of2.close();
@@ -1633,7 +1661,6 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
 
     if (dimension!=2 && _cornellBoxBoundaryCondition) // skip all but z-direction face 
         return 0.0;
-
 
     const BoundingBox         &bbox = _pressureField.bbox();
     REAL                       h;
@@ -1652,6 +1679,8 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
     if ( h <= absorptionWidth )
     {
         REAL                     dist = absorptionWidth - h;
+        // FIXME debug
+        return 0.0; 
 
         if (_cornellBoxBoundaryCondition)
             return 0.0; // skip face at +z face

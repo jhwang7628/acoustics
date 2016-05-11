@@ -808,6 +808,22 @@ class IO {
          */
 #ifdef USE_BOOST
 
+            static bool CopyFile(const std::string &fileFrom_s, const std::string &fileTo_s)
+            {
+                boost::filesystem::path fileFrom(fileFrom_s.c_str());
+                boost::filesystem::path fileTo(fileTo_s.c_str()); 
+                try
+                {
+                    boost::filesystem::copy_file(fileFrom, fileTo);
+                }
+                catch (boost::filesystem::filesystem_error &e)
+                {
+                    std::cerr << "**WARNING** file not copied.\n"; 
+                    return false; 
+                }
+                return true;
+            }
+
             static bool CreateDirectoryForce(const std::string &directoryName)
             {
                 boost::filesystem::path dir(directoryName.c_str());
@@ -819,6 +835,7 @@ class IO {
                 else 
                     return boost::filesystem::create_directory(dir); 
             }
+
             /** 
              * Extract file names in "directory" filenames of which starts with "startString", return results 
              * in filenames. Will attempt a sort on string names. 

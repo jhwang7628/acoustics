@@ -18,9 +18,14 @@ class PressureSource;
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288419716939937510582
 #endif
-//##############################################################################
+                                                                                
 #define PRINT_EIGEN_VECTOR3(x) std::cout << x[0] << ", " << x[1] << ", " << x[2] << std::endl
 
+#define FOR_ALL_3D_GRID_VECTOR3(start,range,ii,jj,kk) \
+    for (ii=start.x; ii<start.x+range.x; ++ii) \
+        for (jj=start.y; jj<start.y+range.y; ++jj) \
+            for (kk=start.z; kk<start.z+range.z; ++kk)
+            
 //##############################################################################
 // Typedefs 
 //##############################################################################

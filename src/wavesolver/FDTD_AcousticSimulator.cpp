@@ -56,6 +56,9 @@ _SaveSolverSettings(const std::string &filename)
     of << *_acousticSolver << std::endl;
     of << _acousticSolver->GetGrid() << std::endl;
     _sceneObjects->PrintAllSources(of);
+
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), "input_control_file.xml"); 
+    IO::CopyFile(_configFile, std::string(buffer)); 
 }
 
 //##############################################################################

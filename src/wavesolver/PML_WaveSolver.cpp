@@ -251,6 +251,7 @@ bool PML_WaveSolver::stepSystem()
     printf( " - Algebra             took %f sec\n", _algebraTimer.getMsPerCycle() );
     printf( " - Memory operations   took %f sec\n", _memoryTimer.getMsPerCycle() );
     printf( " - Writing             took %f sec\n", _writeTimer.getMsPerCycle() );
+    printf( " - Cell reclassify     took %f sec\n", _cellClassifyTimer.getMsPerCycle() );
     printf( " - Velocity update     took %f sec\n", _gradientTimer.getMsPerCycle() );
     printf( " - Pressure update     took %f sec\n", _divergenceTimer.getMsPerCycle() );
 
@@ -284,6 +285,11 @@ void PML_WaveSolver::writeWaveOutput() const
 
 void PML_WaveSolver::stepLeapfrog()
 {
+    // reclassify cells occupied by objects
+    _cellClassifyTimer.start(); 
+    _grid.classifyCellsDynamicAABB(true, false);
+    _cellClassifyTimer.pause(); 
+
     // Update velocity in each direction
     _gradientTimer.start();
     _grid.PML_velocityUpdate( _pFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );

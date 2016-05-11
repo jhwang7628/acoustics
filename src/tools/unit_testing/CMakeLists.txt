@@ -123,6 +123,7 @@ if (BUILD_UNIT_TESTING)
         boost_thread
         boost_system                    
         boost_timer
+        boost_filesystem
         boost_regex) 
 
 endif ( BUILD_UNIT_TESTING )

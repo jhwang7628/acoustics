@@ -42,6 +42,27 @@
 class MAC_Grid 
 {
     public: 
+        // EXPERIMENT cell types FIXME
+        typedef unsigned char CellType; 
+        // bit flags : http://www.cplusplus.com/forum/general/1590/
+        // [1|2|3|4|5|6|7|8]: 
+        //   1: whether its solid cell: enclosed by object using sdf
+        //   2: whether its interface cell: mixed cells (not all solid or all
+        //      fluids) 
+        //   3: if cell has solid on left  in x-direction, 
+        //   4: if cell has solid on right in x-direction.
+        //   5: if cell has solid on left  in y-direction, 
+        //   6: if cell has solid on right in y-direction.
+        //   7: if cell has solid on left  in z-direction, 
+        //   8: if cell has solid on right in z-direction.
+        enum InterfacialInfo {  IS_SOLID     =0x80,
+                                IS_INTERFACE =0x40,
+                                X_SOLID_ON_LEFT =0x20, 
+                                X_SOLID_ON_RIGHT=0x10, 
+                                Y_SOLID_ON_LEFT =0x08, 
+                                Y_SOLID_ON_RIGHT=0x04, 
+                                Z_SOLID_ON_LEFT =0x02, 
+                                Z_SOLID_ON_RIGHT=0x01, }; 
 
     private:
         typedef TriangleMesh<REAL>  TriMesh;
@@ -66,6 +87,7 @@ class MAC_Grid
         // isBulkCell and isGhostCell refer to cells in the pressure grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
+        std::vector<CellType>    _cellTypes; 
 
         // isInterfacialCell refers to cells in the three velocity grid
         BoolArray                _isVelocityBulkCell[ 3 ];
@@ -208,12 +230,12 @@ class MAC_Grid
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void visualizeClassifiedCells(); 
+        void classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose=false);
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
         void classifyCellsDynamic(const bool &useBoundary, const bool &verbose=false);
-        void classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose=false);
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.

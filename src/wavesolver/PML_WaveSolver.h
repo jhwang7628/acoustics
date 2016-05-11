@@ -76,6 +76,7 @@ class PML_WaveSolver : public Solver
         Timer<false>             _memoryTimer;
         Timer<false>             _writeTimer;
         Timer<false>             _ghostCellTimer;
+        Timer<false>             _cellClassifyTimer;
 
         // Optionally write a 2D slice out of the finite difference grid
         int                      _zSlice;

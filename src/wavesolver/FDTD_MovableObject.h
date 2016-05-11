@@ -19,14 +19,14 @@ class FDTD_MovableObject
         // bounding box to check 
         struct BoundingBox
         {
-            Point3d     minBound; 
-            Point3d     maxBound; 
+            Vector3d     minBound; 
+            Vector3d     maxBound; 
             Vector3d    dimension; 
             Vector3d    centroid; 
 
             BoundingBox() 
-                : minBound(Point3d(F_LOW,F_LOW,F_LOW)), 
-                  maxBound(Point3d(F_MAX,F_MAX,F_MAX)), 
+                : minBound(Vector3d(F_LOW,F_LOW,F_LOW)), 
+                  maxBound(Vector3d(F_MAX,F_MAX,F_MAX)), 
                   dimension(Vector3d(F_MAX,F_MAX,F_MAX)), 
                   centroid(Vector3d(0,0,0))
             {
@@ -59,18 +59,29 @@ class FDTD_MovableObject
                         y<(centroid[1]+scaledDimension[1])&&y>(centroid[1]-scaledDimension[1]) &&
                         z<(centroid[2]+scaledDimension[2])&&z>(centroid[2]-scaledDimension[2])); 
             }
-            inline void Update(const Point3<double> &minBound_c, const Point3<double> &maxBound_c)
+            inline void Update(const Vector3<double> &minBound_c, const Vector3<double> &maxBound_c)
             {
                 minBound = minBound_c; 
                 maxBound = maxBound_c; 
                 dimension = maxBound - minBound; 
                 centroid = (maxBound + minBound)/2.0;
             }
+            inline void Union(const BoundingBox &inBox) 
+            {
+                for (int d=0; d<3; ++d) 
+                {
+                    minBound[d] = std::min<double>(inBox.minBound[d], minBound[d]); 
+                    maxBound[d] = std::max<double>(inBox.maxBound[d], maxBound[d]); 
+                }
+                dimension = maxBound - minBound; 
+                centroid = (maxBound + minBound)/2.0; 
+            }
         };
 
     protected: 
         // bounding box in the work coordinate system
         BoundingBox                         _bboxWorld; 
+        BoundingBox                         _bboxWorldUnion2Steps; 
 
         // premultiply this transform to point takes it from object space to
         // work space
@@ -84,12 +95,14 @@ class FDTD_MovableObject
         {
         }
 
+        inline const BoundingBox &GetUnionBBox(){return _bboxWorldUnion2Steps;}
         inline bool InsideBoundingBox(const double &x, const double &y, const double &z, const double &scale)
         {
             return _bboxWorld.Inside(x, y, z, scale);
         }
         virtual void UpdateBoundingBox()=0; 
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
+        
 
         //// debug methods //// 
         void PrintBoundingBox(); 

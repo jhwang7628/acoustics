@@ -220,6 +220,18 @@ void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighb
 
 }
 
+void ScalarField::GetIterationBox(const Vector3d &minBound, const Vector3d &maxBound, RangeIndices &indices)
+{
+    assert(_bbox.isInside(minBound) && _bbox.isInside(maxBound)); 
+    const Vector3d &fieldMinBound = _bbox.minBound();
+    for (int d=0; d<3; ++d) 
+    {
+        indices.startIndex[d] = (int)std::floor((minBound[d]-fieldMinBound[d])/_cellSize); 
+        indices.endIndex[d]   = (int) std::ceil((maxBound[d]-fieldMinBound[d])/_cellSize);
+        indices.dimensionIteration[d] = indices.endIndex[d] - indices.startIndex[d]; 
+    }
+}
+
 //////////////////////////////////////////////////////////////////////
 // Returns the indices of all cells whose values contribute
 // to the given position, as well as trilinear interpolation
@@ -394,5 +406,44 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
                 1, data.cols(), /* Copy size */
                 coef.second /* multiplier */ );
     }
+}
+
+void ScalarField::TestSubindices()
+{
+    std::cout << *this << std::endl;
+    const Vector3d testMin(0.39,0.40,0.41); 
+    const Vector3d testMax(0.79,0.80,1.0000); 
+    RangeIndices indices; 
+    GetIterationBox(testMin, testMax, indices); 
+    COUT_SDUMP(indices.startIndex); 
+    COUT_SDUMP(indices.dimensionIteration); 
+    COUT_SDUMP(testMin); 
+    COUT_SDUMP(testMax);
+
+    for (int ii=0; ii<indices.dimensionIteration.x; ++ii) 
+        for (int jj=0; jj<indices.dimensionIteration.y; ++jj) 
+            for (int kk=0; kk<indices.dimensionIteration.z; ++kk) 
+            {
+                const int ind_x = indices.startIndex.x + ii; 
+                const int ind_y = indices.startIndex.y + jj; 
+                const int ind_z = indices.startIndex.z + kk; 
+                const Tuple3i index(ind_x, ind_y, ind_z); 
+                const Vector3d position = cellPosition(index); 
+                COUT_SDUMP(position);
+            }
+}
+
+std::ostream &operator <<(std::ostream &os, const ScalarField &field)
+{
+    os << "--------------------------------------------------------------------------------\n" 
+        << "Class ScalarField\n" 
+        << "--------------------------------------------------------------------------------\n";
+    os << "min bound: " << field._bbox.minBound() << "\n"
+        << "max bound: " << field._bbox.maxBound() << "\n"
+        << "divisions: " << field._divisions << "\n"
+        << "cell size: " << field._cellSize << "\n"; 
+    os << "--------------------------------------------------------------------------------" 
+        << std::flush; 
+    return os; 
 }
 

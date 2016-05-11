@@ -25,18 +25,23 @@ Initialize()
                 _signedDistanceFieldFilePrefix.c_str()
                 )
             );
+    UpdateBoundingBox();
 }
 
 //##############################################################################
 // Employ a linear time (in surface element) check to update bounding box
+// union of the last two updates are also computed and stored
 //##############################################################################
 void FDTD_RigidObject::
 UpdateBoundingBox()
 {
+    // cache the old one
+    _bboxWorldUnion2Steps = _bboxWorld; 
+    // compute the new one
     if (_mesh)
     {
-        Point3<REAL> minBound(D_INF, D_INF, D_INF); 
-        Point3<REAL> maxBound(-D_INF, -D_INF, -D_INF); 
+        Vector3<REAL> minBound(D_INF, D_INF, D_INF); 
+        Vector3<REAL> maxBound(-D_INF, -D_INF, -D_INF); 
         Eigen::Vector3d pointBuffer; 
         std::vector<Point3<REAL>> &meshVertices = _mesh->vertices(); 
         const typename std::vector<Point3<REAL>>::const_iterator end = meshVertices.end();
@@ -59,6 +64,8 @@ UpdateBoundingBox()
     }
     else 
         throw std::runtime_error("**ERROR** mesh not set");
+    // union step
+    _bboxWorldUnion2Steps.Union(_bboxWorld);
 }
 
 //##############################################################################

@@ -5,6 +5,8 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
+#include <geometry/BoundingBox.h> 
+#include <boost/timer/timer.hpp>
 
 //##############################################################################
 // Submodules 
@@ -84,10 +86,22 @@ void TestAcousticSimulatorRun(const std::string &xmlName)
 }
 
 //##############################################################################
+void TestScalarFieldSubindices()
+{
+    const Vector3d boxMinBound(0,0,0); 
+    const Vector3d boxMaxBound(1,1,1); 
+    const BoundingBox bbox(boxMinBound, boxMaxBound); 
+    ScalarField field(bbox, 0.002); 
+    field.TestSubindices();
+}
+
+//##############################################################################
 int main(int argc, char ** argv)
 {
     //TestBoundingBox();
     //TestParseMeshList(); 
+    //TestScalarFieldSubindices();
+      
     std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
     if (argc>1) 
         xmlName = std::string(argv[1]);

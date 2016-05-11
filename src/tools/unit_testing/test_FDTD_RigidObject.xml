@@ -6,10 +6,10 @@
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
                 id="small_ball_1" 
                 distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
-                fieldresolution="200"
+                fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
-                initial_position_y="0.05"
+                initial_position_y="0.0"
                 initial_position_z="0.0"
                 />
             <!--
@@ -48,7 +48,7 @@
         substeps="4"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_ball_closeness_test/0_cell_apart/test_%s"
+        output_pattern="work/near-field/data_test/test_%s"
 
         PML_width="6"
         PML_strength="1000000.0" 

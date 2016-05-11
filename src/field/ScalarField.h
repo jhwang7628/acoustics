@@ -17,8 +17,37 @@
 // ScalarField class
 //
 // Models a scalar field on a regular grid
+// 
+// If wants to iterate the cell indices, the order corresponds to the 
+// memory layout is x -> y -> z. 
+// FOr more details, please see function cellIndex
+//
+// Example (get cell position according to memory location): 
+//
+//  for (x=0; x<Nx; ++x) 
+//    for (y=0; y<Ny; ++y) 
+//      for (z=0; z<Nz; ++z) 
+//      {
+//         cellPosition(x,y,z)
+//      }
 //////////////////////////////////////////////////////////////////////
 class ScalarField {
+    public:
+        static const int         NUM_NEIGHBOURS;
+        struct RangeIndices
+        {
+            Vector3i startIndex; 
+            Vector3i endIndex; 
+            Vector3i dimensionIteration;
+        }; 
+
+    private:
+        BoundingBox              _bbox;
+        Tuple3i                  _divisions;
+        REAL                     _cellSize;
+
+        ScalarArray3D           *_fieldValues;
+
     public:
         ScalarField();
 
@@ -73,6 +102,12 @@ class ScalarField {
 
         // find the enclosing (8) neighbours for a given point in space
         void                     enclosingNeighbours(const Vector3d &position, IntArray &neighbours) const; 
+
+        // given query box, compute lower index and number of indices in each dimension. 
+        // For example, if (0,0,0) and (1,1,1) is given, then this function should return 
+        // the first index that is within this boundingbox, and (Nx,Ny,Nz) for
+        // iteration in x,y,z directions. 
+        void                     GetIterationBox(const Vector3d &minBound, const Vector3d &maxBound, RangeIndices &indices); 
 
         // Returns the indices of all cells whose values contribute
         // to the given position, as well as trilinear interpolation
@@ -130,17 +165,10 @@ class ScalarField {
         inline Vector3d minBound() const {return cellPosition(0);}
         inline Vector3d maxBound() const {return cellPosition(numCells()-1);}
 
-    public:
-        static const int         NUM_NEIGHBOURS;
+        //// debug methods ////
+        void TestSubindices();
 
-    protected:
-
-    private:
-        BoundingBox              _bbox;
-        Tuple3i                  _divisions;
-        REAL                     _cellSize;
-
-        ScalarArray3D           *_fieldValues;
+    friend std::ostream &operator <<(std::ostream &os, const ScalarField &field);
 
 };
 
