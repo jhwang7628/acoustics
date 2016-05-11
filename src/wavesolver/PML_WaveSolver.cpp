@@ -287,7 +287,7 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsDynamicAABB(true, false);
+    _grid.classifyCellsDynamicAABB(true, true);
     _cellClassifyTimer.pause(); 
 
     // Update velocity in each direction

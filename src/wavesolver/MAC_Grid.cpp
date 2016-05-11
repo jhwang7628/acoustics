@@ -273,7 +273,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, RE
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
-    PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,bulkCells); 
+    PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,_isVelocitbulkCells); 
 
     // Handle interfacial cells
     if (_useGhostCellBoundary)
@@ -1429,25 +1429,25 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
     _ghostCells.clear();
-    // FIXME debug
-    // FIXME is it going to be a problem when bounding box overlaps?
-    std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
-    std::fill(_containingObject.begin(), _containingObject.end(), -1); 
 
     // if not using boundaries, return immediately
     if (!useBoundary)
         return;
 
-    // get all bounding box ranges 
+    // get all bounding boxes and iteration range
     const int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> indices(N); 
-    for (int ii=0; ii<N; ++ii)
+    for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
-        const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(ii).GetUnionBBox();
-        _pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[ii]); 
+        const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(bbox_id).GetUnionBBox();
+        _pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[bbox_id]); 
     } 
 
     // classify only the subset indicated by bounding box
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
         int ii,jj,kk; 
@@ -1456,22 +1456,17 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
             const Tuple3i cellIndices(ii,jj,kk);
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
             cellPos = _pressureField.cellPosition(cell_idx);
-            const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
-            if (indexOccupyObject>=0) 
-            {
-                _isBulkCell[cell_idx] = false; 
-                _containingObject[cell_idx] = indexOccupyObject; 
-            }
-            else 
-            {
-                _isBulkCell[cell_idx] = true; 
-            }
+            _containingObject[cell_idx] = _objects->OccupyByObject(cellPos); 
+            _isBulkCell[cell_idx] = (_containingObject[cell_idx]>=0 ? false : true); 
         }
     }
 
     // step 4a 
     if (_useGhostCellBoundary) 
     {
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
         for (int bbox_id=0; bbox_id<N; ++bbox_id)
         {
             int ii,jj,kk; 
@@ -1501,121 +1496,146 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
             }
         }
         ComputeGhostCellInverseMap(); 
+        STL_Wrapper::VectorSortAndTrimInPlace(_ghostCells);
     }
     // step 4b 
-    else // FIXME not yet worked on for dynamic re-classification
+    else 
     {
-        for (int dim=0; dim<3; ++dim)
+        // TODO
+        throw std::runtime_error("**ERROR** Dynamic reclassification using AABB acceleration for rasterized boundary condition not implemented");
+        /* 
+        for (int dimension=0; dimension<3; ++dimension)
         {
-            std::fill(_isVelocityBulkCell[dim].begin(), _isVelocityBulkCell[dim].end(), true); 
-            std::fill(_isVelocityInterfacialCell[dim].begin(), _isVelocityInterfacialCell[dim].end(), false); 
-            _velocityInterfacialCells[dim].clear(); 
-            _interfacialBoundaryIDs[dim].clear(); 
-            _interfacialBoundaryDirections[dim].clear(); 
-            _interfacialBoundaryCoefficients[dim].clear(); 
-            _velocityBulkCells[dim].clear(); 
+            _interfacialBoundaryIDs[dimension].clear(); 
+            _interfacialBoundaryDirections[dimension].clear(); 
+            _interfacialBoundaryCoefficients[dimension].clear(); 
+            //_velocityBulkCells[dimension].clear(); 
+            _velocityInterfacialCells[dimension].clear(); 
         }
-        for (int dimension = 0; dimension < 3; dimension++)
+        for (int dimension = 0; dimension < 3; ++dimension)
         {
-            for (int cell_idx = 0; cell_idx < _velocityField[dimension].numCells(); cell_idx++)
+            // get iteration box for velocity field
+            for (int bbox_id=0; bbox_id<N; ++bbox_id)
             {
-                Tuple3i cell_coordinates;
-                int     pressure_cell_idx1;
-                int     pressure_cell_idx2;
+                indices.clear();
+                const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(bbox_id).GetUnionBBox();
+                _velocityField[dimension].GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[bbox_id]); 
+            } 
 
-                cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
-
-                // We will assume that boundary cells are not interfacial
-                if ( cell_coordinates[ dimension ] == 0
-                  || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
+            for (int bbox_id=0; bbox_id<N; ++bbox_id)
+            {
+                int ii,jj,kk; 
+                FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
                 {
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
-                    continue;
-                }
+                    Tuple3i cell_coordinates(ii,jj,kk);
+                    const int cell_idx = _velocityField[dimension].cellIndex(cell_coordinates); 
 
-                // Look at our neighbours in the pressure field
-                cell_coordinates[ dimension ] -= 1;
-                pressure_cell_idx1 = _pressureField.cellIndex( cell_coordinates );
-                cell_coordinates[ dimension ] += 1;
-                pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
+                    int     pressure_cell_idx1;
+                    int     pressure_cell_idx2;
 
-                if (_isBulkCell[ pressure_cell_idx1 ] && _isBulkCell[ pressure_cell_idx2 ])
-                {
-                    // Both pressure cell neighbours are bulk cells, so this is
-                    // a bulk cell too
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
-                }
-                else if ( _isBulkCell[ pressure_cell_idx1 ] 
-                        && !_isBulkCell[ pressure_cell_idx2 ] )
-                {
-                    // Only one neighbour is inside the domain, so this must
-                    // be an interfacial cell
-                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
+                    // We will assume that boundary cells are not interfacial
+                    if ( cell_coordinates[ dimension ] == 0
+                      || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
+                    {
+#pragma omp critical
+                        _isVelocityInterfacialCell[dimension][cell_idx] = false; 
+                        //_velocityBulkCells[ dimension ].push_back( cell_idx );
+                        continue;
+                    }
 
-                    // Get the object ID for the boundary that we are adjacent to
-                    const int boundaryObject = _containingObject[ pressure_cell_idx2 ];
+                    // Look at our neighbours in the pressure field
+                    cell_coordinates[ dimension ] -= 1;
+                    pressure_cell_idx1 = _pressureField.cellIndex( cell_coordinates );
+                    cell_coordinates[ dimension ] += 1;
+                    pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
 
-                    TRACE_ASSERT( boundaryObject >= 0 );
+                    if (_isBulkCell[ pressure_cell_idx1 ] && _isBulkCell[ pressure_cell_idx2 ])
+                    {
+                        // Both pressure cell neighbours are bulk cells, so this is
+                        // a bulk cell too
+#pragma omp critical
+                        _isVelocityInterfacialCell[dimension][cell_idx] = false; 
+                        //_velocityBulkCells[ dimension ].push_back( cell_idx );
+                    }
+                    else if ( _isBulkCell[ pressure_cell_idx1 ] 
+                            && !_isBulkCell[ pressure_cell_idx2 ] )
+                    {
+                        // Only one neighbour is inside the domain, so this must
+                        // be an interfacial cell
+                        _isVelocityInterfacialCell[dimension][cell_idx] = true;
 
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
-                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+                        // Get the object ID for the boundary that we are adjacent to
+                        const int boundaryObject = _containingObject[ pressure_cell_idx2 ];
 
-                    // Determine a scaling coefficient based on the angle between
-                    // the boundary normal and the rasterized boundary normal
-                    Vector3d normal( 0.0, 0.0, 0.0 );
-                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                    Vector3d gradient; 
-                    _objects->ObjectNormal(boundaryObject, position, gradient); 
-                    gradient.normalize();
-                    //Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+                        TRACE_ASSERT( boundaryObject >= 0 );
 
-                    normal[ dimension ] = 1.0;
-                    REAL coefficient = normal.dotProduct( gradient );
+#pragma omp critical
+{
+                        _velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                        _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                        //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
+                        _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+}
 
-                    //TRACE_ASSERT( coefficient >= 0.0 );
+                        // Determine a scaling coefficient based on the angle between
+                        // the boundary normal and the rasterized boundary normal
+                        Vector3d normal( 0.0, 0.0, 0.0 );
+                        Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
+                        Vector3d gradient; 
+                        _objects->ObjectNormal(boundaryObject, position, gradient); 
+                        gradient.normalize();
+                        //Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
 
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-                }
-                else if ( !_isBulkCell[ pressure_cell_idx1 ]
-                        && _isBulkCell[ pressure_cell_idx2 ] )
-                {
-                    // Only one neighbour is inside the domain, so this must
-                    // be an interfacial cell
-                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
+                        normal[ dimension ] = 1.0;
+                        REAL coefficient = normal.dotProduct( gradient );
 
-                    // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = _containingObject[ pressure_cell_idx1 ];
+                        //TRACE_ASSERT( coefficient >= 0.0 );
+#pragma omp critical
+                        _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                    }
+                    else if ( !_isBulkCell[ pressure_cell_idx1 ]
+                            && _isBulkCell[ pressure_cell_idx2 ] )
+                    {
+                        // Only one neighbour is inside the domain, so this must
+                        // be an interfacial cell
+                        _isVelocityInterfacialCell[dimension][cell_idx] = true;
 
-                    TRACE_ASSERT( boundaryObject >= 0 );
+                        // Get the object ID for the boundary that we are adjacent to
+                        int boundaryObject = _containingObject[ pressure_cell_idx1 ];
 
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+                        TRACE_ASSERT( boundaryObject >= 0 );
 
-                    // Determine a scaling coefficient based on the angle between
-                    // the boundary normal and the rasterized boundary normal
-                    Vector3d normal( 0.0, 0.0, 0.0 );
-                    Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                    Vector3d gradient; 
-                    _objects->ObjectNormal(boundaryObject, position, gradient); 
-                    gradient.normalize();
+#pragma omp critical 
+{
+                        _velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                        _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                        _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+}
 
-                    normal[ dimension ] = 1.0;
-                    REAL coefficient = normal.dotProduct( gradient );
+                        // Determine a scaling coefficient based on the angle between
+                        // the boundary normal and the rasterized boundary normal
+                        Vector3d normal( 0.0, 0.0, 0.0 );
+                        Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
+                        Vector3d gradient; 
+                        _objects->ObjectNormal(boundaryObject, position, gradient); 
+                        gradient.normalize();
 
-                    //TRACE_ASSERT( coefficient >= 0.0 );
+                        normal[ dimension ] = 1.0;
+                        REAL coefficient = normal.dotProduct( gradient );
 
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                        //TRACE_ASSERT( coefficient >= 0.0 );
+#pragma omp critical
+                        _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                    }
                 }
             }
         }
+*/
     }
 
     if (verbose) 
     {
-        printf( "MAC_Grid: classifyCellsDynamic:\n" );
+        printf( "MAC_Grid: classifyCellsDynamicAABB:\n" );
         printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
         printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
         printf( "\tFound %d v_x interfacial cells\n",
