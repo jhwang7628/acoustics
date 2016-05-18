@@ -162,7 +162,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
     //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
-    distanceTravelled = -1.0 * DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
+    distanceTravelled = -2.0 * DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);

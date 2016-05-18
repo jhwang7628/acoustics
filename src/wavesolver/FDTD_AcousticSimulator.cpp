@@ -20,17 +20,17 @@ void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
     // TODO debug: for now, attach a harmonic vibrational to all objects in the scene
-    //const int N_objects = _sceneObjects->N();
-//    const REAL omega = 2.0*M_PI*500.0;
-//    const REAL phase = 0.0;
-//    for (int index=0; index<N_objects; ++index)
-//    {
-//        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-//        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-//        //VibrationalSourcePtr sourcePtr = std::make_unique<HarmonicVibrationalSource>(objectPtr, omega, phase); 
-//        objectPtr->AddVibrationalSource(sourcePtr); 
-//        //objectPtr->TestObjectBoundaryCondition();
-//    }
+    const int N_objects = _sceneObjects->N();
+    const REAL omega = 2.0*M_PI*500.0;
+    const REAL phase = 0.0;
+    for (int index=0; index<N_objects; ++index)
+    {
+        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //VibrationalSourcePtr sourcePtr = std::make_unique<HarmonicVibrationalSource>(objectPtr, omega, phase); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
+        //objectPtr->TestObjectBoundaryCondition();
+    }
     // TODO {
     // parser-based 
     // } TODO 
@@ -158,7 +158,12 @@ Run()
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();
 #endif
-        stepIndex++;
+        stepIndex ++;
+        _simulationTime += _acousticSolverSettings->timeStepSize; 
+
+        // debug FIXME
+        if (stepIndex > 0)
+            TestMoveObjects();
     }
 }
 
@@ -192,4 +197,21 @@ TestAllComponents()
         PressureSourcePtr &sourcePtr = _sceneObjects->GetPressureSourcePtr(index);
         sourcePtr->PrintSourceInfo(std::cout);
     }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+TestMoveObjects()
+{
+    const int N_objects = _sceneObjects->N();
+    COUT_SDUMP(_simulationTime);
+    for (int ii=0; ii<N_objects; ii++)
+    {
+        FDTD_RigidObject &animatedObject = _sceneObjects->Get(ii); 
+        animatedObject.ApplyTranslation(0.0, -5.e-5, 0.0);
+        //animatedObject.PrintBoundingBox(); 
+        //animatedObject.PrintTransformation();
+    }
+    
 }

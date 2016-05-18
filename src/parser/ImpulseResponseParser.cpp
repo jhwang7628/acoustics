@@ -11,25 +11,32 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
     TiXmlDocument *document = &_document;
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
     GET_FIRST_CHILD_ELEMENT_GUARD(pressureSourceNode, root, "pressure_source"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source"); 
-    while (gaussianSourceNode) 
+    try
     {
-        const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time"); 
-        const REAL widthSpace        = queryOptionalReal(gaussianSourceNode, "source_width_space", soundSpeed*widthTime); 
-        const REAL offsetTime        = queryOptionalReal(gaussianSourceNode, "source_offset_time", 0.0); 
-        const bool flipSign = (queryOptionalReal(gaussianSourceNode, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
-        const REAL scaleSign = (flipSign) ? -1.0 : 1.0; 
-        const REAL normalizeConstant = queryOptionalReal(gaussianSourceNode, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*widthSpace,3))*scaleSign; 
+        GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source"); 
+        while (gaussianSourceNode) 
+        {
+            const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time"); 
+            const REAL widthSpace        = queryOptionalReal(gaussianSourceNode, "source_width_space", soundSpeed*widthTime); 
+            const REAL offsetTime        = queryOptionalReal(gaussianSourceNode, "source_offset_time", 0.0); 
+            const bool flipSign = (queryOptionalReal(gaussianSourceNode, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
+            const REAL scaleSign = (flipSign) ? -1.0 : 1.0; 
+            const REAL normalizeConstant = queryOptionalReal(gaussianSourceNode, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*widthSpace,3))*scaleSign; 
 
-        Vector3d sourcePosition; 
-        sourcePosition.x = queryRequiredReal(gaussianSourceNode, "source_position_x"); 
-        sourcePosition.y = queryRequiredReal(gaussianSourceNode, "source_position_y"); 
-        sourcePosition.z = queryRequiredReal(gaussianSourceNode, "source_position_z"); 
+            Vector3d sourcePosition; 
+            sourcePosition.x = queryRequiredReal(gaussianSourceNode, "source_position_x"); 
+            sourcePosition.y = queryRequiredReal(gaussianSourceNode, "source_position_y"); 
+            sourcePosition.z = queryRequiredReal(gaussianSourceNode, "source_position_z"); 
 
-        PressureSourcePtr sourcePtr(new GaussianPressureSource(sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant)); 
-        pressureSources.push_back(std::move(sourcePtr)); 
+            PressureSourcePtr sourcePtr(new GaussianPressureSource(sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant)); 
+            pressureSources.push_back(std::move(sourcePtr)); 
 
-        gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source"); 
+            gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source"); 
+        }
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No pressure sources found\n"; 
     }
 }
 

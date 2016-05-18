@@ -44,11 +44,11 @@
         density="1.0" 
         cellsize="0.01" 
         gridresolution="100"
-        stop_time="0.005"
+        stop_time="0.01"
         substeps="4"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_test2/test_%s"
+        output_pattern="work/near-field/data_test3/test_%s"
 
         PML_width="6"
         PML_strength="1000000.0" 
@@ -59,13 +59,13 @@
         /> 
 
     <pressure_source> 
+    <!--
         <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.2" 
         source_position_y="0.0" 
         source_position_z="0.0" 
         />
-    <!--
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 

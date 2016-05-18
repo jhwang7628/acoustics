@@ -80,6 +80,7 @@ class MAC_Grid
         std::vector<const TriMesh *>         _boundaryMeshes;
 
         REAL                     _distanceTolerance;
+        REAL                     _cellSize; 
 
         ScalarField              _pressureField;
         ScalarField              _velocityField[ 3 ];
@@ -87,6 +88,7 @@ class MAC_Grid
         // isBulkCell and isGhostCell refer to cells in the pressure grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
+        // TODO not yet implemented bitwise operation for types
         std::vector<CellType>    _cellTypes; 
 
         // isInterfacialCell refers to cells in the three velocity grid
@@ -96,6 +98,11 @@ class MAC_Grid
 
         IntArray                 _bulkCells;
         IntArray                 _ghostCells;
+        // store cells whose bulk identity changed 
+        //  default value: 0 (no change) 
+        //  +1 means turn to bulk (fluid); 
+        //  -1 means turn to solid
+        IntArray                 _toggledBulkCells;  
 
         bool                     _ghostCellsInverseComputed; 
         std::map<int,int>        _ghostCellsInverse; 

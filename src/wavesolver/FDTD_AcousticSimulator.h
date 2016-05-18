@@ -30,6 +30,7 @@ class FDTD_AcousticSimulator
         bool                    _canInitializeSolver; 
 
         // necessary fields 
+        double                  _simulationTime; 
         std::string             _configFile; 
 
     private: 
@@ -43,10 +44,10 @@ class FDTD_AcousticSimulator
 
     public: 
         FDTD_AcousticSimulator()
-            : _canInitializeSolver(false)
+            : _canInitializeSolver(false), _simulationTime(0.0)
         {}
         FDTD_AcousticSimulator(const std::string &configFile)
-            : _canInitializeSolver(false), _configFile(configFile)
+            : _canInitializeSolver(false), _simulationTime(0.0), _configFile(configFile)
         {} 
 
         // parse, instance grid and solver, read mesh 
@@ -61,6 +62,7 @@ class FDTD_AcousticSimulator
 
         //// debug method //// 
         void TestAllComponents(); 
+        void TestMoveObjects(); 
 };
 
 #endif

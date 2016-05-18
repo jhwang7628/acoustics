@@ -99,6 +99,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
 
     // resize all necessary arrays defined everywhere
     _isBulkCell.resize(N_pressureCells, false);
+    _toggledBulkCells.resize(N_pressureCells, 0); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
     {
@@ -112,6 +113,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
             _isVelocityBulkCell[ii].resize(_velocityField[ii].numCells(),false); 
         }
     }
+    _cellSize = cellSize; 
 }
 
 MAC_Grid::~MAC_Grid()
@@ -268,17 +270,15 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, RE
     const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
     const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
     const ScalarField     &field                        = _velocityField[ dimension ];
-    //const IntArray        &interfaceBoundaryIDs         = _interfacialBoundaryIDs[ dimension ];
-    const FloatArray      &interfaceBoundaryDirections  = _interfacialBoundaryDirections[ dimension ];
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
 
     // Handle all bulk cells
-    PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,_isVelocitbulkCells); 
+    PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, bulkCells); 
 
     // Handle interfacial cells
     if (_useGhostCellBoundary)
     {
-        PML_velocityUpdateAux(p,v,dimension,t,timeStep,density,interfacialCells); 
+        PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, interfacialCells); 
     }
     else
     {
@@ -299,7 +299,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, RE
             Vector3d             normal( 0.0, 0.0, 0.0 ); // normal of the interfacial cell boundary
             Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
 
-            normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
+            normal[ dimension ] = 1.0;
             coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
             //objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
 
@@ -585,167 +585,167 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 //
 void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
-    // for the ghost-cell coupling
-    SparseLinearSystemSolver solver(_ghostCells.size()); 
-
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-    {
-
-        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
-        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
-        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
-        const int       boundaryObject = _containingObject[cellIndex]; 
-
-        // find point BI and IP in the formulation
-        Vector3d boundaryPoint, imagePoint, erectedNormal; 
-        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-
-        // get the box enclosing the image point; 
-        IntArray neighbours; 
-        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-
-        assert(neighbours.size()==8);
-
-        // hasGC  : has self as interpolation stencil
-        int hasGC=-1; 
-
-        std::vector<int> coupledGhostCells; 
-        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
-        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
-
-        for (size_t ii=0; ii<neighbours.size(); ii++) 
-        {
-            if (neighbours[ii] == cellIndex) 
-            {
-                hasGC = ii;
-            }
-            else  
-            {
-                // if not itself but a ghost cell then add an edge to graph
-                // adjacency matrix
-                if (_isGhostCell[neighbours[ii]]) 
-                {
-                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
-                    coupledGhostCellsNeighbours.push_back(ii); 
-                }
-                else
-                    uncoupledGhostCellsNeighbours.push_back(ii);
-            }
-        }
-
-        // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
-        Eigen::MatrixXd V(8,8); 
-        Tuple3i     indicesBuffer;
-        Vector3d    positionBuffer; 
-        Eigen::VectorXd pressureNeighbours(8);  // right hand side
-
-        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
-        const double bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
-        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
-
-        for (size_t row=0; row<neighbours.size(); row++) 
-        {
-            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
-            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
-            
-            if ((int)row!=hasGC)
-            {
-                FillVandermondeRegular(row,positionBuffer, V);
-                pressureNeighbours(row) = p(neighbours[row],0); 
-            }
-            else 
-            {
-                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-                pressureNeighbours(row) = bcEval; 
-            }
-        }
-
-        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
-        Eigen::MatrixXd b(1,8); // row vector
-
-        FillVandermondeRegular(0,imagePoint,b); 
-        b.transposeInPlace();  // column vector
-        V.transposeInPlace(); 
-
-        // TODO svd solve is needed? can I use QR? 
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::VectorXd beta = svd.solve(b);
-        //Eigen::VectorXd beta = V.householderQr().solve(b); 
-        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-        //if (conditionNumber > 1E5 && replaced) 
-        //{
-        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
-        //              << "            the solution can be inaccurate.\n"
-        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
-        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
-        //              << "problematic matrix: \n"
-        //              << V << std::endl;
-        //}
-        //
-#pragma omp critical
-        {
-
-            // fill in the sparse matrix
-            
-            // start by filling the diagonal entry
-            solver.StageEntry(ghost_cell_idx, ghost_cell_idx, 1.0);
-
-            // next fill the off-diagonal terms by iterating through the coupled
-            // ghost cells for this row. its coefficient is defined by the i-th
-            // entry of beta. i=1,...,8 are the index of the neighbour
-            for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
-                solver.StageEntry(ghost_cell_idx, coupledGhostCells[cc], -beta(coupledGhostCellsNeighbours[cc])); 
-
-
-            // FIXME debug
-            //double offdiagonalSum=0.0; 
-            //for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
-            //    offdiagonalSum += fabs(beta(coupledGhostCellsNeighbours[cc])); 
-
-            //if (offdiagonalSum>1.0)
-            //    std::cerr << "**WARNING** not diagonally dominant\n"; 
-
-            // next we compute the right-hand-side (RHS) of the equation. looking
-            // at the equation, it will be the neumann condition + any uncoupled
-            // betas (see google doc for eqution)
-            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
-            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
-                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
-
-            // if GC itself is coupled, need to add this to the RHS
-            if (hasGC != -1) 
-            {
-                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-            }
-
-            // finally we fill the rhs of the sparse linear system
-            solver.FillInRHS(ghost_cell_idx, RHS); 
-        }
-
-        // actually fill-in all the staged entry of the sparse matrix. after this
-        // step the matrix is ready for solve. 
-        {
-            boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
-            solver.FillIn(); 
-        }
-
-        // the actual solve. unfortunately eigen supports only dense RHS solve. 
-        Eigen::VectorXd x; 
-        {
-            boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
-            solver.Solve(x); 
-            //solver.DenseSolve(x); 
-        }
-        // put the solution into matrix p
-        {
-            boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
-            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-                p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
-        }
-    }
+//    // for the ghost-cell coupling
+//    SparseLinearSystemSolver solver(_ghostCells.size()); 
+//
+//#ifdef USE_OPENMP
+//#pragma omp parallel for schedule(static) default(shared)
+//#endif
+//    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+//    {
+//
+//        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
+//        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
+//        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
+//        const int       boundaryObject = _containingObject[cellIndex]; 
+//
+//        // find point BI and IP in the formulation
+//        Vector3d boundaryPoint, imagePoint, erectedNormal; 
+//        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
+//
+//        // get the box enclosing the image point; 
+//        IntArray neighbours; 
+//        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+//
+//        assert(neighbours.size()==8);
+//
+//        // hasGC  : has self as interpolation stencil
+//        int hasGC=-1; 
+//
+//        std::vector<int> coupledGhostCells; 
+//        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
+//        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
+//
+//        for (size_t ii=0; ii<neighbours.size(); ii++) 
+//        {
+//            if (neighbours[ii] == cellIndex) 
+//            {
+//                hasGC = ii;
+//            }
+//            else  
+//            {
+//                // if not itself but a ghost cell then add an edge to graph
+//                // adjacency matrix
+//                if (_isGhostCell[neighbours[ii]]) 
+//                {
+//                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
+//                    coupledGhostCellsNeighbours.push_back(ii); 
+//                }
+//                else
+//                    uncoupledGhostCellsNeighbours.push_back(ii);
+//            }
+//        }
+//
+//        // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
+//        Eigen::MatrixXd V(8,8); 
+//        Tuple3i     indicesBuffer;
+//        Vector3d    positionBuffer; 
+//        Eigen::VectorXd pressureNeighbours(8);  // right hand side
+//
+//        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
+//        const double bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+//        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
+//
+//        for (size_t row=0; row<neighbours.size(); row++) 
+//        {
+//            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+//            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+//            
+//            if ((int)row!=hasGC)
+//            {
+//                FillVandermondeRegular(row,positionBuffer, V);
+//                pressureNeighbours(row) = p(neighbours[row],0); 
+//            }
+//            else 
+//            {
+//                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+//                pressureNeighbours(row) = bcEval; 
+//            }
+//        }
+//
+//        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
+//        Eigen::MatrixXd b(1,8); // row vector
+//
+//        FillVandermondeRegular(0,imagePoint,b); 
+//        b.transposeInPlace();  // column vector
+//        V.transposeInPlace(); 
+//
+//        // TODO svd solve is needed? can I use QR? 
+//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+//        Eigen::VectorXd beta = svd.solve(b);
+//        //Eigen::VectorXd beta = V.householderQr().solve(b); 
+//        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+//        //if (conditionNumber > 1E5 && replaced) 
+//        //{
+//        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
+//        //              << "            the solution can be inaccurate.\n"
+//        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
+//        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
+//        //              << "problematic matrix: \n"
+//        //              << V << std::endl;
+//        //}
+//        //
+//#pragma omp critical
+//        {
+//
+//            // fill in the sparse matrix
+//            
+//            // start by filling the diagonal entry
+//            solver.StageEntry(ghost_cell_idx, ghost_cell_idx, 1.0);
+//
+//            // next fill the off-diagonal terms by iterating through the coupled
+//            // ghost cells for this row. its coefficient is defined by the i-th
+//            // entry of beta. i=1,...,8 are the index of the neighbour
+//            for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
+//                solver.StageEntry(ghost_cell_idx, coupledGhostCells[cc], -beta(coupledGhostCellsNeighbours[cc])); 
+//
+//
+//            // FIXME debug
+//            //double offdiagonalSum=0.0; 
+//            //for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
+//            //    offdiagonalSum += fabs(beta(coupledGhostCellsNeighbours[cc])); 
+//
+//            //if (offdiagonalSum>1.0)
+//            //    std::cerr << "**WARNING** not diagonally dominant\n"; 
+//
+//            // next we compute the right-hand-side (RHS) of the equation. looking
+//            // at the equation, it will be the neumann condition + any uncoupled
+//            // betas (see google doc for eqution)
+//            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
+//            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
+//                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
+//
+//            // if GC itself is coupled, need to add this to the RHS
+//            if (hasGC != -1) 
+//            {
+//                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
+//            }
+//
+//            // finally we fill the rhs of the sparse linear system
+//            solver.FillInRHS(ghost_cell_idx, RHS); 
+//        }
+//
+//        // actually fill-in all the staged entry of the sparse matrix. after this
+//        // step the matrix is ready for solve. 
+//        {
+//            boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
+//            solver.FillIn(); 
+//        }
+//
+//        // the actual solve. unfortunately eigen supports only dense RHS solve. 
+//        Eigen::VectorXd x; 
+//        {
+//            boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
+//            solver.Solve(x); 
+//            //solver.DenseSolve(x); 
+//        }
+//        // put the solution into matrix p
+//        {
+//            boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
+//            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+//                p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
+//        }
+//    }
 }
 
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
@@ -1423,11 +1423,6 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 ///##############################################################################
 void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose)
 {
-    const int numPressureCells = _pressureField.numCells(); 
-    Vector3d cellPos;
-    IntArray neighbours;
-    neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
-
     _ghostCells.clear();
 
     // if not using boundaries, return immediately
@@ -1440,7 +1435,13 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
         const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(bbox_id).GetUnionBBox();
-        _pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[bbox_id]); 
+
+        // debug FIXME 
+        //std::cout << "unionBBox = " << unionBBox.minBound << ";  " << unionBBox.maxBound << std::endl;
+        const Vector3d maxBound = unionBBox.maxBound + _cellSize; 
+        const Vector3d minBound = unionBBox.minBound - _cellSize; 
+        _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
+        //_pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[bbox_id]); 
     } 
 
     // classify only the subset indicated by bounding box
@@ -1450,6 +1451,7 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
 #endif
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
+        Vector3d cellPos;
         int ii,jj,kk; 
         FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
         {
@@ -1457,7 +1459,16 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
             cellPos = _pressureField.cellPosition(cell_idx);
             _containingObject[cell_idx] = _objects->OccupyByObject(cellPos); 
-            _isBulkCell[cell_idx] = (_containingObject[cell_idx]>=0 ? false : true); 
+            // need to update the id of the cell 
+            const bool newIsBulkCell = (_containingObject[cell_idx]>=0 ? false : true); 
+            int &toggledBulk = _toggledBulkCells[cell_idx];  // see field _toggledBulkCells for convention
+            if (_isBulkCell[cell_idx] && !newIsBulkCell)  // turning to solid cell
+                toggledBulk = -1; 
+            else if (!_isBulkCell[cell_idx] && newIsBulkCell) // turning to bulk cell
+                toggledBulk = 1; 
+            else 
+                toggledBulk = I_INF; 
+            _isBulkCell[cell_idx] = newIsBulkCell; 
         }
     }
 
@@ -1470,29 +1481,39 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
         for (int bbox_id=0; bbox_id<N; ++bbox_id)
         {
             int ii,jj,kk; 
+            IntArray neighbours;
+            neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
             FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
             {
                 const Tuple3i cellIndices(ii,jj,kk);
                 const int cell_idx = _pressureField.cellIndex(cellIndices); 
+                // if it is bulk cell for two consecutive steps, its safe to skip ghost cell classification
                 if (_isBulkCell[cell_idx])
+                {
+                    if (_toggledBulkCells[cell_idx] != 0)
+                    {
+                        _isGhostCell[cell_idx] = false; // need to reset this if last time step because last step might be ghost cell
+                    }
                     continue; 
-                // FIXME this part might be slow due to reallocation of
+                }
+                // TODO this part might be slow due to reallocation of
                 // neighbours
                 _pressureField.cellNeighbours(cell_idx, neighbours);
                 const int neighbourSize = neighbours.size();
+                bool thisIsGhostCell = false; 
                 for (int neighbour_idx = 0; neighbour_idx<neighbourSize; ++neighbour_idx)
                 {
                     if (_isBulkCell[neighbours[neighbour_idx]])
                     {
                         // We have a neighbour outside of the interior object, so
                         // this is a ghost cell
-                        _isGhostCell[cell_idx] = true;
+                        thisIsGhostCell = true; 
 #pragma omp critical
                         _ghostCells.push_back(cell_idx); 
                         break;
                     }
                 }
-                _isGhostCell[cell_idx] = false; 
+                _isGhostCell[cell_idx] = thisIsGhostCell; 
             }
         }
         ComputeGhostCellInverseMap(); 
@@ -1501,9 +1522,8 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
     // step 4b 
     else 
     {
-        // TODO
-        throw std::runtime_error("**ERROR** Dynamic reclassification using AABB acceleration for rasterized boundary condition not implemented");
-        /* 
+        throw std::runtime_error("**ERROR** not supporting rasterized cell reclassification. you can use the non-AABB accelerated version"); 
+        /*
         for (int dimension=0; dimension<3; ++dimension)
         {
             _interfacialBoundaryIDs[dimension].clear(); 
@@ -1539,7 +1559,6 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
                     {
 #pragma omp critical
                         _isVelocityInterfacialCell[dimension][cell_idx] = false; 
-                        //_velocityBulkCells[ dimension ].push_back( cell_idx );
                         continue;
                     }
 
@@ -1557,8 +1576,7 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
                         _isVelocityInterfacialCell[dimension][cell_idx] = false; 
                         //_velocityBulkCells[ dimension ].push_back( cell_idx );
                     }
-                    else if ( _isBulkCell[ pressure_cell_idx1 ] 
-                            && !_isBulkCell[ pressure_cell_idx2 ] )
+                    else if ( _isBulkCell[ pressure_cell_idx1 ] && !_isBulkCell[ pressure_cell_idx2 ] )
                     {
                         // Only one neighbour is inside the domain, so this must
                         // be an interfacial cell
@@ -1630,7 +1648,7 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
                 }
             }
         }
-*/
+*/ 
     }
 
     if (verbose) 
@@ -1699,9 +1717,6 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
     if ( h <= absorptionWidth )
     {
         REAL                     dist = absorptionWidth - h;
-        // FIXME debug
-        return 0.0; 
-
         if (_cornellBoxBoundaryCondition)
             return 0.0; // skip face at +z face
         else 

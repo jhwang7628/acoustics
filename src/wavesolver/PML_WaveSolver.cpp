@@ -246,8 +246,8 @@ bool PML_WaveSolver::stepSystem()
     _timeIndex += 1;
     _stepTimer.pause();
 
+#ifdef DEBUG
     printf( "Average time step cost: %f sec\n", _stepTimer.getMsPerCycle() );
-
     printf( " - Algebra             took %f sec\n", _algebraTimer.getMsPerCycle() );
     printf( " - Memory operations   took %f sec\n", _memoryTimer.getMsPerCycle() );
     printf( " - Writing             took %f sec\n", _writeTimer.getMsPerCycle() );
@@ -257,6 +257,7 @@ bool PML_WaveSolver::stepSystem()
 
     if (_useGhostCellBoundary) 
         printf( " - Ghost-cell update took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
+#endif
 
     if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
         return false;
@@ -287,7 +288,11 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
+#ifdef DEBUG
     _grid.classifyCellsDynamicAABB(true, true);
+#else 
+    _grid.classifyCellsDynamicAABB(true, false);
+#endif 
     _cellClassifyTimer.pause(); 
 
     // Update velocity in each direction
