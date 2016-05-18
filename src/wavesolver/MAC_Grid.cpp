@@ -878,7 +878,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
     }
 
 
-    const int maxIteration = 10;
+    const int maxIteration = 50;
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         #ifdef USE_OPENMP
@@ -1421,7 +1421,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 // base on the new object positions. Therefore, not all cells will be checked.
 //
 ///##############################################################################
-void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose)
+void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose)
 {
     _ghostCells.clear();
 
@@ -1469,6 +1469,10 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
             else 
                 toggledBulk = I_INF; 
             _isBulkCell[cell_idx] = newIsBulkCell; 
+
+            // FIXME debug 
+            if (!newIsBulkCell)  // reset the pressure for all solid cells; 
+                p(cell_idx, 0) = 0.0;
         }
     }
 
@@ -1516,8 +1520,8 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, const bool &ver
                 _isGhostCell[cell_idx] = thisIsGhostCell; 
             }
         }
-        ComputeGhostCellInverseMap(); 
         STL_Wrapper::VectorSortAndTrimInPlace(_ghostCells);
+        ComputeGhostCellInverseMap(); 
     }
     // step 4b 
     else 

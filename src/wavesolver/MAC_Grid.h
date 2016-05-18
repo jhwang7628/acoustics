@@ -237,7 +237,7 @@ class MAC_Grid
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void visualizeClassifiedCells(); 
-        void classifyCellsDynamicAABB(const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell

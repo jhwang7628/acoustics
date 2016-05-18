@@ -289,11 +289,21 @@ void PML_WaveSolver::stepLeapfrog()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
 #ifdef DEBUG
-    _grid.classifyCellsDynamicAABB(true, true);
+    _grid.classifyCellsDynamicAABB(true, _pFull, true);
 #else 
-    _grid.classifyCellsDynamicAABB(true, false);
+    _grid.classifyCellsDynamicAABB(true, _pFull, true);
 #endif 
     _cellClassifyTimer.pause(); 
+
+    // debug FIXME 
+    if (_useGhostCellBoundary)
+    {
+        // Update the ghost pressures for the velocity update in the next step
+        _ghostCellTimer.start(); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime); 
+        _ghostCellTimer.pause(); 
+    }
 
     // Update velocity in each direction
     _gradientTimer.start();
