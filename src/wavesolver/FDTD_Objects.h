@@ -33,6 +33,7 @@ class FDTD_Objects
         int OccupyByObject(const Vector3d &positionWorld); 
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
         REAL LowestObjectDistance(const Vector3d &positionWorld); 
+        void LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 
         void ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal); 
         void AddVibrationalSourceToObject(const int &objectIndex, VibrationalSourcePtr &sourcePtr);
         void AddPressureSource(PressureSourcePtr &sourcePtr); 

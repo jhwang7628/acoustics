@@ -775,8 +775,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
-        assert(neighbours.size()==8);
-
         // hasGC  : has self as interpolation stencil
         // coupled: if at least one interpolation stencil is another ghost-cell 
         int hasGC=-1; 
@@ -833,7 +831,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
             }
         }
 
-        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
+        // want beta = V^-T b, equivalent to solving V^T beta = b
         Eigen::MatrixXd b(1,8); // row vector
 
         FillVandermondeRegular(0,imagePoint,b); 
@@ -932,6 +930,106 @@ void MAC_Grid::ComputeGhostCellInverseMap()
 
     _ghostCellsInverseComputed = true; 
 }
+
+void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const REAL &density)
+{
+    const int N_cells = _toggledBulkCells.size(); 
+    const int N = _objects->N(); 
+    std::vector<ScalarField::RangeIndices> indices(N); 
+    for (int bbox_id = 0; bbox_id<N; ++bbox_id) 
+    {
+        const FDTD_MovableObject::BoundingBox &unionBox = _objects->Get(bbox_id).GetUnionBBox();
+        // enlarge the box by a little bit in order to include the fresh cells
+        const Vector3d maxBound = unionBox.maxBound + _cellSize * 2.0; 
+        const Vector3d minBound = unionBox.minBound - _cellSize * 2.0; 
+        _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
+    }
+
+    int countToggled = 0;
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int bbox_id=0; bbox_id<N; ++bbox_id)
+    {
+        Vector3d cellPosition;
+        int ii,jj,kk; 
+        FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
+        {
+            const Tuple3i cellIndices(ii,jj,kk);
+            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            cellPosition = _pressureField.cellPosition(cell_idx);
+
+            if (_toggledBulkCells[cell_idx] > 0) // this is the cell we want
+            {
+                REAL distance; 
+                int objectID; 
+                _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+                if (distance < 0.0)
+                    throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
+                Vector3d imagePoint, boundaryPoint, erectedNormal; 
+                REAL distanceTravelled; 
+                _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+
+                // prepare interpolation stencils, this part is similar to
+                // the vandermonde part in ghost cell pressure update
+                IntArray neighbours; 
+                _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+                Eigen::MatrixXd V(8,8); 
+                Tuple3i indicesBuffer;
+                Vector3d positionBuffer; 
+                Eigen::VectorXd pressureNeighbours(8); 
+                const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+
+                for (size_t row=0; row<neighbours.size(); row++) 
+                {
+                    if (!_isBulkCell[neighbours[row]]) 
+                        throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
+                    indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+                    positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+                    if (neighbours[row] != cell_idx) // not self
+                    {
+                        FillVandermondeRegular(row, positionBuffer, V);
+                        pressureNeighbours(row) = p(neighbours[row], 0); 
+                    }
+                    else 
+                    {
+                        FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                        pressureNeighbours(row) = bcEval; 
+                    }
+                }
+
+                // coefficient for the interpolant
+                Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+                Eigen::VectorXd C = V.lu().solve(pressureNeighbours); 
+
+                // evaluate the interpolant at cell position
+                Eigen::VectorXd coordinateVector(8); 
+                FillVandermondeRegular(cellPosition, coordinateVector);
+                const REAL pressureFreshCell = C.dot(coordinateVector); 
+                p(cell_idx, 0) = pressureFreshCell; 
+
+                COUT_SDUMP(pressureFreshCell); 
+
+                countToggled ++; 
+            }
+        } 
+    }
+
+    COUT_SDUMP(countToggled);
+
+#ifdef DEBUG
+    int countToggled_debug = 0;
+    for (int cell_idx=0; cell_idx<N_cells; ++cell_idx) 
+    {
+       if (_toggledBulkCells[cell_idx] > 0) // this is the cell we want
+           countToggled_debug ++; 
+    }
+
+    assert(countToggled == countToggled_debug); 
+    COUT_SDUMP(countToggled_debug); 
+#endif
+
+} 
 
 void MAC_Grid::classifyCells( bool useBoundary )
 {
@@ -1779,6 +1877,14 @@ void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPositi
     V(row,5) =   y  ; 
     V(row,6) =     z; 
     V(row,7) =     1; 
+}
+
+void MAC_Grid::FillVandermondeRegular(const Vector3d &cellPosition, Eigen::VectorXd &V)
+{
+    Eigen::MatrixXd tmp(1,8); 
+    FillVandermondeRegular(0, cellPosition, tmp); 
+    for (int ii=0; ii<8; ii++)
+        V(ii) = tmp(0,ii);
 }
 
 void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V)

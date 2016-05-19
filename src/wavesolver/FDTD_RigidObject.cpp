@@ -166,7 +166,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
-    const bool reflectSuccess = (newDistance > -DISTANCE_TOLERANCE); 
+    const bool reflectSuccess = (newDistance > 0.0); 
 
     if (true) 
     {
@@ -187,6 +187,51 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     return reflectSuccess;
 }
 
+//##############################################################################
+// Without a better name, this function finds the image point for the fresh 
+// cell in ghost-cell implementation by extending the current query point 
+// to find IP. 
+//
+//           /
+// IP  CU  BI
+//  o---o---o  inside boundary
+//          |  
+//          |
+//
+//##############################################################################
+bool FDTD_RigidObject::
+FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
+{
+    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)>0));
+
+    //erectedNormal = _signedDistanceField->gradient(originalPoint); 
+    NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
+    erectedNormal.normalize(); 
+    //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
+    distanceTravelled = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
+    boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
+    imagePoint    = originalPoint + erectedNormal * (distanceTravelled); 
+    const REAL newDistance = DistanceToMesh(imagePoint);
+    const bool isExterior = (newDistance > 0.0); 
+
+    if (true) 
+    {
+        Vector3d boundaryNormal;
+        NormalToMesh(boundaryPoint.x, boundaryPoint.y, boundaryPoint.z, boundaryNormal); 
+        //Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
+        boundaryNormal.normalize(); 
+        if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
+        {
+            std::cerr << "**WARNING** erected normal and true normal deviates. This might cause inaccuracy for the imposed Neumann boundary condition at original point : " 
+                      << originalPoint 
+                      << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
+        }
+        if (!isExterior)
+            std::cerr << "**ERROR** reflected point " << originalPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
+    }
+
+    return isExterior;
+}
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::

@@ -70,6 +70,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
         REAL EvaluateBoundaryCondition(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
+        bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
 
         //// debug methods //// 
         void TestQueryDistance(); 

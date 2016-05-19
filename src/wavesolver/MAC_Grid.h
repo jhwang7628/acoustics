@@ -214,6 +214,10 @@ class MAC_Grid
         // Compute the ghost cell index from the flatten index 
         void ComputeGhostCellInverseMap();
 
+        // interpolate the fresh cell value
+        // see 2008 Mittal paper section 2.2.3
+        void FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const REAL &density); 
+
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 
         inline void SetGhostCellBoundary(const bool &isOn) { _useGhostCellBoundary = isOn; }
@@ -309,6 +313,7 @@ class MAC_Grid
         inline void FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal); 
 
         // fill the Vandermonde matrix 
+        inline void FillVandermondeRegular (const Vector3d &cellPosition, Eigen::VectorXd &V);
         inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
 

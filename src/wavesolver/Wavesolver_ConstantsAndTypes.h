@@ -41,7 +41,7 @@ typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator;
 //const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
 const double sqrt_2_pi = sqrt(2.0*M_PI); 
 const double sqrt_2 = sqrt(2.0); 
-const double DISTANCE_TOLERANCE = 1E-5; 
+//const double DISTANCE_TOLERANCE = 0.0;
 const double GAUSSIAN_CHECK_BOUND = 3.0; // for pressure sources only check within
 const double AABB_CHECK_TOLERANCE_SCALE = 1.1; // scaling factor applied when checking AABB inside
 
