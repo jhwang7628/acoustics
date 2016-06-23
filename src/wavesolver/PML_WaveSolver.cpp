@@ -291,7 +291,7 @@ void PML_WaveSolver::stepLeapfrog()
 #ifdef DEBUG
     _grid.classifyCellsDynamicAABB(true, _pFull, true);
 #else 
-    _grid.classifyCellsDynamicAABB(true, _pFull, true);
+    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 #endif 
     _cellClassifyTimer.pause(); 
 
@@ -299,6 +299,11 @@ void PML_WaveSolver::stepLeapfrog()
     if (_useGhostCellBoundary)
     {
         _grid.FreshCellInterpolate(_pFull, _currentTime, _density); 
+        // Update the ghost pressures for the velocity update in the next step
+        _ghostCellTimer.start(); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime); 
+        _ghostCellTimer.pause(); 
     }
 
     // Update velocity in each direction
@@ -310,16 +315,17 @@ void PML_WaveSolver::stepLeapfrog()
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    _grid.PML_pressureUpdateFull( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    //_grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdateFull( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     _divergenceTimer.pause();
 
     _algebraTimer.start();
-    //_pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
+    _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
     _algebraTimer.pause();
 
+    // debug FIXME 
     if (_useGhostCellBoundary)
     {
         // Update the ghost pressures for the velocity update in the next step

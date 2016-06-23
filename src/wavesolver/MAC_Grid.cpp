@@ -475,11 +475,13 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
             continue; 
         const Vector3d cell_position = _pressureField.cellPosition(cell_idx);
         //const Vector3d cell_position = _pressureField.cellPosition(_bulkCells[cell_idx]);
+
         for (int dimension=0; dimension<3; ++dimension) 
         {
             const REAL      absorptionCoefficient = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
             const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
             const MATRIX   &v = vArray[dimension];
+
             if (inPML) 
             {
                 const REAL      directionalCoefficient  = PML_directionalCoefficient( absorptionCoefficient, timeStep );
@@ -491,7 +493,7 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 
                 // Scale the existing pressure value
                 for ( int i = 0; i < _N; i++ )
-                    p(cell_idx, i) *= updateCoefficient;
+                    p(cell_idx, i) *= updateCoefficient; 
 
                 cell_indices[dimension] += 1;
                 neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
@@ -754,6 +756,17 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(_ghostCells.size()); 
 
+    //debug FIXME 
+    std::ofstream of, of2; 
+    bool write = false; 
+
+    if ((int)(simulationTime/timeStep)%4==0)
+    {
+        write = true; 
+        of.open("work/near-field/data_test/boundaryPoint_"+std::to_string((int)(simulationTime/timeStep/4.0))+".csv"); 
+        of2.open("work/near-field/data_test/ghostPoint_"+std::to_string((int)(simulationTime/timeStep/4.0))+".csv"); 
+    }
+      
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -769,7 +782,15 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
         //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 10);
+        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 1);
+
+        // debug FIXME
+#pragma omp critical
+        {
+        if (write)
+            of << boundaryPoint.x << "," << boundaryPoint.y << "," << boundaryPoint.z << std::endl;
+            of2 << cellPosition.x << "," << cellPosition.y << "," << cellPosition.z << std::endl;
+        }
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -875,6 +896,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
 
+    // debug FIXME
+    if (write)
+    {
+        of.close();
+        of2.close();
+    }
+
 
     const int maxIteration = 50;
     for (int iteration=0; iteration<maxIteration; iteration++) 
@@ -964,7 +992,7 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
                 REAL distance; 
                 int objectID; 
                 _objects->LowestObjectDistance(cellPosition, distance, objectID); 
-                if (distance < 0.0)
+                if (distance < DISTANCE_TOLERANCE)
                     throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
                 Vector3d imagePoint, boundaryPoint, erectedNormal; 
                 REAL distanceTravelled; 
@@ -1000,7 +1028,8 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
 
                 // coefficient for the interpolant
                 Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-                Eigen::VectorXd C = V.lu().solve(pressureNeighbours); 
+                //Eigen::VectorXd C = V.lu().solve(pressureNeighbours); 
+                Eigen::VectorXd C = svd.solve(pressureNeighbours); 
 
                 // evaluate the interpolant at cell position
                 Eigen::VectorXd coordinateVector(8); 
@@ -1568,7 +1597,6 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, cons
                 toggledBulk = I_INF; 
             _isBulkCell[cell_idx] = newIsBulkCell; 
 
-            // FIXME debug 
             if (!newIsBulkCell)  // reset the pressure for all solid cells; 
                 p(cell_idx, 0) = 0.0;
         }

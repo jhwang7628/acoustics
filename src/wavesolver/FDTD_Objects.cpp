@@ -23,7 +23,7 @@ OccupyByObject(const Vector3d &positionWorld)
     for (int ii=0; ii<N_objects; ii++) 
     {
         const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
-        if (distance < 0) 
+        if (distance < DISTANCE_TOLERANCE) 
             return ii; 
     }
     return -1;

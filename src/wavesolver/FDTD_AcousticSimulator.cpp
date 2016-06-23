@@ -210,7 +210,7 @@ TestMoveObjects()
     {
         FDTD_RigidObject &animatedObject = _sceneObjects->Get(ii); 
         //animatedObject.ApplyTranslation(0.0, -5.e-5, 0.0);
-        animatedObject.ApplyTranslation(0.0, -1e-5, 0.0);
+        animatedObject.ApplyTranslation(0.0, -2e-5, 0.0);
         //animatedObject.PrintBoundingBox(); 
         //animatedObject.PrintTransformation();
     }

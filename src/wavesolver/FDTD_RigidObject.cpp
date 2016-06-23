@@ -156,17 +156,16 @@ EvaluateBoundaryCondition(const Vector3d &boundaryPoint, const Vector3d &boundar
 bool FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<0));
+    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
     //erectedNormal = _signedDistanceField->gradient(originalPoint); 
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
-    //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
-    distanceTravelled = -2.0 * DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
+    distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
-    const bool reflectSuccess = (newDistance > 0.0); 
+    const bool reflectSuccess = (newDistance > DISTANCE_TOLERANCE); 
 
     if (true) 
     {
@@ -202,17 +201,17 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 bool FDTD_RigidObject::
 FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)>0));
+    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)>DISTANCE_TOLERANCE));
 
     //erectedNormal = _signedDistanceField->gradient(originalPoint); 
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
     //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
-    distanceTravelled = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z); 
+    distanceTravelled = fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
     boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
     imagePoint    = originalPoint + erectedNormal * (distanceTravelled); 
     const REAL newDistance = DistanceToMesh(imagePoint);
-    const bool isExterior = (newDistance > 0.0); 
+    const bool isExterior = (newDistance > DISTANCE_TOLERANCE); 
 
     if (true) 
     {
