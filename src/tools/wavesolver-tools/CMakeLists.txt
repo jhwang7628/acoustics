@@ -27,5 +27,6 @@ if ( BUILD_WAVESOLVER_TOOLS )
         boost_thread
         boost_timer
         boost_system                    
+        boost_filesystem
         boost_regex) 
 endif ( BUILD_WAVESOLVER_TOOLS )

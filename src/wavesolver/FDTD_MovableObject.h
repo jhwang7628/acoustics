@@ -66,6 +66,7 @@ class FDTD_MovableObject
                 dimension = maxBound - minBound; 
                 centroid = (maxBound + minBound)/2.0;
             }
+            // union two bounding box to form a bigger box in each directions
             inline void Union(const BoundingBox &inBox) 
             {
                 for (int d=0; d<3; ++d) 
@@ -84,7 +85,7 @@ class FDTD_MovableObject
         BoundingBox                         _bboxWorldUnion2Steps; 
 
         // premultiply this transform to point takes it from object space to
-        // work space
+        // world space
         Affine3                             _modelingTransform; 
         Affine3                             _modelingTransformInverse; 
 

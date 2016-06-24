@@ -18,7 +18,7 @@ class FDTD_Objects
     public: 
         inline int N() const {return _rigidObjects.size();} 
         inline int N_sources() const {return _pressureSources.size();}
-        inline FDTD_RigidObject& Get(const int &ind){return *(_rigidObjects[ind]);} 
+        inline FDTD_RigidObject &Get(const int &ind){return *(_rigidObjects[ind]);} 
         inline RigidObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
         inline PressureSourcePtr &GetPressureSourcePtr(const int &ind){return _pressureSources.at(ind);} 
         inline std::string GetMeshName(const int &ind) const {return std::string(_rigidObjects.at(ind)->GetMeshName());}

@@ -104,7 +104,6 @@ class MAC_Grid
         //  -1 means turn to solid
         IntArray                 _toggledBulkCells;  
 
-        bool                     _ghostCellsInverseComputed; 
         std::map<int,int>        _ghostCellsInverse; 
 
         IntArray                 _velocityBulkCells[ 3 ];

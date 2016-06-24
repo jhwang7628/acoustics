@@ -60,7 +60,7 @@ UpdateBoundingBox()
             maxBound.y = max(maxBound.y, pointBuffer[1]);
             maxBound.z = max(maxBound.z, pointBuffer[2]);
         }
-        _bboxWorld.Update(minBound,maxBound); 
+        _bboxWorld.Update(minBound, maxBound); 
     }
     else 
         throw std::runtime_error("**ERROR** mesh not set");
