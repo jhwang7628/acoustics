@@ -161,7 +161,7 @@ Run()
         _simulationTime += _acousticSolverSettings->timeStepSize; 
 
         // debug FIXME
-        if (stepIndex > 0)
+        if (stepIndex > 20)
             TestMoveObjects();
     }
 }

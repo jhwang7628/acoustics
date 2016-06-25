@@ -97,6 +97,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     // resize all necessary arrays defined everywhere
     _isBulkCell.resize(N_pressureCells, false);
     _toggledBulkCells.resize(N_pressureCells, 0); 
+    _toggledGhostCells.resize(N_pressureCells, 0); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
     {
@@ -754,7 +755,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
     _ghostCellCoupledData.resize(_ghostCells.size()); 
 
     //debug FIXME 
-    std::ofstream of, of2; 
+    std::ofstream of, of2, of3; 
     bool write = false; 
 
     if ((int)(simulationTime/timeStep)%4==0)
@@ -956,103 +957,190 @@ void MAC_Grid::ComputeGhostCellInverseMap()
 
 void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const REAL &density)
 {
-    const int N_cells = _toggledBulkCells.size(); 
-    const int N = _objects->N(); 
-    std::vector<ScalarField::RangeIndices> indices(N); 
-    for (int bbox_id = 0; bbox_id<N; ++bbox_id) 
-    {
-        const FDTD_MovableObject::BoundingBox &unionBox = _objects->Get(bbox_id).GetUnionBBox();
-        // enlarge the box by a little bit in order to include the fresh cells
-        const Vector3d maxBound = unionBox.maxBound + _cellSize * 2.0; 
-        const Vector3d minBound = unionBox.minBound - _cellSize * 2.0; 
-        _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
-    }
+//    const int N_cells = _toggledBulkCells.size(); 
+//    const int N = _objects->N(); 
+//    std::vector<ScalarField::RangeIndices> indices(N); 
+//    for (int bbox_id = 0; bbox_id<N; ++bbox_id) 
+//    {
+//        const FDTD_MovableObject::BoundingBox &unionBox = _objects->Get(bbox_id).GetUnionBBox();
+//        // enlarge the box by a little bit in order to include the fresh cells
+//        const Vector3d maxBound = unionBox.maxBound + 2.0*_cellSize; 
+//        const Vector3d minBound = unionBox.minBound - 2.0*_cellSize; 
+//        _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
+//    }
+//
+//#ifdef USE_OPENMP
+//#pragma omp parallel for schedule(static) default(shared)
+//#endif
+//    for (int bbox_id=0; bbox_id<N; ++bbox_id)
+//    {
+//        Vector3d cellPosition;
+//        int ii,jj,kk; 
+//        FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
+//        {
+//            const Tuple3i cellIndices(ii,jj,kk);
+//            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+//            cellPosition = _pressureField.cellPosition(cell_idx);
+//
+//            if (_toggledBulkCells[cell_idx] == 1) // this is the cell which turns into bulk cells
+//            {
+//                REAL distance; 
+//                int objectID; 
+//                _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+//                if (distance < DISTANCE_TOLERANCE)
+//                    throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
+//                Vector3d imagePoint, boundaryPoint, erectedNormal; 
+//                REAL distanceTravelled; 
+//                _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+//
+//                // prepare interpolation stencils, this part is similar to
+//                // the vandermonde part in ghost cell pressure update
+//                IntArray neighbours; 
+//                _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+//                Eigen::MatrixXd V(8,8); 
+//                Tuple3i indicesBuffer;
+//                Vector3d positionBuffer; 
+//                Eigen::VectorXd RHS(8); 
+//                const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+//
+//                for (size_t row=0; row<neighbours.size(); row++) 
+//                {
+//                    // TODO 
+//                    if (!_isBulkCell[neighbours[row]]) 
+//                        throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
+//                    indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+//                    positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+//                    if (neighbours[row] != cell_idx) // not self
+//                    {
+//                        FillVandermondeRegular(row, positionBuffer, V);
+//                        RHS(row) = p(neighbours[row], 0); 
+//                    }
+//                    else 
+//                    {
+//                        FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+//                        RHS(row) = bcEval; 
+//                    }
+//                }
+//
+//                // coefficient for the interpolant
+//                Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+//                //Eigen::VectorXd C = V.lu().solve(RHS); 
+//                Eigen::VectorXd C = svd.solve(RHS); 
+//
+//                // evaluate the interpolant at cell position
+//                Eigen::VectorXd coordinateVector(8); 
+//                FillVandermondeRegular(cellPosition, coordinateVector);
+//                const REAL pressureFreshCell = C.dot(coordinateVector); 
+//                p(cell_idx, 0) = pressureFreshCell; 
+//
+//                // set the neighbouring new ghost cells into the same value as
+//                // the fresh cell
+//                for (size_t nei=0; nei<neighbours.size(); nei++) 
+//                {
+//                    std::cout << _toggledGhostCells[neighbours[nei]] << " "; 
+//                    if (_toggledGhostCells[neighbours[nei]] == 1) 
+//                    {
+//                        exit(1);
+//                    }
+//                }
+//                std::cout << std::endl;
+//            }
+//        } 
+//    }
 
-    int countToggled = 0;
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for (int bbox_id=0; bbox_id<N; ++bbox_id)
+    //// FIXME DEBUG ////
+      
+    //const int N_cells = _toggledBulkCells.size(); 
+    //const int N = _objects->N(); 
+    //std::vector<ScalarField::RangeIndices> indices(N); 
+    //for (int bbox_id = 0; bbox_id<N; ++bbox_id) 
+    //{
+    //    const FDTD_MovableObject::BoundingBox &unionBox = _objects->Get(bbox_id).GetUnionBBox();
+    //    // enlarge the box by a little bit in order to include the fresh cells
+    //    const Vector3d maxBound = unionBox.maxBound + 2.0*_cellSize; 
+    //    const Vector3d minBound = unionBox.minBound - 2.0*_cellSize; 
+    //    _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
+    //}
+
+    const int numPressureCells = _pressureField.numCells();
+
+    // FIXME debug
+    //for (int ii=0; ii<numPressureCells; ++ii) 
+    //{
+    //    std::cout << _toggledGhostCells[ii] << " "; 
+    //}
+
+    for (int cell_idx = 0; cell_idx<numPressureCells; ++cell_idx) 
     {
-        Vector3d cellPosition;
-        int ii,jj,kk; 
-        FOR_ALL_3D_GRID_VECTOR3(indices[bbox_id].startIndex, indices[bbox_id].dimensionIteration, ii, jj, kk)
+        Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
+        if (_toggledBulkCells[cell_idx] == 1) // this is the cell which turns into bulk cells
         {
-            const Tuple3i cellIndices(ii,jj,kk);
-            const int cell_idx = _pressureField.cellIndex(cellIndices); 
-            cellPosition = _pressureField.cellPosition(cell_idx);
+            REAL distance; 
+            int objectID; 
+            _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+            if (distance < DISTANCE_TOLERANCE)
+                throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
+            Vector3d imagePoint, boundaryPoint, erectedNormal; 
+            REAL distanceTravelled; 
+            _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
 
-            if (_toggledBulkCells[cell_idx] > 0) // this is the cell we want
+            // prepare interpolation stencils, this part is similar to
+            // the vandermonde part in ghost cell pressure update
+            IntArray neighbours; 
+            _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+            Eigen::MatrixXd V(8,8); 
+            Tuple3i indicesBuffer;
+            Vector3d positionBuffer; 
+            Eigen::VectorXd RHS(8); 
+            const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+
+            for (size_t row=0; row<neighbours.size(); row++) 
             {
-                REAL distance; 
-                int objectID; 
-                _objects->LowestObjectDistance(cellPosition, distance, objectID); 
-                if (distance < DISTANCE_TOLERANCE)
-                    throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
-                Vector3d imagePoint, boundaryPoint, erectedNormal; 
-                REAL distanceTravelled; 
-                _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
-
-                // prepare interpolation stencils, this part is similar to
-                // the vandermonde part in ghost cell pressure update
-                IntArray neighbours; 
-                _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-                Eigen::MatrixXd V(8,8); 
-                Tuple3i indicesBuffer;
-                Vector3d positionBuffer; 
-                Eigen::VectorXd pressureNeighbours(8); 
-                const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
-
-                for (size_t row=0; row<neighbours.size(); row++) 
+                // TODO 
+                if (!_isBulkCell[neighbours[row]]) 
+                    throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
+                indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+                positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+                if (neighbours[row] != cell_idx) // not self
                 {
-                    if (!_isBulkCell[neighbours[row]]) 
-                        throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
-                    indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
-                    positionBuffer= _pressureField.cellPosition(indicesBuffer); 
-                    if (neighbours[row] != cell_idx) // not self
-                    {
-                        FillVandermondeRegular(row, positionBuffer, V);
-                        pressureNeighbours(row) = p(neighbours[row], 0); 
-                    }
-                    else 
-                    {
-                        FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-                        pressureNeighbours(row) = bcEval; 
-                    }
+                    FillVandermondeRegular(row, positionBuffer, V);
+                    RHS(row) = p(neighbours[row], 0); 
                 }
-
-                // coefficient for the interpolant
-                Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-                //Eigen::VectorXd C = V.lu().solve(pressureNeighbours); 
-                Eigen::VectorXd C = svd.solve(pressureNeighbours); 
-
-                // evaluate the interpolant at cell position
-                Eigen::VectorXd coordinateVector(8); 
-                FillVandermondeRegular(cellPosition, coordinateVector);
-                const REAL pressureFreshCell = C.dot(coordinateVector); 
-                p(cell_idx, 0) = pressureFreshCell; 
-
-                COUT_SDUMP(pressureFreshCell); 
-
-                countToggled ++; 
+                else 
+                {
+                    FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                    RHS(row) = bcEval; 
+                }
             }
-        } 
+
+            // coefficient for the interpolant
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            //Eigen::VectorXd C = V.lu().solve(RHS); 
+            Eigen::VectorXd C = svd.solve(RHS); 
+
+            // evaluate the interpolant at cell position
+            Eigen::VectorXd coordinateVector(8); 
+            FillVandermondeRegular(cellPosition, coordinateVector);
+            const REAL pressureFreshCell = C.dot(coordinateVector); 
+            p(cell_idx, 0) = pressureFreshCell; 
+
+            // reuse the neighbour int array to get neighbours of the current
+            // fresh cell
+            // set the neighbouring new ghost cells into the same value as
+            // the fresh cell
+            _pressureField.cellNeighbours(cell_idx, neighbours); 
+            for (size_t nei=0; nei<neighbours.size(); nei++) 
+            {
+                std::cout << neighbours[nei] << " : " << _toggledGhostCells[neighbours[nei]] << " "; 
+                if (_toggledGhostCells[neighbours[nei]] == 1) 
+                {
+                    p(neighbours[nei], 0) = p(cell_idx, 0); 
+                }
+            }
+            std::cout << std::endl;
+        }
     }
-
-    COUT_SDUMP(countToggled);
-
-#ifdef DEBUG
-    int countToggled_debug = 0;
-    for (int cell_idx=0; cell_idx<N_cells; ++cell_idx) 
-    {
-       if (_toggledBulkCells[cell_idx] > 0) // this is the cell we want
-           countToggled_debug ++; 
-    }
-
-    assert(countToggled == countToggled_debug); 
-    COUT_SDUMP(countToggled_debug); 
-#endif
-
+    //// DEBUG END FIXME ////
 } 
 
 void MAC_Grid::classifyCells( bool useBoundary )
@@ -1338,10 +1426,11 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 
     // step 1 
     _bulkCells.clear(); 
+    _ghostCells.clear(); 
     for (int dim=0; dim<3; ++dim) 
         _velocityBulkCells[dim].clear(); 
-    std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
-    std::fill(_containingObject.begin(), _containingObject.end(), -1); 
+    //std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
+    //std::fill(_containingObject.begin(), _containingObject.end(), -1); 
 
     // step 2
     if (!useBoundary)
@@ -1368,27 +1457,44 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
         cellPos = _pressureField.cellPosition( cell_idx );
         // Check all boundary fields to see if this is a bulk cell
         const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
-        if (indexOccupyObject>=0) 
+        const bool newIsBulkCell = (indexOccupyObject>=0 ? false : true); 
+        if (_isBulkCell[cell_idx] && !newIsBulkCell)  // turning to solid cell
+            _toggledBulkCells[cell_idx] = -1; 
+        else if (!_isBulkCell[cell_idx] && newIsBulkCell) // turning to bulk cell
+            _toggledBulkCells[cell_idx] = 1; 
+        else // identity unchanged
+            _toggledBulkCells[cell_idx] = 0; 
+
+        if (!newIsBulkCell) 
         {
             _isBulkCell[cell_idx] = false; 
             _containingObject[cell_idx] = indexOccupyObject; 
         }
-        if ( _isBulkCell[ cell_idx ] )
+        else 
+        {
+            _isBulkCell[cell_idx] = true; 
+            _containingObject[cell_idx] = -1; 
             _bulkCells.push_back( cell_idx );
+        }
     }
 
     // step 4a 
-    // TODO later we might want to do smart things like trying to figure out
-    // the update pattern based on rigid motion of objects. good for now. 
     if (_useGhostCellBoundary) 
     {
-        std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
-        _ghostCells.clear(); 
+        //std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
         // examine ghost cells 
         for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
         {
-            if ( _isBulkCell[ cell_idx ] )
+            bool newIsGhostCell = false; 
+            if (_isBulkCell[cell_idx])
+            {
+                if (_isGhostCell[cell_idx]) // turn to non-ghost from ghost
+                    _toggledGhostCells[cell_idx] = -1;
+                else 
+                    _toggledGhostCells[cell_idx] = 0;
+                _isGhostCell[cell_idx] = false; 
                 continue;
+            }
             _pressureField.cellNeighbours( cell_idx, neighbours );
             for (size_t neighbour_idx = 0; neighbour_idx<neighbours.size(); ++neighbour_idx)
             {
@@ -1396,11 +1502,18 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
                 {
                     // We have a neighbour outside of the interior object, so
                     // this is a ghost cell
-                    _isGhostCell[ cell_idx ] = true;
+                    newIsGhostCell = true; 
                     _ghostCells.push_back(cell_idx); 
                     break;
                 }
             }
+            if (_isGhostCell[cell_idx] && !newIsGhostCell)
+                _toggledGhostCells[cell_idx] = -1;
+            else if (!_isGhostCell[cell_idx] && newIsGhostCell) 
+                _toggledGhostCells[cell_idx] = 1; 
+            else 
+                _toggledGhostCells[cell_idx] = 0;
+            _isGhostCell[ cell_idx ] = newIsGhostCell;
         }
         ComputeGhostCellInverseMap(); 
         // TODO can make smarter 
@@ -1558,14 +1671,12 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, cons
     {
         const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(object_id).GetUnionBBox();
 
-        const Vector3d maxBound = unionBBox.maxBound + _cellSize; 
-        const Vector3d minBound = unionBBox.minBound - _cellSize; 
+        const Vector3d maxBound = unionBBox.maxBound + 2.0*_cellSize; 
+        const Vector3d minBound = unionBBox.minBound - 2.0*_cellSize; 
         _pressureField.GetIterationBox(minBound, maxBound, indices[object_id]); 
-        //_pressureField.GetIterationBox(unionBBox.minBound, unionBBox.maxBound, indices[object_id]); 
     } 
 
     // classify only the subset indicated by bounding box
-
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -1581,13 +1692,12 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, cons
             _containingObject[cell_idx] = _objects->OccupyByObject(cellPos); 
             // need to update the id of the cell 
             const bool newIsBulkCell = (_containingObject[cell_idx]>=0 ? false : true); 
-            int &toggledBulk = _toggledBulkCells[cell_idx];  // see field _toggledBulkCells for convention
             if (_isBulkCell[cell_idx] && !newIsBulkCell)  // turning to solid cell
-                toggledBulk = -1; 
+                _toggledBulkCells[cell_idx] = -1; 
             else if (!_isBulkCell[cell_idx] && newIsBulkCell) // turning to bulk cell
-                toggledBulk = 1; 
+                _toggledBulkCells[cell_idx] = 1; 
             else // identity unchanged
-                toggledBulk = 0; 
+                _toggledBulkCells[cell_idx] = 0; 
             _isBulkCell[cell_idx] = newIsBulkCell; 
 
             if (!newIsBulkCell)  // reset the pressure for all solid cells; 
@@ -1610,30 +1720,34 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, cons
             {
                 const Tuple3i cellIndices(ii,jj,kk);
                 const int cell_idx = _pressureField.cellIndex(cellIndices); 
+                bool newIsGhostCell = false; 
                 // classify ghost cells
-                if (_isBulkCell[cell_idx])
-                {
-                    _isGhostCell[cell_idx] = false; 
-                }
-                else 
+                if (!_isBulkCell[cell_idx]) 
                 {
                     _pressureField.cellNeighbours(cell_idx, neighbours);
                     const int neighbourSize = neighbours.size();
-                    bool thisIsGhostCell = false; 
                     for (int neighbour_idx = 0; neighbour_idx<neighbourSize; ++neighbour_idx)
                     {
                         if (_isBulkCell[neighbours[neighbour_idx]])
                         {
                             // We have a neighbour outside of the interior object, so
                             // this is a ghost cell
-                            thisIsGhostCell = true; 
-#pragma omp crit    ical
+                            newIsGhostCell = true; 
+#pragma omp critical
                             _ghostCells.push_back(cell_idx); 
                             break;
                         }
                     }
-                    _isGhostCell[cell_idx] = thisIsGhostCell; 
                 }
+                if (_isGhostCell[cell_idx] || newIsGhostCell) 
+                    std::cout << "toggle ghost cell = " << _isGhostCell[cell_idx] << " " << newIsGhostCell << std::endl;
+                if (_isGhostCell[cell_idx] && !newIsGhostCell)
+                    _toggledGhostCells[cell_idx] = -1;
+                else if (!_isGhostCell[cell_idx] && newIsGhostCell) 
+                    _toggledGhostCells[cell_idx] = 1; 
+                else 
+                    _toggledGhostCells[cell_idx] = 0;
+                _isGhostCell[cell_idx] = newIsGhostCell; 
             }
         }
         STL_Wrapper::VectorSortAndTrimInPlace(_ghostCells);

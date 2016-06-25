@@ -98,11 +98,17 @@ class MAC_Grid
 
         IntArray                 _bulkCells;
         IntArray                 _ghostCells;
+
         // store cells whose bulk identity changed 
         //  default value: 0 (no change) 
         //  +1 means turn to bulk (fluid); 
         //  -1 means turn to solid
         IntArray                 _toggledBulkCells;  
+        // store cells whose ghost identity changed 
+        //  default value: 0 (no change) 
+        //  +1 means turn to ghost from regular solid (fluid); 
+        //  -1 means turn to not ghost (bulk or solid) from ghost
+        IntArray                 _toggledGhostCells; 
 
         std::map<int,int>        _ghostCellsInverse; 
 

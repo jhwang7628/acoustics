@@ -286,24 +286,23 @@ void PML_WaveSolver::writeWaveOutput() const
 
 void PML_WaveSolver::stepLeapfrog()
 {
+
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-#ifdef DEBUG
-    _grid.classifyCellsDynamicAABB(true, _pFull, true);
-#else 
-    _grid.classifyCellsDynamicAABB(true, _pFull, false);
-#endif 
+    // FIXME DEBUG
+//#ifdef DEBUG
+//    _grid.classifyCellsDynamicAABB(true, _pFull, true);
+//#else 
+//    _grid.classifyCellsDynamicAABB(true, _pFull, false);
+//#endif 
+    _grid.initFieldRasterized(true);
+    //_grid.classifyCellsDynamicAABB(true, _pFull, false);
     _cellClassifyTimer.pause(); 
 
     // deal with the fresh cell problem
     if (_useGhostCellBoundary)
     {
         _grid.FreshCellInterpolate(_pFull, _currentTime, _density); 
-        // Update the ghost pressures for the velocity update in the next step
-        _ghostCellTimer.start(); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime); 
-        _ghostCellTimer.pause(); 
     }
 
     // Update velocity in each direction
@@ -325,49 +324,46 @@ void PML_WaveSolver::stepLeapfrog()
     _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
     _algebraTimer.pause();
 
-    // debug FIXME 
     if (_useGhostCellBoundary)
     {
-        // Update the ghost pressures for the velocity update in the next step
         _ghostCellTimer.start(); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells(_pFull, _timeStep, _waveSpeed, bcEvaluator, _currentTime); 
         _ghostCellTimer.pause(); 
     }
 
-    _writeTimer.start();
-    if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
-    {
-        REAL                     listenerOutput;
-        const ScalarField       &field = _grid.pressureField();
-        for ( size_t i = 0; i < _listeningPositions->size(); i++ )
-        {
-            field.interpolateVectorField( _listeningPositions->at( i ), _pFull, _listenerOutput );
-            for ( int field_id = 0; field_id < _N; field_id++ )
-            {
-                listenerOutput = _listenerOutput( field_id );
-                _waveOutput[ i ][ field_id ].push_back( listenerOutput );
-            }
-            if ( _outputFile && _timeIndex % 64 == 0 )
-            {
-                char buf[ 1024 ];
-                for ( int field_id = 0; field_id < _N; field_id++ )
-                {
-                    sprintf( buf, "%s_field_%d_position_%03lu.vector", _outputFile, field_id, i );
-                    writeVector( buf, _waveOutput[ i ][ field_id ] );
-                }
-            }
-        }
-    }
-    _writeTimer.pause();
-
-    if ( _zSlice >= 0 )
-    {
-        char buf[ 1024 ];
-        sprintf( buf, "slicedata/slicedata_%04d.matrix", _timeIndex );
-        _grid.sampleZSlice( _zSlice, _pFull, _sliceData );
-        _sliceData.write( buf );
-    }
+    //_writeTimer.start();
+    //if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
+    //{
+    //    REAL                     listenerOutput;
+    //    const ScalarField       &field = _grid.pressureField();
+    //    for ( size_t i = 0; i < _listeningPositions->size(); i++ )
+    //    {
+    //        field.interpolateVectorField( _listeningPositions->at( i ), _pFull, _listenerOutput );
+    //        for ( int field_id = 0; field_id < _N; field_id++ )
+    //        {
+    //            listenerOutput = _listenerOutput( field_id );
+    //            _waveOutput[ i ][ field_id ].push_back( listenerOutput );
+    //        }
+    //        if ( _outputFile && _timeIndex % 64 == 0 )
+    //        {
+    //            char buf[ 1024 ];
+    //            for ( int field_id = 0; field_id < _N; field_id++ )
+    //            {
+    //                sprintf( buf, "%s_field_%d_position_%03lu.vector", _outputFile, field_id, i );
+    //                writeVector( buf, _waveOutput[ i ][ field_id ] );
+    //            }
+    //        }
+    //    }
+    //}
+    //_writeTimer.pause();
+    //
+    //if ( _zSlice >= 0 )
+    //{
+    //    char buf[ 1024 ];
+    //    sprintf( buf, "slicedata/slicedata_%04d.matrix", _timeIndex );
+    //    _grid.sampleZSlice( _zSlice, _pFull, _sliceData );
+    //    _sliceData.write( buf );
+    //}
 
     _currentTime += _timeStep;
 }

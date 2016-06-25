@@ -165,7 +165,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
-    const bool reflectSuccess = (newDistance > DISTANCE_TOLERANCE); 
+    const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
 
     if (true) 
     {
@@ -187,9 +187,11 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 }
 
 //##############################################################################
-// Without a better name, this function finds the image point for the fresh 
-// cell in ghost-cell implementation by extending the current query point 
-// to find IP. 
+// Without a better name, this function finds the image point (IP) for the fresh 
+// cell in ghost-cell implementation by extending the current query point (CU)
+// to find IP. Boundary point (BI) will also be located for boundary condition
+// evaluation later. The fresh cell is contracted to be outside the boundary 
+// when this function is called.
 //
 //           /
 // IP  CU  BI
@@ -199,20 +201,28 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 //
 //##############################################################################
 bool FDTD_RigidObject::
-FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
+FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)>DISTANCE_TOLERANCE));
+    assert(_signedDistanceField!=nullptr && (DistanceToMesh(currentPoint.x,currentPoint.y,currentPoint.z)>DISTANCE_TOLERANCE));
 
-    //erectedNormal = _signedDistanceField->gradient(originalPoint); 
-    NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
+    //erectedNormal = _signedDistanceField->gradient(currentPoint); 
+    NormalToMesh(currentPoint.x, currentPoint.y, currentPoint.z, erectedNormal);
     erectedNormal.normalize(); 
-    //distanceTravelled = -_signedDistanceField->distance(originalPoint)*2; 
-    distanceTravelled = fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
-    boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
-    imagePoint    = originalPoint + erectedNormal * (distanceTravelled); 
+    //distanceTravelled = -_signedDistanceField->distance(currentPoint)*2; 
+    distanceTravelled = DistanceToMesh(currentPoint.x, currentPoint.y, currentPoint.z);
+    if (distanceTravelled > 0) // located correctly outside the boundary
+    {
+        boundaryPoint = currentPoint - erectedNormal * (distanceTravelled);
+        imagePoint    = currentPoint + erectedNormal * (distanceTravelled); 
+    }
+    else // inside the buffer, follow a similar procedure as the ghost cell method 
+    {
+        boundaryPoint = currentPoint - erectedNormal * (distanceTravelled);
+        imagePoint    = currentPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
+    }
+
     const REAL newDistance = DistanceToMesh(imagePoint);
     const bool isExterior = (newDistance > DISTANCE_TOLERANCE); 
-
     if (true) 
     {
         Vector3d boundaryNormal;
@@ -222,11 +232,11 @@ FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d
         if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
         {
             std::cerr << "**WARNING** erected normal and true normal deviates. This might cause inaccuracy for the imposed Neumann boundary condition at original point : " 
-                      << originalPoint 
+                      << currentPoint 
                       << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
         }
         if (!isExterior)
-            std::cerr << "**ERROR** reflected point " << originalPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
+            std::cerr << "**ERROR** reflected point " << currentPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
     }
 
     return isExterior;

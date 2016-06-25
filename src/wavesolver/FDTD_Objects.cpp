@@ -49,6 +49,7 @@ LowestObjectDistance(const Vector3d &positionWorld)
 }
 
 //##############################################################################
+// Find the closest object with respect to positionWorld
 //##############################################################################
 void FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
@@ -154,14 +155,13 @@ bool FDTD_Objects::
 ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const int &maxIteration)
 {
     int objectID = OccupyByObject(originalPoint);
+    accumulatedBoundaryConditionValue = 0.0;
     if (objectID == -1)  // the input point is not inside any objects in the scene
     {
         reflectedPoint = originalPoint; 
-        accumulatedBoundaryConditionValue = 0.0;
         return true; 
     }
 
-    accumulatedBoundaryConditionValue = 0.0;
     Vector3d intermediatePoint; 
     REAL distanceTravelled; 
     intermediatePoint = originalPoint; 
