@@ -98,6 +98,9 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     _isBulkCell.resize(N_pressureCells, false);
     _toggledBulkCells.resize(N_pressureCells, 0); 
     _toggledGhostCells.resize(N_pressureCells, 0); 
+    _toggledVelocityInterfacialCells[0].resize(N_pressureCells, 0); 
+    _toggledVelocityInterfacialCells[1].resize(N_pressureCells, 0); 
+    _toggledVelocityInterfacialCells[2].resize(N_pressureCells, 0); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
     {
@@ -329,7 +332,6 @@ void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, MATRIX &v, int dimension,
         const Vector3d cell_position = field.cellPosition(cell_indices);
         const REAL      absorptionCoefficient   = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
         const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
-
 
         // If we're on a boundary, then set the derivative to zero (since
         // we should have d_n p = 0 on the boundary
@@ -1143,6 +1145,67 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //// DEBUG END FIXME ////
 } 
 
+void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p)
+{
+    const int numPressureCells = _pressureField.numCells(); 
+    for (int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx)
+    {
+        if (_toggledBulkCells[cell_idx] != 1) // no history problem, skip
+            continue; 
+
+        // look at its immediate neighbours, and compute the average among bulk
+        // cells 
+        IntArray neighbours; 
+        neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
+        _pressureField.cellNeighbours(cell_idx, neighbours); 
+
+        REAL average = 0; 
+        int neighbourBulk = 0;
+        for (int nei=0; nei<neighbours.size(); ++nei) 
+        {
+            const int neighbour_cell_idx = neighbours[nei];
+            if (_isBulkCell[neighbour_cell_idx]) 
+            {
+                neighbourBulk += 1; 
+                average += p(neighbour_cell_idx, 0); 
+            } 
+        }
+        average /= (REAL) neighbourBulk; 
+        p(cell_idx, 0) = average; 
+    }
+}
+
+void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim)
+{
+    const int numVelocityCells = _velocityField[dim].numCells(); 
+    // essentially same procedures as pressure cells
+    for (int cell_idx = 0; cell_idx < numVelocityCells; ++cell_idx) 
+    {
+        if (_toggledVelocityInterfacialCells[dim][cell_idx] != 1) // no history problem, skip
+            continue; 
+
+        // look at its immediate neighbours, and compute the average among bulk
+        // cells 
+        IntArray neighbours; 
+        neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
+        _velocityField[dim].cellNeighbours(cell_idx, neighbours); 
+
+        REAL average = 0; 
+        int neighbourBulk = 0;
+        for (int nei=0; nei<neighbours.size(); ++nei) 
+        {
+            const int neighbour_cell_idx = neighbours[nei];
+            if (_isVelocityBulkCell[dim][neighbour_cell_idx]) 
+            {
+                neighbourBulk += 1; 
+                average += v(neighbour_cell_idx, 0); 
+            } 
+        }
+        average /= (REAL) neighbourBulk; 
+        v(cell_idx, 0) = average; 
+    }
+}
+
 void MAC_Grid::classifyCells( bool useBoundary )
 {
 
@@ -1413,8 +1476,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
 //         (2) classify velocity cells as either bulk or interfacial, depending on
 //             its neighbouring pressure cells 
 //
-//  TODO needs to be optimized, too slow right now
-//
 //##############################################################################
 void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose)
 {
@@ -1424,7 +1485,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
-    // step 1 
+    // step 1 : clear relevant arrays
     _bulkCells.clear(); 
     _ghostCells.clear(); 
     for (int dim=0; dim<3; ++dim) 
@@ -1432,7 +1493,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
     //std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
     //std::fill(_containingObject.begin(), _containingObject.end(), -1); 
 
-    // step 2
+    // step 2 : not using boundary, classification is trivial
     if (!useBoundary)
     {
         if (verbose) 
@@ -1451,7 +1512,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
         return;
     }
 
-    // step 3
+    // step 3 : classify pressure bulk cells 
     for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
     {
         cellPos = _pressureField.cellPosition( cell_idx );
@@ -1468,6 +1529,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
         if (!newIsBulkCell) 
         {
             _isBulkCell[cell_idx] = false; 
+            // clear the pressure cells that are bulk
             _containingObject[cell_idx] = indexOccupyObject; 
         }
         else 
@@ -1478,7 +1540,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
         }
     }
 
-    // step 4a 
+    // step 4a : classify pressure ghost cells if flag is on
     if (_useGhostCellBoundary) 
     {
         //std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
@@ -1521,13 +1583,14 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
             for (int ii=0; ii<_velocityField[dim].numCells(); ++ii)
                 _velocityBulkCells[dim].push_back(ii);
     }
-    // step 4b 
+    // step 4b : classify velocity cells for rasterized boundary
     else
     {
         for (int dim=0; dim<3; ++dim)
         {
             std::fill(_isVelocityBulkCell[dim].begin(), _isVelocityBulkCell[dim].end(), true); 
-            std::fill(_isVelocityInterfacialCell[dim].begin(), _isVelocityInterfacialCell[dim].end(), false); 
+            //std::fill(_isVelocityInterfacialCell[dim].begin(), _isVelocityInterfacialCell[dim].end(), false); 
+            std::fill(_toggledVelocityInterfacialCells[dim].begin(), _toggledVelocityInterfacialCells[dim].end(), 0); 
             _velocityInterfacialCells[dim].clear(); 
             _interfacialBoundaryIDs[dim].clear(); 
             _interfacialBoundaryDirections[dim].clear(); 
@@ -1549,6 +1612,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
                   || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
                 {
                     _velocityBulkCells[ dimension ].push_back( cell_idx );
+                    _isVelocityInterfacialCell[dimension][cell_idx] = false; 
                     continue;
                 }
 
@@ -1562,6 +1626,9 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
                 {
                     // Both pressure cell neighbours are bulk cells, so this is
                     // a bulk cell too
+                    if (_isVelocityInterfacialCell[dimension][cell_idx] == true) 
+                        _toggledVelocityInterfacialCells[dimension][cell_idx] = -1; 
+                    _isVelocityInterfacialCell[dimension][cell_idx] = false; 
                     _velocityBulkCells[ dimension ].push_back( cell_idx );
                 }
                 else if ( _isBulkCell[ pressure_cell_idx1 ] 
@@ -1569,6 +1636,8 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
+                    if (_isVelocityInterfacialCell[dimension][cell_idx] == false) 
+                        _toggledVelocityInterfacialCells[dimension][cell_idx] = 1; 
                     _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                     // Get the object ID for the boundary that we are adjacent to
@@ -1595,6 +1664,7 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 
                     //TRACE_ASSERT( coefficient >= 0.0 );
 
+                    _isVelocityBulkCell[dimension][cell_idx] = false; 
                     _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
                 }
                 else if ( !_isBulkCell[ pressure_cell_idx1 ]
@@ -1602,6 +1672,8 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
+                    if (_isVelocityInterfacialCell[dimension][cell_idx] == false) 
+                        _toggledVelocityInterfacialCells[dimension][cell_idx] = 1; 
                     _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
 
                     // Get the object ID for the boundary that we are adjacent to
@@ -1626,7 +1698,13 @@ void MAC_Grid::classifyCellsDynamic(const bool &useBoundary, const bool &verbose
 
                     //TRACE_ASSERT( coefficient >= 0.0 );
 
+                    _isVelocityBulkCell[dimension][cell_idx] = false; 
                     _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                }
+                else // both sides aren't bulk, this is a solid cell
+                {
+                    _isVelocityBulkCell[dimension][cell_idx] = false; 
+                    _isVelocityInterfacialCell[dimension][cell_idx] = false;
                 }
             }
         }

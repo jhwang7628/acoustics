@@ -92,6 +92,8 @@ class MAC_Grid
         std::vector<CellType>    _cellTypes; 
 
         // isInterfacialCell refers to cells in the three velocity grid
+        // interfacial cells are classified as non bulk although its value is
+        // valid
         BoolArray                _isVelocityBulkCell[ 3 ];
 
         BoolArray                _isVelocityInterfacialCell[ 3 ];
@@ -109,6 +111,13 @@ class MAC_Grid
         //  +1 means turn to ghost from regular solid (fluid); 
         //  -1 means turn to not ghost (bulk or solid) from ghost
         IntArray                 _toggledGhostCells; 
+
+        // store velocity cells who transition between solid and interfacial
+        // cells  
+        //  default value: 0 (no change) 
+        //  +1 means turn to interfacial from solid; 
+        //  -1 means turn to solid from interfacial
+        IntArray                 _toggledVelocityInterfacialCells[3]; 
 
         std::map<int,int>        _ghostCellsInverse; 
 
@@ -222,6 +231,13 @@ class MAC_Grid
         // interpolate the fresh cell value
         // see 2008 Mittal paper section 2.2.3
         void FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const REAL &density); 
+
+        // deal with the problem for rasterized boundary, when
+        // solid->interfacial for velocity cells, or when solid->bulk for
+        // pressure cells. In these two situations the cell does not have valid
+        // history. 
+        void InterpolatePressureCellHistory(MATRIX &p);
+        void InterpolateVelocityCellHistory(MATRIX &v, const int &dimension);
 
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 
