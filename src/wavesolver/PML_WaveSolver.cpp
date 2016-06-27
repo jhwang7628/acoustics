@@ -11,6 +11,7 @@
 #include <wavesolver/FDTD_Objects.h> 
 #include "PML_WaveSolver.h"
 #include "utils/Evaluator.h"
+#include "utils/STL_Wrapper.h"
 
 PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const BoundingBox &bbox,
@@ -295,7 +296,8 @@ void PML_WaveSolver::stepLeapfrog()
 //#else 
 //    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 //#endif 
-    _grid.initFieldRasterized(true);
+    _grid.classifyCellsDynamic(_pFull, _p, _v, true, false); 
+    //_grid.initFieldRasterized(true);
     //_grid.classifyCellsDynamicAABB(true, _pFull, false);
     _cellClassifyTimer.pause(); 
 
@@ -306,13 +308,13 @@ void PML_WaveSolver::stepLeapfrog()
     }
     else 
     {
-         _grid.InterpolatePressureCellHistory(_p[0]);  
-         _grid.InterpolatePressureCellHistory(_p[1]);  
-         _grid.InterpolatePressureCellHistory(_p[2]);  
-         _grid.InterpolatePressureCellHistory(_pFull);  
-         //_grid.InterpolateVelocityCellHistory(_v[0], 0);
-         //_grid.InterpolateVelocityCellHistory(_v[1], 1);
-         //_grid.InterpolateVelocityCellHistory(_v[2], 2);
+         //_grid.InterpolatePressureCellHistory(_p[0]);  
+         //_grid.InterpolatePressureCellHistory(_p[1]);  
+         //_grid.InterpolatePressureCellHistory(_p[2]);  
+         //_grid.InterpolatePressureCellHistory(_pFull);  
+         _grid.InterpolateVelocityCellHistory(_v[0], 0);
+         _grid.InterpolateVelocityCellHistory(_v[1], 1);
+         _grid.InterpolateVelocityCellHistory(_v[2], 2);
     }
 
     // Update velocity in each direction

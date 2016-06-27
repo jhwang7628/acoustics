@@ -115,14 +115,13 @@ class MAC_Grid
         // store velocity cells who transition between solid and interfacial
         // cells  
         //  default value: 0 (no change) 
-        //  +1 means turn to interfacial from solid; 
+        //  +1 means turn to interfacial from solid        
         //  -1 means turn to solid from interfacial
         IntArray                 _toggledVelocityInterfacialCells[3]; 
 
         std::map<int,int>        _ghostCellsInverse; 
 
         IntArray                 _velocityBulkCells[ 3 ];
-
         IntArray                 _velocityInterfacialCells[ 3 ];
 
         IntArray                 _pressureGhostCells;
@@ -262,12 +261,12 @@ class MAC_Grid
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void visualizeClassifiedCells(); 
+        void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
-        void classifyCellsDynamic(const bool &useBoundary, const bool &verbose=false);
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
