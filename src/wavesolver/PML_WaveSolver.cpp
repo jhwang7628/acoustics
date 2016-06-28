@@ -308,14 +308,16 @@ void PML_WaveSolver::stepLeapfrog()
     }
     else 
     {
-         //_grid.InterpolatePressureCellHistory(_p[0]);  
-         //_grid.InterpolatePressureCellHistory(_p[1]);  
-         //_grid.InterpolatePressureCellHistory(_p[2]);  
-         //_grid.InterpolatePressureCellHistory(_pFull);  
+         _grid.InterpolatePressureCellHistory(_p[0]);  
+         _grid.InterpolatePressureCellHistory(_p[1]);  
+         _grid.InterpolatePressureCellHistory(_p[2]);  
+         _grid.InterpolatePressureCellHistory(_pFull);  
          _grid.InterpolateVelocityCellHistory(_v[0], 0);
          _grid.InterpolateVelocityCellHistory(_v[1], 1);
          _grid.InterpolateVelocityCellHistory(_v[2], 2);
+    COUT_SDUMP("HERE");
     }
+
 
     // Update velocity in each direction
     _gradientTimer.start();

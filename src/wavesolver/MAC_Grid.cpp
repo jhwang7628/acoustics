@@ -98,9 +98,6 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     _isBulkCell.resize(N_pressureCells, false);
     _toggledBulkCells.resize(N_pressureCells, 0); 
     _toggledGhostCells.resize(N_pressureCells, 0); 
-    _toggledVelocityInterfacialCells[0].resize(N_pressureCells, 0); 
-    _toggledVelocityInterfacialCells[1].resize(N_pressureCells, 0); 
-    _toggledVelocityInterfacialCells[2].resize(N_pressureCells, 0); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
     {
@@ -110,8 +107,10 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     {
         for (int ii=0; ii<3; ++ii) 
         {
-            _isVelocityInterfacialCell[ii].resize(_velocityField[ii].numCells(),false); 
-            _isVelocityBulkCell[ii].resize(_velocityField[ii].numCells(),false); 
+            const int N_velocityCells = _velocityField[ii].numCells(); 
+            _isVelocityInterfacialCell[ii].resize(N_velocityCells, false); 
+            _isVelocityBulkCell[ii].resize(N_velocityCells, false); 
+            _toggledVelocityInterfacialCells[ii].resize(N_velocityCells, 0); 
         }
     }
     _cellSize = cellSize; 
@@ -1191,13 +1190,13 @@ void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim)
 
         REAL average = 0; 
         int neighbourBulk = 0;
-        for (int nei=0; nei<neighbours.size(); ++nei) 
+        for (size_t nei=0; nei<neighbours.size(); ++nei) 
         {
-            const int neighbour_cell_idx = neighbours[nei];
-            if (_isVelocityBulkCell[dim][neighbour_cell_idx]) 
+            const int neighbour_idx = neighbours[nei];
+            if (_isVelocityBulkCell[dim][neighbour_idx] || _isVelocityInterfacialCell[dim][neighbour_idx]) 
             {
                 neighbourBulk += 1; 
-                average += v(neighbour_cell_idx, 0); 
+                average += v(neighbour_idx, 0); 
             } 
         }
         average /= (REAL) neighbourBulk; 

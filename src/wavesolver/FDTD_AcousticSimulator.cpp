@@ -171,8 +171,10 @@ Run()
 void FDTD_AcousticSimulator::
 SaveSolverResult()
 {
-    _SaveSolverSettings("solver_settings.txt");
-    _SavePressureCellPositions("vertex_position.dat"); 
+    const string solverSettings_s("solver_settings.txt"); 
+    const string vertexPosition_s("vertex_position.dat"); 
+    _SaveSolverSettings(solverSettings_s);
+    _SavePressureCellPositions(vertexPosition_s); 
 }
 
 
@@ -204,7 +206,6 @@ void FDTD_AcousticSimulator::
 TestMoveObjects()
 {
     const int N_objects = _sceneObjects->N();
-    COUT_SDUMP(_simulationTime);
     for (int ii=0; ii<N_objects; ii++)
     {
         FDTD_RigidObject &animatedObject = _sceneObjects->Get(ii); 
