@@ -20,6 +20,8 @@ class HarmonicVibrationalSource : public VibrationalSource
         {}
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
 };
 
 #endif

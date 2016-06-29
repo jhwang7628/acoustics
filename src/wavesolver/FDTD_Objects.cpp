@@ -96,13 +96,12 @@ AddPressureSource(PressureSourcePtr &sourcePtr)
 //##############################################################################
 //##############################################################################
 REAL FDTD_Objects::
-EvaluateVibrationalSources(const Vector3d &position, const Vector3d &normal, const REAL &time) 
+EvaluateNearestVibrationalSources(const Vector3d &position, const Vector3d &normal, const REAL &time) 
 {
-    const int objectID = OccupyByObject(position);
-    if (objectID == -1) 
-        return 0.0; 
-    else
-        return _rigidObjects.at(objectID)->EvaluateBoundaryCondition(position, normal, time);
+    REAL distance; 
+    int objectID; 
+    LowestObjectDistance(position, distance, objectID); 
+    return _rigidObjects.at(objectID)->EvaluateBoundaryAcceleration(position, normal, time);
 }
 
 //##############################################################################
@@ -152,7 +151,7 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
 //                                     by travelled distance for all steps
 //##############################################################################
 bool FDTD_Objects::
-ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const int &maxIteration)
+ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration)
 {
     int objectID = OccupyByObject(originalPoint);
     accumulatedBoundaryConditionValue = 0.0;
@@ -168,7 +167,7 @@ ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vec
     for (int ii=0; ii<maxIteration; ++ii)
     {
         _rigidObjects[objectID]->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distanceTravelled); 
-        accumulatedBoundaryConditionValue += -distanceTravelled*_rigidObjects[objectID]->EvaluateBoundaryCondition(boundaryPoint, erectedNormal, time);
+        accumulatedBoundaryConditionValue += -distanceTravelled*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *(-density);
         objectID = OccupyByObject(reflectedPoint); 
         if (objectID == -1)
             return true; 

@@ -134,13 +134,27 @@ NormalToMesh(const Vector3d &position, Vector3d &queriedNormal)
 //##############################################################################
 //##############################################################################
 REAL FDTD_RigidObject::
-EvaluateBoundaryCondition(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
+EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
 {
     REAL bcValue=0; 
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
     {
         bcValue += (*it)->Evaluate(boundaryPoint, boundaryNormal, time);
+    }
+    return bcValue; 
+}
+
+//##############################################################################
+//##############################################################################
+REAL FDTD_RigidObject::
+EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
+{
+    REAL bcValue=0; 
+    const SourceIterator sourceEnd = _vibrationalSources.end(); 
+    for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
+    {
+        bcValue += (*it)->EvaluateVelocity(boundaryPoint, boundaryNormal, time);
     }
     return bcValue; 
 }
@@ -270,7 +284,7 @@ TestObjectBoundaryCondition()
     const int N = 20000;
     for (int ii=0; ii<N; ii++)
     {
-        const REAL result = EvaluateBoundaryCondition(boundaryPoint, boundaryNormal, (double)ii*dt); 
+        const REAL result = EvaluateBoundaryAcceleration(boundaryPoint, boundaryNormal, (double)ii*dt); 
         std::cout << "result at time " << (double)ii*dt << " is " << result << std::endl;
     }
 }

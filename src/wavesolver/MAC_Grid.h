@@ -235,8 +235,8 @@ class MAC_Grid
         // solid->interfacial for velocity cells, or when solid->bulk for
         // pressure cells. In these two situations the cell does not have valid
         // history. 
-        void InterpolatePressureCellHistory(MATRIX &p);
-        void InterpolateVelocityCellHistory(MATRIX &v, const int &dimension);
+        void InterpolatePressureCellHistory(MATRIX &p, const REAL &simulationTime, const REAL &density);
+        void InterpolateVelocityCellHistory(MATRIX &v, const int &dimension, const REAL &simulationTime);
 
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 

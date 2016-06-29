@@ -48,13 +48,13 @@
         substeps="1"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_test3/test_%s"
+        output_pattern="work/near-field/data_test/test_%s"
 
         PML_width="6"
         PML_strength="1000000.0" 
 
         use_mesh="1"
-        use_ghost_cell="0"
+        use_ghost_cell="1"
         cornell_box_boundary_condition="0"
         /> 
 

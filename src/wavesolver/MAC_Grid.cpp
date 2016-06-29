@@ -304,7 +304,7 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, RE
 
             for ( int i = 0; i < _N; i++ )
             {
-                bcEval = _objects->EvaluateVibrationalSources(x,normal,t); 
+                bcEval = _objects->EvaluateNearestVibrationalSources(x,normal,t); 
                 //bcEval = bc( x, normal, objectID, t, i );
                 bcEval *= coefficient;
                 v( cell_idx, i ) += timeStep * bcEval;
@@ -780,7 +780,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
         //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, 1);
+        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
 
         // debug FIXME
 #pragma omp critical
@@ -830,7 +830,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         Eigen::VectorXd pressureNeighbours(8);  // right hand side
  
         // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
-        const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+        const REAL bcEval = _objects->EvaluateNearestVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
         //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
 
         for (size_t row=0; row<neighbours.size(); row++) 
@@ -1063,17 +1063,10 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //}
 
     const int numPressureCells = _pressureField.numCells();
-
-    // FIXME debug
-    //for (int ii=0; ii<numPressureCells; ++ii) 
-    //{
-    //    std::cout << _toggledGhostCells[ii] << " "; 
-    //}
-
     for (int cell_idx = 0; cell_idx<numPressureCells; ++cell_idx) 
     {
         Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
-        if (_toggledBulkCells[cell_idx] == 1) // this is the cell which turns into bulk cells
+        if (_toggledBulkCells[cell_idx] == 1) // this is the fresh pressure cell
         {
             REAL distance; 
             int objectID; 
@@ -1092,7 +1085,7 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
             Tuple3i indicesBuffer;
             Vector3d positionBuffer; 
             Eigen::VectorXd RHS(8); 
-            const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+            const REAL bcEval = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime)*(-density);
 
             for (size_t row=0; row<neighbours.size(); row++) 
             {
@@ -1143,7 +1136,7 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //// DEBUG END FIXME ////
 } 
 
-void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p)
+void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &simulationTime, const REAL &density)
 {
     const int N = _pressureField.numCells(); 
     for (int cell_idx = 0; cell_idx < N; ++cell_idx)
@@ -1151,29 +1144,81 @@ void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p)
         if (_toggledBulkCells[cell_idx] != 1) // no history problem, skip
             continue; 
 
-        // look at its immediate neighbours, and compute the average among bulk
-        // cells 
-        IntArray neighbours; 
-        neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
-        _pressureField.cellNeighbours(cell_idx, neighbours); 
+        // using average values of the neighbours
+        //// look at its immediate neighbours, and compute the average among bulk
+        //// cells 
+        //IntArray neighbours; 
+        //neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
+        //_pressureField.cellNeighbours(cell_idx, neighbours); 
 
-        REAL average = 0; 
-        int neighbourBulk = 0;
-        for (int nei=0; nei<neighbours.size(); ++nei) 
+        //REAL average = 0; 
+        //int neighbourBulk = 0;
+        //for (int nei=0; nei<neighbours.size(); ++nei) 
+        //{
+        //    const int neighbour_cell_idx = neighbours[nei];
+        //    if (_isBulkCell[neighbour_cell_idx]) 
+        //    {
+        //        neighbourBulk += 1; 
+        //        average += p(neighbour_cell_idx, 0); 
+        //    } 
+        //}
+        //average /= (REAL) neighbourBulk; 
+        //p(cell_idx, 0) = average; 
+
+        const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
+        REAL distance; 
+        int objectID; 
+        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+        if (distance < DISTANCE_TOLERANCE)
+            throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
+        Vector3d imagePoint, boundaryPoint, erectedNormal; 
+        REAL distanceTravelled; 
+        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+
+        // prepare interpolation stencils, this part is similar to
+        // the vandermonde part in ghost cell pressure update
+        IntArray neighbours; 
+        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+        Eigen::MatrixXd V(8,8); 
+        Tuple3i indicesBuffer;
+        Vector3d positionBuffer; 
+        Eigen::VectorXd RHS(8); 
+        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime)*(-density); 
+        //const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+
+        for (size_t row=0; row<neighbours.size(); row++) 
         {
-            const int neighbour_cell_idx = neighbours[nei];
-            if (_isBulkCell[neighbour_cell_idx]) 
+            // TODO 
+            if (!_isBulkCell[neighbours[row]]) 
+                throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
+            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+            if (neighbours[row] != cell_idx) // not self
             {
-                neighbourBulk += 1; 
-                average += p(neighbour_cell_idx, 0); 
-            } 
+                FillVandermondeRegular(row, positionBuffer, V);
+                RHS(row) = p(neighbours[row], 0); 
+            }
+            else 
+            {
+                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                RHS(row) = boundaryPressureGradientNormal; 
+            }
         }
-        average /= (REAL) neighbourBulk; 
-        p(cell_idx, 0) = average; 
+
+        // coefficient for the interpolant
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        //Eigen::VectorXd C = V.lu().solve(RHS); 
+        Eigen::VectorXd C = svd.solve(RHS); 
+
+        // evaluate the interpolant at cell position
+        Eigen::VectorXd coordinateVector(8); 
+        FillVandermondeRegular(cellPosition, coordinateVector);
+        const REAL pressureFreshCell = C.dot(coordinateVector); 
+        p(cell_idx, 0) = pressureFreshCell; 
     }
 }
 
-void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim)
+void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim, const REAL &simulationTime)
 {
     const int N = _velocityField[dim].numCells(); 
     // essentially same procedures as pressure cells
@@ -1182,25 +1227,78 @@ void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim)
         if (_toggledVelocityInterfacialCells[dim][cell_idx] != 1) // no history problem, skip
             continue; 
 
-        // look at its immediate neighbours, and compute the average among bulk
-        // cells 
-        IntArray neighbours; 
-        neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
-        _velocityField[dim].cellNeighbours(cell_idx, neighbours); 
+        //// look at its immediate neighbours, and compute the average among bulk
+        //// cells 
+        //IntArray neighbours; 
+        //neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
+        //_velocityField[dim].cellNeighbours(cell_idx, neighbours); 
 
-        REAL average = 0; 
-        int neighbourBulk = 0;
-        for (size_t nei=0; nei<neighbours.size(); ++nei) 
+        //REAL average = 0; 
+        //int neighbourBulk = 0;
+        //for (size_t nei=0; nei<neighbours.size(); ++nei) 
+        //{
+        //    const int neighbour_idx = neighbours[nei];
+        //    if (_isVelocityBulkCell[dim][neighbour_idx] || _isVelocityInterfacialCell[dim][neighbour_idx]) 
+        //    {
+        //        neighbourBulk += 1; 
+        //        average += v(neighbour_idx, 0); 
+        //    } 
+        //}
+
+        //average /= (REAL) neighbourBulk; 
+        //v(cell_idx, 0) = average; 
+
+
+        const Vector3d cellPosition = _velocityField[dim].cellPosition(cell_idx);
+        REAL distance; 
+        int objectID; 
+        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+        if (distance < DISTANCE_TOLERANCE)
+            throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
+        Vector3d imagePoint, boundaryPoint, erectedNormal; 
+        REAL distanceTravelled; 
+        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+
+        // prepare interpolation stencils, this part is similar to
+        // the vandermonde part in ghost cell pressure update
+        IntArray neighbours; 
+        _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
+        Eigen::MatrixXd V(8,8); 
+        Tuple3i indicesBuffer;
+        Vector3d positionBuffer; 
+        Eigen::VectorXd RHS(8); 
+        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime); 
+
+        for (size_t row=0; row<neighbours.size(); row++) 
         {
-            const int neighbour_idx = neighbours[nei];
-            if (_isVelocityBulkCell[dim][neighbour_idx] || _isVelocityInterfacialCell[dim][neighbour_idx]) 
+            // TODO 
+            if (!_isVelocityBulkCell[dim][neighbours[row]]) 
+                throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
+            indicesBuffer = _velocityField[dim].cellIndex(neighbours[row]); 
+            positionBuffer= _velocityField[dim].cellPosition(indicesBuffer); 
+            if (neighbours[row] != cell_idx) // not self
             {
-                neighbourBulk += 1; 
-                average += v(neighbour_idx, 0); 
-            } 
+                FillVandermondeRegular(row, positionBuffer, V);
+                RHS(row) = v(neighbours[row], 0); 
+            }
+            else 
+            {
+                //FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                FillVandermondeRegular(row, positionBuffer, V); 
+                RHS(row) = boundaryVelocity; 
+            }
         }
-        average /= (REAL) neighbourBulk; 
-        v(cell_idx, 0) = average; 
+
+        // coefficient for the interpolant
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        //Eigen::VectorXd C = V.lu().solve(RHS); 
+        Eigen::VectorXd C = svd.solve(RHS); 
+
+        // evaluate the interpolant at cell position
+        Eigen::VectorXd coordinateVector(8); 
+        FillVandermondeRegular(cellPosition, coordinateVector);
+        const REAL velocityFreshCell = C.dot(coordinateVector); 
+        v(cell_idx, 0) = velocityFreshCell; 
     }
 }
 
