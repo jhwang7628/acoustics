@@ -59,15 +59,13 @@ _CompositeFilename(const std::string filename)
 void FDTD_AcousticSimulator::
 _SaveSolverSettings(const std::string &filename)
 {
-    char buffer[512]; 
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
-    std::ofstream of(buffer); 
+    std::ofstream of(filename.c_str()); 
     of << *_acousticSolver << std::endl;
     of << _acousticSolver->GetGrid() << std::endl;
     _sceneObjects->PrintAllSources(of);
 
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), "input_control_file.xml"); 
-    IO::CopyFile(_configFile, std::string(buffer)); 
+    std::string xmlFilename_s = _CompositeFilename("input_control_file.xml"); 
+    IO::CopyFile(_configFile, xmlFilename_s); 
 }
 
 //##############################################################################
@@ -179,8 +177,8 @@ Run()
 void FDTD_AcousticSimulator::
 SaveSolverConfig()
 {
-    const string solverSettings_s("solver_settings.txt"); 
-    const string vertexPosition_s("vertex_position.dat"); 
+    const string solverSettings_s = _CompositeFilename("solver_settings.txt"); 
+    const string vertexPosition_s = _CompositeFilename("vertex_position.dat"); 
     _SaveSolverSettings(solverSettings_s);
     _SavePressureCellPositions(vertexPosition_s); 
 }
