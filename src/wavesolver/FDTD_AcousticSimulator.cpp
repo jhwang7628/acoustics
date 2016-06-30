@@ -46,6 +46,16 @@ _SetPressureSources()
 
 //##############################################################################
 //##############################################################################
+std::string FDTD_AcousticSimulator::
+_CompositeFilename(const std::string filename)
+{
+    char buffer[512];
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    return std::string(buffer); 
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_AcousticSimulator::
 _SaveSolverSettings(const std::string &filename)
 {
@@ -82,9 +92,7 @@ _SavePressureCellPositions(const std::string &filename)
                 count ++;
             }
 
-    char buffer[512];
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
-    IO::writeMatrixXd(vertexPosition, buffer, IO::BINARY);
+    IO::writeMatrixXd(vertexPosition, filename.c_str(), IO::BINARY);
 }
 
 //##############################################################################
@@ -107,9 +115,7 @@ _SavePressureTimestep(const std::string &filename)
                 count ++; 
             }
 
-    char buffer[512];
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
-    IO::writeMatrixXd(*vertexPressure, buffer, IO::BINARY);
+    IO::writeMatrixXd(*vertexPressure, filename.c_str(), IO::BINARY);
 }
 
 //##############################################################################
@@ -118,6 +124,7 @@ void FDTD_AcousticSimulator::
 _SaveProbeData(const std::string &filename)
 {
     // TODO
+    std::cout << "save probe data: " << filename << std::endl;
 }
 
 //##############################################################################
@@ -140,7 +147,7 @@ Run()
 {
     bool continueStepping = true; 
     int stepIndex = 0; 
-    SaveSolverResult();
+    SaveSolverConfig();
 
     while(continueStepping) 
     {
@@ -149,10 +156,11 @@ Run()
         {
             const int timeIndex = stepIndex/_acousticSolverSettings->timeSavePerStep; 
             std::ostringstream oss; 
-            oss << std::setw(6) << std::setfill('0'); 
-            oss << timeIndex; 
-            const std::string filename("pressure_"+oss.str()+".dat"); 
-            _SavePressureTimestep(filename); 
+            oss << std::setw(6) << std::setfill('0') << timeIndex; 
+            const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
+            _SavePressureTimestep(filenameField); 
+            const std::string filenameProbe = _CompositeFilename("probe_"+oss.str()+".dat"); 
+            _SaveProbeData(filenameProbe);
         }
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();
@@ -169,7 +177,7 @@ Run()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-SaveSolverResult()
+SaveSolverConfig()
 {
     const string solverSettings_s("solver_settings.txt"); 
     const string vertexPosition_s("vertex_position.dat"); 

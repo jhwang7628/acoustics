@@ -37,6 +37,7 @@ class FDTD_AcousticSimulator
         void _GetSolverSettings();
         void _SetBoundaryConditions(); 
         void _SetPressureSources(); 
+        std::string _CompositeFilename(const std::string filename); // composite output path and prefix
         void _SaveSolverSettings(const std::string &filename); 
         void _SavePressureCellPositions(const std::string &filename); 
         void _SavePressureTimestep(const std::string &filename); 
@@ -54,7 +55,7 @@ class FDTD_AcousticSimulator
         void InitializeSolver(); 
         void Run(); 
         void Pause(); 
-        void SaveSolverResult(); 
+        void SaveSolverConfig(); 
         void LoadSolverResult(const std::string &dataDirectory); 
 
         // GUI, OpenGL handling 
