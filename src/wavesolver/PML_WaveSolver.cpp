@@ -85,7 +85,7 @@ PML_WaveSolver::PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::sha
       _timeIndex(0), 
       _N(1),
       _zSlice(-1),
-      _listeningPositions(nullptr), 
+      _listeningPositions(nullptr ), 
       _outputFile(nullptr), 
       _callback(nullptr),
       _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
@@ -113,17 +113,13 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
 
     _grid.initFieldRasterized( useBoundary );
 
-    if ( _listeningPositions )
-    {
-        _waveOutput.resize( _listeningPositions->size() );
-
-        for ( size_t i = 0; i < _waveOutput.size(); i++ )
-        {
-            _waveOutput[ i ].resize( _N );
-        }
-
-        cout << "Setting " << _waveOutput.size() << " listening positions" << endl;
-    }
+    //if ( _listeningPositions )
+    //{
+    //    _waveOutput.resize( _listeningPositions->size() );
+    //    for ( size_t i = 0; i < _waveOutput.size(); i++ )
+    //        _waveOutput[ i ].resize( _N );
+    //    cout << "Setting " << _waveOutput.size() << " listening positions" << endl;
+    //}
 
     _listenerOutput.resizeAndWipe( _N );
     _sourceEvaluator = nullptr; 
@@ -183,6 +179,32 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
 
     initTimer.pause(); 
     printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
+}
+
+void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data) 
+{
+    const int N = listeningPoints.size(); 
+    if (N==0) return; 
+
+    _writeTimer.start(); 
+    const ScalarField &field = _grid.pressureField(); 
+    const int N_resultDimension = 1; 
+    data.resize(N, N_resultDimension); 
+    VECTOR output(N_resultDimension); 
+    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox(); 
+    for (size_t ii=0; ii<N; ++ii) 
+    {
+        if (!pressureBoundingBox.isInside(listeningPoints.at(ii)))
+        {
+            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n"; 
+            continue; 
+        }
+
+        field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+        for (size_t jj=0; jj<N_resultDimension; ++jj) 
+            data(ii, jj) = output(jj);
+    }
+    _writeTimer.pause(); 
 }
 
 // TODO this currently produce bad results, maybe need to smooth velocity field as well

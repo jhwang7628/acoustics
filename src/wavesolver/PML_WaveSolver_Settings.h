@@ -32,6 +32,7 @@ struct PML_WaveSolver_Settings
     bool            useGhostCell; 
 
     bool            listening; 
+    std::string     listeningFile; 
     Vector3Array    listeningPoints; 
 };
 

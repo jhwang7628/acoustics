@@ -104,7 +104,7 @@ class IO {
         // Write int Eigen matrix data to a binary file. 
         // Format 
         template <typename T>
-        static void writeMatrixX( const Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> &data, const char *filename, FileType x ) 
+        static void writeMatrixX( const Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> &data, const char *filename, FileType x, const int VERBOSE=1 ) 
         { 
             int Nrow = (int) data.rows(); 
             int Ncol = (int) data.cols(); 
@@ -115,41 +115,51 @@ class IO {
 
                 case BINARY :
                 {
+                    of1.write((char *) &Nrow, sizeof(int));
+                    of1.write((char *) &Ncol, sizeof(int)); 
+                    if (VERBOSE >= 1)
                         cout << "Write data in BINARY format to file : " << filename << endl;
+                    if (VERBOSE >= 2)
+                    {
                         cout << " - Data Dimension: " << Nrow << " x " <<  Ncol << endl; 
-                        of1.write((char *) &Nrow, sizeof(int));
-                        of1.write((char *) &Ncol, sizeof(int)); 
-
                         cout << " - Progress: " << endl; 
                         cout << "     " << "0 % "; 
-                        for (int ii=0; ii<Nrow; ii++) 
-                        {
-                            if (ii%50 ==0) cout << "     " << (double)ii/(double)Nrow*100.0 << " % \r"; 
-                            for (int jj=0; jj<Ncol; jj++) 
-                                of1.write((char *) &data(ii,jj), sizeof(T));
-                        }
+                    }
+                    for (int ii=0; ii<Nrow; ii++) 
+                    {
+                        if (VERBOSE >= 2) 
+                            if (ii%50 ==0) 
+                                cout << "     " << (double)ii/(double)Nrow*100.0 << " % \r"; 
+                        for (int jj=0; jj<Ncol; jj++) 
+                            of1.write((char *) &data(ii,jj), sizeof(T));
+                    }
+                    if (VERBOSE >= 2) 
                         cout << endl; 
-                        break;
+                    break;
                 }
                 case ASCII : 
                 {
+                    if (VERBOSE >= 1) 
                         cout << "Write data in ASCII format to file : " << filename << endl;
+                    if (VERBOSE >= 2) 
+                    {
                         cout << " - Progress: " << endl; 
                         cout << "     " << "0 % "; 
-                        for (int ii=0; ii<Nrow; ii++) 
-                        {
-                            if (ii%50 ==0) cout << "     " << (double)ii/(double)Nrow*100.0 << " % \r"; 
-                            for (int jj=0; jj<Ncol; jj++)
-                                of1 << data(ii,jj) << " "; 
-                            of1<<endl;
-                        }
-                        of1.close();
-                        break; 
+                    }
+                    for (int ii=0; ii<Nrow; ii++) 
+                    {
+                        if (VERBOSE >= 2) 
+                            if (ii%50 ==0) 
+                                cout << "     " << (double)ii/(double)Nrow*100.0 << " % \r"; 
+                        for (int jj=0; jj<Ncol; jj++)
+                            of1 << data(ii,jj) << " "; 
+                        of1<<endl;
+                    }
+                    of1.close();
+                    break; 
                 }
             }
             of1.close(); 
-
-
         }
 
         // Write int Eigen matrix data to a binary file. 

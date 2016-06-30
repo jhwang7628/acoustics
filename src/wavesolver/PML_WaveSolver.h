@@ -81,10 +81,10 @@ class PML_WaveSolver : public Solver
         // Optionally write a 2D slice out of the finite difference grid
         int                      _zSlice;
         MATRIX                   _sliceData;
-        VECTOR                   _listenerOutput;
-        const Vector3Array      *_listeningPositions;
-        const char              *_outputFile;
-        WriteCallback           *_callback;
+        VECTOR                   _listenerOutput; // not in use
+        const Vector3Array      *_listeningPositions; // not in use
+        const char              *_outputFile; // not in use
+        WriteCallback           *_callback; // not in use
         std::vector<std::vector<FloatArray> > _waveOutput;
 
         // if on then PML is activated on only one face, the others will be set to hard-wall
@@ -174,6 +174,9 @@ class PML_WaveSolver : public Solver
         void initSystem( REAL startTime );
         // Initialize the field data using non-zero initial conditions. 
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
+
+        // fetch the pressure data using interpolation
+        void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data); 
 
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);

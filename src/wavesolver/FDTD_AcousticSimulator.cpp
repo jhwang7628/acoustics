@@ -52,9 +52,14 @@ _SetListeningPoints()
     Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
     _parser->GetListeningPoints(listeningPoints); 
     if (listeningPoints.size() == 0) 
+    {
         _acousticSolverSettings->listening = false; 
+    }
     else 
+    {
         _acousticSolverSettings->listening = true; 
+        _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat"); 
+    }
 }
 
 //##############################################################################
@@ -103,7 +108,7 @@ _SavePressureCellPositions(const std::string &filename)
                 count ++;
             }
 
-    IO::writeMatrixXd(vertexPosition, filename.c_str(), IO::BINARY);
+    IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
 }
 
 //##############################################################################
@@ -121,7 +126,7 @@ _SaveListeningPositions(const std::string &filename)
         listeningPoints_eigen(ii, 2) = listeningPoints.at(ii).z; 
     }
 
-    IO::writeMatrixXd(listeningPoints_eigen, filename.c_str(), IO::BINARY); 
+    IO::writeMatrixX<double>(listeningPoints_eigen, filename.c_str(), IO::BINARY); 
 }
 
 //##############################################################################
@@ -144,16 +149,21 @@ _SavePressureTimestep(const std::string &filename)
                 count ++; 
             }
 
-    IO::writeMatrixXd(*vertexPressure, filename.c_str(), IO::BINARY);
+    IO::writeMatrixX<double>(*vertexPressure, filename.c_str(), IO::BINARY);
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-_SaveProbeData(const std::string &filename)
+_SaveListeningData(const std::string &filename)
 {
-    // TODO
-    std::cout << "save probe data: " << filename << std::endl;
+    if (_acousticSolverSettings->listening)
+    {
+        Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+        Eigen::MatrixXd data; 
+        _acousticSolver->FetchPressureData(listeningPoints, data); 
+        IO::writeMatrixX<double>(data, filename.c_str(), IO::BINARY);
+    }
 }
 
 //##############################################################################
@@ -192,8 +202,8 @@ Run()
             oss << std::setw(6) << std::setfill('0') << timeIndex; 
             const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
             _SavePressureTimestep(filenameField); 
-            const std::string filenameProbe = _CompositeFilename("probe_"+oss.str()+".dat"); 
-            _SaveProbeData(filenameProbe);
+            const std::string filenameProbe = _CompositeFilename("listening_"+oss.str()+".dat"); 
+            _SaveListeningData(filenameProbe);
         }
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();
@@ -254,7 +264,7 @@ TestMoveObjects()
     {
         FDTD_RigidObject &animatedObject = _sceneObjects->Get(ii); 
         //animatedObject.ApplyTranslation(0.0, -5.e-5, 0.0);
-        animatedObject.ApplyTranslation(0.0, -2e-5, 0.0);
+        animatedObject.ApplyTranslation(0.0, -5.6689E-6, 0.0);
         //animatedObject.PrintBoundingBox(); 
         //animatedObject.PrintTransformation();
     }

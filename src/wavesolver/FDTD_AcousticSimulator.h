@@ -43,7 +43,7 @@ class FDTD_AcousticSimulator
         void _SavePressureCellPositions(const std::string &filename); 
         void _SaveListeningPositions(const std::string &filename); 
         void _SavePressureTimestep(const std::string &filename); 
-        void _SaveProbeData(const std::string &filename);
+        void _SaveListeningData(const std::string &filename);
 
     public: 
         FDTD_AcousticSimulator()
