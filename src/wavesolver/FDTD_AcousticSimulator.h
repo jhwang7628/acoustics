@@ -37,9 +37,11 @@ class FDTD_AcousticSimulator
         void _GetSolverSettings();
         void _SetBoundaryConditions(); 
         void _SetPressureSources(); 
+        void _SetListeningPoints(); 
         std::string _CompositeFilename(const std::string filename); // composite output path and prefix
         void _SaveSolverSettings(const std::string &filename); 
         void _SavePressureCellPositions(const std::string &filename); 
+        void _SaveListeningPositions(const std::string &filename); 
         void _SavePressureTimestep(const std::string &filename); 
         void _SaveProbeData(const std::string &filename);
 

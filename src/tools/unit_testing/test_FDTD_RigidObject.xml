@@ -75,6 +75,11 @@
         -->
     </pressure_source> 
 
+    <listening_point_list>
+        <listening_point x="1.0005" y="0.0" z="0.0"/>
+        <listening_point x="0.0" y="2.0" z="0.0"/>
+    </listening_point_list> 
+
 </impulse_response>
 
 

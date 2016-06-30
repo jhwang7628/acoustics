@@ -27,10 +27,12 @@ struct PML_WaveSolver_Settings
     REAL    PML_strength;
 
     // Optional settings, mostly switches
-    std::string     listeningFile; 
     bool            useMesh; 
     bool            cornellBoxBoundaryCondition;
     bool            useGhostCell; 
+
+    bool            listening; 
+    Vector3Array    listeningPoints; 
 };
 
 #endif

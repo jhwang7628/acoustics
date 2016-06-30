@@ -46,6 +46,19 @@ _SetPressureSources()
 
 //##############################################################################
 //##############################################################################
+void FDTD_AcousticSimulator::
+_SetListeningPoints()
+{
+    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+    _parser->GetListeningPoints(listeningPoints); 
+    if (listeningPoints.size() == 0) 
+        _acousticSolverSettings->listening = false; 
+    else 
+        _acousticSolverSettings->listening = true; 
+}
+
+//##############################################################################
+//##############################################################################
 std::string FDTD_AcousticSimulator::
 _CompositeFilename(const std::string filename)
 {
@@ -96,6 +109,24 @@ _SavePressureCellPositions(const std::string &filename)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
+_SaveListeningPositions(const std::string &filename)
+{
+    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+    const int N = listeningPoints.size(); 
+    Eigen::MatrixXd listeningPoints_eigen(N, 3); 
+    for (int ii=0; ii<N; ii++) 
+    {
+        listeningPoints_eigen(ii, 0) = listeningPoints.at(ii).x; 
+        listeningPoints_eigen(ii, 1) = listeningPoints.at(ii).y; 
+        listeningPoints_eigen(ii, 2) = listeningPoints.at(ii).z; 
+    }
+
+    IO::writeMatrixXd(listeningPoints_eigen, filename.c_str(), IO::BINARY); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
 _SavePressureTimestep(const std::string &filename)
 {
     const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
@@ -133,7 +164,11 @@ InitializeSolver()
     if (!_canInitializeSolver)
         _GetSolverSettings();
 
+    // setup listening points
+    _SetListeningPoints(); 
+    // initialize solver
     _acousticSolver = std::make_shared<PML_WaveSolver>(*_acousticSolverSettings, _sceneObjects); 
+    // setup source objects in the scene
     _SetBoundaryConditions();
     _SetPressureSources();
 }
@@ -179,8 +214,11 @@ SaveSolverConfig()
 {
     const string solverSettings_s = _CompositeFilename("solver_settings.txt"); 
     const string vertexPosition_s = _CompositeFilename("vertex_position.dat"); 
+    const string listeningPosition_s = _CompositeFilename("listening_position.dat"); 
     _SaveSolverSettings(solverSettings_s);
     _SavePressureCellPositions(vertexPosition_s); 
+    if (_acousticSolverSettings->listening)
+        _SaveListeningPositions(listeningPosition_s); 
 }
 
 

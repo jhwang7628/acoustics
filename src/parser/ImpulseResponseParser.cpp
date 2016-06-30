@@ -2,45 +2,6 @@
 #include <parser/ImpulseResponseParser.h> 
 
 //##############################################################################
-//##############################################################################
-void ImpulseResponseParser::
-GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources)
-{
-    // get the element nodes required
-    TiXmlElement *root, *pressureSourceNode, *gaussianSourceNode;
-    TiXmlDocument *document = &_document;
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(pressureSourceNode, root, "pressure_source"); 
-    try
-    {
-        GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source"); 
-        while (gaussianSourceNode) 
-        {
-            const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time"); 
-            const REAL widthSpace        = queryOptionalReal(gaussianSourceNode, "source_width_space", soundSpeed*widthTime); 
-            const REAL offsetTime        = queryOptionalReal(gaussianSourceNode, "source_offset_time", 0.0); 
-            const bool flipSign = (queryOptionalReal(gaussianSourceNode, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
-            const REAL scaleSign = (flipSign) ? -1.0 : 1.0; 
-            const REAL normalizeConstant = queryOptionalReal(gaussianSourceNode, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*widthSpace,3))*scaleSign; 
-
-            Vector3d sourcePosition; 
-            sourcePosition.x = queryRequiredReal(gaussianSourceNode, "source_position_x"); 
-            sourcePosition.y = queryRequiredReal(gaussianSourceNode, "source_position_y"); 
-            sourcePosition.z = queryRequiredReal(gaussianSourceNode, "source_position_z"); 
-
-            PressureSourcePtr sourcePtr(new GaussianPressureSource(sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant)); 
-            pressureSources.push_back(std::move(sourcePtr)); 
-
-            gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source"); 
-        }
-    }
-    catch (const std::runtime_error &error)
-    {
-        std::cout << "No pressure sources found\n"; 
-    }
-}
-
-//##############################################################################
 // parse meshes from xml into objects 
 //##############################################################################
 void ImpulseResponseParser::
@@ -122,7 +83,6 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 
 
     // Optional settings
-    settings->listeningFile              = queryOptionalAttr(solverNode, "listening_file", "NOT_SPECIFIED" );
     settings->useMesh                    = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
     settings->useGhostCell               = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
     settings->cornellBoxBoundaryCondition= (queryOptionalInt(solverNode, "cornell_box_boundary_condition", "0")==1) ? true : false; 
@@ -133,21 +93,69 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
 }
 
 //##############################################################################
-// parse solver settings from xml into struct
 //##############################################################################
-//void ImpulseResponseParser::
-//GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings) 
-//{
-//    if (!settings) 
-//        throw std::runtime_error("**ERROR** pointer null for GetSources"); 
-//   
-//    // TODO {
-//      
-//    //// get the element nodes required
-//    //TiXmlElement *root, *solverNode;
-//    //TiXmlDocument *document = &_document;
-//    //GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
-//    //GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
-//
-//    // } TODO
-//}
+void ImpulseResponseParser::
+GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources)
+{
+    // get the element nodes required
+    TiXmlElement *root, *pressureSourceNode, *gaussianSourceNode;
+    TiXmlDocument *document = &_document;
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(pressureSourceNode, root, "pressure_source"); 
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source"); 
+        while (gaussianSourceNode) 
+        {
+            const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time"); 
+            const REAL widthSpace        = queryOptionalReal(gaussianSourceNode, "source_width_space", soundSpeed*widthTime); 
+            const REAL offsetTime        = queryOptionalReal(gaussianSourceNode, "source_offset_time", 0.0); 
+            const bool flipSign = (queryOptionalReal(gaussianSourceNode, "source_sign_flip", 0.0) > 1E-10) ? true : false; 
+            const REAL scaleSign = (flipSign) ? -1.0 : 1.0; 
+            const REAL normalizeConstant = queryOptionalReal(gaussianSourceNode, "source_normalize_constant", 1.0/pow(sqrt(2.0*M_PI)*widthSpace,3))*scaleSign; 
+
+            Vector3d sourcePosition; 
+            sourcePosition.x = queryRequiredReal(gaussianSourceNode, "source_position_x"); 
+            sourcePosition.y = queryRequiredReal(gaussianSourceNode, "source_position_y"); 
+            sourcePosition.z = queryRequiredReal(gaussianSourceNode, "source_position_z"); 
+
+            PressureSourcePtr sourcePtr(new GaussianPressureSource(sourcePosition, widthSpace, widthTime, offsetTime, normalizeConstant)); 
+            pressureSources.push_back(std::move(sourcePtr)); 
+
+            gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source"); 
+        }
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No pressure sources found\n"; 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void ImpulseResponseParser::
+GetListeningPoints(Vector3Array &listeningPoints)
+{
+    // get the element nodes required
+    TiXmlElement *root, *listNode, *node;
+    TiXmlDocument *document = &_document;
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_point_list"); 
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, listNode, "listening_point"); 
+        while (node) 
+        {
+            Vector3<REAL> position; 
+            position.x = queryRequiredReal(node, "x"); 
+            position.y = queryRequiredReal(node, "y"); 
+            position.z = queryRequiredReal(node, "z"); 
+            listeningPoints.push_back(position); 
+            node = node->NextSiblingElement("listening_point");
+        }
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No listening points found\n"; 
+    }
+}

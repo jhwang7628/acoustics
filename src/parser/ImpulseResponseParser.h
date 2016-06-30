@@ -74,6 +74,7 @@ class ImpulseResponseParser : public Parser
         //void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
         void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings); 
         void GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources); 
+        void GetListeningPoints(Vector3Array &listeningPoints); 
 }; 
 
 #endif 
