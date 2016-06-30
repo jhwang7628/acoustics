@@ -1,9 +1,9 @@
 #ifndef FDTD_TYPES_H 
 #define FDTD_TYPES_H 
 
+#include <Eigen/Dense> 
 #include <parser/Parser.h>
-//#include <wavesolver/FDTD_RigidObject.h> 
-//#include <wavesolver/VibrationalSource.h> 
+#include <math/MLSModeInterpolator.hpp>
 
 //##############################################################################
 // Forward Declaration
@@ -34,6 +34,14 @@ typedef std::shared_ptr<FDTD_RigidObject> RigidObjectPtr;
 typedef std::unique_ptr<VibrationalSource> VibrationalSourcePtr; 
 typedef std::unique_ptr<PressureSource> PressureSourcePtr; 
 typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator; 
+
+typedef MLSModeInterpolator<double,3,3> MLSInterpolatorType; 
+typedef MLSInterpolatorType::MLSPoint MLSPoint; 
+typedef MLSInterpolatorType::MLSVal MLSVal; 
+typedef MLSInterpolatorType::MLSMatrix MLSMatrix; 
+typedef MLSInterpolatorType::MLSVector MLSVector;
+typedef Eigen::aligned_allocator<MLSPoint> P_ALLOCATOR; 
+typedef Eigen::aligned_allocator<MLSVal> V_ALLOCATOR; 
 
 //##############################################################################
 // Constants

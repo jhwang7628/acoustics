@@ -175,7 +175,6 @@ void ScalarField::cell26Neighbours( const int &flatIndex, IntArray &neighbours) 
 
     const Tuple3i index = cellIndex(flatIndex); 
 
-
     Tuple3i neighbourIndex = index;
     for (int kk=-1; kk<=1; kk++) 
         for (int jj=-1; jj<=1; jj++) 

@@ -217,14 +217,15 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 bool FDTD_RigidObject::
 FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField!=nullptr && (DistanceToMesh(currentPoint.x,currentPoint.y,currentPoint.z)>DISTANCE_TOLERANCE));
+    assert(_signedDistanceField != nullptr);
+    //assert(_signedDistanceField!=nullptr && (DistanceToMesh(currentPoint.x,currentPoint.y,currentPoint.z)>DISTANCE_TOLERANCE));
 
     //erectedNormal = _signedDistanceField->gradient(currentPoint); 
     NormalToMesh(currentPoint.x, currentPoint.y, currentPoint.z, erectedNormal);
     erectedNormal.normalize(); 
     //distanceTravelled = -_signedDistanceField->distance(currentPoint)*2; 
     distanceTravelled = DistanceToMesh(currentPoint.x, currentPoint.y, currentPoint.z);
-    if (distanceTravelled > 0) // located correctly outside the boundary
+    if (distanceTravelled > DISTANCE_TOLERANCE) // located correctly outside the boundary
     {
         boundaryPoint = currentPoint - erectedNormal * (distanceTravelled);
         imagePoint    = currentPoint + erectedNormal * (distanceTravelled); 

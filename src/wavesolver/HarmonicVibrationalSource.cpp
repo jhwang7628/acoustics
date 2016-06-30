@@ -13,9 +13,10 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 //##############################################################################
 //##############################################################################
 REAL HarmonicVibrationalSource::
-EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time) // TODO! 
+EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    throw std::runtime_error("**ERROR** not implemented"); 
+    const REAL returnValue = 1./_omega * sin(_omega*time + _phase); 
+    return returnValue; 
 }
 
 //##############################################################################

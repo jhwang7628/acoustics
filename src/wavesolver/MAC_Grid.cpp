@@ -8,9 +8,10 @@
 #include <utils/IO.h>
 #include <utils/trace.h>
 #include <utils/SimpleTimer.h>
+#include <utils/STL_Wrapper.h> 
+#include <utils/Conversions.h>
 
 #include <math/LeastSquareSurface.h>
-#include <utils/STL_Wrapper.h> 
 #include <boost/timer/timer.hpp>
 
 #include <distancefield/trilinearInterpolation.h> 
@@ -1136,34 +1137,13 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //// DEBUG END FIXME ////
 } 
 
-void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &simulationTime, const REAL &density)
+void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
 {
     const int N = _pressureField.numCells(); 
     for (int cell_idx = 0; cell_idx < N; ++cell_idx)
     {
         if (_toggledBulkCells[cell_idx] != 1) // no history problem, skip
             continue; 
-
-        // using average values of the neighbours
-        //// look at its immediate neighbours, and compute the average among bulk
-        //// cells 
-        //IntArray neighbours; 
-        //neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
-        //_pressureField.cellNeighbours(cell_idx, neighbours); 
-
-        //REAL average = 0; 
-        //int neighbourBulk = 0;
-        //for (int nei=0; nei<neighbours.size(); ++nei) 
-        //{
-        //    const int neighbour_cell_idx = neighbours[nei];
-        //    if (_isBulkCell[neighbour_cell_idx]) 
-        //    {
-        //        neighbourBulk += 1; 
-        //        average += p(neighbour_cell_idx, 0); 
-        //    } 
-        //}
-        //average /= (REAL) neighbourBulk; 
-        //p(cell_idx, 0) = average; 
 
         const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
         REAL distance; 
@@ -1183,8 +1163,7 @@ void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &simulationT
         Tuple3i indicesBuffer;
         Vector3d positionBuffer; 
         Eigen::VectorXd RHS(8); 
-        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime)*(-density); 
-        //const REAL bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
+        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime - 0.5*timeStep)*(-density); 
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -1218,93 +1197,95 @@ void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &simulationT
     }
 }
 
-void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim, const REAL &simulationTime)
+//##############################################################################
+// Interpolate the fresh velocity cell
+//
+// Note: 
+//   fresh velocity cell can be inside the object, so make sure the
+//   interpolation procedure is robust
+//##############################################################################
+void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
 {
-    const int N = _velocityField[dim].numCells(); 
+    const int N = _velocityInterfacialCells[dim].size(); 
     // essentially same procedures as pressure cells
-    for (int cell_idx = 0; cell_idx < N; ++cell_idx) 
+    for (int interfacial_cell_idx = 0; interfacial_cell_idx < N; ++interfacial_cell_idx) 
     {
-        if (_toggledVelocityInterfacialCells[dim][cell_idx] != 1) // no history problem, skip
+        const int cell_idx = _velocityInterfacialCells[dim].at(interfacial_cell_idx);
+        if (_toggledVelocityInterfacialCells[dim].at(cell_idx) != 1) // no history problem, skip
             continue; 
-
-        //// look at its immediate neighbours, and compute the average among bulk
-        //// cells 
-        //IntArray neighbours; 
-        //neighbours.reserve(ScalarField::NUM_NEIGHBOURS);
-        //_velocityField[dim].cellNeighbours(cell_idx, neighbours); 
-
-        //REAL average = 0; 
-        //int neighbourBulk = 0;
-        //for (size_t nei=0; nei<neighbours.size(); ++nei) 
-        //{
-        //    const int neighbour_idx = neighbours[nei];
-        //    if (_isVelocityBulkCell[dim][neighbour_idx] || _isVelocityInterfacialCell[dim][neighbour_idx]) 
-        //    {
-        //        neighbourBulk += 1; 
-        //        average += v(neighbour_idx, 0); 
-        //    } 
-        //}
-
-        //average /= (REAL) neighbourBulk; 
-        //v(cell_idx, 0) = average; 
-
 
         const Vector3d cellPosition = _velocityField[dim].cellPosition(cell_idx);
         REAL distance; 
         int objectID; 
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
-        if (distance < DISTANCE_TOLERANCE)
-            throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
-        REAL distanceTravelled; 
-        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+        REAL distanceToMesh;
+        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
         IntArray neighbours; 
-        _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
-        Eigen::MatrixXd V(8,8); 
         Tuple3i indicesBuffer;
         Vector3d positionBuffer; 
-        Eigen::VectorXd RHS(8); 
-        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime); 
 
+        // interpolate using trilinear interpolant
+        // boundary velocity will be scaled by the normal difference
+        _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
+        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime - timeStep) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
+        Eigen::MatrixXd V(8,8); 
+        Eigen::VectorXd RHS(8); 
+        int row_cell_idx = -1; 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
-            // TODO 
-            if (!_isVelocityBulkCell[dim][neighbours[row]]) 
-                throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
-            indicesBuffer = _velocityField[dim].cellIndex(neighbours[row]); 
+            int neighbourHasHistory = 0;
+            if (!_isVelocityBulkCell[dim].at(neighbours[row]))
+            {
+                if (!_isVelocityInterfacialCell[dim].at(neighbours[row]))
+                {
+                    neighbourHasHistory = 1; 
+                }
+                else  // is interfacial, but still need to check whether it also becomes interfacial at the same time step
+                {
+                    // neighbouring interfacial cell without valid history
+                    if (_toggledVelocityInterfacialCells[dim].at(neighbours[row]) == 1 && neighbours.at(row) != cell_idx) 
+                        neighbourHasHistory = 2; 
+                }
+            }
+            if (neighbourHasHistory != 0) 
+                throw std::runtime_error("**ERROR** one of the interpolation stencil for velocity fresh cell has invalid history. Error code: " + std::to_string(neighbourHasHistory)); 
+
+            indicesBuffer = _velocityField[dim].cellIndex(neighbours.at(row)); 
             positionBuffer= _velocityField[dim].cellPosition(indicesBuffer); 
-            if (neighbours[row] != cell_idx) // not self
+            if (neighbours.at(row) != cell_idx) // not self
             {
                 FillVandermondeRegular(row, positionBuffer, V);
-                RHS(row) = v(neighbours[row], 0); 
+                RHS(row) = v(neighbours.at(row), 0); 
             }
             else 
             {
-                //FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-                FillVandermondeRegular(row, positionBuffer, V); 
+                row_cell_idx = row; 
+                FillVandermondeRegular(row, boundaryPoint, V); 
                 RHS(row) = boundaryVelocity; 
             }
         }
-
         // coefficient for the interpolant
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
         //Eigen::VectorXd C = V.lu().solve(RHS); 
         Eigen::VectorXd C = svd.solve(RHS); 
 
-        // evaluate the interpolant at cell position
         Eigen::VectorXd coordinateVector(8); 
-        FillVandermondeRegular(cellPosition, coordinateVector);
-        const REAL velocityFreshCell = C.dot(coordinateVector); 
-        v(cell_idx, 0) = velocityFreshCell; 
+        FillVandermondeRegular(imagePoint, coordinateVector);
+        const REAL v_IP = C.dot(coordinateVector); 
+        const REAL v_BI = boundaryVelocity;
+        if (distanceToMesh > DISTANCE_TOLERANCE) // cell position is located outside the boundary: the erected normal is BI-CU-IP
+            v(cell_idx, 0) = 0.5 * (v_IP + v_BI); 
+        else // cell position is located inside the boundary: the erected normal is CU-BI-IP
+            v(cell_idx, 0) = 2.0 * v_BI - v_IP;
     }
 }
 
 void MAC_Grid::classifyCells( bool useBoundary )
 {
-
     int      numPressureCells = _pressureField.numCells();
     int      numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
     Vector3d cellPos;
