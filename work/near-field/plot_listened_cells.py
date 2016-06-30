@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import glob
+import scipy
 
 if (len(sys.argv) != 3): 
     print '**Usage: %s <listening_position_dat> <listening_data_dat_prefix>' %(sys.argv[0])
@@ -30,6 +31,9 @@ for f in filenames:
 plt.figure()
 for ii in range(N_points): 
     plt.plot(listenedData[:,ii], label=listeningPositions[ii, :]) 
+    scipy.io.wavfile.write('point_%u.wav' %(ii), 176400, listenedData[:,ii])
 plt.legend()
 plt.show()
+
+# write wav file
 

@@ -9,7 +9,7 @@
                 fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
-                initial_position_y="0.1"
+                initial_position_y="0.075"
                 initial_position_z="0.0"
                 />
             <!--
@@ -50,7 +50,7 @@
 
         output_pattern="work/near-field/data_test/test_%s"
 
-        PML_width="6"
+        PML_width="3"
         PML_strength="1000000.0" 
 
         use_mesh="1"
