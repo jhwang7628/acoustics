@@ -111,7 +111,6 @@ class MAC_Grid
         //  +1 means turn to ghost from regular solid (fluid); 
         //  -1 means turn to not ghost (bulk or solid) from ghost
         IntArray                 _toggledGhostCells; 
-
         // store velocity cells who transition between solid and interfacial
         // cells  
         //  default value: 0 (no change) 
@@ -235,8 +234,8 @@ class MAC_Grid
         // solid->interfacial for velocity cells, or when solid->bulk for
         // pressure cells. In these two situations the cell does not have valid
         // history. 
-        void InterpolatePressureCellHistory(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
-        void InterpolateVelocityCellHistory(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
+        void InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
+        void InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
 
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 

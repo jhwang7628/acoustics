@@ -48,7 +48,7 @@
         substeps="1"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_test3/test_%s"
+        output_pattern="work/near-field/data_boundary_motion/rasterized_no_treatment/test_%s"
 
         PML_width="6"
         PML_strength="1000000.0" 

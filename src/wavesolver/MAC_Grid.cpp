@@ -1137,7 +1137,7 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //// DEBUG END FIXME ////
 } 
 
-void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
+void MAC_Grid::InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
 {
     const int N = _pressureField.numCells(); 
     for (int cell_idx = 0; cell_idx < N; ++cell_idx)
@@ -1204,7 +1204,7 @@ void MAC_Grid::InterpolatePressureCellHistory(MATRIX &p, const REAL &timeStep, c
 //   fresh velocity cell can be inside the object, so make sure the
 //   interpolation procedure is robust
 //##############################################################################
-void MAC_Grid::InterpolateVelocityCellHistory(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
+void MAC_Grid::InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
 {
     const int N = _velocityInterfacialCells[dim].size(); 
     // essentially same procedures as pressure cells

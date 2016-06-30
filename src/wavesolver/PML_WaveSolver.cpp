@@ -308,13 +308,13 @@ void PML_WaveSolver::stepLeapfrog()
     }
     else 
     {
-         _grid.InterpolatePressureCellHistory(_p[0], _timeStep, _currentTime, _density);  
-         _grid.InterpolatePressureCellHistory(_p[1], _timeStep, _currentTime, _density);  
-         _grid.InterpolatePressureCellHistory(_p[2], _timeStep, _currentTime, _density);  
-         _grid.InterpolatePressureCellHistory(_pFull, _timeStep, _currentTime, _density);  
-         _grid.InterpolateVelocityCellHistory(_v[0], 0, _timeStep, _currentTime);
-         _grid.InterpolateVelocityCellHistory(_v[1], 1, _timeStep, _currentTime);
-         _grid.InterpolateVelocityCellHistory(_v[2], 2, _timeStep, _currentTime);
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[0], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[1], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[2], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[0], 0, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[1], 1, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[2], 2, _timeStep, _currentTime);
     }
 
 
