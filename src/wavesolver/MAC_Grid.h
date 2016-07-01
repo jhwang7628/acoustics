@@ -104,6 +104,10 @@ class MAC_Grid
         BoolArray                _pressureCellHasValidHistory; 
         BoolArray                _velocityCellHasValidHistory[3]; 
 
+
+        // TODO clean up all the parts of the code that uses toggle array
+        //
+        ////////////// unwanted start ///////////////
         // store cells whose bulk identity changed 
         //  default value: 0 (no change) 
         //  +1 means turn to bulk (fluid); 
@@ -120,6 +124,7 @@ class MAC_Grid
         //  +1 means turn to interfacial from solid        
         //  -1 means turn to solid from interfacial
         IntArray                 _toggledVelocityInterfacialCells[3]; 
+        ////////////// unwanted end ///////////////
 
         std::map<int,int>        _ghostCellsInverse; 
 

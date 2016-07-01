@@ -1139,6 +1139,14 @@ void MAC_Grid::FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const
     //// DEBUG END FIXME ////
 } 
 
+//##############################################################################
+// Interpolate the fresh pressure cell
+//
+// Note: 
+//   fresh pressure cell will have to be outside the object, otherwise the last
+//   step of the interpolation won't work: Need BI-CU-IP so CU is well-defined
+//   for the interpolant. 
+//##############################################################################
 void MAC_Grid::InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
 {
     const int N = _pressureField.numCells(); 
@@ -1192,7 +1200,7 @@ void MAC_Grid::InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &ti
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Eigen::VectorXd C = svd.solve(RHS); 
 
-        // evaluate the interpolant at cell position
+        //// evaluate the interpolant at cell position
         Eigen::VectorXd coordinateVector(8); 
         FillVandermondeRegular(cellPosition, coordinateVector);
         const REAL pressureFreshCell = C.dot(coordinateVector); 
@@ -1277,149 +1285,12 @@ void MAC_Grid::InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dim
 
 void MAC_Grid::InterpolateFreshPressureCell_GhostCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
 {
-    const int N = _pressureField.numCells(); 
-    for (int cell_idx = 0; cell_idx < N; ++cell_idx)
-    {
-        if (_toggledBulkCells[cell_idx] != 1) // no history problem, skip
-            continue; 
-
-        const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
-        REAL distance; 
-        int objectID; 
-        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
-        if (distance < DISTANCE_TOLERANCE)
-            throw std::runtime_error("**ERROR** fresh cell inside some object. may be classification rounding error. distance: " + std::to_string(distance)); 
-        Vector3d imagePoint, boundaryPoint, erectedNormal; 
-        REAL distanceTravelled; 
-        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
-
-        // prepare interpolation stencils, this part is similar to
-        // the vandermonde part in ghost cell pressure update
-        IntArray neighbours; 
-        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-        Eigen::MatrixXd V(8,8); 
-        Tuple3i indicesBuffer;
-        Vector3d positionBuffer; 
-        Eigen::VectorXd RHS(8); 
-        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime - 0.5*timeStep)*(-density); 
-
-        for (size_t row=0; row<neighbours.size(); row++) 
-        {
-            // TODO 
-            if (!_isBulkCell[neighbours[row]]) 
-                throw std::runtime_error("**ERROR** one of the interpolation stencil for fresh cell is not bulk, this is not handled"); 
-            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
-            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
-            if (neighbours[row] != cell_idx) // not self
-            {
-                FillVandermondeRegular(row, positionBuffer, V);
-                RHS(row) = p(neighbours[row], 0); 
-            }
-            else 
-            {
-                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-                RHS(row) = boundaryPressureGradientNormal; 
-            }
-        }
-
-        // coefficient for the interpolant
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        //Eigen::VectorXd C = V.lu().solve(RHS); 
-        Eigen::VectorXd C = svd.solve(RHS); 
-
-        // evaluate the interpolant at cell position
-        Eigen::VectorXd coordinateVector(8); 
-        FillVandermondeRegular(cellPosition, coordinateVector);
-        const REAL pressureFreshCell = C.dot(coordinateVector); 
-        p(cell_idx, 0) = pressureFreshCell; 
-    }
 }
 
 //##############################################################################
-// Interpolate the fresh velocity cell
-//
-// Note: 
-//   fresh velocity cell can be inside the object, so make sure the
-//   interpolation procedure is robust
 //##############################################################################
 void MAC_Grid::InterpolateFreshVelocityCell_GhostCell(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
 {
-    const int N = _velocityInterfacialCells[dim].size(); 
-    // essentially same procedures as pressure cells
-    for (int interfacial_cell_idx = 0; interfacial_cell_idx < N; ++interfacial_cell_idx) 
-    {
-        const int cell_idx = _velocityInterfacialCells[dim].at(interfacial_cell_idx);
-        if (_toggledVelocityInterfacialCells[dim].at(cell_idx) != 1) // no history problem, skip
-            continue; 
-
-        const Vector3d cellPosition = _velocityField[dim].cellPosition(cell_idx);
-        REAL distance; 
-        int objectID; 
-        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
-        Vector3d imagePoint, boundaryPoint, erectedNormal; 
-        REAL distanceToMesh;
-        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
-
-        // prepare interpolation stencils, this part is similar to
-        // the vandermonde part in ghost cell pressure update
-        IntArray neighbours; 
-        Tuple3i indicesBuffer;
-        Vector3d positionBuffer; 
-
-        // interpolate using trilinear interpolant
-        // boundary velocity will be scaled by the normal difference
-        _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
-        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime - timeStep) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
-        Eigen::MatrixXd V(8,8); 
-        Eigen::VectorXd RHS(8); 
-        int row_cell_idx = -1; 
-        for (size_t row=0; row<neighbours.size(); row++) 
-        {
-            int neighbourHasHistory = 0;
-            if (!_isVelocityBulkCell[dim].at(neighbours[row]))
-            {
-                if (!_isVelocityInterfacialCell[dim].at(neighbours[row]))
-                {
-                    neighbourHasHistory = 1; 
-                }
-                else  // is interfacial, but still need to check whether it also becomes interfacial at the same time step
-                {
-                    // neighbouring interfacial cell without valid history
-                    if (_toggledVelocityInterfacialCells[dim].at(neighbours[row]) == 1 && neighbours.at(row) != cell_idx) 
-                        neighbourHasHistory = 2; 
-                }
-            }
-            if (neighbourHasHistory != 0) 
-                throw std::runtime_error("**ERROR** one of the interpolation stencil for velocity fresh cell has invalid history. Error code: " + std::to_string(neighbourHasHistory)); 
-
-            indicesBuffer = _velocityField[dim].cellIndex(neighbours.at(row)); 
-            positionBuffer= _velocityField[dim].cellPosition(indicesBuffer); 
-            if (neighbours.at(row) != cell_idx) // not self
-            {
-                FillVandermondeRegular(row, positionBuffer, V);
-                RHS(row) = v(neighbours.at(row), 0); 
-            }
-            else 
-            {
-                row_cell_idx = row; 
-                FillVandermondeRegular(row, boundaryPoint, V); 
-                RHS(row) = boundaryVelocity; 
-            }
-        }
-        // coefficient for the interpolant
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        //Eigen::VectorXd C = V.lu().solve(RHS); 
-        Eigen::VectorXd C = svd.solve(RHS); 
-
-        Eigen::VectorXd coordinateVector(8); 
-        FillVandermondeRegular(imagePoint, coordinateVector);
-        const REAL v_IP = C.dot(coordinateVector); 
-        const REAL v_BI = boundaryVelocity;
-        if (distanceToMesh > DISTANCE_TOLERANCE) // cell position is located outside the boundary: the erected normal is BI-CU-IP
-            v(cell_idx, 0) = 0.5 * (v_IP + v_BI); 
-        else // cell position is located inside the boundary: the erected normal is CU-BI-IP
-            v(cell_idx, 0) = 2.0 * v_BI - v_IP;
-    }
 }
 
 void MAC_Grid::classifyCells( bool useBoundary )
