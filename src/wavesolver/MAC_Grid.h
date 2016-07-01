@@ -101,15 +101,18 @@ class MAC_Grid
         IntArray                 _bulkCells;
         IntArray                 _ghostCells;
 
+        BoolArray                _pressureCellHasValidHistory; 
+        BoolArray                _velocityCellHasValidHistory[3]; 
+
         // store cells whose bulk identity changed 
         //  default value: 0 (no change) 
         //  +1 means turn to bulk (fluid); 
         //  -1 means turn to solid
         IntArray                 _toggledBulkCells;  
         // store cells whose ghost identity changed 
-        //  default value: 0 (no change) 
-        //  +1 means turn to ghost from regular solid (fluid); 
-        //  -1 means turn to not ghost (bulk or solid) from ghost
+        //  +1 means turn to ghost from solid; 
+        //  =1 means turn to solid from ghost
+        //   0 otherwise
         IntArray                 _toggledGhostCells; 
         // store velocity cells who transition between solid and interfacial
         // cells  
@@ -236,6 +239,8 @@ class MAC_Grid
         // history. 
         void InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
         void InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
+        void InterpolateFreshPressureCell_GhostCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
+        void InterpolateFreshVelocityCell_GhostCell(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
 
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 
@@ -256,6 +261,8 @@ class MAC_Grid
         inline const Tuple3i &pressureFieldDivisions() const { return _pressureField.cellDivisions(); }
         inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
+        inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
+        inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

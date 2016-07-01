@@ -99,6 +99,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     _isBulkCell.resize(N_pressureCells, false);
     _toggledBulkCells.resize(N_pressureCells, 0); 
     _toggledGhostCells.resize(N_pressureCells, 0); 
+    _pressureCellHasValidHistory.resize(N_pressureCells, true); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
     {
@@ -112,6 +113,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
             _isVelocityInterfacialCell[ii].resize(N_velocityCells, false); 
             _isVelocityBulkCell[ii].resize(N_velocityCells, false); 
             _toggledVelocityInterfacialCells[ii].resize(N_velocityCells, 0); 
+            _velocityCellHasValidHistory[ii].resize(N_velocityCells, true); 
         }
     }
     _cellSize = cellSize; 
@@ -1142,6 +1144,142 @@ void MAC_Grid::InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &ti
     const int N = _pressureField.numCells(); 
     for (int cell_idx = 0; cell_idx < N; ++cell_idx)
     {
+        // if has valid history or if its solid, then no interpolation needed
+        if (_pressureCellHasValidHistory.at(cell_idx) || IsPressureCellSolid(cell_idx))
+            continue; 
+
+        const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
+        REAL distance; 
+        int objectID; 
+        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+        if (distance < DISTANCE_TOLERANCE)
+            throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. Distance: " + std::to_string(distance)); 
+        Vector3d imagePoint, boundaryPoint, erectedNormal; 
+        REAL distanceTravelled; 
+        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+
+        // prepare interpolation stencils, this part is similar to
+        // the vandermonde part in ghost cell pressure update
+        IntArray neighbours; 
+        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+        Eigen::MatrixXd V(8,8); 
+        Tuple3i indicesBuffer;
+        Vector3d positionBuffer; 
+        Eigen::VectorXd RHS(8); 
+        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime - 0.5*timeStep)*(-density); 
+
+        for (size_t row=0; row<neighbours.size(); row++) 
+        {
+            const int neighbour_idx = neighbours[row]; 
+            if (!_pressureCellHasValidHistory.at(neighbour_idx) && neighbour_idx != cell_idx)
+                throw std::runtime_error("**ERROR** one of the interpolation stencil for pressure fresh cell has invalid history."); 
+
+            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+            if (neighbours[row] != cell_idx) // not self
+            {
+                FillVandermondeRegular(row, positionBuffer, V);
+                RHS(row) = p(neighbours[row], 0); 
+            }
+            else 
+            {
+                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
+                RHS(row) = boundaryPressureGradientNormal; 
+            }
+        }
+
+        // coefficient for the interpolant
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::VectorXd C = svd.solve(RHS); 
+
+        // evaluate the interpolant at cell position
+        Eigen::VectorXd coordinateVector(8); 
+        FillVandermondeRegular(cellPosition, coordinateVector);
+        const REAL pressureFreshCell = C.dot(coordinateVector); 
+        p(cell_idx, 0) = pressureFreshCell; 
+    }
+}
+
+//##############################################################################
+// Interpolate the fresh velocity cell
+//
+// Note: 
+//   fresh velocity cell can be inside the object, so make sure the
+//   interpolation procedure is robust
+//##############################################################################
+void MAC_Grid::InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
+{
+    const int N = _velocityInterfacialCells[dim].size(); 
+    // essentially same procedures as pressure cells
+    for (int interfacial_cell_idx = 0; interfacial_cell_idx < N; ++interfacial_cell_idx) 
+    {
+        const int cell_idx = _velocityInterfacialCells[dim].at(interfacial_cell_idx);
+        // if has valid history or if its solid, then no interpolation needed
+        if (_velocityCellHasValidHistory[dim].at(cell_idx) || IsVelocityCellSolid(cell_idx, dim))
+            continue; 
+
+        const Vector3d cellPosition = _velocityField[dim].cellPosition(cell_idx);
+        REAL distance; 
+        int objectID; 
+        _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+        Vector3d imagePoint, boundaryPoint, erectedNormal; 
+        REAL distanceToMesh;
+        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
+
+        // prepare interpolation stencils, this part is similar to
+        // the vandermonde part in ghost cell pressure update
+        IntArray neighbours; 
+        Tuple3i indicesBuffer;
+        Vector3d positionBuffer; 
+
+        // interpolate using trilinear interpolant
+        // boundary velocity will be scaled by the normal difference
+        _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
+        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime - timeStep) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
+        Eigen::MatrixXd V(8,8); 
+        Eigen::VectorXd RHS(8); 
+        int row_cell_idx = -1; 
+        for (size_t row=0; row<neighbours.size(); row++) 
+        {
+            const int neighbour_idx = neighbours[row]; 
+
+            if (!_velocityCellHasValidHistory[dim].at(neighbour_idx) && neighbour_idx != cell_idx) 
+                throw std::runtime_error("**ERROR** one of the interpolation stencil for velocity fresh cell has invalid history."); 
+
+            indicesBuffer = _velocityField[dim].cellIndex(neighbours.at(row)); 
+            positionBuffer= _velocityField[dim].cellPosition(indicesBuffer); 
+            if (neighbours.at(row) != cell_idx) // not self
+            {
+                FillVandermondeRegular(row, positionBuffer, V);
+                RHS(row) = v(neighbours.at(row), 0); 
+            }
+            else 
+            {
+                row_cell_idx = row; 
+                FillVandermondeRegular(row, boundaryPoint, V); 
+                RHS(row) = boundaryVelocity; 
+            }
+        }
+        // coefficient for the interpolant
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::VectorXd C = svd.solve(RHS); 
+
+        Eigen::VectorXd coordinateVector(8); 
+        FillVandermondeRegular(imagePoint, coordinateVector);
+        const REAL v_IP = C.dot(coordinateVector); 
+        const REAL v_BI = boundaryVelocity;
+        if (distanceToMesh > DISTANCE_TOLERANCE) // cell position is located outside the boundary: the erected normal is BI-CU-IP
+            v(cell_idx, 0) = 0.5 * (v_IP + v_BI); 
+        else // cell position is located inside the boundary: the erected normal is CU-BI-IP
+            v(cell_idx, 0) = 2.0 * v_BI - v_IP;
+    }
+}
+
+void MAC_Grid::InterpolateFreshPressureCell_GhostCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
+{
+    const int N = _pressureField.numCells(); 
+    for (int cell_idx = 0; cell_idx < N; ++cell_idx)
+    {
         if (_toggledBulkCells[cell_idx] != 1) // no history problem, skip
             continue; 
 
@@ -1204,7 +1342,7 @@ void MAC_Grid::InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &ti
 //   fresh velocity cell can be inside the object, so make sure the
 //   interpolation procedure is robust
 //##############################################################################
-void MAC_Grid::InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
+void MAC_Grid::InterpolateFreshVelocityCell_GhostCell(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
 {
     const int N = _velocityInterfacialCells[dim].size(); 
     // essentially same procedures as pressure cells
@@ -1562,16 +1700,15 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
     const int numPressureCells = _pressureField.numCells(); 
     Vector3d cellPos;
     IntArray neighbours;
-
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
     // step 1 : clear relevant arrays
     _bulkCells.clear(); 
-    _ghostCells.clear(); 
     for (int dim=0; dim<3; ++dim) 
         _velocityBulkCells[dim].clear(); 
     //std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
     //std::fill(_containingObject.begin(), _containingObject.end(), -1); 
+    // need to know whether at last time step history is valid
 
     // step 2 : not using boundary, classification is trivial
     if (!useBoundary)
@@ -1595,52 +1732,84 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
     // step 3 : classify pressure bulk cells 
     for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
     {
-        cellPos = _pressureField.cellPosition( cell_idx );
-        // Check all boundary fields to see if this is a bulk cell
-        const int indexOccupyObject = _objects->OccupyByObject(cellPos); 
-        const bool newIsBulkCell = (indexOccupyObject>=0 ? false : true); 
-        if (_isBulkCell[cell_idx] && !newIsBulkCell)  // turning to solid cell
+        // first establish if it has valid history
+        if (_isBulkCell.at(cell_idx)) // was bulk -> valid history
         {
-            _toggledBulkCells[cell_idx] = -1; 
-            pFull(cell_idx, 0) = 0; // clear pressure solid cell
-            p[0](cell_idx, 0) = 0; 
-            p[1](cell_idx, 0) = 0; 
-            p[2](cell_idx, 0) = 0; 
-        } 
-        else if (!_isBulkCell[cell_idx] && newIsBulkCell) // turning to bulk cell
-            _toggledBulkCells[cell_idx] = 1; 
-        else // identity unchanged
-            _toggledBulkCells[cell_idx] = 0; 
-
-        if (!newIsBulkCell) 
-        {
-            _isBulkCell[cell_idx] = false; 
-            // clear the pressure cells that are bulk
-            _containingObject[cell_idx] = indexOccupyObject; 
+            _pressureCellHasValidHistory.at(cell_idx) = true; 
         }
         else 
         {
-            _isBulkCell[cell_idx] = true; 
-            _containingObject[cell_idx] = -1; 
-            _bulkCells.push_back( cell_idx );
+            if (_useGhostCellBoundary && _isGhostCell.at(cell_idx)) // was ghost -> valid history
+                _pressureCellHasValidHistory.at(cell_idx) = true;
+            else 
+                _pressureCellHasValidHistory.at(cell_idx) = false;
         }
+
+        cellPos = _pressureField.cellPosition( cell_idx );
+        // Check all boundary fields to see if this is a bulk cell
+        _containingObject.at(cell_idx) = _objects->OccupyByObject(cellPos); 
+        const bool newIsBulkCell = (_containingObject.at(cell_idx)>=0 ? false : true); 
+
+        _isBulkCell.at(cell_idx) = newIsBulkCell; 
+        if (newIsBulkCell)
+            _bulkCells.push_back(cell_idx); 
+
+        // clear history for solid pressure
+        if (!newIsBulkCell && !_useGhostCellBoundary) 
+        {
+            pFull(cell_idx, 0) = 0;
+            p[0](cell_idx, 0) = 0; 
+            p[1](cell_idx, 0) = 0; 
+            p[2](cell_idx, 0) = 0; 
+        }
+
+        //if (_isBulkCell[cell_idx] && !newIsBulkCell)  // turning to solid cell
+        //{
+        //    _toggledBulkCells[cell_idx] = -1; 
+        //    pFull(cell_idx, 0) = 0; // clear pressure solid cell
+        //    p[0](cell_idx, 0) = 0; 
+        //    p[1](cell_idx, 0) = 0; 
+        //    p[2](cell_idx, 0) = 0; 
+        //} 
+        //else if (!_isBulkCell[cell_idx] && newIsBulkCell) // turning to bulk cell
+        //    _toggledBulkCells[cell_idx] = 1; 
+        //else
+        //    _toggledBulkCells[cell_idx] = 0; 
+
+        //if (!newIsBulkCell) 
+        //{
+        //    _isBulkCell[cell_idx] = false; 
+        //    // clear the pressure cells that are bulk
+        //    _containingObject[cell_idx] = indexOccupyObject; 
+        //}
+        //else 
+        //{
+        //    _isBulkCell[cell_idx] = true; 
+        //    _containingObject[cell_idx] = -1; 
+        //    _bulkCells.push_back( cell_idx );
+        //}
     }
 
     // step 4a : classify pressure ghost cells if flag is on
     if (_useGhostCellBoundary) 
     {
-        //std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
+        std::fill(_toggledGhostCells.begin(), _toggledGhostCells.end(), 0); 
+        _ghostCells.clear(); 
         // examine ghost cells 
         for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
         {
             bool newIsGhostCell = false; 
-            if (_isBulkCell[cell_idx])
+            if (_isBulkCell[cell_idx]) // transition to bulk, if this is from solid then we need to worry, if from ghost cell ignore
             {
-                if (_isGhostCell[cell_idx]) // turn to non-ghost from ghost
-                    _toggledGhostCells[cell_idx] = -1;
-                else 
-                    _toggledGhostCells[cell_idx] = 0;
-                _isGhostCell[cell_idx] = false; 
+                if (_isGhostCell[cell_idx] == false && _toggledBulkCells[cell_idx] != 0) // it changes and not changed from ghost, so must change from solid
+                {
+                    throw std::runtime_error("**ERROR** turning to bulk directly from solid. not handled."); 
+                }
+                else
+                {
+                    _toggledGhostCells[cell_idx] = 0; 
+                    _isGhostCell[cell_idx] = false; 
+                }
                 continue;
             }
             _pressureField.cellNeighbours( cell_idx, neighbours );
@@ -1692,6 +1861,12 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
                 int     pressure_cell_idx2;
 
                 cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
+
+                // first establish if it has valid history
+                if (_isVelocityBulkCell[dimension].at(cell_idx) || _isVelocityInterfacialCell[dimension].at(cell_idx)) 
+                    _velocityCellHasValidHistory[dimension].at(cell_idx) = true; 
+                else
+                    _velocityCellHasValidHistory[dimension].at(cell_idx) = false; 
 
                 // We will assume that boundary cells are not interfacial
                 if ( cell_coordinates[ dimension ] == 0
