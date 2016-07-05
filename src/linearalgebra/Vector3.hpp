@@ -22,6 +22,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <assert.h>
 #include "Tuple3.hpp"
 #include "utils/math.hpp"
@@ -123,6 +124,21 @@ class Vector3 : public Tuple3<T>
         Vector3<T> operator / (const T& rhs) const
         {
             return Vector3<T>(x/rhs, y/rhs, z/rhs);
+        }
+
+        T operator () (const int &ind) const
+        {
+            T returnValue; 
+            if (ind == 0) 
+                returnValue = x;  
+            else if (ind == 1) 
+                returnValue = y;  
+            else if (ind == 2) 
+                returnValue = z;  
+            else 
+                throw std::runtime_error("**ERROR** vector access out of bounds");
+
+            return returnValue; 
         }
 
         /*! Dot product of two vectors. */

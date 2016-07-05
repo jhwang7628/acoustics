@@ -15,7 +15,7 @@ set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 
 # General Configuration: find all the required libraries.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
 
 # compile option
 option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)

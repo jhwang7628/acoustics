@@ -214,6 +214,9 @@ Run()
         // debug FIXME
         if (stepIndex > 20)
             TestMoveObjects();
+
+        //if (stepIndex == 100)
+        //    exit(1); 
     }
 }
 

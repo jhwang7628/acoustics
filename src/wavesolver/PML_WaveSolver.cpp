@@ -192,7 +192,7 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
     data.resize(N, N_resultDimension); 
     VECTOR output(N_resultDimension); 
     BoundingBox pressureBoundingBox = _grid.PressureBoundingBox(); 
-    for (size_t ii=0; ii<N; ++ii) 
+    for (int ii=0; ii<N; ++ii) 
     {
         if (!pressureBoundingBox.isInside(listeningPoints.at(ii)))
         {
@@ -318,7 +318,7 @@ void PML_WaveSolver::stepLeapfrog()
 //#else 
 //    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 //#endif 
-    _grid.classifyCellsDynamic(_pFull, _p, _v, true, false); 
+    _grid.classifyCellsDynamic(_pFull, _p, _v, true, true); 
     //_grid.initFieldRasterized(true);
     //_grid.classifyCellsDynamicAABB(true, _pFull, false);
     _cellClassifyTimer.pause(); 
@@ -326,7 +326,20 @@ void PML_WaveSolver::stepLeapfrog()
     // deal with the fresh cell problem
     if (_useGhostCellBoundary)
     {
-        _grid.FreshCellInterpolate(_pFull, _currentTime, _density); 
+        //_grid.FreshCellInterpolate(_pFull, _currentTime, _density); 
+          
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[0], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[1], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_p[2], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell_Rasterized(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[0], 0, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[1], 1, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell_Rasterized(_v[2], 2, _timeStep, _currentTime);
+
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
     }
     else 
     {
@@ -359,12 +372,16 @@ void PML_WaveSolver::stepLeapfrog()
     _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
     _algebraTimer.pause();
 
-    if (_useGhostCellBoundary)
-    {
-        _ghostCellTimer.start(); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
-        _ghostCellTimer.pause(); 
-    }
+    //if (_useGhostCellBoundary)
+    //{
+    ////    _ghostCellTimer.start(); 
+    ////    _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    ////    _ghostCellTimer.pause(); 
+    //}
 
     //_writeTimer.start();
     //if ( _listeningPositions && ( _timeIndex % _subSteps ) == 0 )
