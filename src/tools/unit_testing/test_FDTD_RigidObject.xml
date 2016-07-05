@@ -59,13 +59,13 @@
         /> 
 
     <pressure_source> 
+    <!--
         <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.2" 
         source_position_y="0.0" 
         source_position_z="0.0" 
         />
-    <!--
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 

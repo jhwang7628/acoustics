@@ -41,8 +41,10 @@ class FDTD_AcousticSimulator
         std::string _CompositeFilename(const std::string filename); // composite output path and prefix
         void _SaveSolverSettings(const std::string &filename); 
         void _SavePressureCellPositions(const std::string &filename); 
+        void _SaveVelocityCellPositions(const std::string &filename, const int &dim); 
         void _SaveListeningPositions(const std::string &filename); 
         void _SavePressureTimestep(const std::string &filename); 
+        void _SaveVelocityTimestep(const std::string &filename, const int &dim); 
         void _SaveListeningData(const std::string &filename);
 
     public: 

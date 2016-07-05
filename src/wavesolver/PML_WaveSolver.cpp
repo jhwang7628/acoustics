@@ -125,6 +125,18 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
     _sourceEvaluator = nullptr; 
 }
 
+int PML_WaveSolver::numVelocityCells(const int &dim) const
+{ 
+    if (dim==0) 
+        return _grid.numVelocityCellsX(); 
+    else if (dim==1) 
+        return _grid.numVelocityCellsY(); 
+    else if (dim==2) 
+        return _grid.numVelocityCellsZ(); 
+    else 
+        throw std::runtime_error("**ERROR** dimension for velocity cells out of bounds"); 
+} 
+
 void PML_WaveSolver::SetCornellBoxBoundaryCondition(const bool &isOn)
 { 
     _cornellBoxBoundaryCondition = isOn; 
@@ -294,6 +306,14 @@ void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) co
         pressure.resizeAndWipe( _N );
 
     MATRIX::copy( pressure.data(), _pFull.data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
+}
+
+void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const 
+{
+    if ( velocity.size() != _N )
+        velocity.resizeAndWipe( _N );
+
+    MATRIX::copy( velocity.data(), _v[dim].data() + _grid.velocityFieldVertexIndex( index, dim ) * _N, 1, _N ); 
 }
 
 void PML_WaveSolver::writeWaveOutput() const

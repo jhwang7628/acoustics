@@ -114,6 +114,31 @@ _SavePressureCellPositions(const std::string &filename)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
+_SaveVelocityCellPositions(const std::string &filename, const int &dim)
+{
+    const Tuple3i &divisions = _acousticSolver->velocityFieldDivisions(dim);
+    const int N_cells = _acousticSolver->numVelocityCells(dim);
+    Eigen::MatrixXd vertexPosition(N_cells,3); 
+    int count = 0;
+    Vector3d vPosition; 
+    for (int kk=0; kk<divisions.z; kk++)
+        for (int jj=0; jj<divisions.y; jj++)
+            for (int ii=0; ii<divisions.x; ii++)
+            {
+                Tuple3i  vIndex(ii, jj, kk);
+                vPosition = _acousticSolver->velocityFieldPosition(vIndex, dim);
+                vertexPosition(count, 0) = vPosition[0];
+                vertexPosition(count, 1) = vPosition[1];
+                vertexPosition(count, 2) = vPosition[2];
+                count ++;
+            }
+
+    IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
 _SaveListeningPositions(const std::string &filename)
 {
     Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
@@ -150,6 +175,29 @@ _SavePressureTimestep(const std::string &filename)
             }
 
     IO::writeMatrixX<double>(*vertexPressure, filename.c_str(), IO::BINARY);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+_SaveVelocityTimestep(const std::string &filename, const int &dim)
+{
+    const Tuple3i &divisions = _acousticSolver->velocityFieldDivisions(dim);
+    const int N_cells = _acousticSolver->numVelocityCells(dim);
+    int count = 0;
+    std::shared_ptr<Eigen::MatrixXd> vertexVelocity_eigen(new Eigen::MatrixXd(N_cells, 1)); 
+    for (int kk=0; kk<divisions.z; kk++)
+        for (int jj=0; jj<divisions.y; jj++)
+            for (int ii=0; ii<divisions.x; ii++)
+            {
+                Tuple3i  vIndex( ii, jj, kk );
+                VECTOR vVelocity;
+                _acousticSolver->vertexVelocity( vIndex, dim, vVelocity );
+                (*vertexVelocity_eigen)(count, 0) = vVelocity[0];
+                count ++; 
+            }
+
+    IO::writeMatrixX<double>(*vertexVelocity_eigen, filename.c_str(), IO::BINARY);
 }
 
 //##############################################################################
@@ -202,6 +250,14 @@ Run()
             oss << std::setw(6) << std::setfill('0') << timeIndex; 
             const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
             _SavePressureTimestep(filenameField); 
+
+            for (int dim=0; dim<3; ++dim) 
+            {
+                const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+                _SaveVelocityTimestep(filenameVelocityField, dim); 
+            }
+
+
             const std::string filenameProbe = _CompositeFilename("listening_"+oss.str()+".dat"); 
             _SaveListeningData(filenameProbe);
         }
@@ -226,10 +282,15 @@ void FDTD_AcousticSimulator::
 SaveSolverConfig()
 {
     const string solverSettings_s = _CompositeFilename("solver_settings.txt"); 
-    const string vertexPosition_s = _CompositeFilename("vertex_position.dat"); 
+    const string vertexPosition_s = _CompositeFilename("pressure_vertex_position.dat"); 
     const string listeningPosition_s = _CompositeFilename("listening_position.dat"); 
     _SaveSolverSettings(solverSettings_s);
     _SavePressureCellPositions(vertexPosition_s); 
+    for (int dim=0; dim<3; ++dim) 
+    {
+        const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim+"_vertex_position.dat"); 
+        _SaveVelocityCellPositions(velocityVertexPosition_s, dim); 
+    }
     if (_acousticSolverSettings->listening)
         _SaveListeningPositions(listeningPosition_s); 
 }

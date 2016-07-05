@@ -261,9 +261,14 @@ class MAC_Grid
         inline const ScalarField &velocityField(const int &ind) const { return _velocityField[ind]; }
         inline Vector3d pressureFieldPosition(const Tuple3i &index) const { return _pressureField.cellPosition( index ); }
         inline Vector3d pressureFieldPosition(int index) const { return _pressureField.cellPosition( index ); }
+        inline Vector3d velocityFieldPosition(const Tuple3i &index, const int &dim) const { return _velocityField[dim].cellPosition( index ); }
+        inline Vector3d velocityFieldPosition(int index, const int &dim) const { return _velocityField[dim].cellPosition( index ); }
         inline int pressureFieldVertexIndex(const Tuple3i &index) const { return _pressureField.cellIndex( index ); }
         inline Tuple3i pressureFieldVertexIndex( int index ) const { return _pressureField.cellIndex( index ); }
+        inline int velocityFieldVertexIndex(const Tuple3i &index, const int &dim) const { return _velocityField[dim].cellIndex( index ); }
+        inline Tuple3i velocityFieldVertexIndex( int index, const int &dim ) const { return _velocityField[dim].cellIndex( index ); }
         inline const Tuple3i &pressureFieldDivisions() const { return _pressureField.cellDivisions(); }
+        inline const Tuple3i &velocityFieldDivisions(const int &dim) const { return _velocityField[dim].cellDivisions(); }
         inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }

@@ -163,11 +163,15 @@ class PML_WaveSolver : public Solver
         virtual inline REAL currentSimTime() const { return _timeStep * (REAL)_timeIndex; }
         virtual inline Vector3d fieldPosition(const Tuple3i &index) const { return _grid.pressureFieldPosition( index ); }
         virtual inline Vector3d fieldPosition(int index) const { return _grid.pressureFieldPosition( index ); }
+        virtual inline Vector3d velocityFieldPosition(const Tuple3i &index, const int &dim) const { return _grid.velocityFieldPosition( index, dim ); }
+        virtual inline Vector3d velocityFieldPosition(int index, const int &dim) const { return _grid.velocityFieldPosition( index, dim ); }
         virtual inline Vector3d sceneCenter() const { return _grid.pressureField().bbox().center(); }
         virtual inline const Tuple3i &fieldDivisions() const { return _grid.pressureFieldDivisions(); }
+        virtual inline const Tuple3i &velocityFieldDivisions(const int &dim) const { return _grid.velocityFieldDivisions(dim); }
         virtual inline const Vector3Array *listeningPositions() const { return _listeningPositions; }
         virtual inline const vector<const TriMesh *> &meshes() const { return _grid.meshes(); }
 
+        int numVelocityCells(const int &dim) const;
         void SetCornellBoxBoundaryCondition(const bool &isOn);
         void SetGhostCellBoundary(const bool &isOn);
 
@@ -197,6 +201,7 @@ class PML_WaveSolver : public Solver
 
         // Get vertex pressure for each field
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
+        virtual void vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const;
         virtual void writeWaveOutput() const;
 
         //// debugging/testing methods ////
