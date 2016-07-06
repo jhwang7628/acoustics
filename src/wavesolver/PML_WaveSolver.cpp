@@ -346,13 +346,13 @@ void PML_WaveSolver::stepLeapfrog()
     // deal with the fresh cell problem
     if (_useGhostCellBoundary)
     {
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[0], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[1], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[2], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_pFull, _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[0], 0, _timeStep, _currentTime);
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[1], 1, _timeStep, _currentTime);
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[2], 2, _timeStep, _currentTime);
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _timeStep, _waveSpeed, _currentTime, _density); 
@@ -361,13 +361,13 @@ void PML_WaveSolver::stepLeapfrog()
     }
     else 
     {
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[0], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[1], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_p[2], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell_Rasterized(_pFull, _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[0], 0, _timeStep, _currentTime);
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[1], 1, _timeStep, _currentTime);
-        _grid.InterpolateFreshVelocityCell_Rasterized(_v[2], 2, _timeStep, _currentTime);
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
     }
 
 

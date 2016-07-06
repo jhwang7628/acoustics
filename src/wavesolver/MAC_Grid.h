@@ -234,18 +234,16 @@ class MAC_Grid
         // Compute the ghost cell index from the flatten index 
         void ComputeGhostCellInverseMap();
 
-        // interpolate the fresh cell value
-        // see 2008 Mittal paper section 2.2.3
         void FreshCellInterpolate(MATRIX &p, const REAL &simulationTime, const REAL &density); 
 
+        // interpolate the fresh cell value
         // deal with the problem for rasterized boundary, when
         // solid->interfacial for velocity cells, or when solid->bulk for
         // pressure cells. In these two situations the cell does not have valid
         // history. 
-        void InterpolateFreshPressureCell_Rasterized(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
-        void InterpolateFreshVelocityCell_Rasterized(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
-        void InterpolateFreshPressureCell_GhostCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
-        void InterpolateFreshVelocityCell_GhostCell(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
+        // see 2008 Mittal paper section 2.2.3
+        void InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density);
+        void InterpolateFreshVelocityCell(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
 
         // set the PML effect region flag
         inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 

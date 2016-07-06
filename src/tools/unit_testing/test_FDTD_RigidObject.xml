@@ -9,7 +9,7 @@
                 fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
-                initial_position_y="0.0"
+                initial_position_y="0.1"
                 initial_position_z="0.0"
                 />
             <!--
@@ -43,8 +43,8 @@
         sound_speed="343.0"
         density="1.0" 
         cellsize="0.01" 
-        gridresolution="50"
-        stop_time="0.5"
+        gridresolution="100"
+        stop_time="0.3"
         substeps="4"
         timestepfrequency="176400"
 
