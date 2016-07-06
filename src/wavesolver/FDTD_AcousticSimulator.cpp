@@ -250,14 +250,11 @@ Run()
             oss << std::setw(6) << std::setfill('0') << timeIndex; 
             const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
             _SavePressureTimestep(filenameField); 
-
-            for (int dim=0; dim<3; ++dim) 
-            {
-                const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-                _SaveVelocityTimestep(filenameVelocityField, dim); 
-            }
-
-
+            //for (int dim=0; dim<3; ++dim) 
+            //{
+            //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+            //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+            //}
             const std::string filenameProbe = _CompositeFilename("listening_"+oss.str()+".dat"); 
             _SaveListeningData(filenameProbe);
         }
@@ -288,7 +285,7 @@ SaveSolverConfig()
     _SavePressureCellPositions(vertexPosition_s); 
     for (int dim=0; dim<3; ++dim) 
     {
-        const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim+"_vertex_position.dat"); 
+        const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim)+"_vertex_position.dat"); 
         _SaveVelocityCellPositions(velocityVertexPosition_s, dim); 
     }
     if (_acousticSolverSettings->listening)

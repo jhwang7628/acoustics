@@ -44,11 +44,11 @@
         density="1.0" 
         cellsize="0.01" 
         gridresolution="50"
-        stop_time="0.01"
-        substeps="1"
+        stop_time="0.5"
+        substeps="4"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_test/test_%s"
+        output_pattern="work/near-field/data_test2/test_%s"
 
         PML_width="3"
         PML_strength="1000000.0" 

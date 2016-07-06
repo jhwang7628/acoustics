@@ -1662,7 +1662,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
         std::fill(_toggledGhostCells.begin(), _toggledGhostCells.end(), 0); 
         _ghostCells.clear(); 
 
-
         // examine ghost cells 
         for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
         {
@@ -2186,6 +2185,10 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
     const Vector3d velocity_y_maxBound = grid.velocityField(1).maxBound(); 
     const Vector3d velocity_z_minBound = grid.velocityField(2).minBound(); 
     const Vector3d velocity_z_maxBound = grid.velocityField(2).maxBound(); 
+    const Tuple3i &pressure_divisions = grid.pressureField().cellDivisions(); 
+    const Tuple3i &velocity_x_divisions = grid.velocityField(0).cellDivisions(); 
+    const Tuple3i &velocity_y_divisions = grid.velocityField(1).cellDivisions(); 
+    const Tuple3i &velocity_z_divisions = grid.velocityField(2).cellDivisions(); 
     
     os << "--------------------------------------------------------------------------------\n" 
        << "Class MAC_Grid\n" 
@@ -2198,10 +2201,10 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
        << " velocity field max y   : " << velocity_y_maxBound.x << ", " << velocity_y_maxBound.y << ", " << velocity_y_maxBound.z << "\n"
        << " velocity field min z   : " << velocity_z_minBound.x << ", " << velocity_z_minBound.y << ", " << velocity_z_minBound.z << "\n"
        << " velocity field max z   : " << velocity_z_maxBound.x << ", " << velocity_z_maxBound.y << ", " << velocity_z_maxBound.z << "\n"
-       << " number pressure cells  : " << grid.numPressureCells() << "\n"
-       << " number velocity cells x: " << grid.numVelocityCellsX() << "\n"
-       << " number velocity cells y: " << grid.numVelocityCellsY() << "\n"
-       << " number velocity cells z: " << grid.numVelocityCellsZ() << "\n"
+       << " number pressure cells  : " << pressure_divisions.x << "x" << pressure_divisions.y << "x" << pressure_divisions.z << " = " << grid.numPressureCells() << "\n"
+       << " number velocity cells x: " << velocity_x_divisions.x << "x" << velocity_x_divisions.y << "x" << velocity_x_divisions.z << " = " << grid.numVelocityCellsX() << "\n"
+       << " number velocity cells y: " << velocity_y_divisions.x << "x" << velocity_y_divisions.y << "x" << velocity_y_divisions.z << " = " << grid.numVelocityCellsY() << "\n"
+       << " number velocity cells z: " << velocity_z_divisions.x << "x" << velocity_z_divisions.y << "x" << velocity_z_divisions.z << " = " << grid.numVelocityCellsZ() << "\n"
        << "--------------------------------------------------------------------------------" 
        << std::flush; 
     return os; 

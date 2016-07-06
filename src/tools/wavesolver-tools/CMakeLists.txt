@@ -3,7 +3,7 @@
 # =============================================================================
 if ( BUILD_WAVESOLVER_TOOLS )
 
-    set(CMAKE_CXX_FLAGS "-std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     add_executable(convert-dat-vtk
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
@@ -19,11 +19,21 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${LEASTSQUARESURFACE_SOURCES}
         convert_dat_vtk.cpp) 
 
+    add_executable(convert-dat-vtk-nonuniform
+        convert_dat_vtk_nonuniform.cpp) 
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
+        boost_thread
+        boost_timer
+        boost_system                    
+        boost_filesystem
+        boost_regex) 
+
+    target_link_libraries(convert-dat-vtk-nonuniform
         boost_thread
         boost_timer
         boost_system                    
