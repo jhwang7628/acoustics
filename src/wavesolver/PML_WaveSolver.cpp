@@ -329,23 +329,20 @@ void PML_WaveSolver::writeWaveOutput() const
 
 void PML_WaveSolver::stepLeapfrog()
 {
-
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    // FIXME DEBUG
 //#ifdef DEBUG
 //    _grid.classifyCellsDynamicAABB(true, _pFull, true);
 //#else 
 //    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 //#endif 
     _grid.classifyCellsDynamic(_pFull, _p, _v, true, false); 
-    //_grid.initFieldRasterized(true);
-    //_grid.classifyCellsDynamicAABB(true, _pFull, false);
     _cellClassifyTimer.pause(); 
 
-    // deal with the fresh cell problem
     if (_useGhostCellBoundary)
     {
+        // interpolate fresh cells 
+        _freshCellTimer.start(); 
         _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
         _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
         _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
@@ -353,14 +350,20 @@ void PML_WaveSolver::stepLeapfrog()
         _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
+        _freshCellTimer.pause(); 
 
+        // update ghost cells 
+        _ghostCellTimer.start(); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _timeStep, _waveSpeed, _currentTime, _density); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _timeStep, _waveSpeed, _currentTime, _density); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+        _ghostCellTimer.pause(); 
     }
     else 
     {
+        // interpolate fresh cells 
+        _freshCellTimer.start(); 
         _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
         _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
         _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
@@ -368,8 +371,8 @@ void PML_WaveSolver::stepLeapfrog()
         _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
+        _freshCellTimer.pause(); 
     }
-
 
     // Update velocity in each direction
     _gradientTimer.start();
@@ -387,7 +390,7 @@ void PML_WaveSolver::stepLeapfrog()
     _divergenceTimer.pause();
 
     _algebraTimer.start();
-    _pFull.parallelCopyAdd( _p[ 0 ], _p[ 1 ], _p[ 2 ] );
+    _pFull.parallelCopyAdd(_p[0], _p[1], _p[2]);
     _algebraTimer.pause();
 
     _currentTime += _timeStep;
@@ -399,13 +402,9 @@ REAL PML_WaveSolver::GetMaxCFL()
     const int N_vcellx = _grid.numVelocityCellsX(); 
     const int N_vcelly = _grid.numVelocityCellsY(); 
     const int N_vcellz = _grid.numVelocityCellsZ(); 
-
     assert(N_vcellx==N_vcelly&&N_vcellx==N_vcellz);
-
     const int &N = N_vcellx; 
-
     REAL vmax = -1;  // should be positive
-
     for (int ii=0; ii<N; ii++) 
     {
         REAL vx, vy, vz, v; 
@@ -416,9 +415,7 @@ REAL PML_WaveSolver::GetMaxCFL()
         v = sqrt( vx*vx + vy*vy + vz*vz ); 
         vmax = max(v, vmax); 
     }
-
     const REAL CFL = vmax * _timeStep / _cellSize; 
-
     return CFL; 
 }
 
@@ -450,6 +447,3 @@ std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
        << std::flush; 
     return os; 
 }
-
-
-
