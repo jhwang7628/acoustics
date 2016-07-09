@@ -52,7 +52,6 @@ if ( BUILD_EIGENSOLVER )
             ${IO_SRC}             ${SUPERLU_INTERFACE_SRC}
             ${LINEARALGEBRA_BLAS_LAPACK_SRC}
             )
-
         target_include_directories(arpack-eigensolver
             PUBLIC ${ARPACKPP_INCLUDE_DIR}
             PUBLIC ${SUPERLU_INCLUDES})

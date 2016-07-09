@@ -14,7 +14,8 @@ RigidBodySimulator::RigidBodySimulator():m_ts(0)
     printf("Initializing recorders\n" );
     m_impRec.init("impulses.txt", "modalImpulses.txt");
     printf("Initialized impulse recorder\n");
-    m_dispRec.init("displace.bin");
+    //m_dispRec.init("displace.bin");
+    m_dispRec.init("displace.bin", "velocity.bin", "acceleration.bin");
     printf("Done\n" );
 #endif
 }
@@ -50,7 +51,8 @@ void RigidBodySimulator::advance(REAL dt)
     //// write the displacement of all the rigid objects into file
     m_dispRec.begin_record(m_ts);
     for(size_t i = 0;i < NRB;++ i)
-        m_dispRec.record_displacement(m_rigidObjs[i]);
+        //m_dispRec.record_displacement(m_rigidObjs[i]);
+        m_dispRec.record_rigid_kinematics(m_rigidObjs[i]);
     m_dispRec.end_record();
 #endif
     //// update external force

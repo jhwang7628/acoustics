@@ -99,6 +99,13 @@ if (BUILD_UNIT_TESTING)
         ${SPARSE_LINEAR_ALGEBRA_SRC} 
         ) 
 
+    add_executable(unit_testing_Modal
+        test_Modal.cpp
+        ${GENERAL_TESTING_SRCS} 
+        ${LINEARALGEBRA_SRC} 
+        ${DEFORMABLE_SRC} 
+        ) 
+
     target_link_libraries(unit_testing_sparseLinearSystemSolver
         boost_timer
         boost_thread

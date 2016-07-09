@@ -203,6 +203,10 @@ class RigidBody
         {  return m_v; }
         const Vector3<T>& angular_velocity() const
         {  return m_omega; }
+        const Vector3<T>& acceleration() const
+        {  return m_acc; }
+        const Vector3<T>& angular_acceleration() const
+        {  return m_angAcc; }
         bool is_fixed() const
         {  return m_fixed; }
         bool specified_state() const

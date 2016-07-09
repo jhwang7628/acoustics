@@ -8,7 +8,7 @@
 #define __MODE_DATA_H__
 
 #include <config.h>
-
+#include <iostream>
 #include <vector>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -23,17 +23,17 @@ struct ModeData {
     public:
         std::vector<REAL>       &mode( int modeIndex )
                                  {
-                                    return _modes[ modeIndex ];
+                                    return _modes.at(modeIndex);
                                  }
 
         const std::vector<REAL> &mode( int modeIndex ) const
                                  {
-                                    return _modes[ modeIndex ];
+                                    return _modes.at(modeIndex);
                                  }
 
         REAL                     omegaSquared( int modeIndex ) const
                                  {
-                                    return _omegaSquared[ modeIndex ];
+                                    return _omegaSquared.at(modeIndex);
                                  }
 
         int                      numModes() const
@@ -43,12 +43,13 @@ struct ModeData {
 
         int                      numDOF() const
                                  {
-                                     return ( numModes() > 0 ) ? _modes[ 0 ].size() : 0;
+                                     return ( numModes() > 0 ) ? _modes.at(0).size() : 0;
                                  }
 
         void                     read( const char *filename );
         void                     write( const char *filename ) const;
 
+    friend std::ostream &operator <<(std::ostream &os, const ModeData &data); 
 };
 
 #endif // __MODE_DATA_H__
