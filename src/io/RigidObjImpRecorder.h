@@ -4,6 +4,7 @@
 #include <fstream>
 #include "geometry/FixVtxTetMesh.hpp"
 #include "rigid/LSCollisionRigidBody.hpp"
+#include "rigid/CollisionRec.hpp"
 
 /*
  * Record impulses applied on objects into file. These impulses 

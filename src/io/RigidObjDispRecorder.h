@@ -19,7 +19,7 @@
  ******************************************************************************/
 #endif /* ! DIFF_DEFINE */
 #ifndef IO_RIGID_DISP_RECORDER_H
-#   define IO_RIGID_DISP_RECORDER_H
+#define IO_RIGID_DISP_RECORDER_H
 
 #include <fstream>
 #include "config.h"

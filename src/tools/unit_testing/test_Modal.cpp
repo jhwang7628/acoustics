@@ -2,10 +2,16 @@
 #include <iostream>
 #include <utils/STL_Wrapper.h> 
 #include <deformable/ModeData.h> 
+#include <io/RigidObjDispReader.h> 
 
 void TestRigidBodySim()
 {
     const std::string testDisplacement("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
+    const std::string testVelocity("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
+    const std::string testAcceleration("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
+    RigidObjDispReader reader; 
+    reader.ReadDisplacement(testDisplacement); 
+    reader.ReadAllKinematics(testDisplacement, testVelocity, testAcceleration); 
 }
 
 void TestIO()
@@ -25,6 +31,7 @@ void TestIO()
 int main() 
 {
     std::cout << "Unit Test: Modal Sound\n"; 
-    TestIO(); 
+    //TestIO(); 
+    TestRigidBodySim(); 
     return 0; 
 }

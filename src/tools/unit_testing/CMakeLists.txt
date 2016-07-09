@@ -5,51 +5,29 @@ if (BUILD_UNIT_TESTING)
     # ===================
     # Dependencies
     # ===================
-
     set(GENERAL_TESTING_SRCS
         testing.h) 
-
-    set(GRID_TESTING_SRCS 
-        test_GridWithObject.cpp)
-
-    set(LEASTSQUARESURFACE_TESTING_SRCS 
-        test_LeastSquareSurface.cpp)
-
-    set(GRAPH_TESTING_SRCS
-        test_Graph.cpp) 
-
-    set(SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS
-        test_SparseLinearSystem.cpp) 
-
-    set(TRILINEAR_TESTING_SRCS
-        test_Trilinear.cpp)
-
-    set(FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS
-        test_FDTD_AcousticSimulator.cpp)
-
-    set(TEST_INCLUDE
-        /home/jui-hsien/code/acoustics/src/TYPES.h
-        )
 
     # ===================
     # Settings
     # ===================
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
+    
+    # ===================
+    # Definitions
+    # ===================
+    add_definitions(-DUSE_RECORDER) # needed for testing recorder
 
     # ===================
     # Target
     # ===================
-
-
     add_executable(unit_testing_leastSquareSurface
         ${GENERAL_TESTING_SRCS}
-        ${LEASTSQUARESURFACE_TESTING_SRCS}
         ${LEASTSQUARESURFACE_SOURCES}
+        test_LeastSquareSurface.cpp
         )
     add_executable(unit_testing_grid
         ${GENERAL_TESTING_SRCS}
-        ${GRID_TESTING_SRCS}
         ${GRID_SOURCES}
         ${GENERIC_SRC}                    ${IO_SRC}
         ${LOGGING_SRC}                    ${LINEARALGEBRA_SRC}
@@ -59,22 +37,23 @@ if (BUILD_UNIT_TESTING)
         ${UTILS_SRC}                      ${PARSER_SRC}
         ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+        test_GridWithObject.cpp
         )
 
     add_executable(unit_testing_graph
         ${GENERAL_TESTING_SRCS}
         ${GRAPH_TESTING_SRCS}
-        ${GRAPH_SRC} 
+        test_Graph.cpp
         ) 
 
     add_executable(unit_testing_sparseLinearSystemSolver
         ${GENERAL_TESTING_SRCS}
-        ${SPARSE_LINEAR_SYSTEM_SOLVER_TESTING_SRCS}
         ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        test_SparseLinearSystem.cpp
         ) 
 
     add_executable(unit_testing_trilinear
-        ${TRILINEAR_TESTING_SRCS}
+        test_Trilinear.cpp
         ) 
 
     add_executable(unit_testing_FDTD_AcousticSimulator
@@ -97,6 +76,7 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   
         ${WAVELET_TRANSFER_SRC} 
         ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        test_FDTD_AcousticSimulator.cpp
         ) 
 
     add_executable(unit_testing_Modal
@@ -104,8 +84,16 @@ if (BUILD_UNIT_TESTING)
         ${GENERAL_TESTING_SRCS} 
         ${LINEARALGEBRA_SRC} 
         ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${GEOMETRY_SRC}
+        ${LOGGING_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
         ) 
 
+    # ===================
+    # Linking 
+    # ===================
     target_link_libraries(unit_testing_sparseLinearSystemSolver
         boost_timer
         boost_thread
@@ -132,5 +120,16 @@ if (BUILD_UNIT_TESTING)
         boost_timer
         boost_filesystem
         boost_regex) 
+
+    target_link_libraries(unit_testing_Modal
+        ${MKL_LIBRARY}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        boost_thread
+        boost_system                    
+        boost_timer
+        boost_filesystem
+        boost_regex) 
+
 
 endif ( BUILD_UNIT_TESTING )
