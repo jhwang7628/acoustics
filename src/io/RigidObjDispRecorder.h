@@ -42,7 +42,7 @@
  * <i_id1>   # first rigid object ...
  *
  *
- * Record the velocity (translation and rotation into files)
+ * Record the velocity (linear and angular)
  *
  * <d_ts> 
  * <i_id1>   # first rigid object 
@@ -57,15 +57,15 @@
  * <i_id1>   # first rigid object ...
  *
  *
- * Record the velocity (translation and rotation into files)
+ * Record the acceleration (linear and angular)
  *
  * <d_ts> 
  * <i_id1>   # first rigid object 
- * <d_velocity.x> <d_velocity.y> <d_velocity.z> 
- * <d_angular_velocity.x> <d_angular_velocity.y> <d_angular_velocity.z> 
+ * <d_acceleration.x> <d_acceleration.y> <d_acceleration.z> 
+ * <d_angular_acceleration.x> <d_angular_acceleration.y> <d_angular_acceleration.z> 
  * <i_id2>   # 2nd rigid obj
- * <d_velocity.x> <d_velocity.y> <d_velocity.z> 
- * <d_angular_velocity.x> <d_angular_velocity.y> <d_angular_velocity.z> 
+ * <d_acceleration.x> <d_acceleration.y> <d_acceleration.z> 
+ * <d_angular_acceleration.x> <d_angular_acceleration.y> <d_angular_acceleration.z> 
  * <-1>      # label the ending of this timestep
  * ...
  * <d_ts>
