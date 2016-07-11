@@ -154,15 +154,15 @@ class RigidObjDispRecorder
             
             const Vector3<REAL>& o = body->angular_velocity();
             m_fout_velo.write((const char*)&o, sizeof(Vector3<REAL>));
-
+            
             // write accleration
             m_fout_acce.write((const char*)&id, sizeof(int));
 
             const Vector3<REAL>& a = body->acceleration();
             m_fout_acce.write((const char*)&a, sizeof(Vector3<REAL>));
             
-            const Vector3<REAL>& k = body->angular_acceleration();
-            m_fout_acce.write((const char*)&k, sizeof(Vector3<REAL>));
+            const Vector3<REAL>& g = body->angular_acceleration();
+            m_fout_acce.write((const char*)&g, sizeof(Vector3<REAL>));
         }
 
         void end_record()

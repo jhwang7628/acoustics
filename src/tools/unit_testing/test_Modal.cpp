@@ -7,8 +7,8 @@
 void TestRigidBodySim()
 {
     const std::string testDisplacement("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
-    const std::string testVelocity("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
-    const std::string testAcceleration("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin");
+    const std::string testVelocity("/home/jui-hsien/code/acoustics/work/plate_drop_test/velocity.bin");
+    const std::string testAcceleration("/home/jui-hsien/code/acoustics/work/plate_drop_test/acceleration.bin");
     RigidObjDispReader reader; 
     reader.ReadDisplacement(testDisplacement); 
     reader.ReadAllKinematics(testDisplacement, testVelocity, testAcceleration); 
