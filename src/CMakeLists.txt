@@ -47,6 +47,9 @@ add_subdirectory(sndgen)
 add_subdirectory(multipole)
 add_subdirectory(scripts)
 
+# Modal model
+add_subdirectory(modal_model)
+
 if ( USE_GTS )
     include_directories(
         ${GTS_INCLUDE_DIR}

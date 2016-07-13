@@ -26,6 +26,7 @@ if (BUILD_UNIT_TESTING)
         ${LEASTSQUARESURFACE_SOURCES}
         test_LeastSquareSurface.cpp
         )
+
     add_executable(unit_testing_grid
         ${GENERAL_TESTING_SRCS}
         ${GRID_SOURCES}
@@ -81,6 +82,7 @@ if (BUILD_UNIT_TESTING)
 
     add_executable(unit_testing_Modal
         test_Modal.cpp
+        ${IO_SRC}
         ${GENERAL_TESTING_SRCS} 
         ${LINEARALGEBRA_SRC} 
         ${DEFORMABLE_SRC} 
@@ -89,6 +91,8 @@ if (BUILD_UNIT_TESTING)
         ${GEOMETRY_SRC}
         ${LOGGING_SRC}
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${SNDGEN_SRC}
+        ${MODAL_MODEL_SRC}
         ) 
 
     # ===================
@@ -125,6 +129,7 @@ if (BUILD_UNIT_TESTING)
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             
         ${GTS_LIBRARIES}
+        ${LibConfig_LIBRARY}
         boost_thread
         boost_system                    
         boost_timer

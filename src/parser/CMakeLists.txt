@@ -10,5 +10,8 @@ set(PARSER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml/tinyxmlerror.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml/tinyxml.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml/tinyxmlparser.cpp
+    CACHE FILE "tinyxml Parser sources")
 
-    CACHE FILE "Parser sources")
+set(LIBCONFIG_PARSER_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/ParseConfig.h
+    CACHE FILE "libConfig Parser sources")
