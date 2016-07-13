@@ -1,12 +1,23 @@
 #include <modal_model/ImpulseSeriesObject.h> 
+//##############################################################################
+//
+//##############################################################################
+ImpulseSeriesObject::
+ImpulseSeriesObject()
+    : _objectID(-1), 
+      _objectMesh(nullptr),
+      _firstImpulseTime(std::numeric_limits<REAL>::infinity()), 
+      _lastImpulseTime(-1.0)
+{
+    Initialize();
+}
 
 //##############################################################################
 //##############################################################################
 ImpulseSeriesObject::
-ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr, const std::string &impulseFile)
+ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr)
     : _objectID(objectID), 
       _objectMesh(meshPtr),
-      _impulseFile(impulseFile), 
       _firstImpulseTime(std::numeric_limits<REAL>::infinity()), 
       _lastImpulseTime(-1.0)
 {
@@ -18,6 +29,7 @@ ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr, const s
 void ImpulseSeriesObject::
 Initialize()
 {
+    _lengthImpulses = 0;
 }
 
 //##############################################################################

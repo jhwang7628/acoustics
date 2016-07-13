@@ -10,5 +10,7 @@ set(RIGID_IO_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/RigidObjRecorder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/RigidObjDispReader.h    
     ${CMAKE_CURRENT_SOURCE_DIR}/RigidObjDispReader.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImpulseSeriesReader.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImpulseSeriesReader.cpp 
 
     CACHE FILE "Rigid IO Source")

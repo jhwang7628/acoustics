@@ -4,6 +4,7 @@
 #include <deformable/ModeData.h> 
 #include <io/TglMeshReader.hpp>
 #include <io/RigidObjDispReader.h> 
+#include <io/ImpulseSeriesReader.h> 
 #include <modal_model/ModalAnalysis.h>
 #include <sndgen/RigidModal.h> 
 #include <modal_model/ImpulseSeriesObject.h>
@@ -31,23 +32,27 @@ void TestModal()
     modalAnalysis.BuildModalModelsFromFile(); 
 
     const std::string meshName("tmp.obj"); 
-    const std::string impulseFile("modalImpulse.txt"); 
+    const std::string impulseFile("modalImpulses.txt"); 
 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMesh<REAL> >(); 
     if (MeshObjReader::read(meshName.c_str(), *mesh, false, false, 1.0) == SUCC_RETURN)
         mesh->generate_normals();
-    ImpulseSeriesObject impulseSeriesObject(0, mesh, impulseFile); 
+    ImpulseSeriesObject impulseSeriesObject(0, mesh); 
     impulseSeriesObject.AddImpulse(0.02, 1, Vector3d(1,2,3)); 
     impulseSeriesObject.AddImpulse(0.03, 4, Vector3d(3,2,1)); 
     REAL timestamp; 
     int vertex; 
     Vector3d impulse; 
-    impulseSeriesObject.GetImpulse(2, timestamp, vertex, impulse); 
+    impulseSeriesObject.GetImpulse(1, timestamp, vertex, impulse); 
     REAL firstImpulseTime, lastImpulseTime; 
     impulseSeriesObject.GetImpulseRange(firstImpulseTime, lastImpulseTime); 
 
     std::cout << impulseSeriesObject.Size() << " " << timestamp << " " << vertex << " " << impulse << " " << firstImpulseTime << " " << lastImpulseTime << std::endl;
 
+    typedef std::shared_ptr<ImpulseSeriesObject> ImpulseSeriesObjectPtr; 
+    ImpulseSeriesReader impulseSeriesReader(impulseFile); 
+    std::vector<ImpulseSeriesObjectPtr> objects; 
+    impulseSeriesReader.LoadImpulses(objects); 
 }
 
 void TestIO()

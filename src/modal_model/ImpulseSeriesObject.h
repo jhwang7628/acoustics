@@ -23,7 +23,6 @@ class ImpulseSeriesObject
         TriangleMeshPtr     _objectMesh; 
 
         // impulse data
-        std::string             _impulseFile; 
         int                     _lengthImpulses; 
         REAL                    _firstImpulseTime; 
         REAL                    _lastImpulseTime; 
@@ -32,9 +31,13 @@ class ImpulseSeriesObject
         std::vector<int>        _impulseAppliedVertex; 
 
     public: 
-        ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr, const std::string &impulseFile); 
+        ImpulseSeriesObject(); 
+        ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr); 
 
         inline int Size(){return _lengthImpulses;}
+        inline void SetID(const int &ID){_objectID = ID;} 
+        inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
+        inline bool Initialized(){return _objectID!=-1 && _objectMesh!=nullptr && _lengthImpulses!=0;}
         void Initialize(); 
         // Add impulse for this object. The vertex index should be for surface
         // triangle mesh (not volumetric tetrahedron). 
