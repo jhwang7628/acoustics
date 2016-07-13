@@ -8,12 +8,9 @@
 #include <geometry/TriangleMesh.hpp>
 
 //##############################################################################
-// Class that handles impulse series of an object.
+// Class that stores the impulse information for an object.
 //
-// TODO move comments
-// the impulses created by rigidsim tool in the repo
-// The dumped file that this class deals with usually has the hard-coded name 
-// "modalImpulses.txt" from the simulator
+// Can be created by the IO class io/ImpulseSeriesReader
 //##############################################################################
 class ImpulseSeriesObject
 {
