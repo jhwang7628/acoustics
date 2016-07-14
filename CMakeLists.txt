@@ -18,7 +18,7 @@ SET(CMAKE_CXX_FLAGS "-std=c++11")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
 
 # compile option
-option(USE_QT5 "Turn on for QT5. Turn off for QT4" OFF)
+option(USE_QT5 "Turn on for QT5. Turn off for QT4" ON)
 option(USE_DEBUG "Turn on the debug mode" OFF)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)

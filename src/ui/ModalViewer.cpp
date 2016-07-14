@@ -1,3 +1,8 @@
+#include <QMenu>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QMap>
+#include <QCursor>
 #include <math.h>
 #include <stdlib.h> // RAND_MAX
 #include <geometry/Point3.hpp>
@@ -9,19 +14,33 @@ using namespace std;
 
 //##############################################################################
 //##############################################################################
-void ModalViewer::init()
+void ModalViewer::
+SetAllKeyDescriptions()
 {
-    restoreStateFromFile();
-    glDisable(GL_LIGHTING);
-    glPointSize(3.0);
-    setGridIsDrawn();
-    help();
-    startAnimation();
+    setKeyDescription(Qt::Key_I, "Toggle impulses display"); 
 }
 
 //##############################################################################
 //##############################################################################
-void ModalViewer::draw()
+void ModalViewer::
+init()
+{
+    restoreStateFromFile();
+    RestoreDefaultDrawOptions(); 
+    glDisable(GL_LIGHTING);
+    glPointSize(3.0);
+    setGridIsDrawn();
+    SetAllKeyDescriptions();
+    PrepareImpulses(); 
+    startAnimation();
+
+    std::cout << ">> Press key 'h' for help, 'esc' for exit.\n";
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+draw()
 {
     // draw rigid sound object mesh
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
@@ -86,22 +105,66 @@ void ModalViewer::draw()
         glVertex3f(x.x, x.y, x.z); 
     }
     glEnd(); 
-
-
 }
 
 //##############################################################################
 //##############################################################################
-void ModalViewer::animate()
+void ModalViewer::
+animate()
 {
 }
 
 //##############################################################################
 //##############################################################################
-QString ModalViewer::helpString() const
+void ModalViewer::
+keyPressEvent(QKeyEvent *e)
+{
+    const Qt::KeyboardModifiers modifiers = e->modifiers(); 
+    if ((e->key() == Qt::Key_I) && (modifiers == Qt::NoButton))
+        _drawImpulse = !_drawImpulse; 
+
+    // still enable the default qglviewer event handling
+    QGLViewer::keyPressEvent(e);
+    PrintDrawOptions();
+}
+
+//##############################################################################
+//##############################################################################
+QString ModalViewer::
+helpString() const
 {
     QString text("<h2>Modal ModalViewer</h2>");
     text += "Used for debugging FDTD_RigidSoundObject and associated classes";
     return text;
 }
 
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+PrepareImpulses()
+{
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
+    ImpulseSeriesReader reader(impulseFile); 
+    std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
+    reader.LoadImpulses(0, objectPtr); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+RestoreDefaultDrawOptions()
+{
+    _drawImpulse = false; 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+PrintDrawOptions()
+{
+    std::cout << "\n"
+              << "Draw Options \n"
+              << "------------\n"
+              << " Draw Impulse: " << _drawImpulse << "\n"
+              << "\n"; 
+}
