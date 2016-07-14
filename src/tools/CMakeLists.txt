@@ -1,5 +1,6 @@
 add_subdirectory(isostuffer)
 add_subdirectory(tetviewer)
+add_subdirectory(modalviewer)
 add_subdirectory(elasticity)
 add_subdirectory(eigensolver)
 add_subdirectory(single_tet)

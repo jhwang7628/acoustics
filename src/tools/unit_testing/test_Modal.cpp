@@ -101,7 +101,7 @@ int main()
     std::cout << "Unit Test: Modal Sound\n"; 
     //TestIO(); 
     //TestRigidBodySim(); 
-    TestModal(); 
-    //TestRigidSoundObject(); 
+    //TestModal(); 
+    TestRigidSoundObject(); 
     return 0; 
 }

@@ -50,6 +50,9 @@ add_subdirectory(scripts)
 # Modal model
 add_subdirectory(modal_model)
 
+# user interface
+add_subdirectory(ui)
+
 if ( USE_GTS )
     include_directories(
         ${GTS_INCLUDE_DIR}

@@ -18,7 +18,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 #endif /* ! DIFF_DEFINE */
-#include "FractureImpRecorder.h"
+#include "io/FractureImpRecorder.h"
 #include "utils/print_msg.h"
 
 using namespace std;
