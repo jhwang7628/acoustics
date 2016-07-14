@@ -35,7 +35,6 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
 # ===================
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-    message(${RIGID_SRC})
     add_executable(modalviewer
         main.cpp
         ${UI_SRC}

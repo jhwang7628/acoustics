@@ -35,7 +35,7 @@ init()
     setAnimationPeriod(40); // in milliseconds
     startAnimation();
 
-    std::cout << "\n\n>> Press key 'h' for help, 'esc' for exit.\n\n";
+    std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
 }
 
 //##############################################################################
@@ -223,7 +223,7 @@ DrawOneFrameBackward()
 void ModalViewer::
 PrepareImpulses()
 {
-    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"); 
     ImpulseSeriesReader reader(impulseFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 

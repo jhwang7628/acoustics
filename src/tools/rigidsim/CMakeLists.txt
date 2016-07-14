@@ -13,9 +13,11 @@ if ( BUILD_RIGIDSIM )
         add_executable(rigidsim
             RigidSimDrop.cpp
             ${RIGID_SRC} 		  ${RIGID_IO_SRC}
+            ${MODAL_MODEL_SRC}
             ${LOGGING_SRC}        
             ${DEFORMABLE_SRC}     ${LINEARALGEBRA_SRC}
             ${GENERIC_SRC}        ${IO_SRC}
+            ${SNDGEN_SRC}
             )
 
         target_link_libraries(rigidsim
@@ -77,7 +79,10 @@ if ( BUILD_RIGIDSIM_GUI )
             ${GENERIC_SRC}                  ${DEFORMABLE_SRC}
 			${IO_SRC}                       ${RIGID_SRC}
 			${LOGGING_SRC}                  ${LINEARALGEBRA_SRC}
-            ${RIGID_IO_SRC})
+            ${RIGID_IO_SRC}
+            ${MODAL_MODEL_SRC}
+            ${SNDGEN_SRC}
+            )
 
         target_include_directories(rigidsim-gui
             PUBLIC ${GLUT_INCLUDE_DIR}
@@ -155,7 +160,10 @@ if ( BUILD_RIGIDSIM_GUI )
             ${GENERIC_SRC}                  ${DEFORMABLE_SRC}
 			${IO_SRC}                       ${RIGID_SRC}
 			${LOGGING_SRC}                  ${LINEARALGEBRA_SRC}
-            ${RIGID_IO_SRC})
+            ${RIGID_IO_SRC}
+            ${MODAL_MODEL_SRC}
+            ${SNDGEN_SRC}
+            )
 
         target_include_directories(replayer
             PUBLIC ${GLUT_INCLUDE_DIR}

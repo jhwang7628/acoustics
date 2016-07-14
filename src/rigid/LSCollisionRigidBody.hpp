@@ -67,9 +67,6 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
             m_angAcc += m_invI*m_extT;
 
             clean_external_force();
-
-            // DEBUG FIXME
-            std::cout << m_acc << std::endl;
         }
 
         void clean_external_force()
