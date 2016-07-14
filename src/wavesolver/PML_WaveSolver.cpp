@@ -90,7 +90,8 @@ PML_WaveSolver::PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::sha
       _callback(nullptr),
       _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
       _useGhostCellBoundary(settings.useGhostCell),
-      _objects(objects)
+      _objects(objects), 
+      _waveSolverSettings(settings)
 {
     Reinitialize_PML_WaveSolver(settings.useMesh); 
 }
@@ -336,7 +337,7 @@ void PML_WaveSolver::stepLeapfrog()
 //#else 
 //    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 //#endif 
-    _grid.classifyCellsDynamic(_pFull, _p, _v, true, false); 
+    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, true); 
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)

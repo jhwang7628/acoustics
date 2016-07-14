@@ -20,7 +20,7 @@
 //##############################################################################
 class FDTD_RigidObject : public FDTD_MovableObject
 {
-    private: 
+    protected: 
         int                                 _meshID; 
         REAL                                _meshScale; 
         std::string                         _meshName;
@@ -36,7 +36,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
     public: 
         FDTD_RigidObject()
-            : _meshScale(1.0), 
+            : _meshID(-1), 
+              _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
               _meshFileName("NOT_IDENTIFIED"), 
               _parsed(false) 
@@ -44,20 +45,25 @@ class FDTD_RigidObject : public FDTD_MovableObject
         }
 
         FDTD_RigidObject(const std::string &fileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : _meshScale(scale), 
+            : _meshID(-1), 
+              _meshScale(scale), 
               _meshName(meshName),
               _meshFileName(fileName), 
               _signedDistanceFieldResolution(resolution), 
               _signedDistanceFieldFilePrefix(sdfFilePrefix)
         {
             _parsed = true; 
+            Initialize(); 
         }
 
         inline bool Exist(){return (_mesh!=0);}
         inline std::shared_ptr<TriangleMesh<REAL>> GetMeshPtr(){return _mesh;} 
+        inline const std::shared_ptr<TriangleMesh<REAL>> &GetMeshPtr() const {return _mesh;} 
         inline std::shared_ptr<ClosestPointField> GetSignedDistanceFieldPtr(){return _signedDistanceField;} 
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
+        inline void SetMeshID(const int &ID){_meshID = ID;}
+        inline int GetMeshID(){return _meshID;}
         void Initialize(); 
         virtual void UpdateBoundingBox(); 
         // in-place query for object sdf distance from world x,y,z

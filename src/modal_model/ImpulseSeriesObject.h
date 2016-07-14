@@ -17,9 +17,8 @@ class ImpulseSeriesObject
     public: 
         typedef std::shared_ptr<TriangleMesh<REAL> > TriangleMeshPtr; 
 
-    private: 
-        // object that is managing this impulse series
-        int                 _objectID; 
+    protected: 
+        // object that owns this impulse series
         TriangleMeshPtr     _objectMesh; 
 
         // impulse data
@@ -32,12 +31,11 @@ class ImpulseSeriesObject
 
     public: 
         ImpulseSeriesObject(); 
-        ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr); 
+        ImpulseSeriesObject(const TriangleMeshPtr &meshPtr); 
 
         inline int Size(){return _lengthImpulses;}
-        inline void SetID(const int &ID){_objectID = ID;} 
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
-        inline bool Initialized(){return _objectID!=-1 && _objectMesh!=nullptr && _lengthImpulses!=0;}
+        inline bool Initialized(){return _objectMesh!=nullptr && _lengthImpulses!=0;}
         void Initialize(); 
         // Add impulse for this object. The vertex index should be for surface
         // triangle mesh (not volumetric tetrahedron). 

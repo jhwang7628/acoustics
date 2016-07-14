@@ -38,7 +38,6 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_z = queryOptionalReal(meshNode, "initial_position_z", 0.0); 
 
         RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
-        object->Initialize(); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());

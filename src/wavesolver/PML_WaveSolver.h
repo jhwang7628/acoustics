@@ -98,6 +98,7 @@ class PML_WaveSolver : public Solver
 
         // objects in the scene 
         std::shared_ptr<FDTD_Objects> _objects; 
+        PML_WaveSolver_Settings  _waveSolverSettings;
 
     public: 
         PML_WaveSolver() 

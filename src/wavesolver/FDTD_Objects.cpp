@@ -9,8 +9,10 @@ AddObject(const std::string &objectName, RigidObjectPtr &object)
 {
     if (_meshIDMap.find(objectName) == _meshIDMap.end())
     {
+        const int objectID = _rigidObjects.size()-1; 
         _rigidObjects.push_back(object); 
-        _meshIDMap[objectName] = _rigidObjects.size()-1; 
+        _meshIDMap[objectName] = objectID; 
+        object->SetMeshID(objectID); 
     }
 }
 

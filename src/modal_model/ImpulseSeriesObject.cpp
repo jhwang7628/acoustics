@@ -4,8 +4,7 @@
 //##############################################################################
 ImpulseSeriesObject::
 ImpulseSeriesObject()
-    : _objectID(-1), 
-      _objectMesh(nullptr),
+    : _objectMesh(nullptr),
       _firstImpulseTime(std::numeric_limits<REAL>::infinity()), 
       _lastImpulseTime(-1.0)
 {
@@ -15,9 +14,8 @@ ImpulseSeriesObject()
 //##############################################################################
 //##############################################################################
 ImpulseSeriesObject::
-ImpulseSeriesObject(const int &objectID, const TriangleMeshPtr &meshPtr)
-    : _objectID(objectID), 
-      _objectMesh(meshPtr),
+ImpulseSeriesObject(const TriangleMeshPtr &meshPtr)
+    : _objectMesh(meshPtr),
       _firstImpulseTime(std::numeric_limits<REAL>::infinity()), 
       _lastImpulseTime(-1.0)
 {
@@ -37,6 +35,12 @@ Initialize()
 void ImpulseSeriesObject::
 AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse)
 {
+    // need the notion of mesh to check whether appliedVertex makes sense
+    if (_objectMesh == nullptr)
+        throw std::runtime_error("**ERROR** Adding impulse to an object whose mesh is not defined yet."); 
+    if (appliedVertex >= _objectMesh->num_vertices())
+        throw std::runtime_error("**ERROR** Adding impulse whose applied vertex ID ("+std::to_string(appliedVertex)+") does not make sense (mesh has only "+std::to_string(_objectMesh->num_vertices())+" vertices)."); 
+
     _impulseTimestamps.push_back(timestamp); 
     _impulseAppliedVertex.push_back(appliedVertex);
     _impulses.push_back(impulse); 

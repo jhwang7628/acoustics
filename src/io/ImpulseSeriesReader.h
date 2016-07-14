@@ -34,6 +34,7 @@ class ImpulseSeriesReader
         {}
 
         void LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects); 
+        void LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object); 
 };
 
 #endif 

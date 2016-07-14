@@ -93,6 +93,16 @@ if (BUILD_UNIT_TESTING)
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
         ${SNDGEN_SRC}
         ${MODAL_MODEL_SRC}
+        ${WAVESOLVER_SRC}
+        ${FIELD_SRC}                      
+        ${DISTANCEFIELD_SRC}              
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${UTILS_SRC}                      
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${MATH_SRC} 
         ) 
 
     # ===================
@@ -116,8 +126,10 @@ if (BUILD_UNIT_TESTING)
 
     target_link_libraries(unit_testing_FDTD_AcousticSimulator
         ${MKL_LIBRARY}
-        ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         boost_thread
         boost_system                    
@@ -129,6 +141,9 @@ if (BUILD_UNIT_TESTING)
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             
         ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         boost_thread
         boost_system                    

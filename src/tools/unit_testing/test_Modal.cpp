@@ -8,6 +8,7 @@
 #include <modal_model/ModalAnalysis.h>
 #include <sndgen/RigidModal.h> 
 #include <modal_model/ImpulseSeriesObject.h>
+#include <wavesolver/FDTD_RigidSoundObject.h>
 #include <libconfig.h++> 
 
 void TestRigidBodySim()
@@ -31,13 +32,15 @@ void TestModal()
     ModalAnalysis modalAnalysis(filename); 
     modalAnalysis.BuildModalModelsFromFile(); 
 
-    const std::string meshName("tmp.obj"); 
-    const std::string impulseFile("modalImpulses.txt"); 
+    const std::string meshName("/home/jui-hsien/code/acoustics/work/plate/plate.obj"); 
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMesh<REAL> >(); 
     if (MeshObjReader::read(meshName.c_str(), *mesh, false, false, 1.0) == SUCC_RETURN)
         mesh->generate_normals();
-    ImpulseSeriesObject impulseSeriesObject(0, mesh); 
+    else 
+        throw std::runtime_error("Object read failed.");
+    ImpulseSeriesObject impulseSeriesObject(mesh); 
     impulseSeriesObject.AddImpulse(0.02, 1, Vector3d(1,2,3)); 
     impulseSeriesObject.AddImpulse(0.03, 4, Vector3d(3,2,1)); 
     REAL timestamp; 
@@ -51,8 +54,32 @@ void TestModal()
 
     typedef std::shared_ptr<ImpulseSeriesObject> ImpulseSeriesObjectPtr; 
     ImpulseSeriesReader impulseSeriesReader(impulseFile); 
-    std::vector<ImpulseSeriesObjectPtr> objects; 
+    std::vector<ImpulseSeriesObjectPtr> objects(2, std::make_shared<ImpulseSeriesObject>()); 
+    objects.at(0)->SetMesh(mesh); 
+    objects.at(1)->SetMesh(mesh); 
     impulseSeriesReader.LoadImpulses(objects); 
+
+    ImpulseSeriesObjectPtr anotherObject = std::make_shared<ImpulseSeriesObject>(mesh);
+    impulseSeriesReader.LoadImpulses(0, anotherObject);
+}
+
+void TestRigidSoundObject()
+{
+    std::cout << "test RigidSoundObject\n";
+
+    const std::string meshFileName("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj");
+    const std::string sdfFilePrefix("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist");
+    const int sdfResolution = 100; 
+    FDTD_RigidSoundObject object(meshFileName, sdfResolution, sdfFilePrefix); 
+    std::cout << object.Initialized() << std::endl; 
+    //object.SetID(5); 
+    //object.SetMesh(object.GetMeshPtr()); 
+    Vector3d impulse(1,2,3); 
+    //object.AddImpulse(0.5, 10, impulse);
+
+    REAL a, b; 
+    object.GetImpulseRange(a, b); 
+    std::cout << a << " " << b << std::endl;
 }
 
 void TestIO()
@@ -75,5 +102,6 @@ int main()
     //TestIO(); 
     //TestRigidBodySim(); 
     TestModal(); 
+    //TestRigidSoundObject(); 
     return 0; 
 }
