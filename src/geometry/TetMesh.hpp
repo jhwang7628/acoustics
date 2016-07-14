@@ -502,7 +502,7 @@ void TetMesh<T>::update_tet_neighbors(
 {
 #ifdef USE_UNORDERED_MAP
     using namespace std::tr1;
-    unordered_map< int, unordered_map<int, unordered_map<int, int> > > hash;
+    std::tr1::unordered_map< int, std::tr1::unordered_map<int, std::tr1::unordered_map<int, int> > > hash;
 #else
     using namespace __gnu_cxx;
     hash_map< int, hash_map<int, hash_map<int, int> > > hash;
@@ -586,7 +586,8 @@ void TetMesh<T>::update_tet_neighbors(std::vector<NeighborRec>& neighbors) const
 {
 #ifdef USE_UNORDERED_MAP
     using namespace std::tr1;
-    unordered_map< int, unordered_map<int, unordered_map<int, int> > > hash;
+    //unordered_map< int, unordered_map<int, unordered_map<int, int> > > hash;
+    std::tr1::unordered_map< int, std::tr1::unordered_map<int, std::tr1::unordered_map<int, int> > > hash;
 #else
     using namespace __gnu_cxx;
     hash_map< int, hash_map<int, hash_map<int, int> > > hash;
@@ -667,8 +668,10 @@ void TetMesh<T>::update_surface()
 {
 #ifdef USE_UNORDERED_MAP
     using namespace std::tr1;
-    unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
-    unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash2;
+    //unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
+    //unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash2;
+    std::tr1::unordered_map< int, std::tr1::unordered_map<int, std::tr1::unordered_map<int, int> > > hash;
+    std::tr1::unordered_map< int, std::tr1::unordered_map<int, std::tr1::unordered_map<int, int> > > hash2;
 #else
     using namespace __gnu_cxx;
     hash_map< int, hash_map<int, hash_map<int, int> > > hash;
@@ -846,8 +849,10 @@ void TetMesh<T>::extract_surface(TriangleMesh<T>* smesh) const
 {
 #ifdef USE_UNORDERED_MAP
     using namespace std::tr1;
-    unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
-    unordered_map< int, int > idmap;
+    //unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
+    //unordered_map< int, int > idmap;
+    std::tr1::unordered_map< int, std::tr1::unordered_map<int, std::tr1::unordered_map<int, int> > > hash;
+    std::tr1::unordered_map< int, int > idmap;
 #else
     using namespace __gnu_cxx;
     hash_map< int, hash_map<int, hash_map<int, int> > > hash;
@@ -1021,7 +1026,8 @@ void TetMesh<T>::surface_id_map(std::map<int, int>& idmap) const
 {
 #ifdef USE_UNORDERED_MAP
     using namespace std::tr1;
-    unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
+    //unordered_map< int, unordered_map< int, unordered_map<int, int> > > hash;
+    std::tr1::unordered_map< int, std::tr1::unordered_map< int, std::tr1::unordered_map<int, int> > > hash;
 #else
     using namespace __gnu_cxx;
     hash_map< int, hash_map<int, hash_map<int, int> > > hash;
