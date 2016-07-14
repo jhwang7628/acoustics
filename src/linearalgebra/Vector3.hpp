@@ -197,6 +197,14 @@ class Vector3 : public Tuple3<T>
             }
         }
 
+        /*! Out-of-place normalize */
+        Vector3<T> normalized() const
+        {
+            Vector3<T> newVector(x,y,z); 
+            newVector.normalize(); 
+            return newVector; 
+        }
+
         /*!
          * Normalize vector and return its original length
          */
