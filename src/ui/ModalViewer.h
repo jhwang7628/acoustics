@@ -15,10 +15,19 @@ class ModalViewer : public QGLViewer
         typedef std::shared_ptr<FDTD_RigidSoundObject> RigidSoundObjectPtr; 
 
     private: 
+        struct TimeInterval{ REAL start; REAL stop; }; 
+
         RigidSoundObjectPtr _rigidSoundObject; 
+        TimeInterval        _impulseRange; 
         bool                _drawImpulse; 
+        int                 _currentFrame; 
+        int                 _currentImpulseFrame; 
+        QString             _message; 
+        bool                _displayMessage; 
 
         void SetAllKeyDescriptions(); 
+        void DrawMesh(); 
+        void DrawImpulses();
 
     protected: 
         virtual void draw(); 
@@ -27,16 +36,20 @@ class ModalViewer : public QGLViewer
         virtual void keyPressEvent(QKeyEvent *e);
         virtual QString helpString() const;
 
+        virtual void DrawOneFrameForward(); 
+        virtual void DrawOneFrameBackward(); 
+
     public: 
 
         ModalViewer(RigidSoundObjectPtr rigidSoundObject)
-            : _rigidSoundObject(rigidSoundObject)
+            : _rigidSoundObject(rigidSoundObject), _currentFrame(0), _currentImpulseFrame(0)
         {}
 
         inline void SetRigidSoundObject(RigidSoundObjectPtr &rigidSoundObject){_rigidSoundObject = rigidSoundObject;} 
         void PrepareImpulses(); 
         void RestoreDefaultDrawOptions();
         void PrintDrawOptions(); 
+        void PrintFrameInfo(); 
 };
 
 #endif 

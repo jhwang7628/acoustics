@@ -32,15 +32,31 @@ init()
     setGridIsDrawn();
     SetAllKeyDescriptions();
     PrepareImpulses(); 
+    setAnimationPeriod(40); // in milliseconds
     startAnimation();
 
-    std::cout << ">> Press key 'h' for help, 'esc' for exit.\n";
+    std::cout << "\n\n>> Press key 'h' for help, 'esc' for exit.\n\n";
+}
+
+//##############################################################################
+// This method shouldn't be called directly. Call 'updateGL()' instead. See
+// documentation for QGLViewer
+//##############################################################################
+void ModalViewer::
+draw()
+{
+    DrawMesh(); 
+    if (_drawImpulse)
+        DrawImpulses(); 
+    glColor3f(0.6f, 0.6f, 0.6f); 
+    if (_displayMessage)
+        drawText(10, height()-20, _message); 
 }
 
 //##############################################################################
 //##############################################################################
 void ModalViewer::
-draw()
+DrawMesh()
 {
     // draw rigid sound object mesh
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
@@ -110,8 +126,42 @@ draw()
 //##############################################################################
 //##############################################################################
 void ModalViewer::
+DrawImpulses()
+{
+    const REAL impulseScaling = 0.01;
+    const int N_frames = _rigidSoundObject->Size(); 
+    _currentImpulseFrame = _currentFrame % N_frames; 
+    // get impulse from object
+    REAL timestamp; 
+    int vertexID; 
+    Vector3d impulse; 
+    _rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
+
+    // draw impulse
+    std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
+    const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
+    const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+    const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
+    glLineWidth(3.0f); 
+    glBegin(GL_LINES); 
+    const Point3<REAL> &vertexBegin = vertices.at(vertexID); 
+    const Vector3<REAL> &normal = normals.at(vertexID);
+    glColor3f(1.0f, 1.0f, 0.0f);
+    Point3<REAL> vertexEnd = vertexBegin + normal.normalized() * impulseScaling;
+    glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
+    glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+    glEnd(); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
 animate()
 {
+    if (_drawImpulse)
+        DrawImpulses(); 
+    _currentFrame ++; 
+    PrintFrameInfo(); 
 }
 
 //##############################################################################
@@ -120,12 +170,22 @@ void ModalViewer::
 keyPressEvent(QKeyEvent *e)
 {
     const Qt::KeyboardModifiers modifiers = e->modifiers(); 
-    if ((e->key() == Qt::Key_I) && (modifiers == Qt::NoButton))
+    bool optionsChanged = false;
+    if ((e->key() == Qt::Key_I) && (modifiers == Qt::NoButton)) {
         _drawImpulse = !_drawImpulse; 
+        optionsChanged = true;}
+    else if ((e->key() == Qt::Key_BracketLeft) && (modifiers == Qt::NoButton)) {
+        if (!animationIsStarted())
+            DrawOneFrameBackward(); }
+    else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
+        if (!animationIsStarted())
+            DrawOneFrameForward(); }
 
     // still enable the default qglviewer event handling
     QGLViewer::keyPressEvent(e);
-    PrintDrawOptions();
+    if (optionsChanged) 
+        PrintDrawOptions();
+    updateGL();
 }
 
 //##############################################################################
@@ -141,12 +201,37 @@ helpString() const
 //##############################################################################
 //##############################################################################
 void ModalViewer::
+DrawOneFrameForward()
+{
+    _currentFrame ++; 
+    updateGL();
+    PrintFrameInfo(); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+DrawOneFrameBackward()
+{
+    _currentFrame --; 
+    updateGL();
+    PrintFrameInfo(); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
 PrepareImpulses()
 {
     const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
     ImpulseSeriesReader reader(impulseFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 
+    _rigidSoundObject->GetImpulseRange(_impulseRange.start, _impulseRange.stop); 
+    std::cout << "Impulses Read:\n"
+              << " Number of impulses: " << _rigidSoundObject->Size() << "\n"
+              << " Time range of impulses: [" << _impulseRange.start << ", " << _impulseRange.stop << "]\n"
+              << "\n";
 }
 
 //##############################################################################
@@ -155,6 +240,7 @@ void ModalViewer::
 RestoreDefaultDrawOptions()
 {
     _drawImpulse = false; 
+    _displayMessage = true;
 }
 
 //##############################################################################
@@ -166,5 +252,18 @@ PrintDrawOptions()
               << "Draw Options \n"
               << "------------\n"
               << " Draw Impulse: " << _drawImpulse << "\n"
+              << " Draw Text Info: " << _displayMessage << "\n"
               << "\n"; 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+PrintFrameInfo()
+{
+    //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
+    //_message += QString::fromStdString(frameInfo); 
+    _message = QString("");
+    _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
+    _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame); 
 }
