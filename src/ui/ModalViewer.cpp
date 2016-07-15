@@ -18,6 +18,9 @@ void ModalViewer::
 SetAllKeyDescriptions()
 {
     setKeyDescription(Qt::Key_I, "Toggle impulses display"); 
+    setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
+    setKeyDescription(Qt::Key_BracketLeft, "Previous frame (when no animation)"); 
+    setKeyDescription(Qt::Key_BracketRight, "Next frame (when no animation)"); 
 }
 
 //##############################################################################
@@ -33,7 +36,6 @@ init()
     SetAllKeyDescriptions();
     PrepareImpulses(); 
     setAnimationPeriod(40); // in milliseconds
-    startAnimation();
 
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
 }
@@ -68,7 +70,8 @@ DrawMesh()
     const int N_normals = normals.size(); 
     const REAL offsetEpsilon = 1E-5;
 
-    // plot points
+    // draw points
+    glPointSize(3.0); 
     glBegin(GL_POINTS);
     glColor3f(0.6f, 0.6f, 0.6f); 
     for (int v_idx=0; v_idx<N_vertices; ++v_idx)
@@ -81,22 +84,8 @@ DrawMesh()
     }
     glEnd();
 
-    // plot triangles
-    glBegin(GL_TRIANGLES); 
-    glColor3f(1, 1, 1); 
-    for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
-    {
-        const Tuple3ui &triangle = triangles.at(t_idx); 
-        const Point3<REAL> &x = vertices.at(triangle.x); 
-        const Point3<REAL> &y = vertices.at(triangle.y); 
-        const Point3<REAL> &z = vertices.at(triangle.z); 
-        glVertex3f(x.x, x.y, x.z); 
-        glVertex3f(y.x, y.y, y.z); 
-        glVertex3f(z.x, z.y, z.z); 
-    }
-    glEnd(); 
-
-    // plot edges of the triangles
+    // draw edges of the triangles
+    glLineWidth(1.0f); 
     glBegin(GL_LINES); 
     glColor3f(0.6f, 0.6f, 0.6f); 
     for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
@@ -121,6 +110,24 @@ DrawMesh()
         glVertex3f(x.x, x.y, x.z); 
     }
     glEnd(); 
+
+    // draw triangles
+    if (!_wireframe)
+    {
+        glBegin(GL_TRIANGLES); 
+        glColor3f(1, 1, 1); 
+        for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
+        {
+            const Tuple3ui &triangle = triangles.at(t_idx); 
+            const Point3<REAL> &x = vertices.at(triangle.x); 
+            const Point3<REAL> &y = vertices.at(triangle.y); 
+            const Point3<REAL> &z = vertices.at(triangle.z); 
+            glVertex3f(x.x, x.y, x.z); 
+            glVertex3f(y.x, y.y, y.z); 
+            glVertex3f(z.x, z.y, z.z); 
+        }
+        glEnd(); 
+    }
 }
 
 //##############################################################################
@@ -137,18 +144,24 @@ DrawImpulses()
     Vector3d impulse; 
     _rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
 
-    // draw impulse
+    // draw impulse vector
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
     const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
     const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
     glLineWidth(3.0f); 
     glBegin(GL_LINES); 
-    const Point3<REAL> &vertexBegin = vertices.at(vertexID); 
-    const Vector3<REAL> &normal = normals.at(vertexID);
+    const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
     glColor3f(1.0f, 1.0f, 0.0f);
-    Point3<REAL> vertexEnd = vertexBegin + normal.normalized() * impulseScaling;
+    Point3<REAL> vertexBegin = vertexEnd - impulse * impulseScaling;
     glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
+    glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+    glEnd(); 
+
+    // draw impulse applied vertex
+    glPointSize(10.0); 
+    glBegin(GL_POINTS); 
+    glColor3f(1.0f, 0.0f, 0.0f); 
     glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
     glEnd(); 
 }
@@ -173,6 +186,9 @@ keyPressEvent(QKeyEvent *e)
     bool optionsChanged = false;
     if ((e->key() == Qt::Key_I) && (modifiers == Qt::NoButton)) {
         _drawImpulse = !_drawImpulse; 
+        optionsChanged = true;}
+    if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
+        _wireframe = !_wireframe; 
         optionsChanged = true;}
     else if ((e->key() == Qt::Key_BracketLeft) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
@@ -223,7 +239,7 @@ DrawOneFrameBackward()
 void ModalViewer::
 PrepareImpulses()
 {
-    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"); 
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
     ImpulseSeriesReader reader(impulseFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 
@@ -240,6 +256,7 @@ void ModalViewer::
 RestoreDefaultDrawOptions()
 {
     _drawImpulse = false; 
+    _wireframe = false; 
     _displayMessage = true;
 }
 
@@ -251,8 +268,9 @@ PrintDrawOptions()
     std::cout << "\n"
               << "Draw Options \n"
               << "------------\n"
-              << " Draw Impulse: " << _drawImpulse << "\n"
-              << " Draw Text Info: " << _displayMessage << "\n"
+              << " Draw Impulse       : " << _drawImpulse << "\n"
+              << " Draw Text Info     : " << _displayMessage << "\n"
+              << " Draw Wireframe only: " << _wireframe << "\n"
               << "\n"; 
 }
 

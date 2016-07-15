@@ -20,10 +20,11 @@ class ModalViewer : public QGLViewer
         RigidSoundObjectPtr _rigidSoundObject; 
         TimeInterval        _impulseRange; 
         bool                _drawImpulse; 
+        bool                _displayMessage; 
+        bool                _wireframe;
         int                 _currentFrame; 
         int                 _currentImpulseFrame; 
         QString             _message; 
-        bool                _displayMessage; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
