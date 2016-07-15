@@ -230,6 +230,7 @@ void ModalViewer::
 DrawOneFrameBackward()
 {
     _currentFrame --; 
+    _currentFrame = std::max<int>(_currentFrame, 0);
     updateGL();
     PrintFrameInfo(); 
 }
