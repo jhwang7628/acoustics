@@ -1,6 +1,6 @@
 #ifndef FDTD_RIGID_SOUND_OBJECT_H 
 #define FDTD_RIGID_SOUND_OBJECT_H 
-#include <modal_model/ModalAnalysis.h> 
+#include <modal_model/ModalAnalysisObject.h> 
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/FDTD_RigidObject.h>
 
@@ -9,15 +9,30 @@
 // functions (FDTD_RigidObject) and has impulse (ImpulseSeriesObject) 
 // prescribed by the rigidsim tool
 //##############################################################################
-class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject
+class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject, public ModalAnalysisObject
 {
     public: 
+        // build object
         FDTD_RigidSoundObject()
-            : FDTD_RigidObject(), ImpulseSeriesObject()
+            : FDTD_RigidObject(), 
+              ImpulseSeriesObject(), 
+              ModalAnalysisObject()
         {
         }
+
+        // build object with mesh, sdf
         FDTD_RigidSoundObject(const std::string &meshFileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(meshFileName, resolution, sdfFilePrefix, meshName, scale), ImpulseSeriesObject(GetMeshPtr())
+            : FDTD_RigidObject(meshFileName, resolution, sdfFilePrefix, meshName, scale), 
+              ImpulseSeriesObject(GetMeshPtr()), 
+              ModalAnalysisObject()
+        {
+        }
+
+        // build object with mesh, sdf, modes
+        FDTD_RigidSoundObject(const std::string &meshFileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &modeFile, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+            : FDTD_RigidObject(meshFileName, resolution, sdfFilePrefix, meshName, scale), 
+              ImpulseSeriesObject(GetMeshPtr()), 
+              ModalAnalysisObject(modeFile)
         {
         }
 };

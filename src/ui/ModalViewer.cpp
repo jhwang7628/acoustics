@@ -35,6 +35,7 @@ init()
     setGridIsDrawn();
     SetAllKeyDescriptions();
     PrepareImpulses(); 
+    PrepareModes(); 
     setAnimationPeriod(40); // in milliseconds
 
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
@@ -249,6 +250,16 @@ PrepareImpulses()
               << " Number of impulses: " << _rigidSoundObject->Size() << "\n"
               << " Time range of impulses: [" << _impulseRange.start << ", " << _impulseRange.stop << "]\n"
               << "\n";
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+PrepareModes()
+{
+    const std::string modeFile("/home/jui-hsien/code/acoustics/work/plate/plate.modes"); 
+    _rigidSoundObject->SetModeFile(modeFile); 
+    _rigidSoundObject->ReadModeFromFile();
 }
 
 //##############################################################################

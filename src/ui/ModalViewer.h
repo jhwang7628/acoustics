@@ -48,6 +48,7 @@ class ModalViewer : public QGLViewer
 
         inline void SetRigidSoundObject(RigidSoundObjectPtr &rigidSoundObject){_rigidSoundObject = rigidSoundObject;} 
         void PrepareImpulses(); 
+        void PrepareModes(); 
         void RestoreDefaultDrawOptions();
         void PrintDrawOptions(); 
         void PrintFrameInfo(); 
