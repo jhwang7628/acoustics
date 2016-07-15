@@ -337,7 +337,7 @@ void PML_WaveSolver::stepLeapfrog()
 //#else 
 //    _grid.classifyCellsDynamicAABB(true, _pFull, false);
 //#endif 
-    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, true); 
+    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, false); 
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)

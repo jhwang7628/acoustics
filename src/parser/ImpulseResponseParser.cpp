@@ -28,16 +28,20 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
     GET_FIRST_CHILD_ELEMENT_GUARD(meshNode, listNode, meshNodeName.c_str()); 
     while (meshNode != NULL)
     {
-        const std::string meshFileName = queryRequiredAttr(meshNode, "file");
+        //const std::string meshFileName = queryRequiredAttr(meshNode, "file");
         const std::string meshName = queryRequiredAttr(meshNode, "id");
-        const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
+        //const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
+        const std::string workingDirectory = queryRequiredAttr(meshNode, "working_directory"); 
+        const std::string objectPrefix = queryRequiredAttr(meshNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
         const REAL scale = queryOptionalReal(meshNode, "scale", 1.0); 
         const REAL initialPosition_x = queryOptionalReal(meshNode, "initial_position_x", 0.0); 
         const REAL initialPosition_y = queryOptionalReal(meshNode, "initial_position_y", 0.0); 
         const REAL initialPosition_z = queryOptionalReal(meshNode, "initial_position_z", 0.0); 
 
-        RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
+
+        RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(workingDirectory, sdfResolutionValue, objectPrefix, meshName, scale);
+        //RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());

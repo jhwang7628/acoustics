@@ -3,28 +3,29 @@
     <rigid_object> 
         <mesh_list> 
             <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p10.obj" 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
+                object_prefix="small_ball_r_0p10" 
                 id="small_ball_1" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene/small_ball_r_0p10.obj.dist"
-                fieldresolution="400"
-                scale="1.0" 
-                initial_position_x="0.0"
-                initial_position_y="0.1"
-                initial_position_z="0.0"
-                />
-            <!--
-            <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj" 
-                id="small_ball_2" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist"
                 fieldresolution="100"
                 scale="1.0" 
                 initial_position_x="0.0"
-                initial_position_y="-0.05"
+                initial_position_y="0.0"
                 initial_position_z="0.0"
                 />
+                
+            <!--
                 -->
             <!--
+            <mesh 
+                file="/home/jui-hsien/code/acoustics/work/meshes/mug/mug.obj" 
+                id="mug" 
+                distancefield="/home/jui-hsien/code/acoustics/work/meshes/mug/mug.obj.1m.dist"
+                fieldresolution="300"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                />
             <mesh 
                 file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj" 
                 id="small_ball_3" 
@@ -43,12 +44,12 @@
         sound_speed="343.0"
         density="1.0" 
         cellsize="0.01" 
-        gridresolution="100"
-        stop_time="0.3"
-        substeps="4"
+        gridresolution="50"
+        stop_time="0.005"
+        substeps="1"
         timestepfrequency="176400"
 
-        output_pattern="work/near-field/data_test2/test_%s"
+        output_pattern="work/near-field/data_test/test_%s"
 
         PML_width="3"
         PML_strength="1000000.0" 
@@ -59,13 +60,13 @@
         /> 
 
     <pressure_source> 
-    <!--
         <gaussian_pressure_source
         source_width_time="0.00005"
-        source_position_x="0.2" 
+        source_position_x="0.15" 
         source_position_y="0.0" 
         source_position_z="0.0" 
         />
+    <!--
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 
@@ -76,11 +77,13 @@
     </pressure_source> 
 
     <listening_point_list>
+        <!--
         <listening_point x="0.0" y="0.2" z="0.0"/>
         <listening_point x="0.14142135623730953" y="0.14142135623730953" z="0.0"/>
         <listening_point x="0.2" y="0.0" z="0.0"/>
         <listening_point x="0.14142135623730953" y="-0.14142135623730953" z="0.0"/>
         <listening_point x="0.0" y="-0.2" z="0.0"/>
+        -->
     </listening_point_list> 
 
 </impulse_response>
