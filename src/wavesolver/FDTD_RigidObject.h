@@ -13,6 +13,7 @@
 #include <wavesolver/FDTD_MovableObject.h> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 
+#include <utils/IO/IO.h>
 
 //##############################################################################
 // Stores FDTD simulation Object that contains mesh, sdf, transformation matrix
@@ -21,10 +22,12 @@
 class FDTD_RigidObject : public FDTD_MovableObject
 {
     protected: 
+        std::string                         _workingDirectory;
+        std::string                         _objectPrefix; 
+
         int                                 _meshID; 
         REAL                                _meshScale; 
         std::string                         _meshName;
-        std::string                         _meshFileName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 
 
@@ -36,21 +39,22 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
     public: 
         FDTD_RigidObject()
-            : _meshID(-1), 
+            : _workingDirectory("NOT_IDENTIFIED"),
+              _objectPrefix("NOT_IDENTIFIED"),
+              _meshID(-1), 
               _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
-              _meshFileName("NOT_IDENTIFIED"), 
               _parsed(false) 
         {
         }
 
-        FDTD_RigidObject(const std::string &fileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : _meshID(-1), 
+        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+            : _workingDirectory(workingDirectory), 
+              _objectPrefix(objectPrefix),
+              _meshID(-1), 
               _meshScale(scale), 
               _meshName(meshName),
-              _meshFileName(fileName), 
-              _signedDistanceFieldResolution(resolution), 
-              _signedDistanceFieldFilePrefix(sdfFilePrefix)
+              _signedDistanceFieldResolution(resolution)
         {
             _parsed = true; 
             Initialize(); 

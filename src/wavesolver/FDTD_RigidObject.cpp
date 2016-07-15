@@ -1,5 +1,7 @@
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <io/TglMeshReader.hpp>
+#include <io/TglMeshWriter.hpp>
+#include <io/TetMeshReader.hpp>
 #include <utils/SimpleTimer.h>
 #include <utils/Conversions.h>
 
@@ -10,17 +12,36 @@ Initialize()
 {
     assert(_parsed); 
 
-    // building mesh 
-    _mesh.reset(new TriangleMesh<REAL>()); 
-    if (MeshObjReader::read(_meshFileName.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
-        _mesh->generate_normals(); 
-    else 
-        throw std::runtime_error("**ERROR** Cannot read mesh from"+_meshFileName);
+    // first established paths for tet mesh, surface mesh, and correponding sdf
+    const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
+    const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
+    _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
 
-    // building signed distance field in the original frame of reference
+    if (!IO::ExistFile(tetMeshFile))
+        throw std::runtime_error("**ERROR** Tet mesh file not exist: " + tetMeshFile); 
+
+    // build/load mesh 
+    std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
+    if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
+    {
+        _mesh.reset(new TriangleMesh<REAL>()); 
+        tetMesh->extract_surface(_mesh.get()); 
+        _mesh->generate_normals(); 
+        _mesh->update_vertex_areas(); 
+    }
+    else 
+    {
+        throw std::runtime_error("**ERROR** Cannot read mesh from" + tetMeshFile);
+    }
+
+    // write the surface mesh
+    if (!IO::ExistFile(tetSurfaceMeshFile))
+        MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
+
+    // build signed distance field in the original frame of reference
     _signedDistanceField.reset(
             DistanceFieldBuilder::BuildSignedClosestPointField(
-                _meshFileName.c_str(), 
+                tetSurfaceMeshFile.c_str(), 
                 _signedDistanceFieldResolution, 
                 _signedDistanceFieldFilePrefix.c_str()
                 )

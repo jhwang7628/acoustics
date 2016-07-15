@@ -39,6 +39,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         main.cpp
         ${UI_SRC}
         ${IO_SRC}
+        ${GENERIC_SRC}
         ${GENERAL_TESTING_SRCS} 
         ${LINEARALGEBRA_SRC} 
         ${DEFORMABLE_SRC} 
