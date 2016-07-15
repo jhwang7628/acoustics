@@ -31,7 +31,7 @@ RigidModal::RigidModal(libconfig::Setting& s)
     }
     if ( !s.lookupValue("dampingGamma", m_gamma) )
     {
-      PRINT_ERROR( "No inverse frequency damping 'dampingGamma' specified\n" );
+      PRINT_WARNING( "No inverse frequency damping 'dampingGamma' specified\n" );
       m_gamma = 0.0;
     }
     if ( !s.lookupValue("id", m_id) )
