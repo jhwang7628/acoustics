@@ -35,6 +35,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
               ModalAnalysisObject(modeFile)
         {
         }
+
+        void GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
 };
 
 #endif

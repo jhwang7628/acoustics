@@ -51,6 +51,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${SNDGEN_SRC}
         ${MODAL_MODEL_SRC}
         ${WAVESOLVER_SRC}
+        ${MESH_UTILS_SRC}
         ${FIELD_SRC}                      
         ${DISTANCEFIELD_SRC}              
         ${PARSER_SRC} 

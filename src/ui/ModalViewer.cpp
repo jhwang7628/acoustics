@@ -19,8 +19,10 @@ SetAllKeyDescriptions()
 {
     setKeyDescription(Qt::Key_I, "Toggle impulses display"); 
     setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
-    setKeyDescription(Qt::Key_BracketLeft, "Previous frame (when no animation)"); 
-    setKeyDescription(Qt::Key_BracketRight, "Next frame (when no animation)"); 
+    setKeyDescription(Qt::Key_BracketLeft, "Previous impulse frame (when no animation)"); 
+    setKeyDescription(Qt::Key_BracketRight, "Next impulse frame (when no animation)"); 
+    setKeyDescription(Qt::Key_N, "Previous mode"); 
+    setKeyDescription(Qt::Key_M, "Next mode"); 
 }
 
 //##############################################################################
@@ -61,59 +63,66 @@ draw()
 void ModalViewer::
 DrawMesh()
 {
+    bool isDrawModes = true;
+    if (_drawModes < 0 || _modeValues.size() == 0) 
+        isDrawModes = false;
+
     // draw rigid sound object mesh
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
     const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
     const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-    const int N_vertices = vertices.size(); 
+    //const int N_vertices = vertices.size(); 
     const int N_triangles = triangles.size(); 
-    const int N_normals = normals.size(); 
+    //const int N_normals = normals.size(); 
     const REAL offsetEpsilon = 1E-5;
 
-    // draw points
-    glPointSize(3.0); 
-    glBegin(GL_POINTS);
-    glColor3f(0.6f, 0.6f, 0.6f); 
-    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
-    {
-        // offset the points to make it more visible
-        const Point3<REAL> &vertex = vertices.at(v_idx); 
-        const Vector3<REAL> &normal = normals.at(v_idx); 
-        Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
-        glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
-    }
-    glEnd();
+    //// draw points
+    //glPointSize(3.0); 
+    //glBegin(GL_POINTS);
+    //glColor3f(0.6f, 0.6f, 0.6f); 
+    //for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    //{
+    //    // offset the points to make it more visible
+    //    const Point3<REAL> &vertex = vertices.at(v_idx); 
+    //    const Vector3<REAL> &normal = normals.at(v_idx); 
+    //    Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
+    //    glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
+    //}
+    //glEnd();
 
     // draw edges of the triangles
-    glLineWidth(1.0f); 
-    glBegin(GL_LINES); 
-    glColor3f(0.6f, 0.6f, 0.6f); 
-    for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
+    if (_wireframe == 0 || _wireframe == 1)
     {
-        const Tuple3ui &triangle = triangles.at(t_idx); 
-        Point3<REAL> x = vertices.at(triangle.x); 
-        Point3<REAL> y = vertices.at(triangle.y); 
-        Point3<REAL> z = vertices.at(triangle.z); 
-        const Vector3<REAL> &normal_x = normals.at(triangle.x); 
-        const Vector3<REAL> &normal_y = normals.at(triangle.y); 
-        const Vector3<REAL> &normal_z = normals.at(triangle.z); 
-        x = x + normal_x.normalized() * offsetEpsilon; 
-        y = y + normal_y.normalized() * offsetEpsilon; 
-        z = z + normal_z.normalized() * offsetEpsilon; 
-        glVertex3f(x.x, x.y, x.z); 
-        glVertex3f(y.x, y.y, y.z); 
+        glLineWidth(1.0f); 
+        glBegin(GL_LINES); 
+        glColor3f(0.6f, 0.6f, 0.6f); 
+        for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
+        {
+            const Tuple3ui &triangle = triangles.at(t_idx); 
+            Point3<REAL> x = vertices.at(triangle.x); 
+            Point3<REAL> y = vertices.at(triangle.y); 
+            Point3<REAL> z = vertices.at(triangle.z); 
+            const Vector3<REAL> &normal_x = normals.at(triangle.x); 
+            const Vector3<REAL> &normal_y = normals.at(triangle.y); 
+            const Vector3<REAL> &normal_z = normals.at(triangle.z); 
+            x = x + normal_x.normalized() * offsetEpsilon; 
+            y = y + normal_y.normalized() * offsetEpsilon; 
+            z = z + normal_z.normalized() * offsetEpsilon; 
+            glVertex3f(x.x, x.y, x.z); 
+            glVertex3f(y.x, y.y, y.z); 
 
-        glVertex3f(y.x, y.y, y.z); 
-        glVertex3f(z.x, z.y, z.z); 
+            glVertex3f(y.x, y.y, y.z); 
+            glVertex3f(z.x, z.y, z.z); 
 
-        glVertex3f(z.x, z.y, z.z); 
-        glVertex3f(x.x, x.y, x.z); 
+            glVertex3f(z.x, z.y, z.z); 
+            glVertex3f(x.x, x.y, x.z); 
+        }
+        glEnd(); 
     }
-    glEnd(); 
 
     // draw triangles
-    if (!_wireframe)
+    if (_wireframe == 0 || _wireframe == 2)
     {
         glBegin(GL_TRIANGLES); 
         glColor3f(1, 1, 1); 
@@ -123,9 +132,24 @@ DrawMesh()
             const Point3<REAL> &x = vertices.at(triangle.x); 
             const Point3<REAL> &y = vertices.at(triangle.y); 
             const Point3<REAL> &z = vertices.at(triangle.z); 
-            glVertex3f(x.x, x.y, x.z); 
-            glVertex3f(y.x, y.y, y.z); 
-            glVertex3f(z.x, z.y, z.z); 
+            if (isDrawModes)
+            {
+                const REAL xValue = _modeValues(triangle.x) / _modeAttributes.absMax;
+                const REAL yValue = _modeValues(triangle.y) / _modeAttributes.absMax;
+                const REAL zValue = _modeValues(triangle.z) / _modeAttributes.absMax;
+                glColor3f(xValue, 0, 0);
+                glVertex3f(x.x, x.y, x.z); 
+                glColor3f(yValue, 0, 0);
+                glVertex3f(y.x, y.y, y.z); 
+                glColor3f(zValue, 0, 0);
+                glVertex3f(z.x, z.y, z.z); 
+            }
+            else
+            {
+                glVertex3f(x.x, x.y, x.z); 
+                glVertex3f(y.x, y.y, y.z); 
+                glVertex3f(z.x, z.y, z.z); 
+            }
         }
         glEnd(); 
     }
@@ -148,8 +172,8 @@ DrawImpulses()
     // draw impulse vector
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-    const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
-    const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
+    //const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+    //const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
     glLineWidth(3.0f); 
     glBegin(GL_LINES); 
     const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
@@ -189,7 +213,7 @@ keyPressEvent(QKeyEvent *e)
         _drawImpulse = !_drawImpulse; 
         optionsChanged = true;}
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
-        _wireframe = !_wireframe; 
+        _wireframe = (_wireframe+1)%3; 
         optionsChanged = true;}
     else if ((e->key() == Qt::Key_BracketLeft) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
@@ -197,6 +221,14 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
             DrawOneFrameForward(); }
+    else if ((e->key() == Qt::Key_N)){
+            _drawModes--; 
+            UpdateModeValues();
+            optionsChanged = true;}
+    else if ((e->key() == Qt::Key_M)){
+            _drawModes++; 
+            UpdateModeValues();
+            optionsChanged = true;}
 
     // still enable the default qglviewer event handling
     QGLViewer::keyPressEvent(e);
@@ -239,6 +271,18 @@ DrawOneFrameBackward()
 //##############################################################################
 //##############################################################################
 void ModalViewer::
+UpdateModeValues()
+{
+    if (_drawModes >= 0 && _drawModes < _rigidSoundObject->N_Modes())
+        _rigidSoundObject->GetVertexModeValues(_drawModes, _modeValues); 
+    _modeAttributes.modeMax = _modeValues.maxCoeff(); 
+    _modeAttributes.modeMin = _modeValues.minCoeff(); 
+    _modeAttributes.absMax  = std::max<REAL>(fabs(_modeAttributes.modeMax), fabs(_modeAttributes.modeMin)); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
 PrepareImpulses()
 {
     const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
@@ -268,8 +312,9 @@ void ModalViewer::
 RestoreDefaultDrawOptions()
 {
     _drawImpulse = false; 
-    _wireframe = false; 
+    _wireframe = 0;
     _displayMessage = true;
+    _drawModes = -1; 
 }
 
 //##############################################################################
@@ -283,6 +328,7 @@ PrintDrawOptions()
               << " Draw Impulse       : " << _drawImpulse << "\n"
               << " Draw Text Info     : " << _displayMessage << "\n"
               << " Draw Wireframe only: " << _wireframe << "\n"
+              << " Draw Modes         : " << _drawModes << "\n"
               << "\n"; 
 }
 

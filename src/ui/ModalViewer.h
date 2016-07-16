@@ -1,5 +1,6 @@
 #ifndef MODAL_VIEWER_H 
 #define MODAL_VIEWER_H 
+#include <Eigen/Dense> 
 #include <QGLViewer/qglviewer.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <io/ImpulseSeriesReader.h>
@@ -16,19 +17,24 @@ class ModalViewer : public QGLViewer
 
     private: 
         struct TimeInterval{ REAL start; REAL stop; }; 
+        struct ModeAttribute{ REAL modeMax; REAL modeMin; REAL absMax; };
 
         RigidSoundObjectPtr _rigidSoundObject; 
         TimeInterval        _impulseRange; 
         bool                _drawImpulse; 
         bool                _displayMessage; 
-        bool                _wireframe;
+        int                 _wireframe;  // 0: both wire and face; 1: wire; 2: face
+        int                 _drawModes; 
         int                 _currentFrame; 
         int                 _currentImpulseFrame; 
         QString             _message; 
+        Eigen::VectorXd     _modeValues; 
+        ModeAttribute       _modeAttributes; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawImpulses();
+        void UpdateModeValues(); 
 
     protected: 
         virtual void draw(); 

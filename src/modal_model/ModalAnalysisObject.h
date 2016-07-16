@@ -7,6 +7,9 @@
 
 //##############################################################################
 // Class that handles the modal object
+//
+// Note: 
+//  eigenvectors are based on tet meshes
 //##############################################################################
 class ModalAnalysisObject
 {
@@ -22,7 +25,7 @@ class ModalAnalysisObject
             : _modeFileSet(false)
         {} 
         ModalAnalysisObject(const std::string &modeFile) 
-            : _modeFile(modeFile), _modeFileSet(true)
+            : _modeFileSet(true), _modeFile(modeFile)
         {}
 
         inline int N_Modes() const {return _eigenVectors.cols();}
@@ -33,7 +36,8 @@ class ModalAnalysisObject
         // Get U^T f, where U is the eigenvector (modal) matrix. Input vertexID should be in zero-based. 
         void GetForceInModalSpace(const int &vertexID, const Eigen::Vector3d &impulse, Eigen::VectorXd &forceInModalSpace);
         // Get u from q by doing u = Uq, where U is the modal matrix.
-        void GetVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u); 
+        void GetVolumeVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u); 
+        void GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
 
     friend std::ostream &operator <<(std::ostream &os, const ModalAnalysisObject &object); 
 }; 

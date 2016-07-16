@@ -11,6 +11,7 @@
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_MovableObject.h> 
+#include <geometry/TetMeshIndexToSurfaceMesh.h> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 
 #include <utils/IO/IO.h>
@@ -29,6 +30,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
+        std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
+
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 
 
         int                                 _signedDistanceFieldResolution;

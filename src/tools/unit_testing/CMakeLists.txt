@@ -38,6 +38,7 @@ if (BUILD_UNIT_TESTING)
         ${UTILS_SRC}                      ${PARSER_SRC}
         ${GTS_GEOMETRY_SRC}               ${CGAL_GEOMETRY_SRC}
         ${TRANSFER_SRC}                   ${WAVELET_TRANSFER_SRC}
+        ${MESH_UTILS_SRC}
         test_GridWithObject.cpp
         )
 
@@ -60,6 +61,7 @@ if (BUILD_UNIT_TESTING)
     add_executable(unit_testing_FDTD_AcousticSimulator
         ${DISTANCEFIELD_SRC}              
         ${WAVESOLVER_SRC} 
+        ${MESH_UTILS_SRC}
         ${GENERAL_TESTING_SRCS} 
         ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
         ${GENERIC_SRC}                    
@@ -94,6 +96,7 @@ if (BUILD_UNIT_TESTING)
         ${SNDGEN_SRC}
         ${MODAL_MODEL_SRC}
         ${WAVESOLVER_SRC}
+        ${MESH_UTILS_SRC}
         ${FIELD_SRC}                      
         ${DISTANCEFIELD_SRC}              
         ${PARSER_SRC} 

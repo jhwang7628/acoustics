@@ -36,20 +36,39 @@ GetForceInModalSpace(const int &vertexID, const Eigen::Vector3d &impulse, Eigen:
 {
     if (vertexID >= N_vertices())
         throw std::runtime_error("**ERROR** vertexID"+std::to_string(vertexID)+" out of bounds. Total #vertices = "+std::to_string(N_vertices())); 
-    const int startVertex = vertexID*3; 
-    forceInModalSpace = _eigenVectors.row(startVertex+0)*impulse(0) 
-                      + _eigenVectors.row(startVertex+1)*impulse(1) 
-                      + _eigenVectors.row(startVertex+2)*impulse(2); 
+    const int startIndex = vertexID*3; 
+    forceInModalSpace = _eigenVectors.row(startIndex+0)*impulse(0) 
+                      + _eigenVectors.row(startIndex+1)*impulse(1) 
+                      + _eigenVectors.row(startIndex+2)*impulse(2); 
 }
 
 //##############################################################################
 //##############################################################################
 void ModalAnalysisObject::
-GetVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u)
+GetVolumeVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u)
 {
     if (q.size() != N_Modes()) 
         throw std::runtime_error("**ERROR** Input reduced q has wrong dimension: "+std::to_string(q.size())+"->"+std::to_string(N_Modes())); 
     u = _eigenVectors * q; 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalAnalysisObject::
+GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
+{
+    if (modeIndex >= N_Modes()) 
+        throw std::runtime_error("**ERROR** mode index "+std::to_string(modeIndex)+" out of bounds"); 
+    const int N = N_vertices(); 
+    modeValues.resize(N); 
+    for (int v_idx=0; v_idx<N; ++v_idx) 
+    {
+        const int d_idx = v_idx*3; 
+        modeValues(v_idx) = pow(_eigenVectors(d_idx+0, modeIndex), 2)
+                          + pow(_eigenVectors(d_idx+1, modeIndex), 2)
+                          + pow(_eigenVectors(d_idx+2, modeIndex), 2); 
+        modeValues(v_idx) = sqrt(modeValues(v_idx)); 
+    }
 }
 
 //##############################################################################

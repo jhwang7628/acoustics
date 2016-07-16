@@ -69,6 +69,7 @@ if ( USE_DEBUG )
 else ( USE_DEBUG )
     MESSAGE(STATUS "Using release mode")
     set(CMAKE_BUILD_TYPE Release)
+    add_definitions(-Wall)
 endif ( USE_DEBUG )
 
 if ( USE_64BIT_ARCH )

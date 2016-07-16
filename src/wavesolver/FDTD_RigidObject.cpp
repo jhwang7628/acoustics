@@ -14,6 +14,7 @@ Initialize()
 
     // first established paths for tet mesh, surface mesh, and correponding sdf
     const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
+    const std::string geoFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".geo.txt"; 
     const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
     _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
 
@@ -28,6 +29,12 @@ Initialize()
         tetMesh->extract_surface(_mesh.get()); 
         _mesh->generate_normals(); 
         _mesh->update_vertex_areas(); 
+        _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
+        _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
+        if (_tetMeshIndexToSurfaceMesh->N_surfaceVertices() != _mesh->num_vertices())
+            throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
+        else 
+            std::cout << " Surface mesh and Tet-Surface mapping built.\n";
     }
     else 
     {
