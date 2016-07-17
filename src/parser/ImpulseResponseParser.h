@@ -7,6 +7,8 @@
 #include <tinyxml/tinyxml.h> 
 #include <tinyxml/tinystr.h> 
 #include <parser/Parser.h>
+#include <modal_model/ModalMaterial.h>
+#include <modal_model/ModalMaterialList.h>
 #include <wavesolver/PressureSource.h> 
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
@@ -18,45 +20,47 @@
 class ImpulseResponseParser : public Parser
 {
     public: 
-        //struct ImpulseResponseParms 
-        //{
-        //    // Speed of sound and density
-        //    REAL                            _c;
-        //    REAL                            _density;
+        // this struct is kept for backward compatibility,
+        // tools/impulse-response will need it I think.
+        struct ImpulseResponseParms 
+        {
+            // Speed of sound and density
+            REAL                            _c;
+            REAL                            _density;
 
-        //    // SDF parms
-        //    int                             _sdfResolution;
-        //    std::string                     _sdfFilePrefix;
+            // SDF parms
+            int                             _sdfResolution;
+            std::string                     _sdfFilePrefix;
 
-        //    // Domain resolution and         size
-        //    int                             _gridResolution;
+            // Domain resolution and         size
+            int                             _gridResolution;
 
-        //    // How much to scale the         bounding box of the object by
-        //    REAL                            _gridScale;
+            // How much to scale the         bounding box of the object by
+            REAL                            _gridScale;
 
-        //    // Fix cell size (optional parameter)
-        //    REAL                            _cellSize;
+            // Fix cell size (optional parameter)
+            REAL                            _cellSize;
 
-        //    int                             _timeStepFrequency;
-        //    int                             _subSteps;
+            int                             _timeStepFrequency;
+            int                             _subSteps;
 
-        //    REAL                            _stopTime; 
+            REAL                            _stopTime; 
 
-        //    // Output parameters
-        //    std::string                     _outputPattern; 
+            // Output parameters
+            std::string                     _outputPattern; 
 
-        //    std::string                     _listeningFile; 
+            std::string                     _listeningFile; 
 
-        //    //std::vector<VolumetricSource>   _sources; 
+            //std::vector<VolumetricSource>   _sources; 
 
-        //    bool                            _useMesh; 
-        //    bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
-        //    bool                            _useGhostCellBoundary; // if on then ghost cell will be used, otherwise rasterized boundary
+            bool                            _useMesh; 
+            bool                            _cornellBoxBoundaryCondition; // if on then PML is only on one face. all the other boundaries for the box are hard-wall
+            bool                            _useGhostCellBoundary; // if on then ghost cell will be used, otherwise rasterized boundary
 
-        //    REAL                            _f; 
+            REAL                            _f; 
 
-        //    //void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
-        //};
+            //void SetSources(const std::vector<VolumetricSource> &sources) { _sources = sources; } 
+        };
 
     private:
         TiXmlDocument _document; 
@@ -75,6 +79,7 @@ class ImpulseResponseParser : public Parser
         void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings); 
         void GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources); 
         void GetListeningPoints(Vector3Array &listeningPoints); 
+        void GetModalMaterials(ModalMaterialList &modalMaterials); 
 }; 
 
 #endif 

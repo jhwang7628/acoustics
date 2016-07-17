@@ -9,6 +9,9 @@
 #include <sndgen/RigidModal.h> 
 #include <modal_model/ImpulseSeriesObject.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
+#include <parser/ImpulseResponseParser.h>
+#include <modal_model/ModalMaterialList.h>
+#include <modal_model/ModalMaterial.h>
 #include <libconfig.h++> 
 
 void TestRigidBodySim()
@@ -29,8 +32,8 @@ void TestModal()
     //parser.Parse(); 
     //libconfig::Config config; 
     //RigidModal rigidModal(filename); 
-    ModalAnalysis modalAnalysis(filename); 
-    modalAnalysis.BuildModalModelsFromFile(); 
+    //ModalAnalysis modalAnalysis(filename); 
+    //modalAnalysis.BuildModalModelsFromFile(); 
 
     const std::string meshName("/home/jui-hsien/code/acoustics/work/plate/plate.obj"); 
     const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
@@ -96,12 +99,23 @@ void TestIO()
     }
 }
 
+void TestMaterialParser() 
+{
+    const std::string filename("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+    ImpulseResponseParser parser(filename); 
+    ModalMaterialList materials; 
+    parser.GetModalMaterials(materials); 
+    auto material = materials.at(0); 
+    std::cout << material->id << " " << material->alpha << " " << material->beta << " " << material->density << " " << material->inverseDensity << " " << material->xi(1.0) << " " << material->omega_di(1) << std::endl;
+}
+
 int main() 
 {
     std::cout << "Unit Test: Modal Sound\n"; 
     //TestIO(); 
     //TestRigidBodySim(); 
     //TestModal(); 
-    TestRigidSoundObject(); 
+    //TestRigidSoundObject(); 
+    TestMaterialParser();
     return 0; 
 }

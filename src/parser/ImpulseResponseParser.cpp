@@ -9,7 +9,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
 {
     if (!objects) 
     {
-        std::cerr << "**WARNING** passed in pointer null for GetObjects. Initialize new object.\n"; 
+        std::cerr << "**MESSAGE** passed in pointer null for GetObjects. Initialize new object.\n"; 
         objects = std::make_shared<FDTD_Objects>();
     }
 
@@ -56,7 +56,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
 {
     if (!settings) 
     {
-        std::cerr << "**WARNING** pointer null for GetSolverSettings. Initialize new object.\n"; 
+        std::cerr << "**MESSAGE** pointer null for GetSolverSettings. Initialize new object.\n"; 
         settings = std::make_shared<PML_WaveSolver_Settings>(); 
     }
     
@@ -160,5 +160,41 @@ GetListeningPoints(Vector3Array &listeningPoints)
     catch (const std::runtime_error &error)
     {
         std::cout << "No listening points found\n"; 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void ImpulseResponseParser::
+GetModalMaterials(ModalMaterialList &modalMaterials) 
+{
+    // get the root node
+    TiXmlDocument *document2 = &_document; 
+    TiXmlElement *root, *listNode;
+    if (!document2)
+        throw std::runtime_error("**ERROR** document null"); 
+
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "material_list"); 
+    const std::string materialNodeName("modal_material"); 
+    try
+    {
+        TiXmlElement *materialNode;
+        GET_FIRST_CHILD_ELEMENT_GUARD(materialNode, listNode, materialNodeName.c_str()); 
+        while (materialNode != NULL)
+        {
+            std::shared_ptr<ModalMaterial> material = std::make_shared<ModalMaterial>(); 
+            material->alpha = queryRequiredReal(materialNode, "alpha"); 
+            material->beta = queryRequiredReal(materialNode, "beta"); 
+            material->density = queryRequiredReal(materialNode, "density"); 
+            material->inverseDensity = 1./material->density; 
+            material->id = modalMaterials.size(); 
+            modalMaterials.push_back(material); 
+            materialNode = materialNode->NextSiblingElement(materialNodeName.c_str());
+        }
+    } 
+    catch (const std::runtime_error &error) 
+    {
+        std::cout << "No materials found\n";
     }
 }

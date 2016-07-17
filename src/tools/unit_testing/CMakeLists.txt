@@ -79,6 +79,9 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   
         ${WAVELET_TRANSFER_SRC} 
         ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${MODAL_MODEL_SRC}
+        ${MODAL_MATERIAL_SRC}
+        ${DEFORMABLE_SRC} 
         test_FDTD_AcousticSimulator.cpp
         ) 
 
@@ -106,6 +109,8 @@ if (BUILD_UNIT_TESTING)
         ${TRANSFER_SRC}                   
         ${WAVELET_TRANSFER_SRC} 
         ${MATH_SRC} 
+        ${MODAL_MATERIAL_SRC}
+        ${GENERIC_SRC}
         ) 
 
     # ===================
@@ -134,6 +139,7 @@ if (BUILD_UNIT_TESTING)
         ${GLIB_LIBRARIES}               
         ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
+        ${LibConfig_LIBRARY}
         boost_thread
         boost_system                    
         boost_timer
