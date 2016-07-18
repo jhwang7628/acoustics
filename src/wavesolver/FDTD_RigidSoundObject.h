@@ -1,5 +1,6 @@
 #ifndef FDTD_RIGID_SOUND_OBJECT_H 
 #define FDTD_RIGID_SOUND_OBJECT_H 
+#include <Eigen/Dense>
 #include <modal_model/ModalAnalysisObject.h> 
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/FDTD_RigidObject.h>
@@ -7,10 +8,17 @@
 //##############################################################################
 // Class that manages object that is characterized by surface mesh, level-set
 // functions (FDTD_RigidObject) and has impulse (ImpulseSeriesObject) 
-// prescribed by the rigidsim tool
+// prescribed by the rigidsim tool. 
 //##############################################################################
 class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject, public ModalAnalysisObject
 {
+    public: 
+        struct ModeAttribute{ REAL modeMax; REAL modeMin; REAL absMax; };
+
+    private: 
+        Eigen::VectorXd _activeModeValues; 
+        ModeAttribute   _activeModeAttributes; 
+
     public: 
         // build object
         FDTD_RigidSoundObject()
@@ -36,7 +44,9 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         {
         }
 
+        void SetVertexModeValues(const int &modeIndex); 
         void GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
+        void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
 };
 
 #endif

@@ -113,6 +113,10 @@ if (BUILD_UNIT_TESTING)
         ${GENERIC_SRC}
         ) 
 
+    add_executable(unit_testing_Eigen
+        test_Eigen.cpp
+        )
+
     # ===================
     # Linking 
     # ===================

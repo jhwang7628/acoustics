@@ -134,9 +134,9 @@ DrawMesh()
             const Point3<REAL> &z = vertices.at(triangle.z); 
             if (isDrawModes)
             {
-                const REAL xValue = _modeValues(triangle.x) / _modeAttributes.absMax;
-                const REAL yValue = _modeValues(triangle.y) / _modeAttributes.absMax;
-                const REAL zValue = _modeValues(triangle.z) / _modeAttributes.absMax;
+                const REAL xValue = _modeValues(triangle.x);
+                const REAL yValue = _modeValues(triangle.y);
+                const REAL zValue = _modeValues(triangle.z);
                 glColor3f(xValue, 0, 0);
                 glVertex3f(x.x, x.y, x.z); 
                 glColor3f(yValue, 0, 0);
@@ -274,10 +274,11 @@ void ModalViewer::
 UpdateModeValues()
 {
     if (_drawModes >= 0 && _drawModes < _rigidSoundObject->N_Modes())
-        _rigidSoundObject->GetVertexModeValues(_drawModes, _modeValues); 
-    _modeAttributes.modeMax = _modeValues.maxCoeff(); 
-    _modeAttributes.modeMin = _modeValues.minCoeff(); 
-    _modeAttributes.absMax  = std::max<REAL>(fabs(_modeAttributes.modeMax), fabs(_modeAttributes.modeMin)); 
+    {
+        _rigidSoundObject->SetVertexModeValues(_drawModes); 
+        _rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _modeValues); 
+        PrintFrameInfo(); 
+    }
 }
 
 //##############################################################################
@@ -342,4 +343,5 @@ PrintFrameInfo()
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
     _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame); 
+    _message += "Current Mode Frame: " + QString::number(_drawModes); 
 }

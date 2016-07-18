@@ -17,7 +17,6 @@ class ModalViewer : public QGLViewer
 
     private: 
         struct TimeInterval{ REAL start; REAL stop; }; 
-        struct ModeAttribute{ REAL modeMax; REAL modeMin; REAL absMax; };
 
         RigidSoundObjectPtr _rigidSoundObject; 
         TimeInterval        _impulseRange; 
@@ -29,7 +28,6 @@ class ModalViewer : public QGLViewer
         int                 _currentImpulseFrame; 
         QString             _message; 
         Eigen::VectorXd     _modeValues; 
-        ModeAttribute       _modeAttributes; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
