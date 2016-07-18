@@ -12,6 +12,7 @@
 #include <parser/ImpulseResponseParser.h>
 #include <modal_model/ModalMaterialList.h>
 #include <modal_model/ModalMaterial.h>
+#include <modal_model/ModalODESolver.h>
 #include <libconfig.h++> 
 
 void TestRigidBodySim()
@@ -109,6 +110,21 @@ void TestMaterialParser()
     std::cout << material->id << " " << material->alpha << " " << material->beta << " " << material->density << " " << material->inverseDensity << " " << material->xi(1.0) << " " << material->omega_di(1) << std::endl;
 }
 
+void TestModalODESolver() 
+{
+    const std::string filename("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+    ImpulseResponseParser parser(filename); 
+    ModalMaterialList materials; 
+    parser.GetModalMaterials(materials); 
+    auto materialPtr = materials.at(0); 
+    const REAL dt = 0.01; 
+    const REAL omegaSquared = 0.99;
+    const REAL Q = 0.0;
+    ModalODESolver solver;
+    solver.Initialize(materialPtr, omegaSquared, dt); 
+    solver.StepSystem(Q);
+}
+
 int main() 
 {
     std::cout << "Unit Test: Modal Sound\n"; 
@@ -116,6 +132,7 @@ int main()
     //TestRigidBodySim(); 
     //TestModal(); 
     //TestRigidSoundObject(); 
-    TestMaterialParser();
+    //TestMaterialParser();
+    TestModalODESolver(); 
     return 0; 
 }
