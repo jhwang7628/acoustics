@@ -38,6 +38,7 @@ void TestModal()
 
     const std::string meshName("/home/jui-hsien/code/acoustics/work/plate/plate.obj"); 
     const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
+    const std::string rigidsimConfigFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg");
 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMesh<REAL> >(); 
     if (MeshObjReader::read(meshName.c_str(), *mesh, false, false, 1.0) == SUCC_RETURN)
@@ -57,7 +58,7 @@ void TestModal()
     std::cout << impulseSeriesObject.Size() << " " << timestamp << " " << vertex << " " << impulse << " " << firstImpulseTime << " " << lastImpulseTime << std::endl;
 
     typedef std::shared_ptr<ImpulseSeriesObject> ImpulseSeriesObjectPtr; 
-    ImpulseSeriesReader impulseSeriesReader(impulseFile); 
+    ImpulseSeriesReader impulseSeriesReader(impulseFile, rigidsimConfigFile); 
     std::vector<ImpulseSeriesObjectPtr> objects(2, std::make_shared<ImpulseSeriesObject>()); 
     objects.at(0)->SetMesh(mesh); 
     objects.at(1)->SetMesh(mesh); 

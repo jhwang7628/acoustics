@@ -15,3 +15,10 @@ set(PARSER_SRC
 set(LIBCONFIG_PARSER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ParseConfig.h
     CACHE FILE "libConfig Parser sources")
+
+set(RIGID_PARSER_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/ParseConfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RigidsimParseConfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/RigidsimParseConfig.cpp
+    CACHE FILE "Parser sources for rigidsim")
+

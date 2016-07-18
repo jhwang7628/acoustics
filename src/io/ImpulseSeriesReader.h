@@ -26,11 +26,14 @@ class ImpulseSeriesReader
         typedef std::shared_ptr<ImpulseSeriesObject> ImpulseSeriesObjectPtr; 
 
     private: 
-        std::string                         _impulseFile; 
+        std::string _impulseFile; 
+        std::string _rigidsimConfigFile; 
+
+        void LoadRigidsimConfig(ImpulseSeriesObjectPtr object); 
 
     public: 
-        ImpulseSeriesReader(const std::string &impulseFile)
-            : _impulseFile(impulseFile)
+        ImpulseSeriesReader(const std::string &impulseFile, const std::string &rigidsimConfigFile)
+            : _impulseFile(impulseFile), _rigidsimConfigFile(rigidsimConfigFile)
         {}
 
         void LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects); 

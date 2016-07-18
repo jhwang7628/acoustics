@@ -1,6 +1,17 @@
 #include <fstream>
 #include <map>
 #include <io/ImpulseSeriesReader.h> 
+#include <parser/RigidsimParseConfig.h> 
+
+//##############################################################################
+//##############################################################################
+void ImpulseSeriesReader::
+LoadRigidsimConfig(ImpulseSeriesObjectPtr object)
+{
+    RigidsimParseConfig parser(_rigidsimConfigFile); 
+    parser.Parse(); 
+    object->SetRigidsimConfigData(parser.GetParsedData()); 
+}
 
 //##############################################################################
 // Load the impulses from file. The format is the following: 
@@ -70,6 +81,7 @@ LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects)
     {
         ImpulseSeriesObjectPtr &object = objects.at(objectID); 
         object->AddImpulse(timestamp, vertexID, impulse); 
+        LoadRigidsimConfig(object);
     }
 }
 
@@ -145,6 +157,9 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
                  >> impulseType >> endLine) 
     {
         if (objectID == loadObjectID) 
+        {
             object->AddImpulse(timestamp, vertexID, impulse); 
+            LoadRigidsimConfig(object);
+        }
     }
 }

@@ -246,6 +246,13 @@ class Vector3 : public Tuple3<T>
             T nz = (b * f - a * d * e) * x + (a * d * f + b * e) * y + a * c * z;
             x = nx; y = ny; z = nz;
         }
+
+        void set(T x, T y, T z) 
+        {
+            this->x = x; 
+            this->y = y; 
+            this->z = z; 
+        }
         
 }; // end of Vector3
 

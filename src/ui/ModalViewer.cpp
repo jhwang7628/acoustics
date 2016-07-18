@@ -8,6 +8,7 @@
 #include <geometry/Point3.hpp>
 #include <ui/ModalViewer.h>
 #include <utils/STL_Wrapper.h>
+#include <parser/ImpulseResponseParser.h>
 
 using namespace qglviewer;
 using namespace std;
@@ -287,7 +288,8 @@ void ModalViewer::
 PrepareImpulses()
 {
     const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
-    ImpulseSeriesReader reader(impulseFile); 
+    const std::string rigidsimConfigFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg");
+    ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 
     _rigidSoundObject->GetImpulseRange(_impulseRange.start, _impulseRange.stop); 
@@ -303,8 +305,13 @@ void ModalViewer::
 PrepareModes()
 {
     const std::string modeFile("/home/jui-hsien/code/acoustics/work/plate/plate.modes"); 
-    _rigidSoundObject->SetModeFile(modeFile); 
-    _rigidSoundObject->ReadModeFromFile();
+    const std::string parseFile("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+    ImpulseResponseParser parser(parseFile); 
+    ModalMaterialList materials; 
+    parser.GetModalMaterials(materials); 
+    auto materialPtr = materials.at(0);
+
+    _rigidSoundObject->ModalAnalysisObject::Initialize(modeFile, materialPtr); 
 }
 
 //##############################################################################

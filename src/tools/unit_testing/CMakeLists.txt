@@ -117,6 +117,35 @@ if (BUILD_UNIT_TESTING)
         test_Eigen.cpp
         )
 
+    add_executable(unit_testing_Rigid
+        test_Rigid.cpp 
+        ${IO_SRC}
+        ${GENERAL_TESTING_SRCS} 
+        ${LINEARALGEBRA_SRC} 
+        ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${GEOMETRY_SRC}
+        ${LOGGING_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${SNDGEN_SRC}
+        ${MODAL_MODEL_SRC}
+        ${WAVESOLVER_SRC}
+        ${MESH_UTILS_SRC}
+        ${FIELD_SRC}                      
+        ${DISTANCEFIELD_SRC}              
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${UTILS_SRC}                      
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${MATH_SRC} 
+        ${MODAL_MATERIAL_SRC}
+        ${GENERIC_SRC}
+        ${RIGID_PARSER_SRC}
+        )
+
     # ===================
     # Linking 
     # ===================
@@ -151,6 +180,20 @@ if (BUILD_UNIT_TESTING)
         boost_regex) 
 
     target_link_libraries(unit_testing_Modal
+        ${MKL_LIBRARY}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        ${LibConfig_LIBRARY}
+        boost_thread
+        boost_system                    
+        boost_timer
+        boost_filesystem
+        boost_regex) 
+
+    target_link_libraries(unit_testing_Rigid
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             
         ${GTS_LIBRARIES}

@@ -73,6 +73,44 @@ GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
 
 //##############################################################################
 //##############################################################################
+void ModalAnalysisObject::
+Initialize(const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr)
+{
+    SetModeFile(modeFile); 
+    ReadModeFromFile(); 
+    InitializeModalODESolvers(materialPtr); 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalAnalysisObject::
+InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr)
+{
+    const REAL timeStepSize = 0.05;
+    _modalODESolvers.resize(N_Modes()); 
+    for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
+    {
+        _modalODESolvers.at(mode_idx) = std::make_shared<ModalODESolver>(); 
+        _modalODESolvers.at(mode_idx)->Initialize(materialPtr, _eigenValues(mode_idx), timeStepSize);  
+    }
+}
+
+//##############################################################################
+// Time step size was set when initialized
+//##############################################################################
+void ModalAnalysisObject::
+StepAllModalODESolvers(const int &vertexID, const Eigen::Vector3d &impulse)
+{
+    Eigen::VectorXd forceInModalSpace; // should have length N_modes
+    GetForceInModalSpace(vertexID, impulse, forceInModalSpace); 
+    for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
+    {
+        _modalODESolvers.at(mode_idx)->StepSystem(forceInModalSpace(mode_idx)); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
 std::ostream &operator <<(std::ostream &os, const ModalAnalysisObject &object) 
 {
     os << "--------------------------------------------------------------------------------\n" 

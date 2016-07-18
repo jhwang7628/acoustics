@@ -68,8 +68,18 @@ GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse)
 //##############################################################################
 //##############################################################################
 void ImpulseSeriesObject::
-GetImpulse(const REAL &time) // TODO!
+GetImpulse(const REAL &timeStart, const REAL &timeStop, Vector3d &impulse)
 {
+    if (timeStart > timeStop || timeStart > _lastImpulseTime || timeStop < _firstImpulseTime){
+        impulse.set(0,0,0); return;}
+
+    impulse.set(0,0,0); 
+    for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
+    {
+        const REAL &timestamp = _impulseTimestamps.at(frame_idx); 
+        if (timestamp >= timeStart && timestamp <= timeStop)
+            impulse += _impulses.at(frame_idx); 
+    }
 }
 
 //##############################################################################
