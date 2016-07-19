@@ -209,10 +209,7 @@ DrawImpulses()
 void ModalViewer::
 animate()
 {
-    if (_drawImpulse)
-        DrawImpulses(); 
-    _currentFrame ++; 
-    PrintFrameInfo(); 
+    DrawOneFrameForward(); 
 }
 
 //##############################################################################
@@ -326,7 +323,8 @@ PrepareModes()
     parser.GetModalMaterials(materials); 
     auto materialPtr = materials.at(0);
 
-    _rigidSoundObject->ModalAnalysisObject::Initialize(modeFile, materialPtr); 
+    _ODEStepSize = _timeStepSize / 20.0; 
+    _rigidSoundObject->ModalAnalysisObject::Initialize(_ODEStepSize, modeFile, materialPtr); 
 }
 
 //##############################################################################

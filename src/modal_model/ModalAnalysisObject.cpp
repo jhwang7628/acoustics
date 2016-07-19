@@ -74,8 +74,9 @@ GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
 //##############################################################################
 //##############################################################################
 void ModalAnalysisObject::
-Initialize(const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr)
+Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr)
 {
+    _ODEStepSize = ODEStepSize; 
     SetModeFile(modeFile); 
     ReadModeFromFile(); 
     InitializeModalODESolvers(materialPtr); 
@@ -86,12 +87,11 @@ Initialize(const std::string &modeFile, std::shared_ptr<ModalMaterial> materialP
 void ModalAnalysisObject::
 InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr)
 {
-    const REAL timeStepSize = 0.05;
     _modalODESolvers.resize(N_Modes()); 
     for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
     {
         _modalODESolvers.at(mode_idx) = std::make_shared<ModalODESolver>(); 
-        _modalODESolvers.at(mode_idx)->Initialize(materialPtr, _eigenValues(mode_idx), timeStepSize);  
+        _modalODESolvers.at(mode_idx)->Initialize(materialPtr, _eigenValues(mode_idx), _ODEStepSize);  
     }
 }
 

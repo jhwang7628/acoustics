@@ -27,6 +27,7 @@ class ModalViewer : public QGLViewer
         int                 _currentFrame; 
         int                 _currentImpulseFrame; 
         REAL                _timeStepSize; 
+        REAL                _ODEStepSize; 
         REAL                _startTime; 
         QString             _message; 
         Eigen::VectorXd     _vertexValues; 

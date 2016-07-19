@@ -26,7 +26,7 @@ class ModalAnalysisObject
         Eigen::MatrixXd _eigenVectors; 
 
         std::vector<ModalODESolverPtr> _modalODESolvers; 
-        REAL        _timeStepSize; 
+        REAL _ODEStepSize; 
 
     public: 
         ModalAnalysisObject()
@@ -46,7 +46,7 @@ class ModalAnalysisObject
         // Get u from q by doing u = Uq, where U is the modal matrix.
         void GetVolumeVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u); 
         void GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
-        void Initialize(const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr);
+        void Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr);
         void InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr);
         void StepAllModalODESolvers(const int &vertexID, const Eigen::Vector3d &impulse); 
 

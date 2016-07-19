@@ -18,6 +18,7 @@ if ( BUILD_RIGIDSIM )
             ${DEFORMABLE_SRC}     ${LINEARALGEBRA_SRC}
             ${GENERIC_SRC}        ${IO_SRC}
             ${SNDGEN_SRC}
+            ${RIGID_PARSER_SRC}
             )
 
         target_link_libraries(rigidsim
@@ -82,6 +83,7 @@ if ( BUILD_RIGIDSIM_GUI )
             ${RIGID_IO_SRC}
             ${MODAL_MODEL_SRC}
             ${SNDGEN_SRC}
+            ${RIGID_PARSER_SRC}
             )
 
         target_include_directories(rigidsim-gui
@@ -163,6 +165,7 @@ if ( BUILD_RIGIDSIM_GUI )
             ${RIGID_IO_SRC}
             ${MODAL_MODEL_SRC}
             ${SNDGEN_SRC}
+            ${RIGID_PARSER_SRC}
             )
 
         target_include_directories(replayer
