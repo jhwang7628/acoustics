@@ -68,18 +68,34 @@ GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse)
 //##############################################################################
 //##############################################################################
 void ImpulseSeriesObject::
-GetImpulse(const REAL &timeStart, const REAL &timeStop, Vector3d &impulse)
+GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
 {
     if (timeStart > timeStop || timeStart > _lastImpulseTime || timeStop < _firstImpulseTime){
-        impulse.set(0,0,0); return;}
+        return;}
 
-    impulse.set(0,0,0); 
     for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
     {
         const REAL &timestamp = _impulseTimestamps.at(frame_idx); 
         if (timestamp >= timeStart && timestamp <= timeStop)
-            impulse += _impulses.at(frame_idx); 
+        {
+            ImpactRecord record; 
+            record.impactVector = _impulses.at(frame_idx); 
+            record.timestamp = _impulseTimestamps.at(frame_idx); 
+            record.appliedVertex = _impulseAppliedVertex.at(frame_idx); 
+            records.push_back(record); 
+        }
     }
+}
+
+//##############################################################################
+//##############################################################################
+void ImpulseSeriesObject::
+GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
+{
+    GetImpulse(timeStart, timeStop, records); 
+    const int N = records.size();
+    for (int frame_idx=0; frame_idx<N; ++frame_idx) 
+        records.at(frame_idx).impactVector = ConvertImpulseToForce(records.at(frame_idx).impactVector); 
 }
 
 //##############################################################################

@@ -65,7 +65,7 @@ void ModalViewer::
 DrawMesh()
 {
     bool isDrawModes = true;
-    if (_drawModes < 0 || _modeValues.size() == 0) 
+    if (_drawModes < 0 || _vertexValues.size() == 0) 
         isDrawModes = false;
 
     // draw rigid sound object mesh
@@ -135,9 +135,9 @@ DrawMesh()
             const Point3<REAL> &z = vertices.at(triangle.z); 
             if (isDrawModes)
             {
-                const REAL xValue = _modeValues(triangle.x);
-                const REAL yValue = _modeValues(triangle.y);
-                const REAL zValue = _modeValues(triangle.z);
+                const REAL xValue = _vertexValues(triangle.x);
+                const REAL yValue = _vertexValues(triangle.y);
+                const REAL zValue = _vertexValues(triangle.z);
                 glColor3f(xValue, 0, 0);
                 glVertex3f(x.x, x.y, x.z); 
                 glColor3f(yValue, 0, 0);
@@ -161,35 +161,47 @@ DrawMesh()
 void ModalViewer::
 DrawImpulses()
 {
-    const REAL impulseScaling = 0.01;
+    const REAL impulseScaling = 0.1 * _timeStepSize;
     const int N_frames = _rigidSoundObject->Size(); 
     _currentImpulseFrame = _currentFrame % N_frames; 
     // get impulse from object
-    REAL timestamp; 
-    int vertexID; 
-    Vector3d impulse; 
-    _rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
+    const REAL timeStart = CurrentTime(); 
+    const REAL timeStop  = timeStart + _timeStepSize; 
+    std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
+    _rigidSoundObject->GetForces(timeStart, timeStop, impactRecords); 
+    if (impactRecords.size() > 0) 
+    {
+        const int N_impacts = impactRecords.size(); 
+        for (int imp_idx=0; imp_idx<N_impacts; ++imp_idx)
+        {
+            const auto &record = impactRecords.at(imp_idx); 
+            const int &vertexID = record.appliedVertex; 
+            const Vector3d &impulse = record.impactVector; 
 
-    // draw impulse vector
-    std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
-    const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-    //const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
-    //const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-    glLineWidth(3.0f); 
-    glBegin(GL_LINES); 
-    const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
-    glColor3f(1.0f, 1.0f, 0.0f);
-    Point3<REAL> vertexBegin = vertexEnd - impulse * impulseScaling;
-    glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
-    glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-    glEnd(); 
+            //_rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
 
-    // draw impulse applied vertex
-    glPointSize(10.0); 
-    glBegin(GL_POINTS); 
-    glColor3f(1.0f, 0.0f, 0.0f); 
-    glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-    glEnd(); 
+            // draw impulse vector
+            std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
+            const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
+            //const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+            //const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
+            glLineWidth(3.0f); 
+            glBegin(GL_LINES); 
+            const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
+            glColor3f(1.0f, 1.0f, 0.0f);
+            Point3<REAL> vertexBegin = vertexEnd - impulse * impulseScaling;
+            glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
+            glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+            glEnd(); 
+
+            // draw impulse applied vertex
+            glPointSize(10.0); 
+            glBegin(GL_POINTS); 
+            glColor3f(1.0f, 0.0f, 0.0f); 
+            glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+            glEnd(); 
+        }
+    }
 }
 
 //##############################################################################
@@ -224,11 +236,11 @@ keyPressEvent(QKeyEvent *e)
             DrawOneFrameForward(); }
     else if ((e->key() == Qt::Key_N)){
             _drawModes--; 
-            UpdateModeValues();
+            UpdateVertexValues();
             optionsChanged = true;}
     else if ((e->key() == Qt::Key_M)){
             _drawModes++; 
-            UpdateModeValues();
+            UpdateVertexValues();
             optionsChanged = true;}
 
     // still enable the default qglviewer event handling
@@ -272,12 +284,13 @@ DrawOneFrameBackward()
 //##############################################################################
 //##############################################################################
 void ModalViewer::
-UpdateModeValues()
+UpdateVertexValues()
 {
+    // color vertex using absolute modal values normalized
     if (_drawModes >= 0 && _drawModes < _rigidSoundObject->N_Modes())
     {
         _rigidSoundObject->SetVertexModeValues(_drawModes); 
-        _rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _modeValues); 
+        _rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _vertexValues); 
         PrintFrameInfo(); 
     }
 }
@@ -293,6 +306,8 @@ PrepareImpulses()
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 
     _rigidSoundObject->GetImpulseRange(_impulseRange.start, _impulseRange.stop); 
+    _timeStepSize = _rigidSoundObject->GetRigidsimTimeStepSize();  // set the time step size always the same as rigidsim
+
     std::cout << "Impulses Read:\n"
               << " Number of impulses: " << _rigidSoundObject->Size() << "\n"
               << " Time range of impulses: [" << _impulseRange.start << ", " << _impulseRange.stop << "]\n"
@@ -349,6 +364,7 @@ PrintFrameInfo()
     //_message += QString::fromStdString(frameInfo); 
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
-    _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame); 
-    _message += "Current Mode Frame: " + QString::number(_drawModes); 
+    _message += "Current Time: " + QString::number(CurrentTime()) + "; "; 
+    _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame) + "; ";
+    _message += "Current Mode Frame: " + QString::number(_drawModes) + "; "; 
 }

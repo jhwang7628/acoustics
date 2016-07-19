@@ -61,6 +61,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${TRANSFER_SRC}                   
         ${WAVELET_TRANSFER_SRC} 
         ${MATH_SRC} 
+        ${RIGID_PARSER_SRC}
         )
 
     # target_include_directories(modalviewer

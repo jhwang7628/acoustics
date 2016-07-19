@@ -111,6 +111,7 @@ if (BUILD_UNIT_TESTING)
         ${MATH_SRC} 
         ${MODAL_MATERIAL_SRC}
         ${GENERIC_SRC}
+        ${RIGID_PARSER_SRC}
         ) 
 
     add_executable(unit_testing_Eigen

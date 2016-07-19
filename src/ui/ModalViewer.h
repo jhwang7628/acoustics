@@ -26,13 +26,15 @@ class ModalViewer : public QGLViewer
         int                 _drawModes; 
         int                 _currentFrame; 
         int                 _currentImpulseFrame; 
+        REAL                _timeStepSize; 
+        REAL                _startTime; 
         QString             _message; 
-        Eigen::VectorXd     _modeValues; 
+        Eigen::VectorXd     _vertexValues; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawImpulses();
-        void UpdateModeValues(); 
+        void UpdateVertexValues(); 
 
     protected: 
         virtual void draw(); 
@@ -47,9 +49,11 @@ class ModalViewer : public QGLViewer
     public: 
 
         ModalViewer(RigidSoundObjectPtr rigidSoundObject)
-            : _rigidSoundObject(rigidSoundObject), _currentFrame(0), _currentImpulseFrame(0)
+            : _rigidSoundObject(rigidSoundObject), _currentFrame(0), _currentImpulseFrame(0), 
+              _timeStepSize(0.001), _startTime(0.0)
         {}
 
+        inline REAL CurrentTime(){return _startTime + _currentFrame * _timeStepSize;} 
         inline void SetRigidSoundObject(RigidSoundObjectPtr &rigidSoundObject){_rigidSoundObject = rigidSoundObject;} 
         void PrepareImpulses(); 
         void PrepareModes(); 

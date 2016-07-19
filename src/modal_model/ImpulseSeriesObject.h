@@ -18,6 +18,9 @@ class ImpulseSeriesObject
     public: 
         typedef std::shared_ptr<TriangleMesh<REAL> > TriangleMeshPtr; 
         typedef std::shared_ptr<RigidsimConfigData> RigidsimConfigDataPtr; 
+        // impactVector could have been impulse or force. force will be computed by
+        // member function
+        struct ImpactRecord{Vector3d impactVector; REAL timestamp; int appliedVertex;}; 
 
     protected: 
         // object that owns this impulse series
@@ -38,17 +41,23 @@ class ImpulseSeriesObject
         ImpulseSeriesObject(); 
         ImpulseSeriesObject(const TriangleMeshPtr &meshPtr); 
 
+        inline Vector3d ConvertImpulseToForce(const Vector3d &impulse){return impulse / _rigidsimConfigData->simulation_step_size; }
         inline int Size(){return _lengthImpulses;}
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
         inline bool Initialized(){return _objectMesh!=nullptr && _lengthImpulses!=0;}
         inline RigidsimConfigDataPtr GetRigidsimConfigData(){return _rigidsimConfigData;}
         inline void SetRigidsimConfigData(RigidsimConfigDataPtr configData){_rigidsimConfigData = configData;}
+        inline REAL GetRigidsimTimeStepSize(){return _rigidsimConfigData->simulation_step_size;}
         void Initialize(); 
         // Add impulse for this object. The vertex index should be for surface
         // triangle mesh (not volumetric tetrahedron). 
         void AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse); 
+        // Get single impulse frame by index
         void GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse); 
-        void GetImpulse(const REAL &timeStart, const REAL &timeStop, Vector3d &impulse); 
+        // Get all impulses that have timestamps within [timeStart, timeStop]
+        void GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
+        // Get all forces (scaled impulses) that have timestamps [timeStart, timeStop]
+        void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetImpulseRange(REAL &firstImpulseTime, REAL &lastImpulseTime);
 };
 
