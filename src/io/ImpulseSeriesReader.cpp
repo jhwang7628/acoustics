@@ -43,7 +43,7 @@ LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects)
     int count = 0; 
     std::map<int, int> objectIDMap;  // key: object id from file. value: relative position within first timestamp.
     
-    double timestamp, firstTimestamp;
+    double timestamp=-1.0, firstTimestamp=-1.0;
     int objectID, vertexID; 
     Vector3d impulse; 
     char impulseType, endLine; 
@@ -115,7 +115,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
     int count = 0; 
     std::map<int, int> objectIDMap;  // key: object id from file. value: relative position within first timestamp.
     
-    double timestamp, firstTimestamp;
+    double timestamp=-1, firstTimestamp=-1;
     int objectID, vertexID; 
     Vector3d impulse; 
     char impulseType, endLine; 

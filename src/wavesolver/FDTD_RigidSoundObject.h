@@ -19,6 +19,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         Eigen::VectorXd _activeModeValues; 
         ModeAttribute   _activeModeAttributes; 
 
+        // modal displacement
+        Eigen::VectorXd _qOld; 
+        Eigen::VectorXd _qNew; 
+
     public: 
         // build object
         FDTD_RigidSoundObject()
@@ -47,6 +51,9 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void SetVertexModeValues(const int &modeIndex); 
         void GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
         void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
+        void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace); 
+        void InitializeModeVectors(){_qOld.setZero(N_Modes()); _qNew.setZero(N_Modes());}
+        void AdvanceModalODESolvers(const int &N_steps);
 };
 
 #endif

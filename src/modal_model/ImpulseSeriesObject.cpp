@@ -73,6 +73,7 @@ GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord
     if (timeStart > timeStop || timeStart > _lastImpulseTime || timeStop < _firstImpulseTime){
         return;}
 
+    records.clear(); 
     for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
     {
         const REAL &timestamp = _impulseTimestamps.at(frame_idx); 

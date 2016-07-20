@@ -21,9 +21,16 @@ ReadFromGeoFile(const std::string &geoFile)
     for (int idx=0; idx<N_vertices; ++idx) 
     {
         inFile >> tetIndex >> surfIndex >> nx >> ny >> nz >> area; 
+        // push the (tet, surf) into _indexMap
         if (_indexMap.find(tetIndex) == _indexMap.end())
             _indexMap[tetIndex] = surfIndex; 
         else 
             throw std::runtime_error("**ERROR** Two identical tet mesh index found in the geofile: "+geoFile); 
+
+        // push the (surf, tet) into _indexMap
+        if (_inverseIndexMap.find(surfIndex) == _inverseIndexMap.end())
+            _inverseIndexMap[surfIndex] = tetIndex; 
+        else 
+            throw std::runtime_error("**ERROR** Two identical surface mesh index found in the geofile: "+geoFile); 
     }
 }

@@ -231,14 +231,16 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
             DrawOneFrameForward(); }
-    else if ((e->key() == Qt::Key_N)){
-            _drawModes--; 
-            UpdateVertexValues();
-            optionsChanged = true;}
-    else if ((e->key() == Qt::Key_M)){
-            _drawModes++; 
-            UpdateVertexValues();
-            optionsChanged = true;}
+    else if ((e->key() == Qt::Key_M) && (modifiers == Qt::ShiftModifier)){
+        _drawModes--; 
+        UpdateVertexValues();
+        optionsChanged = true;}
+    else if ((e->key() == Qt::Key_M) && (modifiers == Qt::NoButton)){
+        _drawModes++; 
+        UpdateVertexValues();
+        optionsChanged = true;}
+    else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)){
+        _rigidSoundObject->AdvanceModalODESolvers(1);}
 
     // still enable the default qglviewer event handling
     QGLViewer::keyPressEvent(e);
@@ -262,9 +264,13 @@ helpString() const
 void ModalViewer::
 DrawOneFrameForward()
 {
+    // step the frames
     _currentFrame ++; 
     updateGL();
     PrintFrameInfo(); 
+
+    // step the ODE systems
+
 }
 
 //##############################################################################
@@ -297,7 +303,7 @@ UpdateVertexValues()
 void ModalViewer::
 PrepareImpulses()
 {
-    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"); 
     const std::string rigidsimConfigFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg");
     ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
@@ -325,6 +331,7 @@ PrepareModes()
 
     _ODEStepSize = _timeStepSize / 20.0; 
     _rigidSoundObject->ModalAnalysisObject::Initialize(_ODEStepSize, modeFile, materialPtr); 
+    _rigidSoundObject->InitializeModeVectors(); 
 }
 
 //##############################################################################

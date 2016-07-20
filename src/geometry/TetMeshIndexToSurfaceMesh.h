@@ -29,7 +29,8 @@
 class TetMeshIndexToSurfaceMesh
 {
     private: 
-        std::map<int, int> _indexMap;
+        std::map<int, int> _indexMap; // key: tet index; value: surface index
+        std::map<int, int> _inverseIndexMap; // key: surface; value: tet index
 
     public: 
         TetMeshIndexToSurfaceMesh(){}
@@ -37,6 +38,7 @@ class TetMeshIndexToSurfaceMesh
         inline bool KeyExists(const int &tetIndex){return (_indexMap.find(tetIndex)!=_indexMap.end() ? true : false);}
         inline int N_surfaceVertices(){return _indexMap.size();}
         inline int GetSurfaceIndex(const int &tetIndex){return _indexMap.at(tetIndex);} 
+        inline int GetTetIndex(const int &surfaceIndex){return _inverseIndexMap.at(surfaceIndex);} 
         void ReadFromGeoFile(const std::string &geoFile); 
 };
 

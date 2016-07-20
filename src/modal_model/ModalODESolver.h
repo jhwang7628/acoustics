@@ -24,12 +24,13 @@ class ModalODESolver
         ModalMaterialPtr _material; 
         REAL _omegaSquared; // as in eq. 8
         REAL _omega; // as in eq. 8
-        REAL _qNew; // stores q^(k-1) in eq. 19
-        REAL _qOld; // stores q^(k-2) in eq. 20
+        //REAL _qNew; // stores q^(k-1) in eq. 19
+        //REAL _qOld; // stores q^(k-2) in eq. 20
         REAL _timeStepSize; // h in eq. 19
         REAL _epsilon; // stroes epsilon_i = exp(-xi_i omega_i h) in eq. 19
         REAL _theta; // stroes theta_i = w_di h in eq. 19
         REAL _gamma; // stores gamma_i = arcsin(xi_i) in eq. 19
+        REAL _time; 
 
         // following are cached floats to speed things up
         REAL _2_epsilon_cosTheta;  // coeff in first term in eq. 19.
@@ -40,14 +41,15 @@ class ModalODESolver
 
     public:
         ModalODESolver()
-            : _qNew(0.0), _qOld(0.0), _initialized(false)
+            : _time(0.0), _initialized(false)
         {}
 
         inline ModalMaterialPtr GetModalMaterial(){return _material;}
+        inline REAL GetODECurrentTime(){return _time;}
         inline void SetModalMaterial(ModalMaterialPtr &material){_material = material;} 
         inline void SetModalFrequency(REAL &omegaSquared){_omegaSquared = omegaSquared; _omega = sqrt(omegaSquared);}
         void Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &timeStepSize); 
-        void StepSystem(const REAL &Q); // computes q^(k) from q^(k-1) and q^(k-2) and Q_i
+        void StepSystem(REAL &qOld, REAL &qNew, const REAL &Q); // inplace computes q^(k) from q^(k-1) and q^(k-2) and Q_i
 };
 
 #endif

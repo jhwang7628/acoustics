@@ -13,6 +13,9 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
     _timeStepSize = timeStepSize; 
 
     const REAL xi = material->xi(_omega); 
+    if (xi > 1 || xi < 0) 
+        throw std::runtime_error("**ERROR** xi is out of range [0,1]. check material parameters");
+
     const REAL omega_di = material->omega_di(_omega); 
     _epsilon = exp(-xi * _omega * timeStepSize); 
     _theta = omega_di * timeStepSize; 
@@ -28,14 +31,22 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
 }
 
 //##############################################################################
+// Advance the state from (k-1) to (k). 
+// Input:
+//  qOld is q^(k-2) for this mode
+//  qNew is q^(k-1) for this mode
+// Output: 
+//  qOld is q^(k-1) for this mode
+//  qNew is q^(k)   for this mode
 //##############################################################################
 void ModalODESolver::
-StepSystem(const REAL &Q)
+StepSystem(REAL &qOld, REAL &qNew, const REAL &Q)
 {
     assert(_initialized); 
-    const REAL q = _2_epsilon_cosTheta * _qNew
-                 - _epsilon_squared    * _qOld
+    const REAL q = _2_epsilon_cosTheta * qNew
+                 - _epsilon_squared    * qOld
                  + _coeff_Q_i          * Q; 
-    _qOld = _qNew; 
-    _qNew = q; 
+    qOld = qNew; 
+    qNew = q; 
+    _time += _timeStepSize; 
 }
