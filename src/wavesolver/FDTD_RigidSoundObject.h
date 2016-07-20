@@ -1,5 +1,6 @@
 #ifndef FDTD_RIGID_SOUND_OBJECT_H 
 #define FDTD_RIGID_SOUND_OBJECT_H 
+#include <iostream>
 #include <Eigen/Dense>
 #include <modal_model/ModalAnalysisObject.h> 
 #include <modal_model/ImpulseSeriesObject.h> 
@@ -53,9 +54,11 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
         void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
         void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace); 
+        void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
         void GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement);  // only transform the mode quried
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         void AdvanceModalODESolvers(const int &N_steps);
+        void AdvanceModalODESolvers(const int &N_steps, std::ofstream &os);
 };
 
 #endif

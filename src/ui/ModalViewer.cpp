@@ -5,9 +5,12 @@
 #include <QCursor>
 #include <math.h>
 #include <stdlib.h> // RAND_MAX
+#include <macros.h>
 #include <geometry/Point3.hpp>
 #include <ui/ModalViewer.h>
+#include <utils/IO/IO.h>
 #include <utils/STL_Wrapper.h>
+#include <utils/GL_Wrapper.h>
 #include <parser/ImpulseResponseParser.h>
 
 using namespace qglviewer;
@@ -22,8 +25,9 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
     setKeyDescription(Qt::Key_BracketLeft, "Previous impulse frame (when no animation)"); 
     setKeyDescription(Qt::Key_BracketRight, "Next impulse frame (when no animation)"); 
-    setKeyDescription(Qt::Key_N, "Previous mode"); 
     setKeyDescription(Qt::Key_M, "Next mode"); 
+    setKeyDescription(Qt::ShiftModifier+Qt::Key_M, "Previous mode"); 
+    setKeyDescription(Qt::Key_N, "Step Modal ODE"); 
 }
 
 //##############################################################################
@@ -62,6 +66,43 @@ draw()
 //##############################################################################
 //##############################################################################
 void ModalViewer::
+drawWithNames()
+{
+    // draw rigid sound object mesh
+    std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
+    const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
+    const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+    const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
+    const int N_vertices = vertices.size(); 
+    const int N_triangles = triangles.size(); 
+    //const int N_normals = normals.size(); 
+    const REAL offsetEpsilon = 0.0;
+    const REAL ballSize = 3E-4;
+
+    // draw points
+    glPointSize(3.0); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        // offset the points to make it more visible
+        const Point3<REAL> &vertex = vertices.at(v_idx); 
+        const Vector3<REAL> &normal = normals.at(v_idx); 
+        Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
+        glColor3f(0.6f, 0.6f, 0.6f); 
+        glPushMatrix();
+        glTranslatef(vertex.x, vertex.y, vertex.z); 
+        glPushName(v_idx);
+        GL_Wrapper::DrawSphere(ballSize, 3, 3);
+        glPopName();
+        glPopMatrix();
+        //glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
+    }
+    std::cout << std::endl;
+
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
 DrawMesh()
 {
     bool isDrawModes = true;
@@ -73,24 +114,28 @@ DrawMesh()
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
     const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
     const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-    //const int N_vertices = vertices.size(); 
+    const int N_vertices = vertices.size(); 
     const int N_triangles = triangles.size(); 
     //const int N_normals = normals.size(); 
     const REAL offsetEpsilon = 1E-5;
+    const REAL ballSize = 3E-4;
 
-    //// draw points
-    //glPointSize(3.0); 
-    //glBegin(GL_POINTS);
-    //glColor3f(0.6f, 0.6f, 0.6f); 
-    //for (int v_idx=0; v_idx<N_vertices; ++v_idx)
-    //{
-    //    // offset the points to make it more visible
-    //    const Point3<REAL> &vertex = vertices.at(v_idx); 
-    //    const Vector3<REAL> &normal = normals.at(v_idx); 
-    //    Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
-    //    glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
-    //}
-    //glEnd();
+    // draw points only if selected
+    if (selectedName() != -1)
+    {
+        const int v_idx = selectedName(); 
+        // offset the points to make it more visible
+        const Point3<REAL> &vertex = vertices.at(v_idx); 
+        const Vector3<REAL> &normal = normals.at(v_idx); 
+        Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
+        glPointSize(10.0);
+        glColor3f(0.0f, 1.0f, 0.0f); 
+        glPushMatrix(); 
+        glTranslatef(vertex.x, vertex.y, vertex.z); 
+        GL_Wrapper::DrawSphere(ballSize, 3, 3);
+        glPopMatrix(); 
+        //glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
+    }
 
     // draw edges of the triangles
     if (_wireframe == 0 || _wireframe == 1)
@@ -242,6 +287,9 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)){
         _rigidSoundObject->AdvanceModalODESolvers(1);
         UpdateVertexValues();}
+    else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)){
+        StepODEAndStoreResults(); 
+        }
 
     // still enable the default qglviewer event handling
     QGLViewer::keyPressEvent(e);
@@ -258,6 +306,14 @@ helpString() const
     QString text("<h2>Modal ModalViewer</h2>");
     text += "Used for debugging FDTD_RigidSoundObject and associated classes";
     return text;
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+postSelection(const QPoint &point)
+{
+    std::cout << "selected vertex id = " << selectedName() << std::endl;
 }
 
 //##############################################################################
@@ -330,7 +386,8 @@ PrepareModes()
     parser.GetModalMaterials(materials); 
     auto materialPtr = materials.at(0);
 
-    _ODEStepSize = _timeStepSize / 20.0; 
+    _ODEStepSize = _timeStepSize / 100.0; 
+    std::cout << "ODEStepSize = " << _ODEStepSize << std::endl;
     _rigidSoundObject->ModalAnalysisObject::Initialize(_ODEStepSize, modeFile, materialPtr); 
     _rigidSoundObject->InitializeModeVectors(); 
 }
@@ -347,10 +404,33 @@ RestoreDefaultDrawOptions()
 }
 
 //##############################################################################
+// Assume starts from time = 0
 //##############################################################################
 void ModalViewer::
-StepODEAndStoreResults(const REAL &timeStart, const REAL &timeStop)
+StepODEAndStoreResults()
 {
+    assert(EQUAL_FLOATS(_rigidSoundObject->GetODESolverTime(), 0.0)); 
+    REAL timeStop; 
+    std::string outFile; 
+    std::cout << "\nEnter time to stop (s): ";
+    std::cin >> timeStop; 
+    std::cout << "\nEnter file path to store: ";
+    std::cin >> outFile; 
+    const int N_steps = (timeStop - 0.0) / _ODEStepSize; 
+
+    if (IO::ExistFile(outFile))
+    {
+        char yn = 'N'; 
+        std::cout << "File exists. Overwrite? [y/N] "; 
+        std::cin >> yn; 
+        if (yn == 'N')
+            return; 
+    } 
+
+    std::ofstream of(outFile.c_str()); 
+    std::cout << "\n\n" << N_steps << " steps are needed to advance ODE solvers. Store results to " << outFile << std::endl;
+    _rigidSoundObject->AdvanceModalODESolvers(N_steps, of); 
+    of.close(); 
 }
 
 //##############################################################################

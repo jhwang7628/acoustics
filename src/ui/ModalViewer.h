@@ -39,10 +39,12 @@ class ModalViewer : public QGLViewer
 
     protected: 
         virtual void draw(); 
+        virtual void drawWithNames(); 
         virtual void init();
         virtual void animate();
         virtual void keyPressEvent(QKeyEvent *e);
         virtual QString helpString() const;
+        virtual void postSelection(const QPoint &point); 
 
         virtual void DrawOneFrameForward(); 
         virtual void DrawOneFrameBackward(); 
@@ -59,7 +61,7 @@ class ModalViewer : public QGLViewer
         void PrepareImpulses(); 
         void PrepareModes(); 
         void RestoreDefaultDrawOptions();
-        void StepODEAndStoreResults(const REAL &timeStart, const REAL &timeStop); 
+        void StepODEAndStoreResults(); 
         void PrintDrawOptions(); 
         void PrintFrameInfo(); 
 };

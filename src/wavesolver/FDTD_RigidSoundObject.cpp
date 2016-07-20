@@ -69,18 +69,25 @@ GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSp
 }
 
 //##############################################################################
-// The current implementation might be slow, but this should be used only for
-// debugging.
 //##############################################################################
-void FDTD_RigidSoundObject:: 
-GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement)
+void FDTD_RigidSoundObject::
+GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement)
 {
     // first get the entire vector defined on volumetric mesh
     Eigen::VectorXd tetDisplacement; 
-    Eigen::VectorXd qMode(_qNew.size()); 
-    qMode.setZero(); 
-    qMode(mode) = _qNew(mode); 
-    GetVolumeVertexDisplacement(qMode, tetDisplacement); 
+    if (mode >= 0)
+    {
+        // this implementation copies the vector, should only use when
+        // debugging
+        Eigen::VectorXd qMode(_qNew.size()); 
+        qMode.setZero(); 
+        qMode(mode) = _qNew(mode); 
+        GetVolumeVertexDisplacement(qMode, tetDisplacement); 
+    }
+    else 
+    {
+        GetVolumeVertexDisplacement(_qNew, tetDisplacement); 
+    }
 
     // reorder the entries such that we return the mode values on the surface
     // mesh indices 
@@ -112,16 +119,32 @@ GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement)
 }
 
 //##############################################################################
+//##############################################################################
+void FDTD_RigidSoundObject:: 
+GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement)
+{
+    GetModalDisplacementAux(mode, displacement);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidSoundObject:: 
+GetModalDisplacement(Eigen::VectorXd &displacement)
+{
+    GetModalDisplacementAux(-1, displacement);
+}
+
+//##############################################################################
 // Advance the modal ODEs for N_steps
 //##############################################################################
 void FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps)
 {
-    // retrieve impact records (forces) within the time range 
-    std::vector<ImpactRecord> impactRecords; 
-    Eigen::VectorXd forceTimestep, forceBuffer; 
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
     {
+        // retrieve impact records (forces) within the time range 
+        std::vector<ImpactRecord> impactRecords; 
+        Eigen::VectorXd forceTimestep, forceBuffer; 
         const REAL tsTimeStart = _time; 
         const REAL tsTimeStop  = _time + _ODEStepSize; 
         GetForces(tsTimeStart, tsTimeStop, impactRecords); 
@@ -138,5 +161,24 @@ AdvanceModalODESolvers(const int &N_steps)
             _modalODESolvers.at(mode_idx)->StepSystem(_qOld(mode_idx), _qNew(mode_idx), forceTimestep(mode_idx)); 
         _time += _ODEStepSize;
         std::cout << "time = " << _time << std::endl; 
+    }
+}
+
+//##############################################################################
+// Advance the modal ODEs for N_steps with logging file
+//##############################################################################
+void FDTD_RigidSoundObject::
+AdvanceModalODESolvers(const int &N_steps, std::ofstream &os)
+{
+    const int N_rows = N_steps; 
+    const int N_cols = _mesh->num_vertices(); 
+    os.write((char*)&N_rows, sizeof(int)); 
+    os.write((char*)&N_cols, sizeof(int)); 
+    for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
+    {
+        Eigen::VectorXd displacements; 
+        AdvanceModalODESolvers(1);
+        GetModalDisplacement(0, displacements); 
+        os.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
     }
 }
