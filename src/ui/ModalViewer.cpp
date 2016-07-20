@@ -138,11 +138,11 @@ DrawMesh()
                 const REAL xValue = _vertexValues(triangle.x);
                 const REAL yValue = _vertexValues(triangle.y);
                 const REAL zValue = _vertexValues(triangle.z);
-                glColor3f(xValue, 0, 0);
+                glColor3f(xValue, 0, -xValue);
                 glVertex3f(x.x, x.y, x.z); 
-                glColor3f(yValue, 0, 0);
+                glColor3f(yValue, 0, -xValue);
                 glVertex3f(y.x, y.y, y.z); 
-                glColor3f(zValue, 0, 0);
+                glColor3f(zValue, 0, -xValue);
                 glVertex3f(z.x, z.y, z.z); 
             }
             else
@@ -240,7 +240,8 @@ keyPressEvent(QKeyEvent *e)
         UpdateVertexValues();
         optionsChanged = true;}
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)){
-        _rigidSoundObject->AdvanceModalODESolvers(1);}
+        _rigidSoundObject->AdvanceModalODESolvers(1);
+        UpdateVertexValues();}
 
     // still enable the default qglviewer event handling
     QGLViewer::keyPressEvent(e);
@@ -264,13 +265,9 @@ helpString() const
 void ModalViewer::
 DrawOneFrameForward()
 {
-    // step the frames
     _currentFrame ++; 
     updateGL();
     PrintFrameInfo(); 
-
-    // step the ODE systems
-
 }
 
 //##############################################################################
@@ -292,8 +289,12 @@ UpdateVertexValues()
     // color vertex using absolute modal values normalized
     if (_drawModes >= 0 && _drawModes < _rigidSoundObject->N_Modes())
     {
-        _rigidSoundObject->SetVertexModeValues(_drawModes); 
-        _rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _vertexValues); 
+        // draw the modal displacement excited by impulse
+        _rigidSoundObject->GetModalDisplacement(_drawModes, _vertexValues);
+
+        //// draw the modes directly
+        //_rigidSoundObject->SetVertexModeValues(_drawModes); 
+        //_rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _vertexValues); 
         PrintFrameInfo(); 
     }
 }
@@ -340,9 +341,16 @@ void ModalViewer::
 RestoreDefaultDrawOptions()
 {
     _drawImpulse = false; 
-    _wireframe = 0;
+    _wireframe = 2;
     _displayMessage = true;
-    _drawModes = -1; 
+    _drawModes = 0; 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+StepODEAndStoreResults(const REAL &timeStart, const REAL &timeStop)
+{
 }
 
 //##############################################################################
@@ -371,5 +379,6 @@ PrintFrameInfo()
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
     _message += "Current Time: " + QString::number(CurrentTime()) + "; "; 
     _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame) + "; ";
-    _message += "Current Mode Frame: " + QString::number(_drawModes) + "; "; 
+    _message += "Current Mode Frame: " + QString::number(_drawModes) + "(" + QString::number(_rigidSoundObject->GetModeFrequency(_drawModes)) + " Hz); "; 
+    _message += "Current Modal ODE time: " + QString::number(_rigidSoundObject->GetODESolverTime()) + "; "; 
 }

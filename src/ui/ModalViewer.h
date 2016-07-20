@@ -59,6 +59,7 @@ class ModalViewer : public QGLViewer
         void PrepareImpulses(); 
         void PrepareModes(); 
         void RestoreDefaultDrawOptions();
+        void StepODEAndStoreResults(const REAL &timeStart, const REAL &timeStop); 
         void PrintDrawOptions(); 
         void PrintFrameInfo(); 
 };

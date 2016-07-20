@@ -76,6 +76,7 @@ GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
 void ModalAnalysisObject::
 Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr)
 {
+    _material = materialPtr; 
     _ODEStepSize = ODEStepSize; 
     SetModeFile(modeFile); 
     ReadModeFromFile(); 

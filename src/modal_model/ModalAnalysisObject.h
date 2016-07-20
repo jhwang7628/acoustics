@@ -25,6 +25,7 @@ class ModalAnalysisObject
     protected: 
         Eigen::VectorXd _eigenValues; // eigenvalues produced by modal analysis (omega squared * density)
         Eigen::MatrixXd _eigenVectors; 
+        std::shared_ptr<ModalMaterial> _material;
         std::vector<ModalODESolverPtr> _modalODESolvers; 
         REAL _ODEStepSize; 
         REAL _time; 
@@ -43,6 +44,7 @@ class ModalAnalysisObject
         inline int N_vertices() const {return N_DOF()/3;}
         inline REAL GetODESolverTime(){return _time;}
         inline void SetModeFile(const std::string &modeFile){_modeFile = modeFile; _modeFileSet = true;}
+        inline REAL GetModeFrequency(const int modeIndex){return (modeIndex>=0 && modeIndex<N_Modes()) ? sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI) : -1;}
         void ReadModeFromFile(); 
         // Get U^T f, where U is the eigenvector (modal) matrix. Input vertexID should be in zero-based, tet mesh id. 
         //void GetForceInModalSpace(const int &vertexID, const Eigen::Vector3d &impulse, Eigen::VectorXd &forceInModalSpace);
