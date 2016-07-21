@@ -65,6 +65,7 @@ class ModalViewer : public QGLViewer
         void StepODEAndStoreResults(); 
         void PrintDrawOptions(); 
         void PrintFrameInfo(); 
+        void PrintAllFrequencies(std::ostream &os); 
 };
 
 #endif 

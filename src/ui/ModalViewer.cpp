@@ -28,6 +28,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_M, "Next mode"); 
     setKeyDescription(Qt::ShiftModifier+Qt::Key_M, "Previous mode"); 
     setKeyDescription(Qt::Key_N, "Step Modal ODE"); 
+    setKeyDescription(Qt::Key_F, "Print all modal frequencies"); 
 }
 
 //##############################################################################
@@ -252,6 +253,7 @@ keyPressEvent(QKeyEvent *e)
 {
     const Qt::KeyboardModifiers modifiers = e->modifiers(); 
     bool optionsChanged = false;
+    bool handled = true; 
     if ((e->key() == Qt::Key_I) && (modifiers == Qt::NoButton)) {
         _drawImpulse = !_drawImpulse; 
         optionsChanged = true;}
@@ -276,11 +278,17 @@ keyPressEvent(QKeyEvent *e)
         _rigidSoundObject->AdvanceModalODESolvers(1);
         UpdateVertexValues();}
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)){
-        StepODEAndStoreResults(); 
-        }
+        StepODEAndStoreResults();}
+    else if ((e->key() == Qt::Key_F) && (modifiers == Qt::NoButton)){
+        PrintAllFrequencies(std::cout);}
+    else {
+        handled = false;}
 
-    // still enable the default qglviewer event handling
-    QGLViewer::keyPressEvent(e);
+
+    // still enable the default qglviewer event handling but this function has
+    // priority
+    if (!handled)
+        QGLViewer::keyPressEvent(e);
     if (optionsChanged) 
         PrintDrawOptions();
     updateGL();
@@ -453,4 +461,14 @@ PrintFrameInfo()
     _message += "Current Impulse Frame: " + QString::number(_currentImpulseFrame) + "; ";
     _message += "Current Mode Frame: " + QString::number(_drawModes) + "(" + QString::number(_rigidSoundObject->GetModeFrequency(_drawModes)) + " Hz); "; 
     _message += "Current Modal ODE time: " + QString::number(_rigidSoundObject->GetODESolverTime()) + "; "; 
+}
+
+//##############################################################################
+//##############################################################################
+void ModalViewer::
+PrintAllFrequencies(std::ostream &os)
+{
+    const int N_modes = _rigidSoundObject->N_Modes();
+    for (int mode_idx=0; mode_idx<N_modes; ++mode_idx)
+        os << "Mode " << mode_idx << ": " << _rigidSoundObject->GetModeFrequency(mode_idx) << " Hz" << std::endl;
 }

@@ -202,8 +202,12 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
         of_q.write((char*)_qNew.data(), sizeof(double)*_qNew.size()); 
         timer[2].Pause(); 
     }
-    std::cout << "Timing: \n"
+    std::cout << "Total Timing: \n"
               << " Advance ODEs      : " << timer[0].Duration() << " sec\n"
               << " q->u              : " << timer[1].Duration() << " sec\n"
               << " Write data to disk: " << timer[2].Duration() << " sec\n"; 
+    std::cout << "Average Timing: \n"
+              << " Advance ODEs      : " << timer[0].Duration() / ((REAL)N_steps/1000.) << " ms\n"
+              << " q->u              : " << timer[1].Duration() / ((REAL)N_steps/1000.) << " ms\n"
+              << " Write data to disk: " << timer[2].Duration() / ((REAL)N_steps/1000.) << " ms\n"; 
 }
