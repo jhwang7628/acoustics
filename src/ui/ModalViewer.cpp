@@ -74,22 +74,14 @@ drawWithNames()
     // draw rigid sound object mesh
     std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-    const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
-    const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
     const int N_vertices = vertices.size(); 
-    const int N_triangles = triangles.size(); 
-    //const int N_normals = normals.size(); 
-    const REAL offsetEpsilon = 0.0;
     const REAL ballSize = 3E-4;
 
     // draw points
     glPointSize(3.0); 
     for (int v_idx=0; v_idx<N_vertices; ++v_idx)
     {
-        // offset the points to make it more visible
         const Point3<REAL> &vertex = vertices.at(v_idx); 
-        const Vector3<REAL> &normal = normals.at(v_idx); 
-        Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
         glColor3f(0.6f, 0.6f, 0.6f); 
         glPushMatrix();
         glTranslatef(vertex.x, vertex.y, vertex.z); 
@@ -97,10 +89,7 @@ drawWithNames()
         GL_Wrapper::DrawSphere(ballSize, 3, 3);
         glPopName();
         glPopMatrix();
-        //glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
     }
-    std::cout << std::endl;
-
 }
 
 //##############################################################################
@@ -117,9 +106,7 @@ DrawMesh()
     const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
     const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
     const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-    const int N_vertices = vertices.size(); 
     const int N_triangles = triangles.size(); 
-    //const int N_normals = normals.size(); 
     const REAL offsetEpsilon = 1E-5;
     const REAL ballSize = 3E-4;
 
@@ -129,15 +116,13 @@ DrawMesh()
         const int v_idx = selectedName(); 
         // offset the points to make it more visible
         const Point3<REAL> &vertex = vertices.at(v_idx); 
-        const Vector3<REAL> &normal = normals.at(v_idx); 
-        Point3<REAL> offsetVertex = vertex + normal.normalized() * offsetEpsilon;
+        //const Vector3<REAL> &normal = normals.at(v_idx); 
         glPointSize(10.0);
         glColor3f(0.0f, 1.0f, 0.0f); 
         glPushMatrix(); 
         glTranslatef(vertex.x, vertex.y, vertex.z); 
         GL_Wrapper::DrawSphere(ballSize, 3, 3);
         glPopMatrix(); 
-        //glVertex3f(offsetVertex.x, offsetVertex.y, offsetVertex.z);
     }
 
     // draw edges of the triangles
@@ -433,7 +418,7 @@ StepODEAndStoreResults()
     } 
 
     std::ofstream of1(outFile_displacement.c_str()); 
-    std::ofstream of2(outFile_displacement.c_str()); 
+    std::ofstream of2(outFile_q.c_str()); 
     std::cout << "\n\n" << N_steps << " steps are needed to advance ODE solvers. Store vertex displacements to " << outFile_displacement << "; store q to " << outFile_q << std::endl;
     _rigidSoundObject->AdvanceModalODESolvers(N_steps, of1, of2); 
     of1.close(); 
