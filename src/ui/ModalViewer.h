@@ -30,6 +30,7 @@ class ModalViewer : public QGLViewer
         REAL                _ODEStepSize; 
         REAL                _startTime; 
         QString             _message; 
+        QString             _messageSelection; 
         Eigen::VectorXd     _vertexValues; 
 
         void SetAllKeyDescriptions(); 

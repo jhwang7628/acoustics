@@ -60,7 +60,10 @@ draw()
         DrawImpulses(); 
     glColor3f(0.6f, 0.6f, 0.6f); 
     if (_displayMessage)
+    {
         drawText(10, height()-20, _message); 
+        drawText(10, height()-40, _messageSelection);
+    }
 }
 
 //##############################################################################
@@ -313,7 +316,7 @@ helpString() const
 void ModalViewer::
 postSelection(const QPoint &point)
 {
-    std::cout << "selected vertex id = " << selectedName() << std::endl;
+    _messageSelection = QString("Vertex ID= " + QString::number(selectedName()));
 }
 
 //##############################################################################
@@ -360,7 +363,7 @@ UpdateVertexValues()
 void ModalViewer::
 PrepareImpulses()
 {
-    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"); 
+    const std::string impulseFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"); 
     const std::string rigidsimConfigFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg");
     ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
@@ -386,7 +389,7 @@ PrepareModes()
     parser.GetModalMaterials(materials); 
     auto materialPtr = materials.at(0);
 
-    _ODEStepSize = _timeStepSize / 100.0; 
+    _ODEStepSize = _timeStepSize / 40.0; 
     std::cout << "ODEStepSize = " << _ODEStepSize << std::endl;
     _rigidSoundObject->ModalAnalysisObject::Initialize(_ODEStepSize, modeFile, materialPtr); 
     _rigidSoundObject->InitializeModeVectors(); 
@@ -411,26 +414,30 @@ StepODEAndStoreResults()
 {
     assert(EQUAL_FLOATS(_rigidSoundObject->GetODESolverTime(), 0.0)); 
     REAL timeStop; 
-    std::string outFile; 
+    std::string outFile_displacement, outFile_q; 
     std::cout << "\nEnter time to stop (s): ";
     std::cin >> timeStop; 
-    std::cout << "\nEnter file path to store: ";
-    std::cin >> outFile; 
+    std::cout << "\nEnter file path to store vertex displacements: ";
+    std::cin >> outFile_displacement; 
+    std::cout << "\nEnter file path to store time-history of q: ";
+    std::cin >> outFile_q; 
     const int N_steps = (timeStop - 0.0) / _ODEStepSize; 
 
-    if (IO::ExistFile(outFile))
+    if (IO::ExistFile(outFile_displacement) || IO::ExistFile(outFile_q))
     {
         char yn = 'N'; 
-        std::cout << "File exists. Overwrite? [y/N] "; 
+        std::cout << "Either vertex displacement or q file exists. Overwrite both? [y/N] "; 
         std::cin >> yn; 
         if (yn == 'N')
             return; 
     } 
 
-    std::ofstream of(outFile.c_str()); 
-    std::cout << "\n\n" << N_steps << " steps are needed to advance ODE solvers. Store results to " << outFile << std::endl;
-    _rigidSoundObject->AdvanceModalODESolvers(N_steps, of); 
-    of.close(); 
+    std::ofstream of1(outFile_displacement.c_str()); 
+    std::ofstream of2(outFile_displacement.c_str()); 
+    std::cout << "\n\n" << N_steps << " steps are needed to advance ODE solvers. Store vertex displacements to " << outFile_displacement << "; store q to " << outFile_q << std::endl;
+    _rigidSoundObject->AdvanceModalODESolvers(N_steps, of1, of2); 
+    of1.close(); 
+    of2.close(); 
 }
 
 //##############################################################################

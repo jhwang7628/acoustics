@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
+#include <utils/SimpleTimer.h>
 
 //##############################################################################
 //##############################################################################
@@ -69,6 +70,7 @@ GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSp
 }
 
 //##############################################################################
+// Get the normal displacement
 //##############################################################################
 void FDTD_RigidSoundObject::
 GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement)
@@ -157,6 +159,9 @@ AdvanceModalODESolvers(const int &N_steps)
             forceTimestep += forceBuffer; 
         }
         // step the system using force computed
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
         for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
             _modalODESolvers.at(mode_idx)->StepSystem(_qOld(mode_idx), _qNew(mode_idx), forceTimestep(mode_idx)); 
         _time += _ODEStepSize;
@@ -168,17 +173,37 @@ AdvanceModalODESolvers(const int &N_steps)
 // Advance the modal ODEs for N_steps with logging file
 //##############################################################################
 void FDTD_RigidSoundObject::
-AdvanceModalODESolvers(const int &N_steps, std::ofstream &os)
+AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q)
 {
-    const int N_rows = N_steps; 
-    const int N_cols = _mesh->num_vertices(); 
-    os.write((char*)&N_rows, sizeof(int)); 
-    os.write((char*)&N_cols, sizeof(int)); 
+    SimpleTimer timer[3]; 
+    {
+        const int N_rows = N_steps; 
+        const int N_cols = _mesh->num_vertices(); 
+        of_displacement.write((char*)&N_rows, sizeof(int)); 
+        of_displacement.write((char*)&N_cols, sizeof(int)); 
+    }
+    {
+        const int N_rows = N_steps; 
+        const int N_cols = N_Modes(); 
+        of_q.write((char*)&N_rows, sizeof(int)); 
+        of_q.write((char*)&N_cols, sizeof(int)); 
+    }
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
     {
         Eigen::VectorXd displacements; 
+        timer[0].Start(); 
         AdvanceModalODESolvers(1);
-        GetModalDisplacement(0, displacements); 
-        os.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
+        timer[0].Pause(); 
+        timer[1].Start(); 
+        GetModalDisplacement(displacements);  // debug FIXME
+        timer[1].Pause(); 
+        timer[2].Start(); 
+        of_displacement.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
+        of_q.write((char*)_qNew.data(), sizeof(double)*_qNew.size()); 
+        timer[2].Pause(); 
     }
+    std::cout << "Timing: \n"
+              << " Advance ODEs      : " << timer[0].Duration() << " sec\n"
+              << " q->u              : " << timer[1].Duration() << " sec\n"
+              << " Write data to disk: " << timer[2].Duration() << " sec\n"; 
 }
