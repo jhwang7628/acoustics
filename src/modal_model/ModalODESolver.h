@@ -48,6 +48,9 @@ class ModalODESolver
         inline REAL GetODECurrentTime(){return _time;}
         inline void SetModalMaterial(ModalMaterialPtr &material){_material = material;} 
         inline void SetModalFrequency(REAL &omegaSquared){_omegaSquared = omegaSquared; _omega = sqrt(omegaSquared);}
+        inline REAL GetCoefficient_qNew(){return _2_epsilon_cosTheta;} 
+        inline REAL GetCoefficient_qOld(){return -_epsilon_squared;} 
+        inline REAL GetCoefficient_Q(){return _coeff_Q_i;} 
         void Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &timeStepSize); 
         void StepSystem(REAL &qOld, REAL &qNew, const REAL &Q); // inplace computes q^(k) from q^(k-1) and q^(k-2) and Q_i
 };

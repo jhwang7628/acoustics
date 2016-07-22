@@ -25,6 +25,11 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         Eigen::VectorXd _qOld; 
         Eigen::VectorXd _qNew; 
 
+        // for vectorized IIR
+        Eigen::VectorXd _coeff_qNew; 
+        Eigen::VectorXd _coeff_qOld; 
+        Eigen::VectorXd _coeff_Q; 
+
         // Timers
         SimpleTimer _timer_mainstep[3];  // advance, q->u, IO
         SimpleTimer _timer_substep_advanceODE[3]; // interpolate force, transform force, step system

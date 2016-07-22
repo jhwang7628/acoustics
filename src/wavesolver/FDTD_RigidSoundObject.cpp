@@ -8,6 +8,19 @@ Initialize() // TODO! should manage all parent class initialization
 {
     assert(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh && FDTD_RigidObject::_mesh); 
     CullNonSurfaceModeShapes(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh, FDTD_RigidObject::_mesh); 
+
+    // Copy the fixed coefficient for each ODE for vectorized IIR
+    const int N_modes = N_Modes();  
+    _coeff_qNew.resize(N_modes); 
+    _coeff_qOld.resize(N_modes); 
+    _coeff_Q.resize(N_modes); 
+    for (int mode_idx=0; mode_idx<N_modes; ++mode_idx) 
+    {
+        ModalODESolverPtr &odeSolverPtr = _modalODESolvers.at(mode_idx); 
+        _coeff_qNew(mode_idx) = odeSolverPtr->GetCoefficient_qNew(); 
+        _coeff_qOld(mode_idx) = odeSolverPtr->GetCoefficient_qOld(); 
+        _coeff_Q(mode_idx) = odeSolverPtr->GetCoefficient_Q(); 
+    }
 }
 
 //##############################################################################
@@ -135,11 +148,9 @@ AdvanceModalODESolvers(const int &N_steps)
 
         // step the system using force computed
         _timer_substep_advanceODE[2].Start(); 
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-        for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
-            _modalODESolvers.at(mode_idx)->StepSystem(_qOld(mode_idx), _qNew(mode_idx), forceTimestep(mode_idx)); 
+        Eigen::VectorXd q = _coeff_qNew.cwiseProduct(_qNew) + _coeff_qOld.cwiseProduct(_qOld) + _coeff_Q.cwiseProduct(forceTimestep); 
+        _qOld = _qNew; 
+        _qNew = q; 
         _time += _ODEStepSize;
         _timer_substep_advanceODE[2].Pause();
         std::cout << "time = " << _time << std::endl; 
