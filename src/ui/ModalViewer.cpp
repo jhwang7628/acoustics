@@ -44,6 +44,7 @@ init()
     SetAllKeyDescriptions();
     PrepareImpulses(); 
     PrepareModes(); 
+    _rigidSoundObject->FDTD_RigidSoundObject::Initialize(); 
     setAnimationPeriod(40); // in milliseconds
 
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
@@ -345,7 +346,6 @@ UpdateVertexValues()
         _rigidSoundObject->GetModalDisplacement(_drawModes, _vertexValues);
 
         //// draw the modes directly
-        //_rigidSoundObject->SetVertexModeValues(_drawModes); 
         //_rigidSoundObject->GetVertexModeValuesNormalized(_drawModes, _vertexValues); 
         PrintFrameInfo(); 
     }

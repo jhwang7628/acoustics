@@ -43,13 +43,19 @@ ReadModeFromFile()
 //}
 
 //##############################################################################
+// This function computes u = U q. Depending on whether culling has been
+// performed, the dimension of the returned u can be 3N_V or N_S. 
 //##############################################################################
 void ModalAnalysisObject::
 GetVolumeVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u)
 {
     if (q.size() != N_Modes()) 
         throw std::runtime_error("**ERROR** Input reduced q has wrong dimension: "+std::to_string(q.size())+"->"+std::to_string(N_Modes())); 
-    u = _eigenVectors * q; 
+
+    if (_idType == VOL_UNCULL)
+        u = _eigenVectors * q; 
+    else 
+        u = _eigenVectorsNormal * q; // used the projected if available. 
 }
 
 //##############################################################################
@@ -95,6 +101,48 @@ InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr)
         _modalODESolvers.at(mode_idx) = std::make_shared<ModalODESolver>(); 
         _modalODESolvers.at(mode_idx)->Initialize(materialPtr, omegaSquared, _ODEStepSize);  
     }
+}
+
+//##############################################################################
+// This function performs two main operations: 
+//  1) remove nonsurface entries and reindex the eigen vectors. 
+//  2) premultiply each vertex with the normal such that the number of rows
+//     for eigenvectors are 3N->N, where N is number of surface vertices
+//
+//  At the end of the function, eigenvectors have number of rows reduced down to N_S
+//  from 3N_V, where N_S is number of surface vertices and N_V is number  of
+//  volume vertices.
+//##############################################################################
+void ModalAnalysisObject::
+CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, std::shared_ptr<TriangleMesh<REAL> > meshPtr)
+{
+    // after modes are read, this function should only be called once
+    if (_idType == SURF_CULLED) 
+        return; 
+
+    const int N_surfaceVertices = idMapPtr->N_surfaceVertices(); 
+    const int N_volumeVertices  = N_vertices(); 
+    Eigen::MatrixXd culledEigenVectors(N_surfaceVertices*3, N_Modes()); 
+    _eigenVectorsNormal.resize(N_surfaceVertices, N_Modes()); 
+    for (int vol_idx=0; vol_idx<N_volumeVertices; ++vol_idx)
+    {
+        if (!idMapPtr->KeyExists(vol_idx)) // skip vol indices that are interior
+            continue; 
+        const int surf_idx = idMapPtr->GetSurfaceIndex(vol_idx);
+        const Vector3d &normal = meshPtr->normals().at(surf_idx); 
+        // copy the block of eigenvectors and project to normal direction
+        culledEigenVectors.row(surf_idx*3 + 0) = _eigenVectors.row(vol_idx*3 + 0); 
+        culledEigenVectors.row(surf_idx*3 + 1) = _eigenVectors.row(vol_idx*3 + 1); 
+        culledEigenVectors.row(surf_idx*3 + 2) = _eigenVectors.row(vol_idx*3 + 2); 
+        _eigenVectorsNormal.row(surf_idx) = _eigenVectors.row(vol_idx*3 + 0) * normal.x
+                                          + _eigenVectors.row(vol_idx*3 + 1) * normal.y
+                                          + _eigenVectors.row(vol_idx*3 + 2) * normal.z;
+    }
+
+    // apply changes to member fields
+    _eigenVectors = culledEigenVectors; 
+    _tetMeshIndexToSurfaceMesh = idMapPtr; 
+    _idType = SURF_CULLED; 
 }
 
 //##############################################################################

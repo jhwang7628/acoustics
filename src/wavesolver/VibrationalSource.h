@@ -8,9 +8,13 @@
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 
 //##############################################################################
-// Represents the surface acceleration that causes sound. 
+// Forward declaration
 //##############################################################################
 class FDTD_RigidObject; 
+
+//##############################################################################
+// Represents the surface acceleration that causes sound. 
+//##############################################################################
 class VibrationalSource : public Source
 {
     protected:

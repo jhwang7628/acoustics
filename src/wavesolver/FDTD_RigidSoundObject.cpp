@@ -4,7 +4,16 @@
 //##############################################################################
 //##############################################################################
 void FDTD_RigidSoundObject::
-SetVertexModeValues(const int &modeIndex)
+Initialize() // TODO! should manage all parent class initialization
+{
+    assert(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh && FDTD_RigidObject::_mesh); 
+    CullNonSurfaceModeShapes(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh, FDTD_RigidObject::_mesh); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidSoundObject::
+GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues)
 {
     // first get the entire vector defined on volumetric mesh
     Eigen::VectorXd allModeValues; 
@@ -14,9 +23,9 @@ SetVertexModeValues(const int &modeIndex)
     // mesh indices 
     const int N_volumeIndices = allModeValues.size(); 
     const int N_surfaceIndices = _mesh->num_vertices(); 
-    const auto &map = _tetMeshIndexToSurfaceMesh; 
+    const auto &map = FDTD_RigidObject::_tetMeshIndexToSurfaceMesh; 
 
-    _activeModeValues.resize(N_surfaceIndices); 
+    modeValues.resize(N_surfaceIndices); 
     for (int vol_idx=0; vol_idx<N_volumeIndices; ++vol_idx)
     {
         if (!map->KeyExists(vol_idx))
@@ -24,44 +33,29 @@ SetVertexModeValues(const int &modeIndex)
 
         // key exists, meaning there is a corresponding surface mesh idx
         const int surf_idx = map->GetSurfaceIndex(vol_idx); 
-        _activeModeValues(surf_idx) = allModeValues(vol_idx); 
+        modeValues(surf_idx) = allModeValues(vol_idx); 
     }
 
-    _activeModeAttributes.modeMax = _activeModeValues.maxCoeff(); 
-    _activeModeAttributes.modeMin = _activeModeValues.minCoeff(); 
-    _activeModeAttributes.absMax  = std::max<REAL>(fabs(_activeModeAttributes.modeMax), fabs(_activeModeAttributes.modeMin)); 
+    const REAL modeMax = modeValues.maxCoeff(); 
+    const REAL modeMin = modeValues.minCoeff(); 
+    const REAL absMax  = std::max<REAL>(fabs(modeMax), fabs(modeMin)); 
+    modeValues = modeValues / absMax; 
 }
 
 //##############################################################################
-//##############################################################################
-void FDTD_RigidSoundObject::
-GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
-{
-    modeValues = _activeModeValues; 
-}
-
-//##############################################################################
-//##############################################################################
-void FDTD_RigidSoundObject::
-GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues)
-{
-    modeValues = _activeModeValues / _activeModeAttributes.absMax; 
-}
-
-//##############################################################################
+// This function computes Q = U^T f. Note that whether culling was performed or
+// not, the transformation should use _eigenVectors, which has dimension
+// 3N_V before culling, and 3N_S after culling.
 //##############################################################################
 void FDTD_RigidSoundObject::
 GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace)
 {
     // surface mesh vertex id
-    const int &surfaceVertexID = record.appliedVertex; 
     const Vector3d &force = record.impactVector; 
-    
-    // obtain tet mesh vertex id from the mapping
-    const int vertexID = _tetMeshIndexToSurfaceMesh->GetTetIndex(surfaceVertexID); 
+    const int &vertexID = record.appliedVertex; // FIXME debug
 
     if (vertexID >= ModalAnalysisObject::N_vertices())
-        throw std::runtime_error("**ERROR** vertexID"+std::to_string(vertexID)+" out of bounds. Total #vertices = "+std::to_string(ModalAnalysisObject::N_vertices())); 
+        throw std::runtime_error("**ERROR** vertexID "+std::to_string(vertexID)+" out of bounds. Total #vertices = "+std::to_string(ModalAnalysisObject::N_vertices())); 
     const int startIndex = vertexID*3; 
     forceInModalSpace.resize(_eigenVectors.cols());
     forceInModalSpace = _eigenVectors.row(startIndex+0)*force.x 
@@ -75,8 +69,9 @@ GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSp
 void FDTD_RigidSoundObject::
 GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement)
 {
-    // first get the entire vector defined on volumetric mesh
-    Eigen::VectorXd tetDisplacement; 
+    assert(IDTypeIsSurf()); 
+
+    _timer_substep_q2u[0].Start(); 
     if (mode >= 0)
     {
         // this implementation copies the vector, should only use when
@@ -84,40 +79,14 @@ GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement)
         Eigen::VectorXd qMode(_qNew.size()); 
         qMode.setZero(); 
         qMode(mode) = _qNew(mode); 
-        GetVolumeVertexDisplacement(qMode, tetDisplacement); 
+        GetVolumeVertexDisplacement(qMode, displacement); 
     }
     else 
     {
-        GetVolumeVertexDisplacement(_qNew, tetDisplacement); 
+        GetVolumeVertexDisplacement(_qNew, displacement); 
     }
-
-    // reorder the entries such that we return the mode values on the surface
-    // mesh indices 
-    const int N_volumeIndices = tetDisplacement.size()/3; 
-    const int N_surfaceIndices = _mesh->num_vertices(); 
-    const auto &map = _tetMeshIndexToSurfaceMesh; 
-
-    _activeModeValues.resize(N_surfaceIndices); 
-    for (int vol_idx=0; vol_idx<N_volumeIndices; ++vol_idx)
-    {
-        if (!map->KeyExists(vol_idx))
-            continue; 
-
-        // key exists, meaning there is a corresponding surface mesh idx
-        const int surf_idx = map->GetSurfaceIndex(vol_idx); 
-        const int flatIndex = vol_idx*3; 
-        const Vector3d &normals = _mesh->normals().at(surf_idx); 
-        const REAL modeValue = tetDisplacement(flatIndex+0) * normals.x
-                             + tetDisplacement(flatIndex+1) * normals.y
-                             + tetDisplacement(flatIndex+2) * normals.z;
-
-        _activeModeValues(surf_idx) = modeValue; 
-    }
-
-    _activeModeAttributes.modeMax = _activeModeValues.maxCoeff(); 
-    _activeModeAttributes.modeMin = _activeModeValues.minCoeff(); 
-    _activeModeAttributes.absMax  = std::max<REAL>(fabs(_activeModeAttributes.modeMax), fabs(_activeModeAttributes.modeMin)); 
-    displacement = _activeModeValues / 1e-5; 
+    _timer_substep_q2u[0].Pause(); 
+    displacement /= 1E-5;
 }
 
 //##############################################################################
@@ -147,9 +116,13 @@ AdvanceModalODESolvers(const int &N_steps)
         // retrieve impact records (forces) within the time range 
         std::vector<ImpactRecord> impactRecords; 
         Eigen::VectorXd forceTimestep, forceBuffer; 
+        _timer_substep_advanceODE[0].Start(); 
         const REAL tsTimeStart = _time; 
         const REAL tsTimeStop  = _time + _ODEStepSize; 
         GetForces(tsTimeStart, tsTimeStop, impactRecords); 
+        _timer_substep_advanceODE[0].Pause(); 
+
+        _timer_substep_advanceODE[1].Start(); 
         forceTimestep.setZero(N_Modes()); 
         const int N_records = impactRecords.size(); 
         // for each impact record within this timestep, concatenate the forces
@@ -158,13 +131,17 @@ AdvanceModalODESolvers(const int &N_steps)
             GetForceInModalSpace(impactRecords.at(rec_idx), forceBuffer); 
             forceTimestep += forceBuffer; 
         }
+        _timer_substep_advanceODE[1].Pause(); 
+
         // step the system using force computed
+        _timer_substep_advanceODE[2].Start(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
         for (int mode_idx=0; mode_idx<N_Modes(); ++mode_idx) 
             _modalODESolvers.at(mode_idx)->StepSystem(_qOld(mode_idx), _qNew(mode_idx), forceTimestep(mode_idx)); 
         _time += _ODEStepSize;
+        _timer_substep_advanceODE[2].Pause();
         std::cout << "time = " << _time << std::endl; 
     }
 }
@@ -175,7 +152,6 @@ AdvanceModalODESolvers(const int &N_steps)
 void FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q)
 {
-    SimpleTimer timer[3]; 
     {
         const int N_rows = N_steps; 
         const int N_cols = _mesh->num_vertices(); 
@@ -191,23 +167,34 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
     {
         Eigen::VectorXd displacements; 
-        timer[0].Start(); 
+        _timer_mainstep[0].Start(); 
         AdvanceModalODESolvers(1);
-        timer[0].Pause(); 
-        timer[1].Start(); 
-        GetModalDisplacement(displacements);  // debug FIXME
-        timer[1].Pause(); 
-        timer[2].Start(); 
+        _timer_mainstep[0].Pause(); 
+        _timer_mainstep[1].Start(); 
+        GetModalDisplacement(displacements);
+        _timer_mainstep[1].Pause(); 
+        _timer_mainstep[2].Start(); 
         of_displacement.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
         of_q.write((char*)_qNew.data(), sizeof(double)*_qNew.size()); 
-        timer[2].Pause(); 
+        _timer_mainstep[2].Pause(); 
     }
     std::cout << "Total Timing: \n"
-              << " Advance ODEs      : " << timer[0].Duration() << " sec\n"
-              << " q->u              : " << timer[1].Duration() << " sec\n"
-              << " Write data to disk: " << timer[2].Duration() << " sec\n"; 
+              << " Advance ODEs      : " << _timer_mainstep[0].Duration()           << " sec\n"
+              << "  Interpolate force: " << _timer_substep_advanceODE[0].Duration() << " sec\n"
+              << "  Transform force  : " << _timer_substep_advanceODE[1].Duration() << " sec\n"
+              << "  Step ODE         : " << _timer_substep_advanceODE[2].Duration() << " sec\n"
+              << " q->u              : " << _timer_mainstep[1].Duration()           << " sec\n"
+              << "  Get volume u     : " << _timer_substep_q2u[0].Duration()        << " sec\n"
+              << "  Map to surface   : " << _timer_substep_q2u[1].Duration()        << " sec\n"
+              << " Write data to disk: " << _timer_mainstep[2].Duration()           << " sec\n"; 
+    const REAL scale = 1.0 / ((REAL)N_steps/1000.); 
     std::cout << "Average Timing: \n"
-              << " Advance ODEs      : " << timer[0].Duration() / ((REAL)N_steps/1000.) << " ms\n"
-              << " q->u              : " << timer[1].Duration() / ((REAL)N_steps/1000.) << " ms\n"
-              << " Write data to disk: " << timer[2].Duration() / ((REAL)N_steps/1000.) << " ms\n"; 
+              << " Advance ODEs      : " << _timer_mainstep[0].Duration()           * scale << " ms\n"
+              << "  Interpolate force: " << _timer_substep_advanceODE[0].Duration() * scale << " ms\n"
+              << "  Transform force  : " << _timer_substep_advanceODE[1].Duration() * scale << " ms\n"
+              << "  Step ODE         : " << _timer_substep_advanceODE[2].Duration() * scale << " ms\n"
+              << " q->u              : " << _timer_mainstep[1].Duration()           * scale << " ms\n"
+              << "  Get volume u     : " << _timer_substep_q2u[0].Duration()        * scale << " ms\n"
+              << "  Map to surface   : " << _timer_substep_q2u[1].Duration()        * scale << " ms\n"
+              << " Write data to disk: " << _timer_mainstep[2].Duration()           * scale << " ms\n"; 
 }

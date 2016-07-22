@@ -5,6 +5,7 @@
 #include <modal_model/ModalAnalysisObject.h> 
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/FDTD_RigidObject.h>
+#include <utils/SimpleTimer.h>
 
 //##############################################################################
 // Class that manages object that is characterized by surface mesh, level-set
@@ -23,6 +24,11 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         // modal displacement
         Eigen::VectorXd _qOld; 
         Eigen::VectorXd _qNew; 
+
+        // Timers
+        SimpleTimer _timer_mainstep[3];  // advance, q->u, IO
+        SimpleTimer _timer_substep_advanceODE[3]; // interpolate force, transform force, step system
+        SimpleTimer _timer_substep_q2u[1]; 
 
     public: 
         // build object
@@ -50,8 +56,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         }
 
         inline void InitializeModeVectors(){_qOld.setZero(N_Modes()); _qNew.setZero(N_Modes());}
-        void SetVertexModeValues(const int &modeIndex); 
-        void GetVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
+        void Initialize(); 
         void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
         void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace); 
         void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
