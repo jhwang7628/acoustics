@@ -26,9 +26,9 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         Eigen::VectorXd _qNew; 
 
         // for vectorized IIR
-        Eigen::VectorXd _coeff_qNew; 
-        Eigen::VectorXd _coeff_qOld; 
-        Eigen::VectorXd _coeff_Q; 
+        Eigen::VectorXd _coeff_qNew;  // 2 epsilon cos(theta)
+        Eigen::VectorXd _coeff_qOld;  // -epsilon^2
+        Eigen::VectorXd _coeff_Q;     // 2(epsilon cos(theta+gamma) - epsilon^2 cos(2theta + gamma))/(3 omega omega_d m)
 
         // Timers
         SimpleTimer _timer_mainstep[3];  // advance, q->u, IO

@@ -3,6 +3,7 @@
 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_RigidObject.h> 
+//#include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/PressureSource.h>
 
 //##############################################################################

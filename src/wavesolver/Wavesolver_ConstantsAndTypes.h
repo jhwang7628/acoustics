@@ -9,6 +9,7 @@
 // Forward Declaration
 //##############################################################################
 class FDTD_RigidObject; 
+class FDTD_RigidSoundObject; 
 class VibrationalSource; 
 class PressureSource; 
 
@@ -31,6 +32,7 @@ class PressureSource;
 //##############################################################################
 //typedef std::vector<Source> SourceVector; 
 typedef std::shared_ptr<FDTD_RigidObject> RigidObjectPtr; 
+typedef std::shared_ptr<FDTD_RigidSoundObject> RigidSoundObjectPtr; 
 typedef std::unique_ptr<VibrationalSource> VibrationalSourcePtr; 
 typedef std::unique_ptr<PressureSource> PressureSourcePtr; 
 typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator; 
