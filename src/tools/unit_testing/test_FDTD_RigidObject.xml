@@ -1,16 +1,28 @@
 <?xml version="1.0" ?>
 <impulse_response>
+    <material_list>
+        <modal_material
+            alpha = "40" 
+            beta = "1.0E-7" 
+            density = "2300" 
+            /> 
+    </material_list>
     <rigid_object> 
         <mesh_list> 
             <mesh 
-                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
-                object_prefix="small_ball_r_0p10" 
-                id="small_ball_1" 
-                fieldresolution="100"
+                working_directory="/home/jui-hsien/code/acoustics/work/plate"
+                object_prefix="plate" 
+                id="0" 
+                fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
                 initial_position_y="0.0"
                 initial_position_z="0.0"
+                material_id="0"
+                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"
+                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg"
+                mode_file="/home/jui-hsien/code/acoustics/work/plate/plate.modes"
+                modal_ODE_step_frequency="176400"
                 />
                 
             <!--

@@ -5,7 +5,7 @@
 // note this is not thread safe
 //##############################################################################
 void FDTD_Objects::
-AddObject(const std::string &objectName, RigidObjectPtr &object)
+AddObject(const std::string &objectName, RigidSoundObjectPtr &object)
 {
     if (_meshIDMap.find(objectName) == _meshIDMap.end())
     {

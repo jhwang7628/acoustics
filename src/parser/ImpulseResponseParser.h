@@ -11,6 +11,9 @@
 #include <modal_model/ModalMaterialList.h>
 #include <wavesolver/PressureSource.h> 
 #include <wavesolver/FDTD_Objects.h> 
+#include <wavesolver/FDTD_RigidSoundObject.h>
+#include <modal_model/ImpulseSeriesObject.h>
+#include <modal_model/ModalAnalysisObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 #include <wavesolver/PML_WaveSolver_Settings.h> 
 

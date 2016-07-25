@@ -1,5 +1,6 @@
 #include <wavesolver/GaussianPressureSource.h>
 #include <parser/ImpulseResponseParser.h> 
+#include <io/ImpulseSeriesReader.h>
 
 //##############################################################################
 // parse meshes from xml into objects 
@@ -29,7 +30,8 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
     while (meshNode != NULL)
     {
         //const std::string meshFileName = queryRequiredAttr(meshNode, "file");
-        const std::string meshName = queryRequiredAttr(meshNode, "id");
+        const int meshID = queryRequiredInt(meshNode, "id"); 
+        const std::string meshName = std::to_string(meshID); 
         //const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
         const std::string workingDirectory = queryRequiredAttr(meshNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(meshNode, "object_prefix"); 
@@ -39,8 +41,37 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_y = queryOptionalReal(meshNode, "initial_position_y", 0.0); 
         const REAL initialPosition_z = queryOptionalReal(meshNode, "initial_position_z", 0.0); 
 
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, meshName, scale);
+        // load impulse from file
+        const std::string impulseFile = queryRequiredAttr(meshNode, "impulse_file"); 
+        const std::string rigidsimConfigFile = queryRequiredAttr(meshNode, "impulse_rigidsim_config_file");
+        ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
+        std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(object); 
+        reader.LoadImpulses(meshID, objectPtr); 
+        REAL impulseRangeStart, impulseRangeStop; 
+        object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
+        //_timeStepSize = object->GetRigidsimTimeStepSize();  // set the time step size always the same as rigidsim
+        std::cout << "Impulses Read for object " << meshName << ":\n"
+                  << " Number of impulses: " << object->Size() << "\n"
+                  << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
+                  << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
+                  << "\n";
 
-        RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(workingDirectory, sdfResolutionValue, objectPrefix, meshName, scale);
+        // load modes from file
+        const std::string modeFile = queryRequiredAttr(meshNode, "mode_file");
+        const std::string parseFile("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+        ModalMaterialList materials; 
+        GetModalMaterials(materials); 
+        const int materialID = queryRequiredInt(meshNode, "material_id");
+        auto materialPtr = materials.at(materialID);
+
+        const REAL ODEStepSize = 1.0/queryRequiredReal(meshNode, "modal_ODE_step_frequency"); 
+        object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
+        object->InitializeModeVectors(); 
+
+        object->FDTD_RigidSoundObject::Initialize(); 
+          
+
         //RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 

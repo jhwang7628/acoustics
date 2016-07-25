@@ -3,7 +3,7 @@
 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_RigidObject.h> 
-//#include <wavesolver/FDTD_RigidSoundObject.h>
+#include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/PressureSource.h>
 
 //##############################################################################
@@ -12,22 +12,22 @@
 class FDTD_Objects
 {
     private: 
-        std::vector<RigidObjectPtr>     _rigidObjects; 
-        std::vector<PressureSourcePtr>  _pressureSources; 
-        std::map<std::string, int>      _meshIDMap; 
+        std::vector<RigidSoundObjectPtr>    _rigidObjects; 
+        std::vector<PressureSourcePtr>      _pressureSources; 
+        std::map<std::string, int>          _meshIDMap; 
 
     public: 
         inline int N() const {return _rigidObjects.size();} 
         inline int N_sources() const {return _pressureSources.size();}
-        inline FDTD_RigidObject &Get(const int &ind){return *(_rigidObjects[ind]);} 
-        inline RigidObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
+        inline FDTD_RigidSoundObject &Get(const int &ind){return *(_rigidObjects[ind]);} 
+        inline RigidSoundObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
         inline PressureSourcePtr &GetPressureSourcePtr(const int &ind){return _pressureSources.at(ind);} 
         inline std::string GetMeshName(const int &ind) const {return std::string(_rigidObjects.at(ind)->GetMeshName());}
         inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
-        void AddObject(const std::string &objectName, RigidObjectPtr &object); 
+        void AddObject(const std::string &objectName, RigidSoundObjectPtr &object); 
         // return index of the object that occupies the position, -1 if none. 
         // in the case where multiple objects are occupying that position (due
         // to numerical errors), return the first in the vector

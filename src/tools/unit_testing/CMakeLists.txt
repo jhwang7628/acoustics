@@ -82,6 +82,9 @@ if (BUILD_UNIT_TESTING)
         ${MODAL_MODEL_SRC}
         ${MODAL_MATERIAL_SRC}
         ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${RIGID_PARSER_SRC}
         test_FDTD_AcousticSimulator.cpp
         ) 
 
