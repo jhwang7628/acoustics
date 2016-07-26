@@ -179,6 +179,17 @@ ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vec
 }
 
 //##############################################################################
+// @return ODE time (should be the same across all ODEs registered)
+//##############################################################################
+REAL FDTD_Objects::
+AdvanceAllModalODESolvers(const int &N_steps)
+{
+    for (auto &object : _rigidObjects)
+        object->AdvanceModalODESolvers(N_steps); 
+    return (_rigidObjects.size()>0 ? _rigidObjects.at(0)->GetODESolverTime() : -1);
+}
+
+//##############################################################################
 //##############################################################################
 void FDTD_Objects::
 TestObjectDistanceField(const size_t &ind)

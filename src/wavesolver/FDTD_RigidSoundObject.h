@@ -11,6 +11,9 @@
 // Class that manages object that is characterized by surface mesh, level-set
 // functions (FDTD_RigidObject) and has impulse (ImpulseSeriesObject) 
 // prescribed by the rigidsim tool. 
+//
+// Note: be careful when fetching velocity and acceleration data, see comments
+// below.
 //##############################################################################
 class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject, public ModalAnalysisObject
 {
@@ -22,8 +25,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         ModeAttribute   _activeModeAttributes; 
 
         // modal displacement
-        Eigen::VectorXd _qOld; 
-        Eigen::VectorXd _qNew; 
+        Eigen::VectorXd _qNew;     
+        Eigen::VectorXd _qOld;     // current displacement
+        Eigen::VectorXd _qOldDot;  // current velocity
+        Eigen::VectorXd _qOldDDot; // current acceleration
 
         // for vectorized IIR
         Eigen::VectorXd _coeff_qNew;  // 2 epsilon cos(theta)
@@ -60,8 +65,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         {
         }
 
-        inline void InitializeModeVectors(){_qOld.setZero(N_Modes()); _qNew.setZero(N_Modes());}
         void Initialize(); 
+        void InitializeModeVectors(); 
         void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
         void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace); 
         void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
@@ -69,6 +74,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         void AdvanceModalODESolvers(const int &N_steps);
         void AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q);
+        // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
+        // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 

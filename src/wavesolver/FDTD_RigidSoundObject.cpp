@@ -1,5 +1,7 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <utils/SimpleTimer.h>
+#include <geometry/Point3.hpp>
+#include <macros.h>
 
 //##############################################################################
 //##############################################################################
@@ -21,6 +23,18 @@ Initialize() // TODO! should manage all parent class initialization
         _coeff_qOld(mode_idx) = odeSolverPtr->GetCoefficient_qOld(); 
         _coeff_Q(mode_idx) = odeSolverPtr->GetCoefficient_Q(); 
     }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidSoundObject::
+InitializeModeVectors()
+{
+    const int N_modes = N_Modes(); 
+    _qOld.setZero(N_modes); 
+    _qNew.setZero(N_modes); 
+    _qOldDot.setZero(N_modes); 
+    _qOldDDot.setZero(N_modes); 
 }
 
 //##############################################################################
@@ -149,36 +163,19 @@ AdvanceModalODESolvers(const int &N_steps)
         // step the system using force computed
         _timer_substep_advanceODE[2].Start(); 
         Eigen::VectorXd q = _coeff_qNew.cwiseProduct(_qNew) + _coeff_qOld.cwiseProduct(_qOld) + _coeff_Q.cwiseProduct(forceTimestep); 
+
+        // compute velocity and acceleration using finite-difference. Notice
+        // that this corresponds to the state at qOld after updates
+        _qOldDot  = (q - _qOld) / (2.0*_ODEStepSize); 
+        _qOldDDot = (q + _qOld - 2.0*_qNew) / pow(_ODEStepSize,2); 
+
         _qOld = _qNew; 
         _qNew = q; 
+
         _time += _ODEStepSize;
-        _timer_substep_advanceODE[2].Pause();
         std::cout << "time = " << _time << std::endl; 
+        _timer_substep_advanceODE[2].Pause();
     }
-}
-
-//##############################################################################
-//##############################################################################
-REAL FDTD_RigidSoundObject::
-SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO! 
-{
-    return 0.0;
-}
-
-//##############################################################################
-//##############################################################################
-REAL FDTD_RigidSoundObject::
-SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)// TODO!
-{
-    return 0.0;
-}
-
-//##############################################################################
-//##############################################################################
-REAL FDTD_RigidSoundObject::
-SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)// TODO!
-{
-    return 0.0;
 }
 
 //##############################################################################
@@ -233,3 +230,52 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
               << "  Map to surface   : " << _timer_substep_q2u[1].Duration()        * scale << " ms\n"
               << " Write data to disk: " << _timer_mainstep[2].Duration()           * scale << " ms\n"; 
 }
+
+//##############################################################################
+// Brute force looping for now
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO!
+{
+    std::cerr << "**WARNING** return zero for modal displacement since time does not match. interpolation not implemented.\n";
+    return 0.0;
+}
+
+//##############################################################################
+// Brute force looping for now
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO!
+{
+    std::cerr << "**WARNING** return zero for modal velocity since time does not match. interpolation not implemented.\n";
+    return 0.0;
+}
+
+//##############################################################################
+// Brute force looping for now
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
+{
+    int closestIndex = -1;
+    REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))
+    {
+        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+        const int N_vertices = vertices.size(); 
+        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+        {
+            const REAL distance = (vertices.at(vert_idx) - samplePoint).normSqr();
+            if (distance < closestDistance)
+            {
+                closestIndex = vert_idx; 
+                closestDistance = distance; 
+            }
+        }
+        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qOldDDot); 
+        return sampledValue; 
+    }
+    std::cerr << "**WARNING** return zero for modal acceleration since time does not match. interpolation not implemented.\n";
+    return 0.0;
+}
+
