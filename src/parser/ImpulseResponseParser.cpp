@@ -110,7 +110,8 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->timeStepSize = 1.0/timeStepFrequency; 
 
     // IO settings
-    settings->outputPattern      = queryRequiredAttr(solverNode, "output_pattern"); 
+    settings->outputPattern = queryRequiredAttr(solverNode, "output_pattern"); 
+    settings->writePressureFieldToDisk = (queryRequiredInt(solverNode, "write_pressure_field_to_disk")==0) ? false : true; 
 
     // Boundary settings
     settings->PML_width          = queryRequiredReal(solverNode, "PML_width"); 

@@ -1,5 +1,6 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <utils/IO/IO.h>
+#include <macros.h>
 
 //##############################################################################
 //##############################################################################
@@ -242,30 +243,36 @@ Run()
     bool continueStepping = true; 
     int stepIndex = 0; 
     SaveSolverConfig();
+    auto &settings = _acousticSolverSettings; 
 
     while(continueStepping) 
     {
+        // first step all modal ode, so that its one step ahead of main acoustic
+        // simulator. this is needed because central difference is used for
+        // velocity and accleration estimates. 
+        const REAL odeTime = _sceneObjects->AdvanceAllModalODESolvers(1); 
+        assert(EQUAL_FLOATS(odeTime - settings->timeStepSize, _simulationTime)); 
+
+        // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
-        if (stepIndex % _acousticSolverSettings->timeSavePerStep == 0)
+        if (stepIndex % settings->timeSavePerStep == 0)
         {
-            const int timeIndex = stepIndex/_acousticSolverSettings->timeSavePerStep; 
+            const int timeIndex = stepIndex/settings->timeSavePerStep; 
             std::ostringstream oss; 
             oss << std::setw(6) << std::setfill('0') << timeIndex; 
-            const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
-            _SavePressureTimestep(filenameField); 
-            //for (int dim=0; dim<3; ++dim) 
-            //{
-            //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-            //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-            //}
             const std::string filenameProbe = _CompositeFilename("listening_"+oss.str()+".dat"); 
             _SaveListeningData(filenameProbe);
+            if (settings->writePressureFieldToDisk)
+            {
+                const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
+                _SavePressureTimestep(filenameField); 
+            }
         }
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();
 #endif
         stepIndex ++;
-        _simulationTime += _acousticSolverSettings->timeStepSize; 
+        _simulationTime += settings->timeStepSize; 
 
         // debug FIXME
         //if (stepIndex > 20)

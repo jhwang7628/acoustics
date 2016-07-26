@@ -34,6 +34,8 @@ struct PML_WaveSolver_Settings
     bool            listening; 
     std::string     listeningFile; 
     Vector3Array    listeningPoints; 
+
+    bool            writePressureFieldToDisk; 
 };
 
 #endif
