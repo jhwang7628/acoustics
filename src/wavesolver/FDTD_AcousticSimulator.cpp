@@ -20,16 +20,19 @@ void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
     // FIXME debug: for now, attach a harmonic vibrational to all objects in the scene
-    //const int N_objects = _sceneObjects->N();
+    const int N_objects = _sceneObjects->N();
     //const REAL omega = 2.0*M_PI*500.0;
     //const REAL phase = 0.0;
-    //for (int index=0; index<N_objects; ++index)
-    //{
-    //    RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-    //    VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-    //    objectPtr->AddVibrationalSource(sourcePtr); 
-    //    //objectPtr->TestObjectBoundaryCondition();
-    //}
+    for (int index=0; index<N_objects; ++index)
+    {
+        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
+
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
+        //objectPtr->TestObjectBoundaryCondition();
+    }
     // TODO {
     // parser-based 
     // } TODO 

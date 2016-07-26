@@ -4,7 +4,6 @@
 #include <TYPES.h> 
 #include <linearalgebra/Vector3.hpp> 
 #include <wavesolver/Source.h> 
-#include <wavesolver/FDTD_RigidObject.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 
 //##############################################################################

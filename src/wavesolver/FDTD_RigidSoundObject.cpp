@@ -158,6 +158,30 @@ AdvanceModalODESolvers(const int &N_steps)
 }
 
 //##############################################################################
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO! 
+{
+    return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)// TODO!
+{
+    return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)// TODO!
+{
+    return 0.0;
+}
+
+//##############################################################################
 // Advance the modal ODEs for N_steps with logging file
 //##############################################################################
 void FDTD_RigidSoundObject::

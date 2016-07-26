@@ -7,6 +7,7 @@
 #include <wavesolver/PML_WaveSolver_Settings.h> 
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/HarmonicVibrationalSource.h>
+#include <wavesolver/ModalVibrationalSource.h>
 #include <wavesolver/FDTD_Objects.h> 
 
 //##############################################################################

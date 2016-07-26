@@ -33,8 +33,8 @@ class PressureSource;
 //typedef std::vector<Source> SourceVector; 
 typedef std::shared_ptr<FDTD_RigidObject> RigidObjectPtr; 
 typedef std::shared_ptr<FDTD_RigidSoundObject> RigidSoundObjectPtr; 
-typedef std::unique_ptr<VibrationalSource> VibrationalSourcePtr; 
-typedef std::unique_ptr<PressureSource> PressureSourcePtr; 
+typedef std::shared_ptr<VibrationalSource> VibrationalSourcePtr; 
+typedef std::shared_ptr<PressureSource> PressureSourcePtr; 
 typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator; 
 
 typedef MLSModeInterpolator<double,3,3> MLSInterpolatorType; 

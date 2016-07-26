@@ -16,6 +16,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/VibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_MovableObject.h

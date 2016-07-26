@@ -69,6 +69,9 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         void AdvanceModalODESolvers(const int &N_steps);
         void AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q);
+        REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
 };
 
 #endif
