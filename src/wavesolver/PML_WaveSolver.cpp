@@ -98,6 +98,9 @@ PML_WaveSolver::PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::sha
 
 void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
 {
+    _currentTime = 0.0;
+    _timeIndex = 0;
+
     _pFull.resizeAndWipe( _grid.numPressureCells(),  _N );
     _p[ 0 ].resizeAndWipe( _grid.numPressureCells(), _N );
     _p[ 1 ].resizeAndWipe( _grid.numPressureCells(), _N );
@@ -150,9 +153,9 @@ void PML_WaveSolver::SetGhostCellBoundary(const bool &isOn)
     _grid.SetGhostCellBoundary(isOn); 
 } 
 
+// not used anymore, see Reinitialize_PML_WaveSolver
 void PML_WaveSolver::initSystem( REAL startTime )
 {
-    _currentTime = startTime;
     _timeIndex = 0;
 
     _pFull.clear();
@@ -331,13 +334,9 @@ void PML_WaveSolver::writeWaveOutput() const
 void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
+    // DEBUG FIXME
     _cellClassifyTimer.start(); 
-//#ifdef DEBUG
-//    _grid.classifyCellsDynamicAABB(true, _pFull, true);
-//#else 
-//    _grid.classifyCellsDynamicAABB(true, _pFull, false);
-//#endif 
-    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, false); 
+    //_grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, false); 
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
