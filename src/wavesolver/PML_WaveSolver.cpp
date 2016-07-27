@@ -116,6 +116,7 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
     //_vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), _N );
 
     _grid.initFieldRasterized( useBoundary );
+    _grid.classifyCellsDynamic(_pFull, _p, _v, useBoundary, true); // FIXME debug: shouldn't be here. haven't fixed classify completely
 
     //if ( _listeningPositions )
     //{
