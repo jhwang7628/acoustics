@@ -88,8 +88,6 @@ class PML_WaveSolver : public Solver
         WriteCallback           *_callback; // not in use
         std::vector<std::vector<FloatArray> > _waveOutput;
 
-        // if on then PML is activated on only one face, the others will be set to hard-wall
-        bool                     _cornellBoxBoundaryCondition; 
         // if on then ghost cell boundary treatment, otherwise rasterized
         bool                     _useGhostCellBoundary; 
 
@@ -98,7 +96,7 @@ class PML_WaveSolver : public Solver
 
         // objects in the scene 
         std::shared_ptr<FDTD_Objects> _objects; 
-        PML_WaveSolver_Settings  _waveSolverSettings;
+        PML_WaveSolver_Settings_Ptr _waveSolverSettings;
 
     public: 
         PML_WaveSolver() 
@@ -143,7 +141,7 @@ class PML_WaveSolver : public Solver
                         );
 
         // initialize from settings parsed from xml
-        PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects);
+        PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
         void Reinitialize_PML_WaveSolver(const bool &useBoundary); 
@@ -152,7 +150,6 @@ class PML_WaveSolver : public Solver
         virtual ~PML_WaveSolver(){};
 
 
-        inline bool GetCornellBoxBoundaryCondition() { return _cornellBoxBoundaryCondition; } 
         inline bool GetGhostCellBoundary() { return _useGhostCellBoundary; } 
         inline MAC_Grid &GetGrid() {return _grid;}
         inline void setPMLBoundaryWidth( REAL width, REAL strength ){ _grid.setPMLBoundaryWidth( width, strength ); }
@@ -174,7 +171,6 @@ class PML_WaveSolver : public Solver
         virtual inline const vector<const TriMesh *> &meshes() const { return _grid.meshes(); }
 
         int numVelocityCells(const int &dim) const;
-        void SetCornellBoxBoundaryCondition(const bool &isOn);
         void SetGhostCellBoundary(const bool &isOn);
 
         void initSystem( REAL startTime );

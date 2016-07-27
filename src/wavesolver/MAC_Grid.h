@@ -131,6 +131,7 @@ class MAC_Grid
 
         // handles all the objects in the scene
         std::shared_ptr<FDTD_Objects>       _objects; 
+        PML_WaveSolver_Settings_Ptr         _waveSolverSettings;
 
     public:
         MAC_Grid(){}
@@ -149,7 +150,7 @@ class MAC_Grid
                   int N = 1 );
 
         // initialize the grid by a boundingbox and cellsize
-        MAC_Grid(const BoundingBox &bbox, const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects);
+        MAC_Grid(const BoundingBox &bbox, PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects);
 
         void Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSize); 
 
@@ -224,7 +225,6 @@ class MAC_Grid
         void InterpolateFreshVelocityCell(MATRIX &v, const int &dimension, const REAL &timeStep, const REAL &simulationTime);
 
         // set the PML effect region flag
-        inline void SetCornellBoxBoundaryCondition(const bool &isOn) { _cornellBoxBoundaryCondition = isOn; } 
         inline void SetGhostCellBoundary(const bool &isOn) { _useGhostCellBoundary = isOn; }
         inline int N() const { return _N; }
         inline int numPressureCells() const { return _pressureField.numCells(); }
@@ -265,9 +265,6 @@ class MAC_Grid
         //
         // FIXME: For now, we will use a quadratic profile here, though
         // we may need to try something more complex later on.
-        //
-        // if cornellBoxBoundary is on, the PML has been disabled except for the face at -z
-        // , because we want to make a acoustic cornell box (3/1, 2016)
         inline REAL PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension );
 
         // Scaling factor for the initial velocity update in each time step

@@ -229,7 +229,7 @@ InitializeSolver()
     // setup listening points
     _SetListeningPoints(); 
     // initialize solver
-    _acousticSolver = std::make_shared<PML_WaveSolver>(*_acousticSolverSettings, _sceneObjects); 
+    _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
     // setup source objects in the scene
     _SetBoundaryConditions();
     _SetPressureSources();

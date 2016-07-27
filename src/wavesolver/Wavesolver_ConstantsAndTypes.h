@@ -12,6 +12,7 @@ class FDTD_RigidObject;
 class FDTD_RigidSoundObject; 
 class VibrationalSource; 
 class PressureSource; 
+class PML_WaveSolver_Settings;
 
 //##############################################################################
 // Macros
@@ -36,6 +37,7 @@ typedef std::shared_ptr<FDTD_RigidSoundObject> RigidSoundObjectPtr;
 typedef std::shared_ptr<VibrationalSource> VibrationalSourcePtr; 
 typedef std::shared_ptr<PressureSource> PressureSourcePtr; 
 typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator; 
+typedef std::shared_ptr<PML_WaveSolver_Settings> PML_WaveSolver_Settings_Ptr;
 
 typedef MLSModeInterpolator<double,3,3> MLSInterpolatorType; 
 typedef MLSInterpolatorType::MLSPoint MLSPoint; 

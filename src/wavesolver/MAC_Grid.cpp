@@ -55,15 +55,15 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
     Reinitialize_MAC_Grid(bbox, cellSize); 
 }
 
-MAC_Grid::MAC_Grid(const BoundingBox &bbox, const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects)
-    : _pressureField(bbox,settings.cellSize), 
+MAC_Grid::MAC_Grid(const BoundingBox &bbox, PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
+    : _pressureField(bbox,settings->cellSize), 
       _N(1), // no longer supports multiple fields, 
-      _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
-      _useGhostCellBoundary(settings.useGhostCell),
-      _objects(objects)
+      _useGhostCellBoundary(settings->useGhostCell),
+      _objects(objects), 
+      _waveSolverSettings(settings)
 {
-    setPMLBoundaryWidth(settings.PML_width, settings.PML_strength);
-    Reinitialize_MAC_Grid(bbox,settings.cellSize); 
+    setPMLBoundaryWidth(settings->PML_width, settings->PML_strength);
+    Reinitialize_MAC_Grid(bbox,settings->cellSize); 
 }
 
 void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSize)
@@ -1769,34 +1769,39 @@ void MAC_Grid::visualizeClassifiedCells()
 
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension )
 {
-    //return 0.0;
+    const int &preset = _waveSolverSettings->boundaryConditionPreset; 
+    const BoundingBox &bbox = _pressureField.bbox();
+    const REAL hMin = x[ dimension ] - bbox.minBound()[ dimension ];
+    const REAL hMax = bbox.maxBound()[ dimension ] - x[ dimension ];
+    const REAL a2 = absorptionWidth * absorptionWidth;
+    const REAL distMin = absorptionWidth - hMin; 
+    const REAL distMax = absorptionWidth - hMax; 
 
-    if (dimension!=2 && _cornellBoxBoundaryCondition) // skip all but z-direction face 
-        return 0.0;
-
-    const BoundingBox         &bbox = _pressureField.bbox();
-    REAL                       h;
-    REAL                       a2 = absorptionWidth * absorptionWidth;
-
-    h = x[ dimension ] - bbox.minBound()[ dimension ];
-    if ( h <= absorptionWidth )
+    switch (preset)
     {
-        REAL                     dist = absorptionWidth - h;
-
-        //return _PML_absorptionStrength * ( absorptionWidth - h ) / absorptionWidth;
-        return _PML_absorptionStrength * dist * dist / a2;
+        case 0: // no wall
+            if (hMin <= absorptionWidth)
+                return _PML_absorptionStrength * pow(distMin,2) / a2; 
+            else if (hMax <= absorptionWidth)
+                return _PML_absorptionStrength * pow(distMax,2) / a2; 
+            else 
+                return 0.0;
+            break; 
+        case 1: // wall on +x, +y, +z
+            if (hMin <= absorptionWidth)
+                return _PML_absorptionStrength * pow(distMin,2) / a2; 
+            else 
+                return 0.0;
+            break; 
+        case 2: 
+            if (dimension != 2 || hMin <= absorptionWidth) // wall on all but +z
+                return 0.0; 
+            else if (dimension == 2 && hMax <= absorptionWidth)
+                return _PML_absorptionStrength * pow(distMax,2) / a2; 
+            break; 
+        default: 
+            break; 
     }
-
-    h = bbox.maxBound()[ dimension ] - x[ dimension ];
-    if ( h <= absorptionWidth )
-    {
-        REAL                     dist = absorptionWidth - h;
-        if (_cornellBoxBoundaryCondition)
-            return 0.0; // skip face at +z face
-        else 
-            return _PML_absorptionStrength * dist * dist / a2;
-    }
-
     return 0.0;
 }
 

@@ -118,9 +118,9 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 
 
     // Optional settings
-    settings->useMesh                    = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
-    settings->useGhostCell               = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
-    settings->cornellBoxBoundaryCondition= (queryOptionalInt(solverNode, "cornell_box_boundary_condition", "0")==1) ? true : false; 
+    settings->useMesh                 = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
+    settings->useGhostCell            = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
+    settings->boundaryConditionPreset = (queryOptionalInt(solverNode, "boundary_condition_preset", "0")); 
 
     // set sources 
     //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );

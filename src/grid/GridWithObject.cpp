@@ -27,7 +27,7 @@ void UniformGridWithObject::Reinitialize(const std::string &configFile)
     parser_->GetSolverSettings(settings); 
     parser_->GetObjects(objects_); 
 
-    PML_WaveSolver solver(*settings, objects_); 
+    PML_WaveSolver solver(settings, objects_); 
     BoundingBox solverBBox = solver.GetGrid().PressureBoundingBox(); 
     minBound_ = Eigen::Vector3d(solverBBox.minBound().x, solverBBox.minBound().y, solverBBox.minBound().z);
     maxBound_ = minBound_ + Eigen::Vector3d::Ones()*settings->cellSize*(double)settings->cellDivisions; 

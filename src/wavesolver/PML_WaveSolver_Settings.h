@@ -23,13 +23,13 @@ struct PML_WaveSolver_Settings
     std::string     outputPattern; 
 
     // Boundary settings
-    REAL    PML_width; 
-    REAL    PML_strength;
+    REAL PML_width; 
+    REAL PML_strength;
 
     // Optional settings, mostly switches
-    bool            useMesh; 
-    bool            cornellBoxBoundaryCondition;
-    bool            useGhostCell; 
+    int  boundaryConditionPreset; // 0: no wall. 1: wall on +x, +y, +z, 2: wall on all but +z
+    bool useMesh; 
+    bool useGhostCell; 
 
     bool            listening; 
     std::string     listeningFile; 

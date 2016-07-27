@@ -74,26 +74,25 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     Reinitialize_PML_WaveSolver(useBoundary);
 }
 
-PML_WaveSolver::PML_WaveSolver(const PML_WaveSolver_Settings &settings, std::shared_ptr<FDTD_Objects> objects)
-    : _waveSpeed(settings.soundSpeed), 
-      _density(settings.airDensity), 
-      _grid(BoundingBox(settings.cellSize,settings.cellDivisions),settings,objects),
-      _cellSize(settings.cellSize), 
-      _subSteps(settings.timeSavePerStep), 
-      _endTime(settings.timeEnd), 
-      _timeStep(settings.timeStepSize), 
+PML_WaveSolver::PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
+    : _waveSpeed(settings->soundSpeed), 
+      _density(settings->airDensity), 
+      _grid(BoundingBox(settings->cellSize,settings->cellDivisions),settings,objects),
+      _cellSize(settings->cellSize), 
+      _subSteps(settings->timeSavePerStep), 
+      _endTime(settings->timeEnd), 
+      _timeStep(settings->timeStepSize), 
       _timeIndex(0), 
       _N(1),
       _zSlice(-1),
       _listeningPositions(nullptr ), 
       _outputFile(nullptr), 
       _callback(nullptr),
-      _cornellBoxBoundaryCondition(settings.cornellBoxBoundaryCondition), 
-      _useGhostCellBoundary(settings.useGhostCell),
+      _useGhostCellBoundary(settings->useGhostCell),
       _objects(objects), 
       _waveSolverSettings(settings)
 {
-    Reinitialize_PML_WaveSolver(settings.useMesh); 
+    Reinitialize_PML_WaveSolver(settings->useMesh); 
 }
 
 void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
@@ -140,12 +139,6 @@ int PML_WaveSolver::numVelocityCells(const int &dim) const
         return _grid.numVelocityCellsZ(); 
     else 
         throw std::runtime_error("**ERROR** dimension for velocity cells out of bounds"); 
-} 
-
-void PML_WaveSolver::SetCornellBoxBoundaryCondition(const bool &isOn)
-{ 
-    _cornellBoxBoundaryCondition = isOn; 
-    _grid.SetCornellBoxBoundaryCondition(isOn); 
 } 
 
 void PML_WaveSolver::SetGhostCellBoundary(const bool &isOn)
@@ -442,7 +435,6 @@ std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
        << " stop time       : " << solver._endTime << "\n" 
        << " time step size  : " << solver._timeStep << "\n"
        << " CFL             : " << CFL << "\n"
-       << " cornell box boundary condition  : " << solver._cornellBoxBoundaryCondition << "\n"
        << " ghost cell boundary condition   : " << solver._useGhostCellBoundary << "\n"
        << "--------------------------------------------------------------------------------" 
        << std::flush; 
