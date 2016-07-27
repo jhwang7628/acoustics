@@ -259,13 +259,19 @@ Run()
         {
             const int timeIndex = stepIndex/settings->timeSavePerStep; 
             std::ostringstream oss; 
-            oss << std::setw(6) << std::setfill('0') << timeIndex; 
-            const std::string filenameProbe = _CompositeFilename("listening_"+oss.str()+".dat"); 
+            oss << std::setw(8) << std::setfill('0') << timeIndex; 
+            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
             _SaveListeningData(filenameProbe);
             if (settings->writePressureFieldToDisk)
             {
-                const std::string filenameField = _CompositeFilename("pressure_"+oss.str()+".dat"); 
+                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
                 _SavePressureTimestep(filenameField); 
+                // uncomment if want to store velocities
+                //for (int dim=0; dim<3; ++dim) 
+                //{
+                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+                //}
             }
         }
 #ifdef DEBUG

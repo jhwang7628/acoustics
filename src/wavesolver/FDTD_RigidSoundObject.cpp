@@ -173,7 +173,7 @@ AdvanceModalODESolvers(const int &N_steps)
         _qNew = q; 
 
         _time += _ODEStepSize;
-        std::cout << "time = " << _time << std::endl; 
+        std::cout << "modal ode time = " << _time << std::endl; 
         _timer_substep_advanceODE[2].Pause();
     }
 }
