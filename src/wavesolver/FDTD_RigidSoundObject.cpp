@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <utils/SimpleTimer.h>
 #include <geometry/Point3.hpp>
 #include <macros.h>
@@ -10,6 +11,7 @@ Initialize() // TODO! should manage all parent class initialization
 {
     assert(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh && FDTD_RigidObject::_mesh); 
     CullNonSurfaceModeShapes(FDTD_RigidObject::_tetMeshIndexToSurfaceMesh, FDTD_RigidObject::_mesh); 
+    CullHighFrequencyModes(MODE_SHAPE_CUTOFF_FREQ);
 
     // Copy the fixed coefficient for each ODE for vectorized IIR
     const int N_modes = N_Modes();  
@@ -23,6 +25,7 @@ Initialize() // TODO! should manage all parent class initialization
         _coeff_qOld(mode_idx) = odeSolverPtr->GetCoefficient_qOld(); 
         _coeff_Q(mode_idx) = odeSolverPtr->GetCoefficient_Q(); 
     }
+    InitializeModeVectors(); 
 }
 
 //##############################################################################

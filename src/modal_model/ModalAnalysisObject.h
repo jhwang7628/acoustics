@@ -68,6 +68,8 @@ class ModalAnalysisObject
         // remove all non-surface mode shapes and permute the rows of modal
         // matrix
         void CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, std::shared_ptr<TriangleMesh<REAL> > meshPtr); 
+        void CullHighFrequencyModes(const int &modesToKeep); 
+        void CullHighFrequencyModes(const REAL &frequenciesToKeep); 
 
     friend std::ostream &operator <<(std::ostream &os, const ModalAnalysisObject &object); 
 }; 

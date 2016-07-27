@@ -147,6 +147,48 @@ CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, st
 
 //##############################################################################
 //##############################################################################
+void ModalAnalysisObject::
+CullHighFrequencyModes(const int &modesToKeep)
+{
+    if (modesToKeep >= N_Modes()) 
+        return;
+
+    // conservative resizing eigenvalues etc
+    _eigenValues.conservativeResize(modesToKeep);
+    _eigenVectors.conservativeResize(Eigen::NoChange, modesToKeep); 
+    if (IDTypeIsSurf())
+        _eigenVectorsNormal.conservativeResize(Eigen::NoChange, modesToKeep); 
+
+    // reinitialize modal ode if material has been defined.
+    if (_material)
+    {
+        _modalODESolvers.clear(); 
+        InitializeModalODESolvers(_material);
+    }
+    std::cout << "Highest frequency after culling: " << GetModeFrequency(modesToKeep-1) << std::endl;
+}
+
+//##############################################################################
+//##############################################################################
+void ModalAnalysisObject::
+CullHighFrequencyModes(const REAL &frequenciesToKeep)
+{
+    const int N_modes = N_Modes(); 
+    int cullModeStart = -1;
+    for (int mode_idx=0; mode_idx<N_modes; ++mode_idx)
+    {
+        if (GetModeFrequency(mode_idx) > frequenciesToKeep)
+        {
+            cullModeStart = mode_idx; 
+            break;
+        }
+    }
+    if (cullModeStart > 1)
+        CullHighFrequencyModes(cullModeStart);
+}
+
+//##############################################################################
+//##############################################################################
 std::ostream &operator <<(std::ostream &os, const ModalAnalysisObject &object) 
 {
     os << "--------------------------------------------------------------------------------\n" 

@@ -56,6 +56,7 @@ const double sqrt_2 = sqrt(2.0);
 const double DISTANCE_TOLERANCE = 0;
 const double GAUSSIAN_CHECK_BOUND = 3.0; // for pressure sources only check within
 const double AABB_CHECK_TOLERANCE_SCALE = 1.1; // scaling factor applied when checking AABB inside
+const double MODE_SHAPE_CUTOFF_FREQ = 44100.0;
 
 const REAL D_INF = std::numeric_limits<REAL>::infinity(); 
 const int I_INF = std::numeric_limits<int>::infinity(); 

@@ -67,11 +67,8 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
 
         const REAL ODEStepSize = 1.0/queryRequiredReal(meshNode, "modal_ODE_step_frequency"); 
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
-        object->InitializeModeVectors(); 
-
         object->FDTD_RigidSoundObject::Initialize(); 
           
-
         //RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
