@@ -20,10 +20,12 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         QString         _message; 
         QString         _messageSelection;
         int             _wireframe;
+        bool            _drawBox; 
         std::vector<Vector3f> _objectColors; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
+        void DrawBox(); 
 
     protected: 
         virtual void draw(); 
@@ -40,6 +42,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
             : _simulator(new FDTD_AcousticSimulator(simulationXMLFile))
         {
+            RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
         }
 

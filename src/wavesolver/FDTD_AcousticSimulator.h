@@ -35,7 +35,7 @@ class FDTD_AcousticSimulator
         std::string             _configFile; 
 
     protected: 
-        void _GetSolverSettings();
+        void _ParseSolverSettings();
         void _SetBoundaryConditions(); 
         void _SetPressureSources(); 
         void _SetListeningPoints(); 
@@ -56,6 +56,7 @@ class FDTD_AcousticSimulator
             : _canInitializeSolver(false), _simulationTime(0.0), _configFile(configFile)
         {} 
 
+        inline const std::shared_ptr<PML_WaveSolver_Settings> &GetSolverSettings() const {return _acousticSolverSettings;}
         inline const std::shared_ptr<FDTD_Objects> &GetSceneObjects() const {return _sceneObjects;} 
         inline std::shared_ptr<FDTD_Objects> GetSceneObjects(){return _sceneObjects;} 
 

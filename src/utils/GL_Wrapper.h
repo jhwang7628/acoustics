@@ -4,6 +4,7 @@
 namespace GL_Wrapper
 {
 void DrawSphere(double r, int lats, int longs); 
+void DrawWireBox(const double *const minBound, const double *const maxBound);
 };  // namespace GLWrapper
 
 #endif 

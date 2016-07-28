@@ -8,7 +8,9 @@
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/FDTD_Objects.h>
+#include <wavesolver/PML_WaveSolver_Settings.h>
 #include <utils/GL_Wrapper.h>
+#include <config.h>
 
 using namespace qglviewer;
 
@@ -18,6 +20,7 @@ void FDTD_AcousticSimulator_Viewer::
 SetAllKeyDescriptions()
 {
     setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
+    setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
 }
 
 //##############################################################################
@@ -29,7 +32,7 @@ init()
     RestoreDefaultDrawOptions(); 
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
-    setGridIsDrawn();
+    //setGridIsDrawn();
     SetAllKeyDescriptions();
     setAnimationPeriod(40); // in milliseconds
 
@@ -89,6 +92,9 @@ draw()
     DrawMesh(); 
     glColor3f(0.6f, 0.6f, 0.6f); 
     drawText(10, height()-20, _message); 
+
+    if (_drawBox)
+        DrawBox(); 
 }
 
 //##############################################################################
@@ -232,6 +238,22 @@ DrawMesh()
 }
 
 //##############################################################################
+// Draw simulation box
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawBox()
+{
+    const auto &settings = _simulator->GetSolverSettings(); 
+    const REAL cellSize = settings->cellSize; 
+    const int division = settings->cellDivisions; 
+    const REAL halfLength = (REAL)division*cellSize / 2.0; 
+    const double minBound[3] = {-halfLength, -halfLength, -halfLength}; 
+    const double maxBound[3] = { halfLength,  halfLength,  halfLength}; 
+    glColor3f(1.0f, 1.0f, 1.0f);
+    GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
+}
+
+//##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
 animate()
@@ -245,9 +267,13 @@ keyPressEvent(QKeyEvent *e)
 {
     const Qt::KeyboardModifiers modifiers = e->modifiers(); 
     bool optionsChanged = false;
-    bool handled = false; 
+    bool handled = true; 
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
         _wireframe = (_wireframe+1)%3; 
+        optionsChanged = true;
+    }
+    else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
+        _drawBox = !_drawBox; 
         optionsChanged = true;
     }
     else {
@@ -287,6 +313,7 @@ void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
+    _drawBox = true; 
 }
 
 //##############################################################################
@@ -297,7 +324,8 @@ PrintDrawOptions()
     std::cout << "\n"
               << "Draw Options \n"
               << "------------\n"
-              << " Draw Wireframe only: " << _wireframe << "\n"
+              << " Draw simulation box: " << _drawBox << "\n"
+              << " Draw wireframe only: " << _wireframe << "\n"
               << "\n"; 
 }
 

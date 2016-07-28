@@ -5,7 +5,7 @@
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-_GetSolverSettings()
+_ParseSolverSettings()
 {
     _parser = std::make_shared<ImpulseResponseParser>(_configFile);
     _acousticSolverSettings = std::make_shared<PML_WaveSolver_Settings>(); 
@@ -227,7 +227,7 @@ void FDTD_AcousticSimulator::
 InitializeSolver()
 {
     if (!_canInitializeSolver)
-        _GetSolverSettings();
+        _ParseSolverSettings();
 
     // setup listening points
     _SetListeningPoints(); 
