@@ -33,7 +33,50 @@ init()
     SetAllKeyDescriptions();
     setAnimationPeriod(40); // in milliseconds
 
+    init_gl();
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+init_gl()
+{
+    // fetch objects to set up for colors, material for gl rendering
+    const int N_objects = _simulator->GetSceneObjects()->GetRigidSoundObjects().size(); 
+    _objectColors.resize(N_objects); 
+    for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
+    {
+        const float x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
+        const float y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
+        const float z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
+        _objectColors[obj_idx] = Vector3f(x, y, z);
+    }
+
+    const GLfloat GLOBAL_AMBIENT[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+    const GLfloat SPECULAR_COLOR[] = { 0.6f, 0.6f, 0.6f, 1.0 };
+
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, GLOBAL_AMBIENT);
+    const GLfloat ambientLight[] = { 0.f, 0.f, 0.f, 1.0f };
+    const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    const GLfloat specularLight[] = { 1.f, 1.f, 1.f, 1.0f };
+    const GLfloat position[] = { -0.5f, 1.0f, 0.4f, 1.0f };
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, SPECULAR_COLOR);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+
+    // antialiasing
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 //##############################################################################
@@ -145,16 +188,21 @@ DrawMesh()
         }
 
         // draw triangles
+        glEnable(GL_LIGHTING);
         if (_wireframe == 0 || _wireframe == 2)
         {
             glBegin(GL_TRIANGLES); 
-            glColor3f(1, 1, 1); 
+            const auto &color = _objectColors.at(obj_idx); 
+            glColor3f(color.x, color.y, color.z); 
             for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
             {
                 const Tuple3ui &triangle = triangles.at(t_idx); 
                 const Point3<REAL> &x = vertices.at(triangle.x); 
                 const Point3<REAL> &y = vertices.at(triangle.y); 
                 const Point3<REAL> &z = vertices.at(triangle.z); 
+                const Vector3<REAL> &nx = normals.at(triangle.x); 
+                const Vector3<REAL> &ny = normals.at(triangle.y); 
+                const Vector3<REAL> &nz = normals.at(triangle.z); 
                 if (isDrawModes)
                 {
                     //const REAL xValue = _vertexValues(triangle.x);
@@ -169,13 +217,17 @@ DrawMesh()
                 }
                 else
                 {
+                    glNormal3f(nx.x, nx.y, nx.z); 
                     glVertex3f(x.x, x.y, x.z); 
+                    glNormal3f(ny.x, ny.y, ny.z); 
                     glVertex3f(y.x, y.y, y.z); 
+                    glNormal3f(nz.x, nz.y, nz.z); 
                     glVertex3f(z.x, z.y, z.z); 
                 }
             }
             glEnd(); 
         }
+        glDisable(GL_LIGHTING);
     }
 }
 

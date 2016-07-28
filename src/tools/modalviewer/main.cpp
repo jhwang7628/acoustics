@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     //const std::string sdfFilePrefix("/home/jui-hsien/code/acoustics/work/plate/plate.obj.1m.dist");
     const int sdfResolution = 100; 
     //std::shared_ptr<FDTD_RigidSoundObject> object = std::make_shared<FDTD_RigidSoundObject>(meshFilePrefix, sdfResolution, sdfFilePrefix); 
-    std::shared_ptr<FDTD_RigidSoundObject> object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolution, objectPrefix); 
+    std::shared_ptr<FDTD_RigidSoundObject> object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolution, objectPrefix, true); 
 
     QApplication application(argc,argv);
 

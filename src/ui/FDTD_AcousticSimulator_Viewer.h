@@ -3,6 +3,7 @@
 #include <memory>
 #include <QGLViewer/qglviewer.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h>
+#include <linearalgebra/Vector3.hpp>
 #include <config.h>
 
 //##############################################################################
@@ -19,6 +20,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         QString         _message; 
         QString         _messageSelection;
         int             _wireframe;
+        std::vector<Vector3f> _objectColors; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
@@ -27,6 +29,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         virtual void draw(); 
         virtual void drawWithNames(); 
         virtual void init();
+        virtual void init_gl();
         virtual void animate();
         virtual void keyPressEvent(QKeyEvent *e);
         virtual QString helpString() const;
