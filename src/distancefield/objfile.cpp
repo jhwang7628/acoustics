@@ -282,6 +282,12 @@ ObjFile::ObjFile( const std::string& filename, int verbose )
     else if  ((strncmp(line,"#",1) == 0 ) ||  (strncmp(line,"\0",1) == 0 ))
     { // ignore comment lines and empty lines
     }
+    else if  ((strncmp(line,"o",1) == 0 ))
+    { // ignore object lines
+    }
+    else if  ((strncmp(line,"s",1) == 0 ))
+    { // ignore smooth shading lines
+    }
     else if (strncmp(line,"usemtl",6) == 0)
     {
       // Ignore material lines

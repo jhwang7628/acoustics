@@ -139,7 +139,6 @@ class MeshObjReader
                                                carbine::Int(tokens[3])-1));
                     }
                 }
-
                 fin.getline(text, 1024);
                 ++ l;
             }
