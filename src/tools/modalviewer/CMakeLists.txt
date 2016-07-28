@@ -58,6 +58,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${GTS_GEOMETRY_SRC}               
         ${CGAL_GEOMETRY_SRC} 
         ${UTILS_SRC}                      
+        ${UTILS_OPENGL_SRC}                      
         ${TRANSFER_SRC}                   
         ${WAVELET_TRANSFER_SRC} 
         ${MATH_SRC} 

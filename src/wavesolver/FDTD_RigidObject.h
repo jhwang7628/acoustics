@@ -51,7 +51,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         {
         }
 
-        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
             : _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
               _meshID(-1), 
@@ -60,7 +60,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
               _signedDistanceFieldResolution(resolution)
         {
             _parsed = true; 
-            Initialize(); 
+            Initialize(buildFromTetMesh); 
         }
 
         inline bool Exist(){return (_mesh!=0);}
@@ -71,7 +71,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
         inline void SetMeshID(const int &ID){_meshID = ID;}
         inline int GetMeshID(){return _meshID;}
-        void Initialize(); 
+        void Initialize(const bool &buildFromTetMesh); 
         virtual void UpdateBoundingBox(); 
         // in-place query for object sdf distance from world x,y,z
         REAL DistanceToMesh(const double &x, const double &y, const double &z); 

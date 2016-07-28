@@ -7,7 +7,11 @@ set(UTILS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/timer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/MathUtil.cpp  
     ${CMAKE_CURRENT_SOURCE_DIR}/Conversions.h
+
+    CACHE FILE "Utility source")
+
+set(UTILS_OPENGL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/GL_Wrapper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/GL_Wrapper.cpp
 
-    CACHE FILE "Utility source")
+    CACHE FILE "OpenGL utility source")

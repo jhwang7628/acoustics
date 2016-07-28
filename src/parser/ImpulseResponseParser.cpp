@@ -16,41 +16,51 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
 
     // get the root node
     TiXmlDocument *document2 = &_document; 
-    TiXmlElement *root, *inputRoot, *listNode;
+    TiXmlElement *root, *inputRoot;
     if (!document2)
         throw std::runtime_error("**ERROR** document null"); 
 
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "rigid_object"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(listNode, inputRoot, "mesh_list"); 
-    const std::string meshNodeName("mesh"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "scene_object_list"); 
+    
+    const std::string rigidSoundObjectNodeName("rigid_sound_object"); 
+    const std::string rigidObjectNodeName("rigid_object"); 
 
-    TiXmlElement *meshNode;
-    GET_FIRST_CHILD_ELEMENT_GUARD(meshNode, listNode, meshNodeName.c_str()); 
-    while (meshNode != NULL)
+
+    // parse and build rigid sound objects
+    TiXmlElement *rigidSoundObjectNode;
+    try
     {
-        //const std::string meshFileName = queryRequiredAttr(meshNode, "file");
-        const int meshID = queryRequiredInt(meshNode, "id"); 
+        GET_FIRST_CHILD_ELEMENT_GUARD(rigidSoundObjectNode, inputRoot, rigidSoundObjectNodeName.c_str()); 
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No rigid_sound_object found\n";
+    }
+    while (rigidSoundObjectNode != NULL)
+    {
+        //const std::string meshFileName = queryRequiredAttr(rigidSoundObjectNode, "file");
+        //const std::string sdfFilePrefix = queryRequiredAttr(rigidSoundObjectNode, "distancefield");
+        const int meshID = queryRequiredInt(rigidSoundObjectNode, "id"); 
         const std::string meshName = std::to_string(meshID); 
-        //const std::string sdfFilePrefix = queryRequiredAttr(meshNode, "distancefield");
-        const std::string workingDirectory = queryRequiredAttr(meshNode, "working_directory"); 
-        const std::string objectPrefix = queryRequiredAttr(meshNode, "object_prefix"); 
-        const int sdfResolutionValue = queryRequiredInt(meshNode, "fieldresolution");
-        const REAL scale = queryOptionalReal(meshNode, "scale", 1.0); 
-        const REAL initialPosition_x = queryOptionalReal(meshNode, "initial_position_x", 0.0); 
-        const REAL initialPosition_y = queryOptionalReal(meshNode, "initial_position_y", 0.0); 
-        const REAL initialPosition_z = queryOptionalReal(meshNode, "initial_position_z", 0.0); 
+        const std::string workingDirectory = queryRequiredAttr(rigidSoundObjectNode, "working_directory"); 
+        const std::string objectPrefix = queryRequiredAttr(rigidSoundObjectNode, "object_prefix"); 
+        const int sdfResolutionValue = queryRequiredInt(rigidSoundObjectNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(rigidSoundObjectNode, "scale", 1.0); 
+        const REAL initialPosition_x = queryOptionalReal(rigidSoundObjectNode, "initial_position_x", 0.0); 
+        const REAL initialPosition_y = queryOptionalReal(rigidSoundObjectNode, "initial_position_y", 0.0); 
+        const REAL initialPosition_z = queryOptionalReal(rigidSoundObjectNode, "initial_position_z", 0.0); 
 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, meshName, scale);
+        const bool buildFromTetMesh = true;
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
         // load impulse from file
-        const std::string impulseFile = queryRequiredAttr(meshNode, "impulse_file"); 
-        const std::string rigidsimConfigFile = queryRequiredAttr(meshNode, "impulse_rigidsim_config_file");
+        const std::string impulseFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_file"); 
+        const std::string rigidsimConfigFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file");
         ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
         std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(object); 
         reader.LoadImpulses(meshID, objectPtr); 
         REAL impulseRangeStart, impulseRangeStop; 
         object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
-        //_timeStepSize = object->GetRigidsimTimeStepSize();  // set the time step size always the same as rigidsim
         std::cout << "Impulses Read for object " << meshName << ":\n"
                   << " Number of impulses: " << object->Size() << "\n"
                   << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
@@ -58,21 +68,53 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
                   << "\n";
 
         // load modes from file
-        const std::string modeFile = queryRequiredAttr(meshNode, "mode_file");
+        const std::string modeFile = queryRequiredAttr(rigidSoundObjectNode, "mode_file");
         const std::string parseFile("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
         ModalMaterialList materials; 
         GetModalMaterials(materials); 
-        const int materialID = queryRequiredInt(meshNode, "material_id");
+        const int materialID = queryRequiredInt(rigidSoundObjectNode, "material_id");
         auto materialPtr = materials.at(materialID);
 
-        const REAL ODEStepSize = 1.0/queryRequiredReal(meshNode, "modal_ODE_step_frequency"); 
+        const REAL ODEStepSize = 1.0/queryRequiredReal(rigidSoundObjectNode, "modal_ODE_step_frequency"); 
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
         object->FDTD_RigidSoundObject::Initialize(); 
           
         //RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
-        meshNode = meshNode->NextSiblingElement(meshNodeName.c_str());
+        rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
+    }
+
+    // parse and build rigid objects. In the implementation, I still use the class
+    // RigidSoundObject to store the non-sounding objects.
+    TiXmlElement *rigidObjectNode;
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(rigidObjectNode, inputRoot, rigidObjectNodeName.c_str()); 
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No rigid_object found\n";
+    }
+    while (rigidObjectNode != NULL)
+    {
+        //const std::string meshFileName = queryRequiredAttr(rigidObjectNode, "file");
+        //const std::string sdfFilePrefix = queryRequiredAttr(rigidObjectNode, "distancefield");
+        const int meshID = queryRequiredInt(rigidObjectNode, "id"); 
+        const std::string meshName = std::to_string(meshID); 
+        const std::string workingDirectory = queryRequiredAttr(rigidObjectNode, "working_directory"); 
+        const std::string objectPrefix = queryRequiredAttr(rigidObjectNode, "object_prefix"); 
+        const int sdfResolutionValue = queryRequiredInt(rigidObjectNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(rigidObjectNode, "scale", 1.0); 
+        const REAL initialPosition_x = queryOptionalReal(rigidObjectNode, "initial_position_x", 0.0); 
+        const REAL initialPosition_y = queryOptionalReal(rigidObjectNode, "initial_position_y", 0.0); 
+        const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
+
+        const bool buildFromTetMesh = false; 
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
+        objects->AddObject(meshName,object); 
+        rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
 }
 

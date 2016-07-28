@@ -26,9 +26,12 @@ _SetBoundaryConditions()
     //const REAL phase = 0.0;
     for (int index=0; index<N_objects; ++index)
     {
-        RigidObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+        if (objectPtr->IsModalObject())
+        {
+            VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+            objectPtr->AddVibrationalSource(sourcePtr); 
+        }
 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 

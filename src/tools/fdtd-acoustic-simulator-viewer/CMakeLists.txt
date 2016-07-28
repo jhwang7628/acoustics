@@ -50,6 +50,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${GEOMETRY_SRC} 
         ${FIELD_SRC}                      
         ${UTILS_SRC}                      
+        ${UTILS_OPENGL_SRC}                      
         ${PARSER_SRC} 
         ${GTS_GEOMETRY_SRC}               
         ${CGAL_GEOMETRY_SRC} 

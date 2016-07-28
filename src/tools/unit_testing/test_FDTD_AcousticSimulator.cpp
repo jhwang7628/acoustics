@@ -29,7 +29,7 @@ void TestBoundingBox()
     const std::string meshFileName("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj");
     const std::string sdfFilePrefix("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist");
     const int sdfResolution = 100; 
-    FDTD_RigidObject object(meshFileName, sdfResolution, sdfFilePrefix); 
+    FDTD_RigidObject object(meshFileName, sdfResolution, sdfFilePrefix, false); 
     //object.Initialize();
 
     SimpleTimer timer[2]; 

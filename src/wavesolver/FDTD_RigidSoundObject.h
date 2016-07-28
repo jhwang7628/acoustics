@@ -50,20 +50,22 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         }
 
         // build object with mesh, sdf
-        FDTD_RigidSoundObject(const std::string &meshFileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(meshFileName, resolution, sdfFilePrefix, meshName, scale), 
+        FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+            : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, meshName, scale), 
               ImpulseSeriesObject(GetMeshPtr()), 
               ModalAnalysisObject()
         {
         }
 
         // build object with mesh, sdf, modes
-        FDTD_RigidSoundObject(const std::string &meshFileName, const int &resolution, const std::string &sdfFilePrefix, const std::string &modeFile, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(meshFileName, resolution, sdfFilePrefix, meshName, scale), 
+        FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const std::string &modeFile, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+            : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, meshName, scale), 
               ImpulseSeriesObject(GetMeshPtr()), 
               ModalAnalysisObject(modeFile)
         {
         }
+
+        inline bool IsModalObject(){return N_Modes()>0;}
 
         void Initialize(); 
         void InitializeModeVectors(); 
