@@ -15,8 +15,10 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     private: 
         SimulatorPtr    _simulator; 
+
         QString         _message; 
         QString         _messageSelection;
+        int             _wireframe;
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 

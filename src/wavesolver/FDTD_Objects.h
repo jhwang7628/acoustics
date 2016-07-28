@@ -25,6 +25,8 @@ class FDTD_Objects
         inline std::string GetMeshName(const int &ind) const {return std::string(_rigidObjects.at(ind)->GetMeshName());}
         inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
+        inline const std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects() const {return _rigidObjects;}
+        inline std::vector<RigidSoundObjectPtr> GetRigidSoundObjects(){return _rigidObjects;}
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
         void AddObject(const std::string &objectName, RigidSoundObjectPtr &object); 

@@ -56,6 +56,9 @@ class FDTD_AcousticSimulator
             : _canInitializeSolver(false), _simulationTime(0.0), _configFile(configFile)
         {} 
 
+        inline const std::shared_ptr<FDTD_Objects> &GetSceneObjects() const {return _sceneObjects;} 
+        inline std::shared_ptr<FDTD_Objects> GetSceneObjects(){return _sceneObjects;} 
+
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); 
         void Run(); 
