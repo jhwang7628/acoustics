@@ -20,7 +20,7 @@
 //##############################################################################
 class FDTD_AcousticSimulator
 {
-    private: 
+    protected: 
         // meta objects
         std::shared_ptr<ImpulseResponseParser>      _parser; 
         std::shared_ptr<PML_WaveSolver>             _acousticSolver; 
@@ -34,7 +34,7 @@ class FDTD_AcousticSimulator
         double                  _simulationTime; 
         std::string             _configFile; 
 
-    private: 
+    protected: 
         void _GetSolverSettings();
         void _SetBoundaryConditions(); 
         void _SetPressureSources(); 
