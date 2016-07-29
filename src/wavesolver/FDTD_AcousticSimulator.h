@@ -9,6 +9,7 @@
 #include <wavesolver/HarmonicVibrationalSource.h>
 #include <wavesolver/ModalVibrationalSource.h>
 #include <wavesolver/FDTD_Objects.h> 
+#include <wavesolver/FDTD_RigidObject_Animator.h>
 
 //##############################################################################
 // A managing class to coordinate wavesolver, rigid body simulator, parser, 
@@ -26,6 +27,7 @@ class FDTD_AcousticSimulator
         std::shared_ptr<PML_WaveSolver>             _acousticSolver; 
         std::shared_ptr<PML_WaveSolver_Settings>    _acousticSolverSettings; 
         std::shared_ptr<FDTD_Objects>               _sceneObjects; 
+        std::shared_ptr<FDTD_RigidObject_Animator>  _sceneObjectsAnimator; 
 
         // state representation
         bool                    _canInitializeSolver; 

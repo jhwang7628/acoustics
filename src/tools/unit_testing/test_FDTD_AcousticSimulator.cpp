@@ -3,6 +3,7 @@
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h> 
+#include <wavesolver/FDTD_RigidObject_Animator.h>
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
 #include <geometry/BoundingBox.h> 
@@ -96,16 +97,38 @@ void TestScalarFieldSubindices()
 }
 
 //##############################################################################
+void TestFDTD_RigidObject_Animator()
+{
+    const std::string displacementFile("/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin"); 
+    FDTD_RigidObject_Animator animator; 
+    animator.ReadDisplacement(displacementFile); 
+    std::ofstream of("test.txt"); 
+    Vector3d displacement; 
+    Quaternion<REAL> quaternion;
+    const REAL dt = 0.0001; 
+    REAL t = 0.0; 
+    while(t<1)
+    {
+        animator.GetObjectDisplacement(0, t, displacement, quaternion); 
+        t += dt; 
+
+        of << displacement.x << " " << displacement.y << " " << displacement.z << std::endl;
+    }
+    of.close();
+}
+
+//##############################################################################
 int main(int argc, char ** argv)
 {
     //TestBoundingBox();
     //TestParseMeshList(); 
     //TestScalarFieldSubindices();
-      
-    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    if (argc>1) 
-        xmlName = std::string(argv[1]);
-    TestAcousticSimulatorRun(xmlName); 
+    
+    TestFDTD_RigidObject_Animator();
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //if (argc>1) 
+    //    xmlName = std::string(argv[1]);
+    //TestAcousticSimulatorRun(xmlName); 
 
     return 0;
 }

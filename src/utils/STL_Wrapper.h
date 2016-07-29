@@ -56,7 +56,7 @@ namespace STL_Wrapper
         }
 
     template <typename T> 
-        void PrintVectorContent(std::ostream &os, std::vector<T> &vec, const int cutoff=-1, const bool &verticalPrint=false)
+        void PrintVectorContent(std::ostream &os, const std::vector<T> &vec, const int cutoff=-1, const bool &verticalPrint=false)
         {
             const int half_cutoff = cutoff/2;
             const int N = vec.size();
@@ -64,10 +64,10 @@ namespace STL_Wrapper
             if (vec.size()<=cutoff || cutoff<0)
             {
                 if (verticalPrint)
-                    for (auto &i : vec) os << i << std::endl; 
+                    for (const auto &i : vec) os << i << std::endl; 
                 else
                 {
-                    for (auto &i : vec) os << i << " " << std::flush; 
+                    for (const auto &i : vec) os << i << " " << std::flush; 
                     os << std::endl; 
                 }
             }

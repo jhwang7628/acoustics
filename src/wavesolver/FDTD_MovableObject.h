@@ -4,6 +4,7 @@
 #include <TYPES.h>
 #include <config.h> 
 #include <linearalgebra/Vector3.hpp>
+#include <linearalgebra/Quaternion.hpp>
 #include <geometry/Point3.hpp> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 
@@ -81,13 +82,13 @@ class FDTD_MovableObject
 
     protected: 
         // bounding box in the work coordinate system
-        BoundingBox                         _bboxWorld; 
-        BoundingBox                         _bboxWorldUnion2Steps; 
+        BoundingBox _bboxWorld; 
+        BoundingBox _bboxWorldUnion2Steps; 
 
         // premultiply this transform to point takes it from object space to
         // world space
-        Affine3                             _modelingTransform; 
-        Affine3                             _modelingTransformInverse; 
+        Affine3     _modelingTransform; 
+        Affine3     _modelingTransformInverse; 
 
     public: 
         FDTD_MovableObject()
@@ -103,6 +104,7 @@ class FDTD_MovableObject
         }
         virtual void UpdateBoundingBox()=0; 
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
+        virtual void ApplyRotation(const Quaternion<REAL> &quaternion);
         
 
         //// debug methods //// 

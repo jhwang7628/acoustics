@@ -24,6 +24,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_MovableObject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject_Animator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidObject_Animator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidSoundObject.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_RigidSoundObject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_AcousticSimulator.h

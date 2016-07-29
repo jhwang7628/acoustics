@@ -13,6 +13,13 @@ ApplyTranslation(const double &x, const double &y, const double &z)
 //##############################################################################
 //##############################################################################
 void FDTD_MovableObject::
+ApplyRotation(const Quaternion<REAL> &quarternion)
+{
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_MovableObject::
 PrintBoundingBox()
 {
     std::cout << "minBound = " << _bboxWorld.minBound << std::endl; 

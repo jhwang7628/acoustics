@@ -93,6 +93,7 @@ draw()
     glColor3f(0.6f, 0.6f, 0.6f); 
     drawText(10, height()-20, _message); 
 
+    glLineWidth(3.0f);
     if (_drawBox)
         DrawBox(); 
 }
