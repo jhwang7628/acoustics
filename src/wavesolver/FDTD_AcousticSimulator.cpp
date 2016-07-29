@@ -229,13 +229,18 @@ InitializeSolver()
     if (!_canInitializeSolver)
         _ParseSolverSettings();
 
-    // setup listening points
+    // initialize solver and set various things
     _SetListeningPoints(); 
-    // initialize solver
     _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
-    // setup source objects in the scene
     _SetBoundaryConditions();
     _SetPressureSources();
+
+    const auto &settings = _acousticSolverSettings; 
+    if (settings->rigidsimDataRead)
+    {
+        _sceneObjectsAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
+        _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
+    }
 }
 
 //##############################################################################
@@ -283,12 +288,7 @@ Run()
         stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
-        // debug FIXME
-        //if (stepIndex > 20)
-        //    TestMoveObjects();
-
-        //if (stepIndex == 100)
-        //    exit(1); 
+        AnimateObjects(); 
     }
 }
 
@@ -311,6 +311,22 @@ SaveSolverConfig()
         _SaveListeningPositions(listeningPosition_s); 
 }
 
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+AnimateObjects()
+{
+    if (_sceneObjectsAnimator) 
+    {
+        Vector3d displacement; 
+        Quaternion<REAL> quaternion; 
+        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
+        {
+            std::cout << obj_idx << " " << _simulationTime << " " << displacement << std::endl;
+            _sceneObjectsAnimator->GetObjectDisplacement(obj_idx, _simulationTime, displacement, quaternion); 
+        }
+    }
+}
 
 //##############################################################################
 //##############################################################################

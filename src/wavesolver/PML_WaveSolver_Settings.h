@@ -36,6 +36,12 @@ struct PML_WaveSolver_Settings
     Vector3Array    listeningPoints; 
 
     bool            writePressureFieldToDisk; 
+
+    // rigidsim data files, used to animate objects
+    bool            rigidsimDataRead = false; 
+    std::string     fileDisplacement; 
+    std::string     fileVelocity; 
+    std::string     fileAcceleration;
 };
 
 #endif

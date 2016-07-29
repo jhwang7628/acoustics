@@ -68,9 +68,7 @@ class FDTD_AcousticSimulator
         void Pause(); 
         void SaveSolverConfig(); 
         void LoadSolverResult(const std::string &dataDirectory); 
-
-        // GUI, OpenGL handling 
-        void Draw(); 
+        void AnimateObjects(); 
 
         //// debug method //// 
         void TestAllComponents(); 

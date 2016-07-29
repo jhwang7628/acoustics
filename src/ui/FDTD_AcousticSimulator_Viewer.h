@@ -3,6 +3,7 @@
 #include <memory>
 #include <QGLViewer/qglviewer.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h>
+#include <wavesolver/FDTD_RigidObject_Animator.h> 
 #include <linearalgebra/Vector3.hpp>
 #include <config.h>
 
@@ -39,7 +40,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     public: 
 
-        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
+       FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
             : _simulator(new FDTD_AcousticSimulator(simulationXMLFile))
         {
             RestoreDefaultDrawOptions();

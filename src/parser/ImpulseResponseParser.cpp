@@ -21,11 +21,10 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         throw std::runtime_error("**ERROR** document null"); 
 
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "scene_object_list"); 
+    GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "scene"); 
     
     const std::string rigidSoundObjectNodeName("rigid_sound_object"); 
     const std::string rigidObjectNodeName("rigid_object"); 
-
 
     // parse and build rigid sound objects
     TiXmlElement *rigidSoundObjectNode;
@@ -78,8 +77,6 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL ODEStepSize = 1.0/queryRequiredReal(rigidSoundObjectNode, "modal_ODE_step_frequency"); 
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
         object->FDTD_RigidSoundObject::Initialize(); 
-          
-        //RigidObjectPtr object = std::make_shared<FDTD_RigidObject>(meshFileName, sdfResolutionValue, sdfFilePrefix, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
@@ -98,8 +95,6 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
     }
     while (rigidObjectNode != NULL)
     {
-        //const std::string meshFileName = queryRequiredAttr(rigidObjectNode, "file");
-        //const std::string sdfFilePrefix = queryRequiredAttr(rigidObjectNode, "distancefield");
         const int meshID = queryRequiredInt(rigidObjectNode, "id"); 
         const std::string meshName = std::to_string(meshID); 
         const std::string workingDirectory = queryRequiredAttr(rigidObjectNode, "working_directory"); 
@@ -164,6 +159,25 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     // set sources 
     //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
     //parms._sources = QueryVolumetricSource(document, this, "impulse_response/volumetric_source/source", parms._c); 
+
+    // parse object rigidsim results data if exists
+    TiXmlElement *sceneNode, *rigidsimDataNode; 
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(sceneNode, root, "scene"); 
+        GET_FIRST_CHILD_ELEMENT_GUARD(rigidsimDataNode, sceneNode, "object_rigidsim_data"); 
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No scene/object_rigidsim_data node found\n"; 
+    }
+    if (rigidsimDataNode)
+    {
+        settings->rigidsimDataRead = true; 
+        settings->fileDisplacement = queryRequiredAttr(rigidsimDataNode, "file_displacement"); 
+        settings->fileVelocity = queryRequiredAttr(rigidsimDataNode, "file_velocity"); 
+        settings->fileAcceleration = queryRequiredAttr(rigidsimDataNode, "file_acceleration"); 
+    }
 }
 
 //##############################################################################

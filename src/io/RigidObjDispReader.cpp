@@ -95,13 +95,12 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
                 totalObjects ++;
                 inFile.read((char*)&objID, sizeof(int)); 
             }
-            REAL timeCached = _timesteps.at(v_totalFrames); 
-            if (fabs(timeCached - time) > 1E-10)
-                throw std::runtime_error("**ERROR** velocity has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
 
             if (frameVelocity.size() !=0)
             {
-                _timesteps.push_back(time); 
+                REAL timeCached = _timesteps.at(v_totalFrames); 
+                if (fabs(timeCached - time) > 1E-10)
+                    throw std::runtime_error("**ERROR** velocity has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
                 _velocity.push_back(frameVelocity); 
                 _angularVelocity.push_back(frameAngularVelocity); 
                 v_totalFrames ++; 
@@ -157,13 +156,12 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
                                                                     
                 inFile.read((char*)&objID, sizeof(int)); 
             }
-            REAL timeCached = _timesteps.at(v_totalFrames); 
-            if (fabs(timeCached - time) > 1E-10)
-                throw std::runtime_error("**ERROR** acceleration has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
 
             if (frameAcceleration.size() !=0)
             {
-                _timesteps.push_back(time); 
+                REAL timeCached = _timesteps.at(v_totalFrames); 
+                if (fabs(timeCached - time) > 1E-10)
+                    throw std::runtime_error("**ERROR** acceleration has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
                 _acceleration.push_back(frameAcceleration); 
                 _angularAcceleration.push_back(frameAngularAcceleration); 
                 v_totalFrames ++; 

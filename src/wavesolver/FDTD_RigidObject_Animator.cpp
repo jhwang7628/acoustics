@@ -28,6 +28,9 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
 }
 
 //##############################################################################
+// Because of how it is stored, the current implementation might not have good 
+// data locality. Might want to consider refactor some parts for a much larger
+// scene.
 //##############################################################################
 void FDTD_RigidObject_Animator::
 GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacement, Quaternion<REAL> &quaternion)
@@ -36,9 +39,6 @@ GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacem
     const auto &timeStamps = _rigidsimResults->Timesteps(); 
     const std::vector<std::vector<Point3<REAL> > > &positions  = _rigidsimResults->Positions();
     const std::vector<std::vector<Quaternion<REAL> > > &quaternions  = _rigidsimResults->Rotations();
-
-    std::cout << "_timeStart = " << _timeStart << "; _timeStop = " << _timeStop << std::endl;
-
     if (time <= _timeStart)
     {
         displacement = positions.at(0).at(objectID); 
