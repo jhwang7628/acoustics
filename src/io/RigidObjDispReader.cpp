@@ -37,10 +37,13 @@ ReadDisplacement(const std::string &filename)
             totalObjects ++;
             inFile.read((char*)&objID, sizeof(int)); 
         }
-        _timesteps.push_back(time); 
-        _positions.push_back(framePositions); 
-        _rotations.push_back(frameRotations); 
-        _totalFrames ++; 
+        if (framePositions.size() !=0)
+        {
+            _timesteps.push_back(time); 
+            _positions.push_back(framePositions); 
+            _rotations.push_back(frameRotations); 
+            _totalFrames ++; 
+        }
         if (totalObjects != 0) _totalObjects = totalObjects; 
 
         if (!inFile.eof())
@@ -96,10 +99,13 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
             if (fabs(timeCached - time) > 1E-10)
                 throw std::runtime_error("**ERROR** velocity has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
 
-            _timesteps.push_back(time); 
-            _velocity.push_back(frameVelocity); 
-            _angularVelocity.push_back(frameAngularVelocity); 
-            v_totalFrames ++; 
+            if (frameVelocity.size() !=0)
+            {
+                _timesteps.push_back(time); 
+                _velocity.push_back(frameVelocity); 
+                _angularVelocity.push_back(frameAngularVelocity); 
+                v_totalFrames ++; 
+            }
             if (totalObjects != 0) v_totalObjects = totalObjects; 
 
             if (!inFile.eof())
@@ -155,10 +161,13 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
             if (fabs(timeCached - time) > 1E-10)
                 throw std::runtime_error("**ERROR** acceleration has different time frame than displacement."+std::to_string(timeCached)+"->"+std::to_string(time)); 
 
-            _timesteps.push_back(time); 
-            _acceleration.push_back(frameAcceleration); 
-            _angularAcceleration.push_back(frameAngularAcceleration); 
-            v_totalFrames ++; 
+            if (frameAcceleration.size() !=0)
+            {
+                _timesteps.push_back(time); 
+                _acceleration.push_back(frameAcceleration); 
+                _angularAcceleration.push_back(frameAngularAcceleration); 
+                v_totalFrames ++; 
+            }
             if (totalObjects != 0) v_totalObjects = totalObjects; 
 
             if (!inFile.eof())
