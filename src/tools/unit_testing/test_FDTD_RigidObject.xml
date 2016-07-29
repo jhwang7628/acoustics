@@ -16,6 +16,8 @@
                 file_acceleration="/home/jui-hsien/code/acoustics/work/plate_drop_test/acceleration.bin"
                 />
             <!-- object_prefix is used to search for: *.tet *.geo.txt *.tet.obj *.dist -->
+            <!-- right now only the id of rigid_sound_object will be used to
+                 get rigidsim data, for these objects, id needs to be integer to cope with rigidsim and impulses register -->
             <rigid_sound_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/plate"
                 object_prefix="plate"  

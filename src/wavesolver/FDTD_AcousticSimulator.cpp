@@ -322,8 +322,10 @@ AnimateObjects()
         Quaternion<REAL> quaternion; 
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
-            std::cout << obj_idx << " " << _simulationTime << " " << displacement << std::endl;
-            _sceneObjectsAnimator->GetObjectDisplacement(obj_idx, _simulationTime, displacement, quaternion); 
+            if (!_sceneObjects->GetPtr(obj_idx)->IsModalObject())
+                continue; 
+            const int rigidsimObjectID = (int)_sceneObjects->GetMeshName(obj_idx); 
+            _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
         }
     }
 }
