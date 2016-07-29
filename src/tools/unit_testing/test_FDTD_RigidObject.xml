@@ -7,11 +7,18 @@
             density = "2300" 
             /> 
     </material_list>
-    <rigid_object> 
-        <mesh_list> 
-            <mesh 
+    <scene> 
+            <!-- note: in these data, id of the objects will be used to
+                 distinguish -->
+            <object_rigidsim_data
+                file_displacement="/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin"
+                file_velocity="/home/jui-hsien/code/acoustics/work/plate_drop_test/velocity.bin"
+                file_acceleration="/home/jui-hsien/code/acoustics/work/plate_drop_test/acceleration.bin"
+                />
+            <!-- object_prefix is used to search for: *.tet *.geo.txt *.tet.obj *.dist -->
+            <rigid_sound_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/plate"
-                object_prefix="plate" 
+                object_prefix="plate"  
                 id="0" 
                 fieldresolution="400"
                 scale="1.0" 
@@ -19,12 +26,22 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 material_id="0"
-                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"
+                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"
                 impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg"
                 mode_file="/home/jui-hsien/code/acoustics/work/plate/plate.modes"
                 modal_ODE_step_frequency="176400"
                 /> <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
                 
+            <rigid_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/big_plane"
+                object_prefix="big_plane_offset" 
+                id="1" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                /> 
             <!--
                 -->
             <!--
@@ -46,8 +63,7 @@
                 scale="1.0" 
                 />
                 -->
-        </mesh_list> 
-    </rigid_object> 
+    </scene> 
     <!--
     <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
     -->
@@ -57,7 +73,7 @@
         density="1.0" 
         cellsize="0.005" 
         gridresolution="60"
-        stop_time="1"
+        stop_time="0.01"
         substeps="1"
         timestepfrequency="176400"
 
@@ -68,9 +84,9 @@
 
         use_mesh="1"
         use_ghost_cell="0"
-        cornell_box_boundary_condition="0"
+        boundary_condition_preset="1"
 
-        write_pressure_field_to_disk="0"
+        write_pressure_field_to_disk="1"
         /> 
 
     <pressure_source> 
@@ -79,7 +95,7 @@
         source_width_time="0.00005"
         source_position_x="0.0" 
         source_position_y="0.0" 
-        source_position_z="0.05" 
+        source_position_z="0.0" 
         />
         <gaussian_pressure_source
         source_width_time="0.00005" 
