@@ -240,6 +240,7 @@ InitializeSolver()
     {
         _sceneObjectsAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
         _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
+        AnimateObjects(); // apply the transformation right away
     }
 }
 
@@ -319,13 +320,17 @@ AnimateObjects()
     if (_sceneObjectsAnimator) 
     {
         Vector3d displacement; 
+        Vector3d rotationAxis; 
+        REAL rotationAngle;
         Quaternion<REAL> quaternion; 
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
             if (!_sceneObjects->GetPtr(obj_idx)->IsModalObject())
                 continue; 
-            const int rigidsimObjectID = (int)_sceneObjects->GetMeshName(obj_idx); 
+            const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
             _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
+            rotationAngle = quaternion.toAxisRotR(rotationAxis); 
+            _sceneObjects->GetPtr(obj_idx)->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
         }
     }
 }
@@ -366,5 +371,18 @@ TestMoveObjects()
         //animatedObject.PrintBoundingBox(); 
         //animatedObject.PrintTransformation();
     }
-    
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+TestAnimateObjects(const int &N_steps)
+{
+    auto &settings = _acousticSolverSettings; 
+    for (int ii=0; ii<N_steps; ++ii)
+    {
+        _simulationTime += settings->timeStepSize; 
+        std::cout << "time = " << _simulationTime << std::endl;
+        AnimateObjects(); 
+    }
 }

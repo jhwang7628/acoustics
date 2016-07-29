@@ -82,7 +82,8 @@ void TestAcousticSimulatorRun(const std::string &xmlName)
 {
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
-    simulator.Run();
+    simulator.TestAnimateObjects(1);
+    //simulator.Run();
     //simulator.TestAllComponents();
 }
 

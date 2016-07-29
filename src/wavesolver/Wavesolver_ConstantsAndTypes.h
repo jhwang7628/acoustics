@@ -22,6 +22,9 @@ class PML_WaveSolver_Settings;
 #endif
                                                                                 
 #define PRINT_EIGEN_VECTOR3(x) std::cout << x[0] << ", " << x[1] << ", " << x[2] << std::endl
+#define RAD_2_DEG(x) (x*180.0/M_PI)
+#define DEG_2_RAD(x) (x/180.0*M_PI)
+
 
 #define FOR_ALL_3D_GRID_VECTOR3(start,range,ii,jj,kk) \
     for (ii=start.x; ii<start.x+range.x; ++ii) \

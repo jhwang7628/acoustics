@@ -16,7 +16,7 @@
 class FDTD_MovableObject
 {
     public: 
-        typedef Eigen::Transform<REAL,3,Eigen::Affine> Affine3; 
+        typedef Eigen::Transform<REAL, 3, Eigen::Affine> Affine3; 
         // bounding box to check 
         struct BoundingBox
         {
@@ -102,10 +102,12 @@ class FDTD_MovableObject
         {
             return _bboxWorld.Inside(x, y, z, scale);
         }
+        virtual Eigen::Vector3d GetTranslation() const;
+        virtual void GetRotationDegree(REAL &angle, Eigen::Vector3d &axis) const; 
         virtual void UpdateBoundingBox()=0; 
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
         virtual void ApplyRotation(const Quaternion<REAL> &quaternion);
-        
+        virtual void SetTransform(const double &x, const double &y, const double &z, const double &angle, const double &rotationVectorx, const double &rotationVectory, const double &rotationVectorz);
 
         //// debug methods //// 
         void PrintBoundingBox(); 

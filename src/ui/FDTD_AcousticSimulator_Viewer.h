@@ -18,6 +18,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
     private: 
         SimulatorPtr    _simulator; 
 
+        int             _currentFrame = 0;
         QString         _message; 
         QString         _messageSelection;
         int             _wireframe;
@@ -40,14 +41,16 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     public: 
 
-       FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
+        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
             : _simulator(new FDTD_AcousticSimulator(simulationXMLFile))
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
         }
 
+        void DrawOneFrameForward(); 
         void RestoreDefaultDrawOptions(); 
+        void PrintFrameInfo(); 
         void PrintDrawOptions(); 
 };
 

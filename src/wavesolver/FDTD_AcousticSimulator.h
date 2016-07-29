@@ -36,7 +36,7 @@ class FDTD_AcousticSimulator
         double                  _simulationTime; 
         std::string             _configFile; 
 
-    protected: 
+    private: 
         void _ParseSolverSettings();
         void _SetBoundaryConditions(); 
         void _SetPressureSources(); 
@@ -73,6 +73,7 @@ class FDTD_AcousticSimulator
         //// debug method //// 
         void TestAllComponents(); 
         void TestMoveObjects(); 
+        void TestAnimateObjects(const int &N_steps); 
 };
 
 #endif

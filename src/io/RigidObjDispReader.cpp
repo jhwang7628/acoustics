@@ -151,9 +151,6 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
                 frameAcceleration.push_back(acceleration); 
                 frameAngularAcceleration.push_back(angularAcceleration); 
                 totalObjects ++;
-
-                std::cout << objID << " : " << acceleration << ", " << angularAcceleration << std::endl;
-                                                                    
                 inFile.read((char*)&objID, sizeof(int)); 
             }
 

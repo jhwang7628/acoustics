@@ -11,6 +11,7 @@
 #include <wavesolver/PML_WaveSolver_Settings.h>
 #include <utils/GL_Wrapper.h>
 #include <config.h>
+#include <iostream>
 
 using namespace qglviewer;
 
@@ -149,6 +150,16 @@ DrawMesh()
         const REAL offsetEpsilon = 1E-5;
         const REAL ballSize = 3E-4;
 
+        // get transformations
+        Eigen::Vector3d translation = object->GetTranslation(); 
+        Eigen::Vector3d rotationAxis;
+        REAL rotationAngle;
+        object->GetRotationDegree(rotationAngle, rotationAxis); 
+        glPushMatrix(); 
+        std::cout << "translation = " << translation.transpose() << std::endl;
+        glTranslated(translation[0], translation[1], translation[2]); 
+        glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
+
         // draw points only if selected
         if (selectedName() != -1)
         {
@@ -235,6 +246,8 @@ DrawMesh()
             glEnd(); 
         }
         glDisable(GL_LIGHTING);
+
+        glPopMatrix();
     }
 }
 
@@ -259,6 +272,7 @@ DrawBox()
 void FDTD_AcousticSimulator_Viewer::
 animate()
 {
+    DrawOneFrameForward();
 }
 
 //##############################################################################
@@ -277,6 +291,9 @@ keyPressEvent(QKeyEvent *e)
         _drawBox = !_drawBox; 
         optionsChanged = true;
     }
+    else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
+        if (!animationIsStarted())
+            DrawOneFrameForward(); }
     else {
         handled = false;
     }
@@ -311,6 +328,17 @@ postSelection(const QPoint &point)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+DrawOneFrameForward()
+{
+    _currentFrame++;
+    _simulator->TestAnimateObjects(145); 
+    updateGL(); 
+    PrintFrameInfo();
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
@@ -330,3 +358,14 @@ PrintDrawOptions()
               << "\n"; 
 }
 
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+PrintFrameInfo()
+{
+    //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
+    //_message += QString::fromStdString(frameInfo); 
+    //_message = QString("");
+    //_message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
+    std::cout << "Current Frame: " << _currentFrame << std::endl; 
+}
