@@ -229,12 +229,8 @@ InitializeSolver()
     if (!_canInitializeSolver)
         _ParseSolverSettings();
 
-    // initialize solver and set various things
-    _SetListeningPoints(); 
-    _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
-    _SetBoundaryConditions();
-    _SetPressureSources();
-
+    // if rigidsim data exists, read and apply them to objects before
+    // initializing solver.
     const auto &settings = _acousticSolverSettings; 
     if (settings->rigidsimDataRead)
     {
@@ -242,6 +238,12 @@ InitializeSolver()
         _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
         AnimateObjects(); // apply the transformation right away
     }
+
+    // initialize solver and set various things
+    _SetListeningPoints(); 
+    _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
+    _SetBoundaryConditions();
+    _SetPressureSources();
 }
 
 //##############################################################################

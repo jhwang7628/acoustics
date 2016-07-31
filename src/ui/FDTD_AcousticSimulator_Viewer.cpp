@@ -57,30 +57,7 @@ init_gl()
         _objectColors[obj_idx] = Vector3f(x, y, z);
     }
 
-    const GLfloat GLOBAL_AMBIENT[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    const GLfloat SPECULAR_COLOR[] = { 0.6f, 0.6f, 0.6f, 1.0 };
-
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, GLOBAL_AMBIENT);
-    const GLfloat ambientLight[] = { 0.f, 0.f, 0.f, 1.0f };
-    const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-    const GLfloat specularLight[] = { 1.f, 1.f, 1.f, 1.0f };
-    const GLfloat position[] = { -0.5f, 1.0f, 0.4f, 1.0f };
-
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
-    glLightfv(GL_LIGHT0, GL_POSITION, position);
-
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, SPECULAR_COLOR);
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-
-    // antialiasing
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    DrawLights();
 }
 
 //##############################################################################
@@ -91,7 +68,7 @@ void FDTD_AcousticSimulator_Viewer::
 draw()
 {
     DrawMesh(); 
-    glColor3f(0.6f, 0.6f, 0.6f); 
+    DrawListeningPoints();
     drawText(10, height()-20, _message); 
 
     glLineWidth(3.0f);
@@ -156,7 +133,6 @@ DrawMesh()
         REAL rotationAngle;
         object->GetRotationDegree(rotationAngle, rotationAxis); 
         glPushMatrix(); 
-        std::cout << "translation = " << translation.transpose() << std::endl;
         glTranslated(translation[0], translation[1], translation[2]); 
         glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
 
@@ -268,6 +244,60 @@ DrawBox()
 }
 
 //##############################################################################
+// Draw simulation listening point
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawListeningPoints()
+{
+    const auto &settings = _simulator->GetSolverSettings(); 
+    const auto &points = settings->listeningPoints; 
+    const int N_points = points.size(); 
+    for (int pt_idx=0; pt_idx<N_points; ++pt_idx)
+    {
+        const Vector3d &vertex = points.at(pt_idx); 
+        glPushMatrix();
+        glTranslatef(vertex.x, vertex.y, vertex.z); 
+        glColor3f(0.9f, 0.1f, 0.1f);
+        GL_Wrapper::DrawSphere(5E-3, 10, 10); 
+        glPopMatrix(); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawLights()
+{
+    const GLfloat GLOBAL_AMBIENT[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+    const GLfloat SPECULAR_COLOR[] = { 0.6f, 0.6f, 0.6f, 1.0 };
+
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, GLOBAL_AMBIENT);
+    const GLfloat ambientLight[] = { 0.f, 0.f, 0.f, 1.0f };
+    const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    const GLfloat specularLight[] = { 1.f, 1.f, 1.f, 1.0f };
+    const GLfloat position[] = { -0.5f, 1.0f, 0.4f, 1.0f };
+
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+    glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, SPECULAR_COLOR);
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+
+    // antialiasing
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHT0);
+}
+
+//##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
 animate()
@@ -331,7 +361,7 @@ void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
     _currentFrame++;
-    _simulator->TestAnimateObjects(145); 
+    _simulator->TestAnimateObjects(5000); 
     updateGL(); 
     PrintFrameInfo();
 }

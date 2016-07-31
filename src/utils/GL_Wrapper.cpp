@@ -24,7 +24,6 @@ void DrawSphere(double r, int lats, int longs)
             double lng = 2 * M_PI * (double) (j - 1) / longs;
             double x = cos(lng);
             double y = sin(lng);
-
             glNormal3f(r* x * zr0, r* y * zr0, r*z0);
             glVertex3f(r* x * zr0, r* y * zr0, r*z0);
             glNormal3f(r* x * zr1, r* y * zr1, r*z1);

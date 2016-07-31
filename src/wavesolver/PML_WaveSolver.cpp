@@ -328,9 +328,8 @@ void PML_WaveSolver::writeWaveOutput() const
 void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
-    // DEBUG FIXME
     _cellClassifyTimer.start(); 
-    //_grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings.useMesh, false); 
+    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, false); 
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
