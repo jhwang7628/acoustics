@@ -98,6 +98,7 @@ class FDTD_MovableObject
         }
 
         inline const BoundingBox &GetUnionBBox(){return _bboxWorldUnion2Steps;}
+        inline const BoundingBox &GetBBox(){return _bboxWorld;}
         inline bool InsideBoundingBox(const double &x, const double &y, const double &z, const double &scale)
         {
             return _bboxWorld.Inside(x, y, z, scale);

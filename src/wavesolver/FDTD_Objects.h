@@ -26,7 +26,7 @@ class FDTD_Objects
         inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
         inline const std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects() const {return _rigidObjects;}
-        inline std::vector<RigidSoundObjectPtr> GetRigidSoundObjects(){return _rigidObjects;}
+        inline std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects(){return _rigidObjects;}
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
         void AddObject(const std::string &objectName, RigidSoundObjectPtr &object); 
@@ -44,6 +44,7 @@ class FDTD_Objects
         REAL EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         bool ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration=1); 
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
+        REAL GetEarliestImpactEvent();
 
         //// debug methods ////
         void TestObjectDistanceField(const size_t &ind); 

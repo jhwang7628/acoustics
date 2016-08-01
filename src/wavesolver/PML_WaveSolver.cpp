@@ -41,7 +41,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
       _outputFile( outputFile ),
       _callback( callback )
 { 
-    Reinitialize_PML_WaveSolver(useBoundary);
+    Reinitialize_PML_WaveSolver(useBoundary, 0.0);
 }
 
 PML_WaveSolver::PML_WaveSolver( REAL timeStep,
@@ -71,7 +71,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
       _outputFile( outputFile ),
       _callback( callback )
 { 
-    Reinitialize_PML_WaveSolver(useBoundary);
+    Reinitialize_PML_WaveSolver(useBoundary, 0.0);
 }
 
 PML_WaveSolver::PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
@@ -92,12 +92,12 @@ PML_WaveSolver::PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared
       _objects(objects), 
       _waveSolverSettings(settings)
 {
-    Reinitialize_PML_WaveSolver(settings->useMesh); 
+    Reinitialize_PML_WaveSolver(settings->useMesh, 0.0); 
 }
 
-void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary)
+void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime)
 {
-    _currentTime = 0.0;
+    _currentTime = startTime;
     _timeIndex = 0;
 
     _pFull.resizeAndWipe( _grid.numPressureCells(),  _N );
@@ -258,7 +258,7 @@ bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
     //printf( "Time step %d took %f s\n", _timeIndex, omp_get_wtime()-start);
     //_stepTimer.reset();
 
-    if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
+    if ( _endTime > 0.0 && _currentTime >= _endTime )
     {
         return false;
     }
@@ -329,7 +329,7 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, false); 
+    //_grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, false); // FIXME debug
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
@@ -430,7 +430,7 @@ std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
        << " density         : " << solver._density << "\n"
        << " cell size       : " << solver._cellSize << "\n"
        << " save per steps  : " << solver._subSteps << "\n"
-       << " start time(TEMP): " << 0.0 << "\n"
+       << " start time      : " << solver._currentTime << "\n"
        << " stop time       : " << solver._endTime << "\n" 
        << " time step size  : " << solver._timeStep << "\n"
        << " CFL             : " << CFL << "\n"

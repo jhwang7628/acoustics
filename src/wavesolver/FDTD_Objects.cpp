@@ -191,6 +191,20 @@ AdvanceAllModalODESolvers(const int &N_steps)
 
 //##############################################################################
 //##############################################################################
+REAL FDTD_Objects::
+GetEarliestImpactEvent()
+{
+    REAL earliestTime = std::numeric_limits<REAL>::max(); 
+    for (const auto &object : _rigidObjects)
+    {
+        if (object->N_Impulses() > 0)
+            earliestTime = min(earliestTime, object->GetFirstImpulseTime());
+    }
+    return earliestTime; 
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_Objects::
 TestObjectDistanceField(const size_t &ind)
 {

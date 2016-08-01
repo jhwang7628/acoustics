@@ -33,6 +33,7 @@ class FDTD_AcousticSimulator
         bool                    _canInitializeSolver; 
 
         // necessary fields 
+        int                     _stepIndex;
         double                  _simulationTime; 
         std::string             _configFile; 
 
@@ -52,10 +53,10 @@ class FDTD_AcousticSimulator
 
     public: 
         FDTD_AcousticSimulator()
-            : _canInitializeSolver(false), _simulationTime(0.0)
+            : _canInitializeSolver(false), _stepIndex(0), _simulationTime(0.0)
         {}
         FDTD_AcousticSimulator(const std::string &configFile)
-            : _canInitializeSolver(false), _simulationTime(0.0), _configFile(configFile)
+            : _canInitializeSolver(false), _stepIndex(0), _simulationTime(0.0), _configFile(configFile)
         {} 
 
         inline const std::shared_ptr<PML_WaveSolver_Settings> &GetSolverSettings() const {return _acousticSolverSettings;}
@@ -64,6 +65,8 @@ class FDTD_AcousticSimulator
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); 
+        void ResetStartTime(const REAL &startTime); 
+        bool RunForSteps(const int &N_steps); 
         void Run(); 
         void Pause(); 
         void SaveSolverConfig(); 

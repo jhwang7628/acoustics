@@ -46,6 +46,7 @@ class ModalODESolver
 
         inline ModalMaterialPtr GetModalMaterial(){return _material;}
         inline REAL GetODECurrentTime(){return _time;}
+        inline void SetODECurrentTime(const REAL &time){_time = time;}
         inline void SetModalMaterial(ModalMaterialPtr &material){_material = material;} 
         inline void SetModalFrequency(REAL &omegaSquared){_omegaSquared = omegaSquared; _omega = sqrt(omegaSquared);}
         inline REAL GetCoefficient_qNew(){return _2_epsilon_cosTheta;} 

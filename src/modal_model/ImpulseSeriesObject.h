@@ -43,6 +43,8 @@ class ImpulseSeriesObject
 
         inline Vector3d ConvertImpulseToForce(const Vector3d &impulse){return impulse / _rigidsimConfigData->simulation_step_size; }
         inline int Size(){return _lengthImpulses;}
+        inline int N_Impulses(){return _lengthImpulses;}
+        inline REAL GetFirstImpulseTime(){return _firstImpulseTime;}
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
         inline bool Initialized(){return _objectMesh!=nullptr && _lengthImpulses!=0;}
         inline RigidsimConfigDataPtr GetRigidsimConfigData(){return _rigidsimConfigData;}

@@ -176,7 +176,6 @@ AdvanceModalODESolvers(const int &N_steps)
         _qNew = q; 
 
         _time += _ODEStepSize;
-        std::cout << "modal ode time = " << _time << std::endl; 
         _timer_substep_advanceODE[2].Pause();
     }
 }
@@ -262,13 +261,16 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
 {
     int closestIndex = -1;
     REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    // transform the sample point to object frame
+    const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
+    const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))
     {
         const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
         const int N_vertices = vertices.size(); 
         for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
         {
-            const REAL distance = (vertices.at(vert_idx) - samplePoint).normSqr();
+            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
             if (distance < closestDistance)
             {
                 closestIndex = vert_idx; 

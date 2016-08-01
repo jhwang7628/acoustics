@@ -63,6 +63,7 @@ class ModalAnalysisObject
         // Get u from q by doing u = Uq, where U is the modal matrix.
         void GetVolumeVertexDisplacement(const Eigen::VectorXd &q, Eigen::VectorXd &u); 
         void GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues); 
+        void SetODESolverTime(const REAL &time);
         void Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr);
         void InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr);
         // remove all non-surface mode shapes and permute the rows of modal

@@ -22,6 +22,7 @@ SetAllKeyDescriptions()
 {
     setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
     setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
+    setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
 }
 
 //##############################################################################
@@ -323,9 +324,19 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
-            DrawOneFrameForward(); }
+            DrawOneFrameForward(); 
+    }
+    else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
+        bool continueStepping = true; 
+        int stepIndex = 0;
+        while(continueStepping) {
+            continueStepping = _simulator->RunForSteps(1); 
+            if (stepIndex % 500 == 0)
+                updateGL(); 
+        }
+    }
     else {
-        handled = false;
+        handled = false; 
     }
 
     // still enable the default qglviewer event handling but this function has
@@ -361,7 +372,7 @@ void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
     _currentFrame++;
-    _simulator->TestAnimateObjects(5000); 
+    _simulator->TestAnimateObjects(150); 
     updateGL(); 
     PrintFrameInfo();
 }

@@ -20,7 +20,6 @@ _ParseSolverSettings()
 void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
-    // FIXME debug: for now, attach a harmonic vibrational to all objects in the scene
     const int N_objects = _sceneObjects->N();
     //const REAL omega = 2.0*M_PI*500.0;
     //const REAL phase = 0.0;
@@ -32,7 +31,6 @@ _SetBoundaryConditions()
             VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
             objectPtr->AddVibrationalSource(sourcePtr); 
         }
-
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
         //objectPtr->TestObjectBoundaryCondition();
@@ -238,25 +236,50 @@ InitializeSolver()
         _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
         AnimateObjects(); // apply the transformation right away
     }
+    else 
+    {
+        std::cerr << "**WARNING** no rigidsim data read\n";
+    }
 
     // initialize solver and set various things
     _SetListeningPoints(); 
     _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
+
+    // get the earliest event and reset all solver time to that event
+    const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
+    ResetStartTime(startTime);
+    std::cout << "Reset solver time to " << startTime << std::endl;
+
+    // save settings
+    SaveSolverConfig();
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-Run()
+ResetStartTime(const REAL &startTime)
+{
+    _stepIndex = 0; 
+    _simulationTime = startTime; 
+    if (_acousticSolverSettings->rigidsimDataRead)
+        AnimateObjects();
+    _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
+    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    for (auto &object : objects) 
+        object->SetODESolverTime(startTime);
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_AcousticSimulator::
+RunForSteps(const int &N_steps)
 {
     bool continueStepping = true; 
-    int stepIndex = 0; 
-    SaveSolverConfig();
     auto &settings = _acousticSolverSettings; 
 
-    while(continueStepping) 
+    for (int step_idx=0; step_idx<N_steps; ++step_idx)
     {
         // first step all modal ode, so that its one step ahead of main acoustic
         // simulator. this is needed because central difference is used for
@@ -266,9 +289,9 @@ Run()
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
-        if (stepIndex % settings->timeSavePerStep == 0)
+        if (_stepIndex % settings->timeSavePerStep == 0)
         {
-            const int timeIndex = stepIndex/settings->timeSavePerStep; 
+            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
             std::ostringstream oss; 
             oss << std::setw(8) << std::setfill('0') << timeIndex; 
             const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
@@ -288,10 +311,63 @@ Run()
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();
 #endif
-        stepIndex ++;
+        _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
+        std::cout << "time = " << _simulationTime << std::endl;
 
         AnimateObjects(); 
+
+        if (!continueStepping)
+            break; 
+    }
+    return continueStepping; 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+Run()
+{
+    bool continueStepping = true; 
+    auto &settings = _acousticSolverSettings; 
+
+    while(continueStepping) 
+    {
+        // first step all modal ode, so that its one step ahead of main acoustic
+        // simulator. this is needed because central difference is used for
+        // velocity and accleration estimates. 
+        const REAL odeTime = _sceneObjects->AdvanceAllModalODESolvers(1); 
+        assert(EQUAL_FLOATS(odeTime - settings->timeStepSize, _simulationTime)); 
+
+        // step acoustic equations
+        continueStepping = _acousticSolver->stepSystem();
+        if (_stepIndex % settings->timeSavePerStep == 0)
+        {
+            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
+            std::ostringstream oss; 
+            oss << std::setw(8) << std::setfill('0') << timeIndex; 
+            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
+            _SaveListeningData(filenameProbe);
+            if (settings->writePressureFieldToDisk)
+            {
+                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
+                _SavePressureTimestep(filenameField); 
+                // uncomment if want to store velocities
+                //for (int dim=0; dim<3; ++dim) 
+                //{
+                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+                //}
+            }
+        }
+#ifdef DEBUG
+        _acousticSolver->PrintAllFieldExtremum();
+#endif
+        std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
+        _stepIndex ++;
+        _simulationTime += settings->timeStepSize; 
+
+        //AnimateObjects(); 
     }
 }
 
@@ -333,6 +409,10 @@ AnimateObjects()
             _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
             rotationAngle = quaternion.toAxisRotR(rotationAxis); 
             _sceneObjects->GetPtr(obj_idx)->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
+
+#ifdef DEBUG
+            std::cout << "object " << obj_idx << " has translation = " << _sceneObjects->GetPtr(obj_idx)->GetTranslation().transpose() << std::endl;
+#endif
         }
     }
 }

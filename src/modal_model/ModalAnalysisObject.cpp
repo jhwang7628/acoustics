@@ -80,6 +80,16 @@ GetVolumeVertexModeValues(const int &modeIndex, Eigen::VectorXd &modeValues)
 //##############################################################################
 //##############################################################################
 void ModalAnalysisObject::
+SetODESolverTime(const REAL &time)
+{
+    _time = time; 
+    for (auto &odeSolver : _modalODESolvers)
+        odeSolver->SetODECurrentTime(time);
+}
+
+//##############################################################################
+//##############################################################################
+void ModalAnalysisObject::
 Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr)
 {
     _material = materialPtr; 

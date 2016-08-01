@@ -144,7 +144,7 @@ class PML_WaveSolver : public Solver
         PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
-        void Reinitialize_PML_WaveSolver(const bool &useBoundary); 
+        void Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime); 
 
         // Destructor
         virtual ~PML_WaveSolver(){};
