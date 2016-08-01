@@ -247,10 +247,13 @@ InitializeSolver()
     _SetBoundaryConditions();
     _SetPressureSources();
 
-    // get the earliest event and reset all solver time to that event
-    const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
-    ResetStartTime(startTime);
-    std::cout << "Reset solver time to " << startTime << std::endl;
+    // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
+    if (!_sceneObjects->HasExternalPressureSources())
+    {
+        const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
+        ResetStartTime(startTime);
+        std::cout << "Reset solver time to " << startTime << std::endl;
+    }
 
     // save settings
     SaveSolverConfig();
