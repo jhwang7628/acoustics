@@ -370,7 +370,7 @@ Run()
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
-        //AnimateObjects(); 
+        AnimateObjects(); 
     }
 }
 

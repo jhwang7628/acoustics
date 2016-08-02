@@ -329,7 +329,7 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    //_grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, false); // FIXME debug
+    _grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, true);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)

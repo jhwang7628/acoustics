@@ -23,6 +23,9 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
     setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
     setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
+    setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
+    setKeyDescription(Qt::Key_C, "Clear all debug draw"); 
+    setKeyDescription(Qt::Key_A, "Draw an arrow"); 
 }
 
 //##############################################################################
@@ -70,6 +73,7 @@ draw()
 {
     DrawMesh(); 
     DrawListeningPoints();
+    DrawDebugCin();
     drawText(10, height()-20, _message); 
 
     glLineWidth(3.0f);
@@ -301,6 +305,42 @@ DrawLights()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+DrawDebugCin()
+{
+    // debug sphere
+    for (size_t sph_idx=0; sph_idx<_sphereCin.size(); ++sph_idx)
+    {
+        const REAL &x = _sphereCin.at(sph_idx).x; 
+        const REAL &y = _sphereCin.at(sph_idx).y; 
+        const REAL &z = _sphereCin.at(sph_idx).z; 
+        glPushMatrix();
+        glTranslatef(x, y, z); 
+        glColor3f(0.0f, 1.0f, 0.0f); 
+        GL_Wrapper::DrawSphere(5E-4, 10, 10);
+        glPopMatrix();
+    }
+    
+    // debug arrows
+    for (size_t arr_idx=0; arr_idx<_arrowCin.size(); ++arr_idx)
+    {
+        glLineWidth(5.0f);
+        const REAL &start_x = _arrowCin.at(arr_idx).start.x; 
+        const REAL &start_y = _arrowCin.at(arr_idx).start.y; 
+        const REAL &start_z = _arrowCin.at(arr_idx).start.z; 
+        const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x; 
+        const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y; 
+        const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z; 
+        glBegin(GL_LINES);
+        glColor3f(0.0f, 0.0f, 1.0f); 
+        glVertex3f(start_x, start_y, start_z); 
+        glVertex3f(stop_x, stop_y, stop_z); 
+        glEnd();
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 animate()
 {
     DrawOneFrameForward();
@@ -325,6 +365,26 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
             DrawOneFrameForward(); 
+    }
+    else if ((e->key() == Qt::Key_P) && (modifiers == Qt::NoButton)) {
+            Vector3f x; 
+            std::cout << "Sphere Location <x, y, z>: "; 
+            std::cin >> x.x >> x.y >> x.z; 
+            _sphereCin.push_back(x); 
+    }
+    else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)) {
+            Vector3f x, n; 
+            std::cout << "Arrow start location <x, y, z>: "; 
+            std::cin >> x.x >> x.y >> x.z; 
+            std::cout << "Arrow normal <x, y, z>: "; 
+            std::cin >> n.x >> n.y >> n.z; 
+            Arrow arrow; 
+            arrow.start = x; 
+            arrow.normal = n; 
+            _arrowCin.push_back(arrow); 
+    }
+    else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
+            _sphereCin.clear(); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
         bool continueStepping = true; 

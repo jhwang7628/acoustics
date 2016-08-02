@@ -14,6 +14,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 {
     public: 
         typedef std::shared_ptr<FDTD_AcousticSimulator> SimulatorPtr; 
+        struct Arrow{Vector3f start; Vector3f normal;}; 
 
     private: 
         SimulatorPtr    _simulator; 
@@ -24,12 +25,15 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int             _wireframe;
         bool            _drawBox; 
         std::vector<Vector3f> _objectColors; 
+        std::vector<Vector3f> _sphereCin; 
+        std::vector<Arrow> _arrowCin; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawBox(); 
         void DrawListeningPoints(); 
         void DrawLights(); 
+        void DrawDebugCin();
 
     protected: 
         virtual void draw(); 

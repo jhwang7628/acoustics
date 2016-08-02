@@ -951,12 +951,18 @@ void MAC_Grid::ComputeGhostCellInverseMap()
 }
 
 //##############################################################################
-// Interpolate the fresh pressure cell
+// This function interpolate the fresh pressure cell
 //
 // Note: 
-//   fresh pressure cell will have to be outside the object, otherwise the last
+//   1) fresh pressure cell will have to be outside the object, otherwise the last
 //   step of the interpolation won't work: Need BI-CU-IP so CU is well-defined
 //   for the interpolant. 
+//
+//   2) if the interpolation stencil does not have valid history and is the
+//      cell itself, then throw exception because this should not happen, but if 
+//      the stencil does not have valid history and is caused by other cells, 
+//      zero will be used in the current implementation.
+//
 //##############################################################################
 void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, const REAL &simulationTime, const REAL &density)
 {
@@ -991,15 +997,30 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         for (size_t row=0; row<neighbours.size(); row++) 
         {
             const int neighbour_idx = neighbours[row]; 
-            if (!_pressureCellHasValidHistory.at(neighbour_idx) && neighbour_idx != cell_idx)
-                throw std::runtime_error("**ERROR** one of the interpolation stencil for pressure fresh cell has invalid history."); 
+            const bool neighbourValid = _pressureCellHasValidHistory.at(neighbour_idx) ? true : false; 
 
-            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
+            indicesBuffer = _pressureField.cellIndex(neighbour_idx); 
             positionBuffer= _pressureField.cellPosition(indicesBuffer); 
             if (neighbours[row] != cell_idx) // not self
             {
                 FillVandermondeRegular(row, positionBuffer, V);
-                RHS(row) = p(neighbours[row], 0); 
+                if (neighbourValid)
+                {
+                    RHS(row) = p(neighbours[row], 0); 
+                }
+                else
+                {
+                    if (_containingObject.at(neighbour_idx) == objectID)
+                    {
+                        std::cout << "invalid cell has all neighbours = \n";
+                        STL_Wrapper::PrintVectorContent(std::cout, neighbours); 
+                        throw std::runtime_error("**ERROR** Invalid self pressure cells encountered in interpolation."); 
+                    }
+                    else
+                    {
+                        RHS(row) = 0.0; 
+                    }
+                }
             }
             else 
             {
