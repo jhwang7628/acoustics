@@ -21,8 +21,6 @@ void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
     const int N_objects = _sceneObjects->N();
-    //const REAL omega = 2.0*M_PI*500.0;
-    //const REAL phase = 0.0;
     for (int index=0; index<N_objects; ++index)
     {
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
@@ -31,13 +29,16 @@ _SetBoundaryConditions()
             VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
             objectPtr->AddVibrationalSource(sourcePtr); 
         }
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
-        //objectPtr->TestObjectBoundaryCondition();
+        else
+        {
+            const REAL omega = 2.0*M_PI*500.0;
+            const REAL phase = 0.0;
+            std::cout << "Add vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
+            VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+            objectPtr->AddVibrationalSource(sourcePtr); 
+            //objectPtr->TestObjectBoundaryCondition();
+        }
     }
-    // TODO {
-    // parser-based 
-    // } TODO 
 }
 
 //##############################################################################
@@ -248,7 +249,7 @@ InitializeSolver()
     _SetPressureSources();
 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources())
+    if (!_sceneObjects->HasExternalPressureSources() && _sceneObjectsAnimator)
     {
         const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
         ResetStartTime(startTime);
@@ -340,7 +341,6 @@ Run()
         // simulator. this is needed because central difference is used for
         // velocity and accleration estimates. 
         const REAL odeTime = _sceneObjects->AdvanceAllModalODESolvers(1); 
-        assert(EQUAL_FLOATS(odeTime - settings->timeStepSize, _simulationTime)); 
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
@@ -371,6 +371,9 @@ Run()
         _simulationTime += settings->timeStepSize; 
 
         AnimateObjects(); 
+
+        // FIXME debug
+        TestMoveObjects();
     }
 }
 
@@ -394,6 +397,8 @@ SaveSolverConfig()
 }
 
 //##############################################################################
+// This function animates objects in the scene. Silent return if no stored
+// rigidsim data found.
 //##############################################################################
 void FDTD_AcousticSimulator::
 AnimateObjects()
@@ -467,7 +472,6 @@ TestAnimateObjects(const int &N_steps)
     for (int ii=0; ii<N_steps; ++ii)
     {
         _simulationTime += settings->timeStepSize; 
-        std::cout << "time = " << _simulationTime << std::endl;
         AnimateObjects(); 
     }
 }
