@@ -133,7 +133,7 @@ DistanceToMesh(const double &x, const double &y, const double &z)
         return std::numeric_limits<REAL>::max();
 
     Eigen::Vector3d position(x,y,z); 
-    position = _modelingTransformInverse*position;
+    position = _modelingTransformInverse*position.eval();
     return _signedDistanceField->distance(position[0],position[1],position[2]); 
 }
 
@@ -169,10 +169,10 @@ NormalToMesh(const double &x, const double &y, const double &z, Vector3d &querie
     }
 
     Eigen::Vector3d position(x,y,z); 
-    position = _modelingTransformInverse*position;
+    position = _modelingTransformInverse*position.eval();
     queriedNormal = _signedDistanceField->gradient(Conversions::ToVector3<double>(position));
     Eigen::Vector3d normal = Conversions::ToEigen<double>(queriedNormal); 
-    normal = _modelingTransform.linear()*normal; 
+    normal = _modelingTransform.linear()*normal.eval(); 
     queriedNormal = Conversions::ToVector3(normal); 
     return true; 
 }
@@ -248,7 +248,11 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
                       << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
         }
         if (!reflectSuccess)
+        {
             std::cerr << "**ERROR** reflected point " << originalPoint << "->" << reflectedPoint << " still inside object : " << newDistance << std::endl; 
+            _debugArrowStart.push_back(originalPoint); 
+            _debugArrowNormal.push_back(erectedNormal); 
+        }
     }
 
     return reflectSuccess;
@@ -305,7 +309,11 @@ FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d 
                       << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
         }
         if (!isExterior)
+        {
             std::cerr << "**ERROR** reflected point " << currentPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
+            _debugArrowStart.push_back(originalPoint); 
+            _debugArrowNormal.push_back(erectedNormal); 
+        }
     }
 
     return isExterior;
@@ -344,3 +352,16 @@ TestObjectBoundaryCondition()
     }
 }
 
+//##############################################################################
+//##############################################################################
+void FDTD_RigidObject::
+WriteDebugArrow(const std::string &file)
+{
+    std::ofstream of(file.c_str()); 
+    for (size_t idx=0; idx<_debugArrowStart.size(); ++idx)
+    {
+        of << _debugArrowStart.at(idx).x << " " << _debugArrowStart.at(idx).y << " " << _debugArrowStart.at(idx).z << " " 
+           << _debugArrowNormal.at(idx).x << " " << _debugArrowNormal.at(idx).y << " " << _debugArrowNormal.at(idx).z << std::endl;
+    }
+    of.close();
+}

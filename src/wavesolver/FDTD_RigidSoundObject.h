@@ -14,6 +14,27 @@
 //
 // Note: be careful when fetching velocity and acceleration data, see comments
 // below.
+//
+// The stored fields follows the timeline
+// tn-1         tn         tn+1        tn+2
+//  n-1   n-1    n     n    n+1   n+1   n+2
+// --p-----v-----p-----v-----p-----v-----p--
+//  q_p         q_c         q_n         q_nn
+//    qDot_c_minus
+//            qDDot_c
+//               qDDot_c_plus
+//
+// When AdvanceModalODESolvers() is called, it will compute q_nn and update all
+// derivatives needed. Therefore it is expected the impact forces are fetched
+// in the interval [tn+1, tn+2] is used. This should be called before acoustic
+// time stepping so that derivatives are updated properly.
+//
+// After the acoustic time stepping, call UpdateQPointers() so that the
+// internal timestamps for ODE solvers are updated and pointers for q arrays
+// are shifted properly. 
+//
+// For safety, I limit the timestamp access when sampling velocity and
+// acceleration to make sure its called correctly. See individual functions. 
 //##############################################################################
 class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject, public ModalAnalysisObject
 {
@@ -24,11 +45,13 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         Eigen::VectorXd _activeModeValues; 
         ModeAttribute   _activeModeAttributes; 
 
-        // modal displacement
-        Eigen::VectorXd _qNew;     // displacement corresponds to _time; _time should always be one step ahead than wavesolver time
-        Eigen::VectorXd _qOld;     // displacement cooresponds to timestamp at the beginning of acoustic time-step.
-        Eigen::VectorXd _qOldDot;  // velocity
-        Eigen::VectorXd _qOldDDot; // acceleration
+        Eigen::VectorXd _q_p;  // previous displacement
+        Eigen::VectorXd _q_c;  // current displacement
+        Eigen::VectorXd _q_n;  // next displacement
+        Eigen::VectorXd _q_nn; // next next displacement
+        Eigen::VectorXd _qDot_c_minus; // previous half step velocity
+        Eigen::VectorXd _qDDot_c; // current acceleration
+        Eigen::VectorXd _qDDot_c_plus; // next half step acceleration
 
         // for vectorized IIR
         Eigen::VectorXd _coeff_qNew;  // 2 epsilon cos(theta)
@@ -76,6 +99,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         void AdvanceModalODESolvers(const int &N_steps);
         void AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q);
+        void UpdateQPointers(); 
         // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
         // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 

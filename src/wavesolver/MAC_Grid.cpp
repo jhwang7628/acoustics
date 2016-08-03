@@ -1092,7 +1092,11 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
                     REAL distanceNeighbour; 
                     Vector3d imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour; 
                     _objects->Get(objectID).FindImageFreshCell(cellPositionNeighbour, imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour, distanceNeighbour); 
-                    const REAL boundaryVelocityNeighbour = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPointNeighbour, erectedNormalNeighbour, simulationTime) * _interfacialBoundaryCoefficients[dim].at(neighbour_idx);
+                    Vector3d gradient; 
+                    _objects->ObjectNormal(objectID, boundaryPointNeighbour, gradient);
+                    gradient.normalize(); 
+                    const REAL coefficient = gradient(dim); 
+                    const REAL boundaryVelocityNeighbour = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPointNeighbour, erectedNormalNeighbour, simulationTime - 0.5*timeStep) * coefficient;
                     RHS(row) = boundaryVelocityNeighbour; 
                 }
             }

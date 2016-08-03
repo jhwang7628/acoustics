@@ -25,7 +25,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
     setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
     setKeyDescription(Qt::Key_C, "Clear all debug draw"); 
-    setKeyDescription(Qt::Key_A, "Draw an arrow"); 
+    setKeyDescription(Qt::Key_N, "Draw an arrow"); 
 }
 
 //##############################################################################
@@ -382,6 +382,23 @@ keyPressEvent(QKeyEvent *e)
             arrow.start = x; 
             arrow.normal = n; 
             _arrowCin.push_back(arrow); 
+    }
+    else if ((e->key() == Qt::Key_M) && (modifiers == Qt::NoButton)) {
+        std::string filename; 
+        std::cout << "Read debug arrow files: "; 
+        std::cin >> filename; 
+        std::ifstream inFile(filename.c_str()); 
+        if (inFile)
+        {
+            Vector3f x, n; 
+            while (inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
+            {
+                Arrow arrow; 
+                arrow.start = x; 
+                arrow.normal = n; 
+                _arrowCin.push_back(arrow); 
+            }
+        }
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 

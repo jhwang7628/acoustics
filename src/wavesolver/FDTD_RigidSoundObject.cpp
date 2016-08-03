@@ -34,10 +34,15 @@ void FDTD_RigidSoundObject::
 InitializeModeVectors()
 {
     const int N_modes = N_Modes(); 
-    _qOld.setZero(N_modes); 
-    _qNew.setZero(N_modes); 
-    _qOldDot.setZero(N_modes); 
-    _qOldDDot.setZero(N_modes); 
+
+    _q_p.setZero(N_modes); 
+    _q_c.setZero(N_modes); 
+    _q_n.setZero(N_modes); 
+    _q_nn.setZero(N_modes); 
+
+    _qDot_c_minus.setZero(N_modes); 
+    _qDDot_c.setZero(N_modes); 
+    _qDDot_c_plus.setZero(N_modes); 
 }
 
 //##############################################################################
@@ -106,14 +111,14 @@ GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement)
     {
         // this implementation copies the vector, should only use when
         // debugging
-        Eigen::VectorXd qMode(_qNew.size()); 
+        Eigen::VectorXd qMode(_q_c.size()); 
         qMode.setZero(); 
-        qMode(mode) = _qNew(mode); 
+        qMode(mode) = _q_c(mode); 
         GetVolumeVertexDisplacement(qMode, displacement); 
     }
     else 
     {
-        GetVolumeVertexDisplacement(_qNew, displacement); 
+        GetVolumeVertexDisplacement(_q_c, displacement); 
     }
     _timer_substep_q2u[0].Pause(); 
     displacement /= 1E-5;
@@ -164,18 +169,12 @@ AdvanceModalODESolvers(const int &N_steps)
         _timer_substep_advanceODE[1].Pause(); 
 
         // step the system using force computed
+        const REAL h2 = pow(_ODEStepSize, 2);
         _timer_substep_advanceODE[2].Start(); 
-        Eigen::VectorXd q = _coeff_qNew.cwiseProduct(_qNew) + _coeff_qOld.cwiseProduct(_qOld) + _coeff_Q.cwiseProduct(forceTimestep); 
-
-        // compute velocity and acceleration using finite-difference. Notice
-        // that this corresponds to the state at qOld after updates
-        _qOldDot  = (q - _qOld) / (2.0*_ODEStepSize); 
-        _qOldDDot = (q + _qOld - 2.0*_qNew) / pow(_ODEStepSize,2); 
-
-        _qOld = _qNew; 
-        _qNew = q; 
-
-        _time += _ODEStepSize;
+        _q_nn = _coeff_qNew.cwiseProduct(_q_n) + _coeff_qOld.cwiseProduct(_q_c) + _coeff_Q.cwiseProduct(forceTimestep);
+        _qDot_c_minus = (_q_c - _q_p) / _ODEStepSize;
+        _qDDot_c = (_q_n + _q_p - 2.0*_q_c) / h2;
+        _qDDot_c_plus = 0.5 * ((_q_nn + _q_c - 2.0*_q_n)/h2 + _qDDot_c);
         _timer_substep_advanceODE[2].Pause();
     }
 }
@@ -209,7 +208,7 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
         _timer_mainstep[1].Pause(); 
         _timer_mainstep[2].Start(); 
         of_displacement.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
-        of_q.write((char*)_qNew.data(), sizeof(double)*_qNew.size()); 
+        of_q.write((char*)_q_c.data(), sizeof(double)*_q_c.size()); 
         _timer_mainstep[2].Pause(); 
     }
     std::cout << "Total Timing: \n"
@@ -234,12 +233,29 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
 }
 
 //##############################################################################
+// This function should be called after acoustic time stepping has been
+// completed.
+//##############################################################################
+void FDTD_RigidSoundObject::
+UpdateQPointers()
+{
+    if (IsModalObject())
+    {
+        _q_p = _q_c; 
+        _q_c = _q_n; 
+        _q_n = _q_nn; 
+
+        _time += _ODEStepSize;
+    }
+}
+
+//##############################################################################
 // Brute force looping for now
 //##############################################################################
 REAL FDTD_RigidSoundObject::
 SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO!
 {
-    std::cerr << "**WARNING** return zero for modal displacement since time does not match. interpolation not implemented.\n";
+    std::cerr << "**WARNING** Modal displacement sampling is not implemented.\n";
     return 0.0;
 }
 
@@ -249,7 +265,31 @@ SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &sampleNorma
 REAL FDTD_RigidSoundObject::
 SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // TODO!
 {
-    std::cerr << "**WARNING** return zero for modal velocity since time does not match. interpolation not implemented.\n";
+    int closestIndex = -1;
+    REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    // transform the sample point to object frame
+    const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
+    const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
+    if (EQUAL_FLOATS(sampleTime, _time - 1.5*_ODEStepSize)) // sample at current time
+    {
+        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+        const int N_vertices = vertices.size(); 
+        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+        {
+            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+            if (distance < closestDistance)
+            {
+                closestIndex = vert_idx; 
+                closestDistance = distance; 
+            }
+        }
+        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDot_c_minus); 
+        return sampledValue; 
+    }
+    else
+    {
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal velocity sampling. Double check.");
+    }
     return 0.0;
 }
 
@@ -264,7 +304,7 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
-    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
     {
         const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
         const int N_vertices = vertices.size(); 
@@ -277,10 +317,29 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
                 closestDistance = distance; 
             }
         }
-        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qOldDDot); 
+        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
         return sampledValue; 
     }
-    std::cerr << "**WARNING** return zero for modal acceleration since time does not match. interpolation not implemented.\n";
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize)) // sample at current time
+    {
+        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+        const int N_vertices = vertices.size(); 
+        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+        {
+            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+            if (distance < closestDistance)
+            {
+                closestIndex = vert_idx; 
+                closestDistance = distance; 
+            }
+        }
+        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
+        return sampledValue; 
+    }
+    else
+    {
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    }
     return 0.0;
 }
 

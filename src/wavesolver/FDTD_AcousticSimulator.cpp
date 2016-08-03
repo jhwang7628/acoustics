@@ -253,7 +253,11 @@ InitializeSolver()
     {
         const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
         ResetStartTime(startTime);
-        std::cout << "Reset solver time to " << startTime << std::endl;
+        std::cout << "Shift solver time to the first impact event at " << startTime << std::endl;
+    }
+    else 
+    {
+        ResetStartTime(0.0);
     }
 
     // save settings
@@ -272,7 +276,17 @@ ResetStartTime(const REAL &startTime)
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
     auto &objects = _sceneObjects->GetRigidSoundObjects(); 
     for (auto &object : objects) 
-        object->SetODESolverTime(startTime);
+    {
+        if (object->IsModalObject())
+        {
+            // take one step to update q Vectors. Note that this way all modal odes are one
+            // step further than the solver because we need derivatives along
+            // the way.
+            object->SetODESolverTime(startTime);
+            object->AdvanceModalODESolvers(1); 
+            object->UpdateQPointers(); 
+        }
+    }
 }
 
 //##############################################################################
@@ -363,17 +377,19 @@ Run()
                 //}
             }
         }
-#ifdef DEBUG
-        _acousticSolver->PrintAllFieldExtremum();
-#endif
+        // update modal vectors for the next time step
+        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
+            _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
+
         std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
         AnimateObjects(); 
 
-        // FIXME debug
-        TestMoveObjects();
+#ifdef DEBUG
+        _acousticSolver->PrintAllFieldExtremum();
+#endif
     }
 }
 

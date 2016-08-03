@@ -40,6 +40,9 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
         bool                                _parsed; 
 
+        std::vector<Vector3d>               _debugArrowStart; 
+        std::vector<Vector3d>               _debugArrowNormal; 
+
     public: 
         FDTD_RigidObject()
             : _workingDirectory("NOT_IDENTIFIED"),
@@ -89,6 +92,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         //// debug methods //// 
         void TestQueryDistance(); 
         void TestObjectBoundaryCondition();
+        void WriteDebugArrow(const std::string &file); 
 };
 //##############################################################################
 
