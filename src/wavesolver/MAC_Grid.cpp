@@ -965,7 +965,9 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         Tuple3i indicesBuffer;
         Vector3d positionBuffer; 
         Eigen::VectorXd RHS(8); 
-        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density); 
+        // should evaluate the pressure at the previous time-step
+        //const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density); 
+        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime - timeStep)*(-density); 
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -1061,7 +1063,9 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         // interpolate using trilinear interpolant
         // boundary velocity will be scaled by the normal difference
         _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
-        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
+
+        // evaluate the velocity source in the previous step for velocity
+        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime - 0.5*timeStep) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
 
         Eigen::MatrixXd V(8,8); 
         Eigen::VectorXd RHS(8); 

@@ -25,10 +25,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         ModeAttribute   _activeModeAttributes; 
 
         // modal displacement
-        Eigen::VectorXd _qNew;     
-        Eigen::VectorXd _qOld;     // current displacement
-        Eigen::VectorXd _qOldDot;  // current velocity
-        Eigen::VectorXd _qOldDDot; // current acceleration
+        Eigen::VectorXd _qNew;     // displacement corresponds to _time; _time should always be one step ahead than wavesolver time
+        Eigen::VectorXd _qOld;     // displacement cooresponds to timestamp at the beginning of acoustic time-step.
+        Eigen::VectorXd _qOldDot;  // velocity
+        Eigen::VectorXd _qOldDDot; // acceleration
 
         // for vectorized IIR
         Eigen::VectorXd _coeff_qNew;  // 2 epsilon cos(theta)

@@ -40,7 +40,7 @@ class ModalAnalysisObject
         std::shared_ptr<ModalMaterial> _material;
         std::vector<ModalODESolverPtr> _modalODESolvers; 
         REAL _ODEStepSize; 
-        REAL _time; 
+        REAL _time;  // corresponds to qNew
 
     public: 
         ModalAnalysisObject()
