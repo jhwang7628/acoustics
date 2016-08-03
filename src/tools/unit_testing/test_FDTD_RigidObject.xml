@@ -10,14 +10,28 @@
     <scene> 
             <!-- note: in these data, id of the objects will be used to
                  distinguish -->
+                 <!--
             <object_rigidsim_data
                 file_displacement="/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin"
                 file_velocity="/home/jui-hsien/code/acoustics/work/plate_drop_test/velocity.bin"
                 file_acceleration="/home/jui-hsien/code/acoustics/work/plate_drop_test/acceleration.bin"
                 />
+                -->
+            <rigid_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
+                object_prefix="small_ball_r_0p10" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                /> 
             <!-- object_prefix is used to search for: *.tet *.geo.txt *.tet.obj *.dist -->
             <!-- right now only the id of rigid_sound_object will be used to
                  get rigidsim data, for these objects, id needs to be integer to cope with rigidsim and impulses register -->
+            <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
+            <!--
             <rigid_sound_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/plate"
                 object_prefix="plate"  
@@ -28,15 +42,14 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 material_id="0"
-                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses_one.txt"
+                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"
                 impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg"
                 mode_file="/home/jui-hsien/code/acoustics/work/plate/plate.modes"
                 modal_ODE_step_frequency="176400"
-                /> <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
-                
+                /> 
             <rigid_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/big_plane"
-                object_prefix="big_plane_offset" 
+                object_prefix="big_plane_rotated" 
                 id="1" 
                 fieldresolution="400"
                 scale="1.0" 
@@ -44,8 +57,6 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 /> 
-            <!--
-                -->
     </scene> 
     <solver
         sound_speed="343.0"
@@ -69,7 +80,7 @@
         <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.0" 
-        source_position_y="0.0" 
+        source_position_y="0.1" 
         source_position_z="0.0" 
         />
         <gaussian_pressure_source

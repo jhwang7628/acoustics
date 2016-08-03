@@ -749,17 +749,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(_ghostCells.size()); 
 
-    //debug FIXME 
-    std::ofstream of, of2, of3; 
-    bool write = false; 
-
-    if ((int)(simulationTime/timeStep)%1==0)
-    {
-        write = true; 
-        of.open("work/near-field/data_test/boundaryPoint_"+std::to_string((int)(simulationTime/timeStep/1.0))+".csv"); 
-        of2.open("work/near-field/data_test/ghostPoint_"+std::to_string((int)(simulationTime/timeStep/1.0))+".csv"); 
-    }
-      
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -776,14 +765,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         REAL accumulatedBoundaryConditionValue; 
         //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
         _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
-
-        // debug FIXME
-#pragma omp critical
-        {
-        if (write)
-            of << boundaryPoint.x << "," << boundaryPoint.y << "," << boundaryPoint.z << std::endl;
-            of2 << cellPosition.x << "," << cellPosition.y << "," << cellPosition.z << std::endl;
-        }
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -888,14 +869,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         if (hasGC != -1) 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
-
-    // debug FIXME
-    if (write)
-    {
-        of.close();
-        of2.close();
-    }
-
 
     const int maxIteration = 50;
     for (int iteration=0; iteration<maxIteration; iteration++) 
