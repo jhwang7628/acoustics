@@ -292,7 +292,7 @@ bool PML_WaveSolver::stepSystem()
         printf( " - Ghost-cell update took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
 #endif
 
-    if ( _endTime > 0.0 && (REAL)_timeIndex * _timeStep >= _endTime )
+    if ( _endTime > 0.0 && _currentTime >= _endTime )
         return false;
 
     return true;
