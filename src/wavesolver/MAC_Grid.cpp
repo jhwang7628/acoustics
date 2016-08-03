@@ -985,9 +985,16 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
                 {
                     if (_containingObject.at(neighbour_idx) == objectID)
                     {
-                        std::cout << "invalid cell has all neighbours = \n";
-                        STL_Wrapper::PrintVectorContent(std::cout, neighbours); 
-                        throw std::runtime_error("**ERROR** Invalid self pressure cells encountered in interpolation."); 
+                        if (_waveSolverSettings->useGhostCell) // this shouldn't happen for ghost cells
+                        {
+                            std::cout << "invalid cell has all neighbours = \n";
+                            STL_Wrapper::PrintVectorContent(std::cout, neighbours); 
+                            throw std::runtime_error("**ERROR** Invalid self pressure cells encountered in interpolation."); 
+                        }
+                        else // using rasterized boundary, give it 0 for now FIXME: better way?
+                        {
+                            RHS(row) = 0.0;
+                        }
                     }
                     else
                     {
@@ -1023,6 +1030,9 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
 //
 //   Only performed on interfacial cells, assuming solid cell cannot turn to
 //   bulk directly without being interfacial first. 
+//
+//   If neighbour has invalid history, grab the nearest boundary condition to
+//   that neighbour and use it as its velocity value.
 //##############################################################################
 void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REAL &timeStep, const REAL &simulationTime)
 {
@@ -1058,16 +1068,29 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         for (size_t row=0; row<neighbours.size(); row++) 
         {
             const int neighbour_idx = neighbours[row]; 
+            const bool neighbourValid = _velocityCellHasValidHistory[dim].at(neighbour_idx) ? true : false; 
 
-            if (!_velocityCellHasValidHistory[dim].at(neighbour_idx) && neighbour_idx != cell_idx) 
-                throw std::runtime_error("**ERROR** one of the interpolation stencil for velocity fresh cell has invalid history."); 
+            //if (!_velocityCellHasValidHistory[dim].at(neighbour_idx) && neighbour_idx != cell_idx) 
+            //    throw std::runtime_error("**ERROR** one of the interpolation stencil for velocity fresh cell has invalid history."); 
 
             indicesBuffer = _velocityField[dim].cellIndex(neighbours.at(row)); 
             positionBuffer= _velocityField[dim].cellPosition(indicesBuffer); 
             if (neighbours.at(row) != cell_idx) // not self
             {
                 FillVandermondeRegular(row, positionBuffer, V);
-                RHS(row) = v(neighbours.at(row), 0); 
+                if (neighbourValid)
+                {
+                    RHS(row) = v(neighbours.at(row), 0); 
+                }
+                else // if not valid, try to get the closest boundary point and use the boundary condition there.
+                {
+                    const Vector3d cellPositionNeighbour = _velocityField[dim].cellPosition(neighbour_idx);
+                    REAL distanceNeighbour; 
+                    Vector3d imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour; 
+                    _objects->Get(objectID).FindImageFreshCell(cellPositionNeighbour, imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour, distanceNeighbour); 
+                    const REAL boundaryVelocityNeighbour = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPointNeighbour, erectedNormalNeighbour, simulationTime) * _interfacialBoundaryCoefficients[dim].at(neighbour_idx);
+                    RHS(row) = boundaryVelocityNeighbour; 
+                }
             }
             else 
             {
