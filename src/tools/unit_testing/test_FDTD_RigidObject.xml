@@ -46,48 +46,21 @@
                 /> 
             <!--
                 -->
-            <!--
-            <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/mug/mug.obj" 
-                id="mug" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/mug/mug.obj.1m.dist"
-                fieldresolution="300"
-                scale="1.0" 
-                initial_position_x="0.0"
-                initial_position_y="0.0"
-                initial_position_z="0.0"
-                />
-            <mesh 
-                file="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj" 
-                id="small_ball_3" 
-                distancefield="/home/jui-hsien/code/acoustics/work/meshes/small_ball_translated/small_ball_yn0p3.obj.1m.dist"
-                fieldresolution="100"
-                scale="1.0" 
-                />
-                -->
     </scene> 
-    <!--
-    <mesh file="/home/jui-hsien/code/acoustics/work/meshes/plane/plane.obj" scale="1.0" />
-    -->
-
     <solver
         sound_speed="343.0"
         density="1.0" 
-        cellsize="0.005" 
-        gridresolution="60"
-        stop_time="0.01"
+        cellsize="0.01" 
+        gridresolution="50"
+        stop_time="1"
         substeps="1"
         timestepfrequency="176400"
-
-        output_pattern="work/near-field/data_test/test_%s"
-
+        output_pattern="work/near-field/data_test2/test_%s"
         PML_width="3"
         PML_strength="1000000.0" 
-
         use_mesh="1"
-        use_ghost_cell="0"
-        boundary_condition_preset="1"
-
+        use_ghost_cell="1"
+        boundary_condition_preset="0"
         write_pressure_field_to_disk="1"
         /> 
 
@@ -109,30 +82,17 @@
     </pressure_source> 
 
     <listening_point_list>
+        <!--
         <listening_point x="0.0" y="0.0" z="0.0"/>
         <listening_point x="0.0" y="0.0" z="0.0825"/>
         <listening_point x="0.0" y="0.0" z="-0.0825"/>
-        <!--
-        <listening_point x="0.14142135623730953" y="0.14142135623730953" z="0.0"/>
-        <listening_point x="0.2" y="0.0" z="0.0"/>
-        <listening_point x="0.14142135623730953" y="-0.14142135623730953" z="0.0"/>
-        <listening_point x="0.0" y="-0.2" z="0.0"/>
+        <listening_point x="0.0" y="0.1325" z="0"/>
+        <listening_point x="0.0" y="-0.1325" z="0"/>
+        <listening_point x="0.1325" y="0.1325" z="0.1325"/>
+        <listening_point x="0.1325" y="0.01" z="0.1325"/>
+        <listening_point x="-0.1325" y="0.01" z="0.1325"/>
+        <listening_point x="0.1325" y="0.01" z="-0.1325"/>
         -->
     </listening_point_list> 
 
 </impulse_response>
-
-
-<!--
-     <solver
-        stop_time="0.006803"
-        gridscale="1.0000000"
-        />
-        <source
-        source_width_time="0.00005"
-        source_position_x="0.0" 
-        source_position_y="-0.1" 
-        source_position_z="0" 
-        source_sign_flip="1"
-        />
-        -->
