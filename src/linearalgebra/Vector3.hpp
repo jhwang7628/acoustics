@@ -126,19 +126,31 @@ class Vector3 : public Tuple3<T>
             return Vector3<T>(x/rhs, y/rhs, z/rhs);
         }
 
+        T &operator () (const int &ind)
+        {
+            if (ind == 0) 
+                return x; 
+            else if (ind == 1) 
+                return y;
+            else if (ind == 2) 
+                return z; 
+            else 
+                throw std::runtime_error("**ERROR** vector access out of bounds");
+        }
+
         T operator () (const int &ind) const
         {
-            T returnValue; 
+            T returnValue;
             if (ind == 0) 
-                returnValue = x;  
+                returnValue = x; 
             else if (ind == 1) 
-                returnValue = y;  
+                returnValue = y;
             else if (ind == 2) 
-                returnValue = z;  
+                returnValue = z; 
             else 
                 throw std::runtime_error("**ERROR** vector access out of bounds");
 
-            return returnValue; 
+            return returnValue;
         }
 
         /*! Dot product of two vectors. */
