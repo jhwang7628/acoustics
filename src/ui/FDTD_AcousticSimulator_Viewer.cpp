@@ -28,6 +28,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
 }
 
@@ -324,25 +325,42 @@ DrawLights()
 void FDTD_AcousticSimulator_Viewer::
 DrawSlices(const int &dataPointer)
 {
-    for (const auto &slice : _sliceCin)
-    {
-        Eigen::MatrixXd data; 
-        if (dataPointer == 0)
-        {
-            _simulator->GetSolver()->FetchPressureData(slice.samples, data);
-            _drawAbsMax = max(fabs(data.maxCoeff()), fabs(data.minCoeff())) * 0.9; 
-            if (_drawAbsMax > 1E-15)
-                data /= _drawAbsMax; 
-        }
-        else if (dataPointer == 1)
-        {
-            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
-        }
+    if (_sliceCin.size() == 0)
+        return;
 
+    const int N_slices = _sliceCin.size();
+    std::vector<Eigen::MatrixXd> dataSlices(N_slices); 
+    REAL maxCoeffSlices = std::numeric_limits<REAL>::min(); 
+    REAL minCoeffSlices = std::numeric_limits<REAL>::max(); 
+    // first fetch all data and compute min, max
+    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
+    {
+        const auto &slice = _sliceCin.at(s_idx); 
+        Eigen::MatrixXd &data = dataSlices.at(s_idx); 
+        if (dataPointer == 0)
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data);
+        else if (dataPointer == 1)
+            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+
+        maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 
+        minCoeffSlices = min(minCoeffSlices, data.minCoeff()); 
+    }
+
+    minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
+    if (dataPointer == 0)
+        _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices); 
+    else if (dataPointer == 1) 
+        _sliceColorMap->set_interpolation_range(-1.0, 1.0); 
+
+    // draw slices 
+    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
+    {
+        const auto &slice = _sliceCin.at(s_idx); 
+        const Eigen::MatrixXd &data = dataSlices.at(s_idx); 
         if (_sliceWireframe == 0 || _sliceWireframe == 1)
         {
             glLineWidth(1.0f);
-            glColor3f(0.8f, 0.8f, 0.8f); 
+            glColor3f(0.4f, 0.4f, 0.4f); 
             const int N_gridLines = slice.gridLines.size()/2; 
             for (int l_idx=0; l_idx<N_gridLines; ++l_idx)
             {
@@ -366,36 +384,22 @@ DrawSlices(const int &dataPointer)
                     const int idx_0_1 =  dim_0_idx     *divisions + dim_1_idx + 1; 
                     const int idx_1_1 = (dim_0_idx + 1)*divisions + dim_1_idx; 
                     const int idx_1_0 = (dim_0_idx + 1)*divisions + dim_1_idx + 1; 
-                    const REAL &c_0_0 = data(idx_0_0); 
-                    const REAL &c_0_1 = data(idx_0_1); 
-                    const REAL &c_1_0 = data(idx_1_0); 
-                    const REAL &c_1_1 = data(idx_1_1); 
+                    const Tuple3f c_0_0 = _sliceColorMap->get_interpolated_color(data(idx_0_0)); 
+                    const Tuple3f c_0_1 = _sliceColorMap->get_interpolated_color(data(idx_0_1)); 
+                    const Tuple3f c_1_0 = _sliceColorMap->get_interpolated_color(data(idx_1_0)); 
+                    const Tuple3f c_1_1 = _sliceColorMap->get_interpolated_color(data(idx_1_1)); 
                     const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
                     const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
                     const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
                     const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1); 
-                    if (dataPointer == 0)
-                    {
-                        glColor3f(c_0_0, 0, -c_0_0); 
-                        glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
-                        glColor3f(c_0_1, 0, -c_0_1); 
-                        glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
-                        glColor3f(c_1_0, 0, -c_1_0); 
-                        glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
-                        glColor3f(c_1_1, 0, -c_1_1); 
-                        glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
-                    }
-                    else if (dataPointer == 1)
-                    {
-                        glColor3f(c_0_0, fabs(c_0_0), -c_0_0); 
-                        glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
-                        glColor3f(c_0_1, fabs(c_0_1), -c_0_1); 
-                        glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
-                        glColor3f(c_1_0, fabs(c_1_0), -c_1_0); 
-                        glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
-                        glColor3f(c_1_1, fabs(c_1_1), -c_1_1); 
-                        glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
-                    }
+                    glColor3f(c_0_0.x, c_0_0.y, c_0_0.z); 
+                    glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
+                    glColor3f(c_0_1.x, c_0_1.y, c_0_1.z); 
+                    glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
+                    glColor3f(c_1_0.x, c_1_0.y, c_1_0.z); 
+                    glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
+                    glColor3f(c_1_1.x, c_1_1.y, c_1_1.z); 
+                    glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
                 }
             glEnd();
         }
@@ -458,7 +462,7 @@ keyPressEvent(QKeyEvent *e)
         _wireframe = (_wireframe+1)%4; 
         optionsChanged = true;
     }
-    if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
+    if ((e->key() == Qt::Key_G) && (modifiers == Qt::ShiftModifier)) {
         _sliceWireframe = (_sliceWireframe+1)%4; 
         optionsChanged = true;
     }
@@ -514,7 +518,7 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%3; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%2; 
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
@@ -619,6 +623,10 @@ ConstructSliceSamples(Slice &slice)
         gridLines.push_back(start); 
         gridLines.push_back(stop); 
     }
+
+    // make colormap for this slice.
+    if (!_sliceColorMap)
+        _sliceColorMap = std::make_shared<JetColorMap>(); 
 }
 
 //##############################################################################
