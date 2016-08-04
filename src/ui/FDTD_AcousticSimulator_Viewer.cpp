@@ -26,6 +26,8 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
     setKeyDescription(Qt::Key_C, "Clear all debug draw"); 
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
+    setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
+    setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
 }
 
 //##############################################################################
@@ -74,6 +76,8 @@ draw()
     DrawMesh(); 
     DrawListeningPoints();
     DrawDebugCin();
+    DrawSlices(); 
+    glColor3f(1.0, 1.0, 1.0);
     drawText(10, height()-20, _message); 
 
     glLineWidth(3.0f);
@@ -305,6 +309,49 @@ DrawLights()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+DrawSlices()
+{
+
+    for (const auto &slice : _sliceCin)
+    {
+        Eigen::MatrixXd data; 
+        _simulator->GetSolver()->FetchPressureData(slice.samples, data);
+        _drawAbsMax = max(fabs(data.maxCoeff()), fabs(data.minCoeff())) * 0.9; 
+        if (_drawAbsMax > 1E-15)
+            data /= _drawAbsMax; 
+        glBegin(GL_QUADS);
+        const int divisions = slice.N_sample_per_dim; 
+        for (int dim_0_idx=0; dim_0_idx<divisions-1; ++dim_0_idx)
+            for (int dim_1_idx=0; dim_1_idx<divisions-1; ++dim_1_idx)
+            {
+                const int idx_0_0 =  dim_0_idx     *divisions + dim_1_idx; 
+                const int idx_0_1 =  dim_0_idx     *divisions + dim_1_idx + 1; 
+                const int idx_1_1 = (dim_0_idx + 1)*divisions + dim_1_idx; 
+                const int idx_1_0 = (dim_0_idx + 1)*divisions + dim_1_idx + 1; 
+                const REAL &c_0_0 = data(idx_0_0); 
+                const REAL &c_0_1 = data(idx_0_1); 
+                const REAL &c_1_0 = data(idx_1_0); 
+                const REAL &c_1_1 = data(idx_1_1); 
+                const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
+                const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
+                const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
+                const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1); 
+                glColor3f(c_0_0, 0, -c_0_0); 
+                glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
+                glColor3f(c_0_1, 0, -c_0_1); 
+                glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
+                glColor3f(c_1_0, 0, -c_1_0); 
+                glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
+                glColor3f(c_1_1, 0, -c_1_1); 
+                glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
+            }
+        glEnd();
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 DrawDebugCin()
 {
     // debug sphere
@@ -400,17 +447,20 @@ keyPressEvent(QKeyEvent *e)
             }
         }
     }
+    else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::NoButton)) {
+        Slice slice; 
+        std::cout << "Slice dim: "; 
+        std::cin >> slice.dim;
+        std::cout << "Slice origin: "; 
+        std::cin >> slice.origin.x >> slice.origin.y >> slice.origin.z; 
+        ConstructSliceSamples(slice);
+        _sliceCin.push_back(slice); 
+    }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
-        bool continueStepping = true; 
-        int stepIndex = 0;
-        while(continueStepping) {
-            continueStepping = _simulator->RunForSteps(1); 
-            if (stepIndex % 500 == 0)
-                updateGL(); 
-        }
+        DrawOneFrameForward(); 
     }
     else {
         handled = false; 
@@ -446,12 +496,42 @@ postSelection(const QPoint &point)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+ConstructSliceSamples(Slice &slice)
+{
+    const int &dim = slice.dim; 
+    const Vector3d &origin = slice.origin; 
+    Vector3Array &samples = slice.samples; 
+
+    const auto &settings = _simulator->GetSolverSettings(); 
+    const REAL cellSize = settings->cellSize; 
+    const int division = settings->cellDivisions; 
+    const REAL halfLength = (REAL)division*cellSize / 2.0; 
+    const REAL minBound = -halfLength + cellSize/2.0; 
+
+    const int dim_0 = (dim + 1) % 3; 
+    const int dim_1 = (dim + 2) % 3; 
+    for (int dim_0_idx=0; dim_0_idx<division; ++dim_0_idx)
+        for (int dim_1_idx=0; dim_1_idx<division; ++dim_1_idx)
+        {
+            Vector3d sample; 
+            sample(dim) = origin(dim); 
+            sample(dim_0) = minBound + cellSize*dim_0_idx; 
+            sample(dim_1) = minBound + cellSize*dim_1_idx; 
+            samples.push_back(sample); 
+        }
+    slice.N_sample_per_dim = division; 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
     _currentFrame++;
-    _simulator->TestAnimateObjects(150); 
-    updateGL(); 
     PrintFrameInfo();
+    //_simulator->TestAnimateObjects(150); 
+    _simulator->RunForSteps(1); 
+    updateGL(); 
 }
 
 //##############################################################################
@@ -482,8 +562,7 @@ void FDTD_AcousticSimulator_Viewer::
 PrintFrameInfo()
 {
     //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
-    //_message += QString::fromStdString(frameInfo); 
-    //_message = QString("");
-    //_message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
-    std::cout << "Current Frame: " << _currentFrame << std::endl; 
+    _message = QString("");
+    _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
+    _message += "max= " + QString::number(_drawAbsMax) + "; "; 
 }

@@ -15,6 +15,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
     public: 
         typedef std::shared_ptr<FDTD_AcousticSimulator> SimulatorPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
+        struct Slice{int dim; Vector3d origin; Vector3Array samples; int N_sample_per_dim;};
 
     private: 
         SimulatorPtr    _simulator; 
@@ -27,12 +28,15 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         std::vector<Vector3f> _objectColors; 
         std::vector<Vector3f> _sphereCin; 
         std::vector<Arrow> _arrowCin; 
+        std::vector<Slice> _sliceCin; 
+        REAL            _drawAbsMax; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawBox(); 
         void DrawListeningPoints(); 
         void DrawLights(); 
+        void DrawSlices();
         void DrawDebugCin();
 
     protected: 
@@ -54,6 +58,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             _simulator->InitializeSolver(); 
         }
 
+        void ConstructSliceSamples(Slice &slice); 
         void DrawOneFrameForward(); 
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 

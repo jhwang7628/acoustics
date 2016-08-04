@@ -311,8 +311,8 @@ FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d 
         if (!isExterior)
         {
             std::cerr << "**ERROR** reflected point " << currentPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
-            _debugArrowStart.push_back(originalPoint); 
-            _debugArrowNormal.push_back(erectedNormal); 
+            _debugArrowStart.push_back(currentPoint); 
+            _debugArrowNormal.push_back(boundaryNormal); 
         }
     }
 

@@ -191,7 +191,7 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
     printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
 }
 
-void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data) 
+void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data)
 {
     const int N = listeningPoints.size(); 
     if (N==0) return; 
