@@ -303,35 +303,15 @@ RunForSteps(const int &N_steps)
         // simulator. this is needed because central difference is used for
         // velocity and accleration estimates. 
         const REAL odeTime = _sceneObjects->AdvanceAllModalODESolvers(1); 
-        assert(EQUAL_FLOATS(odeTime - settings->timeStepSize, _simulationTime)); 
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
-        if (_stepIndex % settings->timeSavePerStep == 0)
-        {
-            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
-            std::ostringstream oss; 
-            oss << std::setw(8) << std::setfill('0') << timeIndex; 
-            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
-            _SaveListeningData(filenameProbe);
-            if (settings->writePressureFieldToDisk)
-            {
-                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
-                _SavePressureTimestep(filenameField); 
-                // uncomment if want to store velocities
-                //for (int dim=0; dim<3; ++dim) 
-                //{
-                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-                //}
-            }
-        }
-#ifdef DEBUG
-        _acousticSolver->PrintAllFieldExtremum();
-#endif
+        // update modal vectors for the next time step
+        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
+            _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
+        std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
-        std::cout << "time = " << _simulationTime << std::endl;
 
         AnimateObjects(); 
 
