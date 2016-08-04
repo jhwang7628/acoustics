@@ -28,6 +28,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
 }
 
 //##############################################################################
@@ -76,7 +77,19 @@ draw()
     DrawMesh(); 
     DrawListeningPoints();
     DrawDebugCin();
-    DrawSlices(); 
+    if (_sliceDataPointer == 0)
+    {
+        DrawSlices(0); 
+    }
+    else if (_sliceDataPointer == 1)
+    {
+        DrawSlices(1); 
+    }
+    else
+    {
+        DrawSlices(0); 
+        DrawSlices(1); 
+    }
     glColor3f(1.0, 1.0, 1.0);
     drawText(10, height()-20, _message); 
 
@@ -309,43 +322,83 @@ DrawLights()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
-DrawSlices()
+DrawSlices(const int &dataPointer)
 {
-
     for (const auto &slice : _sliceCin)
     {
         Eigen::MatrixXd data; 
-        _simulator->GetSolver()->FetchPressureData(slice.samples, data);
-        _drawAbsMax = max(fabs(data.maxCoeff()), fabs(data.minCoeff())) * 0.9; 
-        if (_drawAbsMax > 1E-15)
-            data /= _drawAbsMax; 
-        glBegin(GL_QUADS);
-        const int divisions = slice.N_sample_per_dim; 
-        for (int dim_0_idx=0; dim_0_idx<divisions-1; ++dim_0_idx)
-            for (int dim_1_idx=0; dim_1_idx<divisions-1; ++dim_1_idx)
+        if (dataPointer == 0)
+        {
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data);
+            _drawAbsMax = max(fabs(data.maxCoeff()), fabs(data.minCoeff())) * 0.9; 
+            if (_drawAbsMax > 1E-15)
+                data /= _drawAbsMax; 
+        }
+        else if (dataPointer == 1)
+        {
+            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+        }
+
+        if (_sliceWireframe == 0 || _sliceWireframe == 1)
+        {
+            glLineWidth(1.0f);
+            glColor3f(0.8f, 0.8f, 0.8f); 
+            const int N_gridLines = slice.gridLines.size()/2; 
+            for (int l_idx=0; l_idx<N_gridLines; ++l_idx)
             {
-                const int idx_0_0 =  dim_0_idx     *divisions + dim_1_idx; 
-                const int idx_0_1 =  dim_0_idx     *divisions + dim_1_idx + 1; 
-                const int idx_1_1 = (dim_0_idx + 1)*divisions + dim_1_idx; 
-                const int idx_1_0 = (dim_0_idx + 1)*divisions + dim_1_idx + 1; 
-                const REAL &c_0_0 = data(idx_0_0); 
-                const REAL &c_0_1 = data(idx_0_1); 
-                const REAL &c_1_0 = data(idx_1_0); 
-                const REAL &c_1_1 = data(idx_1_1); 
-                const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
-                const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
-                const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
-                const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1); 
-                glColor3f(c_0_0, 0, -c_0_0); 
-                glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
-                glColor3f(c_0_1, 0, -c_0_1); 
-                glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
-                glColor3f(c_1_0, 0, -c_1_0); 
-                glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
-                glColor3f(c_1_1, 0, -c_1_1); 
-                glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
+                glBegin(GL_LINES);
+                const Vector3d &vertex_0 = slice.gridLines.at(l_idx*2); 
+                const Vector3d &vertex_1 = slice.gridLines.at(l_idx*2+1); 
+                glVertex3f(vertex_0.x, vertex_0.y, vertex_0.z); 
+                glVertex3f(vertex_1.x, vertex_1.y, vertex_1.z); 
+                glEnd();
             }
-        glEnd();
+        }
+
+        if (_sliceWireframe == 0 || _sliceWireframe == 2)
+        {
+            glBegin(GL_QUADS);
+            const int divisions = slice.N_sample_per_dim; 
+            for (int dim_0_idx=0; dim_0_idx<divisions-1; ++dim_0_idx)
+                for (int dim_1_idx=0; dim_1_idx<divisions-1; ++dim_1_idx)
+                {
+                    const int idx_0_0 =  dim_0_idx     *divisions + dim_1_idx; 
+                    const int idx_0_1 =  dim_0_idx     *divisions + dim_1_idx + 1; 
+                    const int idx_1_1 = (dim_0_idx + 1)*divisions + dim_1_idx; 
+                    const int idx_1_0 = (dim_0_idx + 1)*divisions + dim_1_idx + 1; 
+                    const REAL &c_0_0 = data(idx_0_0); 
+                    const REAL &c_0_1 = data(idx_0_1); 
+                    const REAL &c_1_0 = data(idx_1_0); 
+                    const REAL &c_1_1 = data(idx_1_1); 
+                    const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
+                    const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
+                    const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
+                    const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1); 
+                    if (dataPointer == 0)
+                    {
+                        glColor3f(c_0_0, 0, -c_0_0); 
+                        glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
+                        glColor3f(c_0_1, 0, -c_0_1); 
+                        glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
+                        glColor3f(c_1_0, 0, -c_1_0); 
+                        glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
+                        glColor3f(c_1_1, 0, -c_1_1); 
+                        glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
+                    }
+                    else if (dataPointer == 1)
+                    {
+                        glColor3f(c_0_0, fabs(c_0_0), -c_0_0); 
+                        glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
+                        glColor3f(c_0_1, fabs(c_0_1), -c_0_1); 
+                        glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
+                        glColor3f(c_1_0, fabs(c_1_0), -c_1_0); 
+                        glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
+                        glColor3f(c_1_1, fabs(c_1_1), -c_1_1); 
+                        glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
+                    }
+                }
+            glEnd();
+        }
     }
 }
 
@@ -402,7 +455,11 @@ keyPressEvent(QKeyEvent *e)
     bool optionsChanged = false;
     bool handled = true; 
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
-        _wireframe = (_wireframe+1)%3; 
+        _wireframe = (_wireframe+1)%4; 
+        optionsChanged = true;
+    }
+    if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
+        _sliceWireframe = (_sliceWireframe+1)%4; 
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
@@ -456,6 +513,10 @@ keyPressEvent(QKeyEvent *e)
         ConstructSliceSamples(slice);
         _sliceCin.push_back(slice); 
     }
+    else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
+        _sliceDataPointer = (_sliceDataPointer + 1)%3; 
+        optionsChanged = true;
+    }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 
     }
@@ -501,6 +562,7 @@ ConstructSliceSamples(Slice &slice)
     const int &dim = slice.dim; 
     const Vector3d &origin = slice.origin; 
     Vector3Array &samples = slice.samples; 
+    Vector3Array &gridLines = slice.gridLines; 
 
     const auto &settings = _simulator->GetSolverSettings(); 
     const REAL cellSize = settings->cellSize; 
@@ -515,11 +577,48 @@ ConstructSliceSamples(Slice &slice)
         {
             Vector3d sample; 
             sample(dim) = origin(dim); 
-            sample(dim_0) = minBound + cellSize*dim_0_idx; 
-            sample(dim_1) = minBound + cellSize*dim_1_idx; 
+            sample(dim_0) = minBound + cellSize*(REAL)dim_0_idx; 
+            sample(dim_1) = minBound + cellSize*(REAL)dim_1_idx; 
             samples.push_back(sample); 
         }
     slice.N_sample_per_dim = division; 
+    slice.minBound = minBound; 
+    slice.maxBound = minBound + (REAL)(division-1)*cellSize; 
+
+
+    // horizontal grid lines
+    const REAL xStart = slice.minBound - cellSize/2.0; 
+    const REAL xStop =  slice.maxBound + cellSize/2.0; 
+    for (int dim_0_idx=0; dim_0_idx<division+1; ++dim_0_idx)
+    {
+        Vector3d start; 
+        Vector3d stop; 
+        start(dim) = origin(dim); 
+        stop(dim) = origin(dim); 
+        start(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
+        stop(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
+        start(dim_1) = xStart; 
+        stop(dim_1) = xStop; 
+        gridLines.push_back(start); 
+        gridLines.push_back(stop); 
+    }
+
+    // vertical grid lines
+    const REAL yStart = slice.minBound - cellSize/2.0; 
+    const REAL yStop =  slice.maxBound + cellSize/2.0; 
+    for (int dim_1_idx=0; dim_1_idx<division+1; ++dim_1_idx)
+    {
+        Vector3d start; 
+        Vector3d stop; 
+        start(dim) = origin(dim); 
+        stop(dim) = origin(dim); 
+        start(dim_0) = yStart; 
+        stop(dim_0) = yStop; 
+        start(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
+        stop(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
+        gridLines.push_back(start); 
+        gridLines.push_back(stop); 
+    }
 }
 
 //##############################################################################
@@ -540,7 +639,9 @@ void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
+    _sliceWireframe = 2;
     _drawBox = true; 
+    _sliceDataPointer = 0; 
 }
 
 //##############################################################################
@@ -553,6 +654,8 @@ PrintDrawOptions()
               << "------------\n"
               << " Draw simulation box: " << _drawBox << "\n"
               << " Draw wireframe only: " << _wireframe << "\n"
+              << " Draw slice wireframe only: " << _sliceWireframe << "\n"
+              << " Draw slice data pointer: " << _sliceDataPointer << "\n"
               << "\n"; 
 }
 

@@ -231,6 +231,7 @@ class MAC_Grid
         inline int numVelocityCellsX() const { return _velocityField[ 0 ].numCells(); }
         inline int numVelocityCellsY() const { return _velocityField[ 1 ].numCells(); }
         inline int numVelocityCellsZ() const { return _velocityField[ 2 ].numCells(); }
+        inline int PressureCellType(const int &idx){if (_isBulkCell.at(idx)) return 0; else if (!_isBulkCell.at(idx) && !_isGhostCell.at(idx)) return 1; else return -1;}
         inline REAL fieldDiameter() const { return _pressureField.bbox().maxlength(); }
         inline BoundingBox PressureBoundingBox() const {return _pressureField.bbox();}
         inline const ScalarField &pressureField() const { return _pressureField; }

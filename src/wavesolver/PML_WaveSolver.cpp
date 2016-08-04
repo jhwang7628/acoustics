@@ -217,6 +217,46 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
     _writeTimer.pause(); 
 }
 
+// get neareset neighbour cell type
+void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data)
+{
+    const int N = listeningPoints.size(); 
+    if (N==0) return; 
+
+    const ScalarField &field = _grid.pressureField(); 
+    const int N_resultDimension = 1; 
+    data.resize(N, N_resultDimension); 
+
+    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox(); 
+    auto & grid = GetGrid(); 
+    for (int ii=0; ii<N; ++ii) 
+    {
+        if (!pressureBoundingBox.isInside(listeningPoints.at(ii)))
+        {
+            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n"; 
+            continue; 
+        }
+
+        // grab the neighbour indices
+        IntArray neighbours; 
+        field.enclosingNeighbours(listeningPoints.at(ii), neighbours); 
+
+        // find cell types
+        REAL distance = std::numeric_limits<REAL>::max(); 
+        int index = -1; 
+        for (size_t nei_idx=0; nei_idx<neighbours.size(); ++nei_idx)
+        {
+            const REAL currentDistance = (field.cellPosition(neighbours.at(nei_idx)) - listeningPoints.at(ii)).lengthSqr();
+            if ( currentDistance < distance)
+            {
+                distance = currentDistance; 
+                index = neighbours.at(nei_idx); 
+            }
+        }
+        data(ii, 0) = (REAL)grid.PressureCellType(index); 
+    }
+}
+
 // TODO this currently produce bad results, maybe need to smooth velocity field as well
 bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 {

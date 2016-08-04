@@ -179,6 +179,7 @@ class PML_WaveSolver : public Solver
 
         // fetch the pressure data using interpolation
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
+        void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
 
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);
