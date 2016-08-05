@@ -101,7 +101,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         //// debug methods //// 
         void TestQueryDistance(); 
         void TestObjectBoundaryCondition();
-        void WriteDebugArrow(const std::string &file); 
+        void WriteDebugArrow(const std::string &file);
 };
 //##############################################################################
 

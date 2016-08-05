@@ -28,6 +28,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
 }
@@ -423,7 +424,8 @@ DrawDebugCin()
         GL_Wrapper::DrawSphere(5E-4, 10, 10);
         glPopMatrix();
     }
-    
+   
+    const REAL arrowScale = 1;
     // debug arrows
     for (size_t arr_idx=0; arr_idx<_arrowCin.size(); ++arr_idx)
     {
@@ -431,14 +433,20 @@ DrawDebugCin()
         const REAL &start_x = _arrowCin.at(arr_idx).start.x; 
         const REAL &start_y = _arrowCin.at(arr_idx).start.y; 
         const REAL &start_z = _arrowCin.at(arr_idx).start.z; 
-        const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x; 
-        const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y; 
-        const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z; 
+        const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x*arrowScale; 
+        const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y*arrowScale; 
+        const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z*arrowScale; 
         glBegin(GL_LINES);
         glColor3f(0.0f, 0.0f, 1.0f); 
         glVertex3f(start_x, start_y, start_z); 
         glVertex3f(stop_x, stop_y, stop_z); 
         glEnd();
+
+        glPushMatrix();
+        glTranslatef(start_x, start_y, start_z); 
+        glColor3f(1.0f, 1.0f, 0.0f); 
+        GL_Wrapper::DrawSphere(5E-4, 10, 10);
+        glPopMatrix();
     }
 }
 
@@ -479,6 +487,31 @@ keyPressEvent(QKeyEvent *e)
             std::cout << "Sphere Location <x, y, z>: "; 
             std::cin >> x.x >> x.y >> x.z; 
             _sphereCin.push_back(x); 
+    }
+    else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ShiftModifier)) {
+
+        // write to disk 
+        std::string filename; 
+        std::cout << "Debug: failed reflection arrow filename: "; 
+        std::cin >> filename; 
+        auto &sceneObjects = _simulator->GetSceneObjects(); 
+        const int N = sceneObjects->N();
+        sceneObjects->WriteFailedReflections(filename);
+
+        // push all arrows to debug draw
+        for (int obj_idx=0; obj_idx<N; ++obj_idx)
+        {
+            const std::string objFilename = filename + sceneObjects->GetMeshName(obj_idx); 
+            std::ifstream inFile(objFilename.c_str()); 
+            Vector3f x, n; 
+            while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
+            {
+                Arrow arrow; 
+                arrow.start = x; 
+                arrow.normal = n; 
+                _arrowCin.push_back(arrow); 
+            }
+        }
     }
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)) {
             Vector3f x, n; 

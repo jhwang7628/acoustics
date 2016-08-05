@@ -274,6 +274,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         if (!reflectSuccess)
         {
             std::cerr << "**ERROR** reflected point " << originalPoint << "->" << reflectedPoint << " still inside object : " << newDistance << std::endl; 
+            erectedNormal *= (boundaryPoint-originalPoint).length(); // so that it ends at boundary points
             _debugArrowStart.push_back(originalPoint); 
             _debugArrowNormal.push_back(erectedNormal); 
         }
@@ -335,8 +336,9 @@ FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d 
         if (!isExterior)
         {
             std::cerr << "**ERROR** reflected point " << currentPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
+            erectedNormal *= (boundaryPoint-currentPoint).length(); 
             _debugArrowStart.push_back(currentPoint); 
-            _debugArrowNormal.push_back(boundaryNormal); 
+            _debugArrowNormal.push_back(erectedNormal); 
         }
     }
 
@@ -388,4 +390,6 @@ WriteDebugArrow(const std::string &file)
            << _debugArrowNormal.at(idx).x << " " << _debugArrowNormal.at(idx).y << " " << _debugArrowNormal.at(idx).z << std::endl;
     }
     of.close();
+    _debugArrowStart.clear(); 
+    _debugArrowNormal.clear(); 
 }

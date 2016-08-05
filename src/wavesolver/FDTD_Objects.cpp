@@ -230,6 +230,18 @@ PrintAllSources(std::ostream &os)
 
 //##############################################################################
 //##############################################################################
+void FDTD_Objects::
+WriteFailedReflections(const std::string &filename)
+{
+    for (auto &object : _rigidObjects) 
+    {
+        const std::string objFilename = filename + object->GetMeshName();
+        object->WriteDebugArrow(objFilename); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
 std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects) 
 {
     os << "--------------------------------------------------------------------------------\n" 

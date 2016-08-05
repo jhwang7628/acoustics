@@ -1,7 +1,6 @@
 #ifndef VTKCONVERTER_H 
 #define VTKCONVERTER_H
 
-
 #include <iostream> 
 #include <fstream> 
 #include <Eigen/Dense> 
