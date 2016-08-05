@@ -13,8 +13,6 @@ find_path(VLFEAT_INCLUDE_DIR NAMES generic.h
 find_library(VLFEAT_LIBRARY NAMES vl libvl
           PATHS $ENV{VLFEAT_ROOT}
           PATH_SUFFIXES bin/glnxa64 bin/maci64)
-
-      message(${VLFEAT_INCLUDE_DIR})
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(VLFeat DEFAULT_MSG VLFEAT_LIBRARY VLFEAT_INCLUDE_DIR)
 mark_as_advanced(VLFEAT_INCLUDE_DIR VLFEAT_LIBRARY )
