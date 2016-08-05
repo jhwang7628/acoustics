@@ -9,7 +9,8 @@
 #include <parser/ImpulseResponseParser.h>
 #include <wavesolver/PML_WaveSolver_Settings.h>
 #include <wavesolver/FDTD_Objects.h>
-#include <distancefield/closestPointField.h> 
+//#include <distancefield/closestPointField.h> 
+#include <distancefield/AdaptiveDistanceField.h> 
 #include <distancefield/FieldBuilder.h>
 
 #include <linearalgebra/Vector3.hpp> 
@@ -46,7 +47,7 @@ class UniformGridWithObject : public UniformGrid
         std::string                             meshName_; 
         std::shared_ptr<FDTD_Objects>           objects_; 
         // active managed object
-        std::shared_ptr<ClosestPointField>      distanceField_; 
+        std::shared_ptr<AdaptiveDistanceField>  distanceField_; 
         std::shared_ptr<TriangleMesh<double>>   mesh_; 
         std::shared_ptr<ImpulseResponseParser>  parser_; 
         //Parser::ImpulseResponseParms            solverParameters_; 

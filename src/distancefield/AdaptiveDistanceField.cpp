@@ -6,7 +6,7 @@
 #include "trilinearInterpolation.h"
 #include "objfile.h"
 #include "objfileOctree.h"
-#include "adaptiveDistanceField.h"
+#include "AdaptiveDistanceField.h"
 
 // for testing
 #include "utils/SimpleTimer.h"

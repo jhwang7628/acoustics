@@ -16,8 +16,8 @@ set(DISTANCEFIELD_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/vec3d.h               ${CMAKE_CURRENT_SOURCE_DIR}/vec3d.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vec_types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FieldBuilder.h        ${CMAKE_CURRENT_SOURCE_DIR}/FieldBuilder.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/adaptiveDistanceField.h        
-    ${CMAKE_CURRENT_SOURCE_DIR}/adaptiveDistanceField.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/AdaptiveDistanceField.h        
+    ${CMAKE_CURRENT_SOURCE_DIR}/AdaptiveDistanceField.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lodepng.h        
     ${CMAKE_CURRENT_SOURCE_DIR}/lodepng.cpp
 

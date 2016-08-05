@@ -10,7 +10,7 @@
 
 #include "distanceField.h"
 #include "closestPointField.h"
-#include "adaptiveDistanceField.h"
+#include "AdaptiveDistanceField.h"
 
 #include <geometry/TriangleMesh.hpp>
 

@@ -47,12 +47,18 @@ Initialize(const bool &buildFromTetMesh)
         if (!IO::ExistFile(tetSurfaceMeshFile))
             MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
 
+        //_signedDistanceField.reset(
+        //        DistanceFieldBuilder::BuildSignedClosestPointField(
+        //            tetMeshFile.c_str(), 
+        //            _signedDistanceFieldResolution, 
+        //            _signedDistanceFieldFilePrefix.c_str()
+        //            )
+        //        );
         _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    tetMeshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
+                DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                    tetMeshFile.c_str(),
+                    _signedDistanceFieldFilePrefix.c_str(),
+                    0.01*sqrt(3.0), 9, 0.00001)
                 );
     }
     else // build from surface mesh
@@ -70,12 +76,18 @@ Initialize(const bool &buildFromTetMesh)
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
 
+        //_signedDistanceField.reset(
+        //        DistanceFieldBuilder::BuildSignedClosestPointField(
+        //            meshFile.c_str(), 
+        //            _signedDistanceFieldResolution, 
+        //            _signedDistanceFieldFilePrefix.c_str()
+        //            )
+        //        );
         _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    meshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
+                DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                    meshFile.c_str(),
+                    _signedDistanceFieldFilePrefix.c_str(),
+                    0.01*sqrt(3.0), 9, 0.00001)
                 );
     }
  
@@ -134,7 +146,7 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position.eval();
-    return _signedDistanceField->distance(position[0],position[1],position[2]); 
+    return _signedDistanceField->distance(Vector3d(position[0],position[1],position[2])); 
 }
 
 //##############################################################################
