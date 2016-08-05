@@ -4,6 +4,7 @@
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <wavesolver/FDTD_RigidObject_Animator.h>
+#include <geometry/TriangleMeshKDTree.hpp>
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
 #include <geometry/BoundingBox.h> 
@@ -116,6 +117,12 @@ void TestFDTD_RigidObject_Animator()
         of << displacement.x << " " << displacement.y << " " << displacement.z << std::endl;
     }
     of.close();
+}
+
+//##############################################################################
+void Test_TriangleMeshKDTree()
+{
+    TriangleMeshKDTree<REAL> mesh; 
 }
 
 //##############################################################################

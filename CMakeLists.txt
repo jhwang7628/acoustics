@@ -184,6 +184,7 @@ endif (USE_CUDA)
 if (USE_VLFEAT)
     find_package(VLFeat REQUIRED)
     add_definitions(-DUSE_VLFeat)
+    include_directories(${VLFEAT_INCLUDE_DIR})
 endif (USE_VLFEAT)
 
 # check if we're using Intel's compiler
