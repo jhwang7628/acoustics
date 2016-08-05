@@ -57,6 +57,7 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 /> 
+                -->
     </scene> 
     <solver
         sound_speed="343.0"

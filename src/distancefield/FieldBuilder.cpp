@@ -101,3 +101,25 @@ DistanceFieldBuilder::BuildSignedClosestPointField( const std::string &objFileNa
     return field;
 }
 
+AdaptiveDistanceField*
+DistanceFieldBuilder::BuildAdaptiveDistanceField(const std::string& objFileName, const std::string &filePrefix,
+                                                 double subdivideRadius, int maxAdfLevel, double maxError)
+{
+    char filename[1024];
+    int status = 1;
+    
+    AdaptiveDistanceField* field = new AdaptiveDistanceField();
+    if (!filePrefix.empty())
+    {
+        sprintf(filename, "%s_sr%g_ml%02d_me%g.adf", filePrefix.c_str(), subdivideRadius, maxAdfLevel, maxError);
+        status = field->load(string(filename));
+    }
+    if (status != 0)
+    {
+        // build the field explicitly
+        field->computeSignedField(objFileName, subdivideRadius, maxAdfLevel, maxError);
+        if (!filePrefix.empty())
+            field->save(string(filename));
+    }
+    return field;
+}

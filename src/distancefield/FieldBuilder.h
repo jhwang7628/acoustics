@@ -10,6 +10,7 @@
 
 #include "distanceField.h"
 #include "closestPointField.h"
+#include "adaptiveDistanceField.h"
 
 #include <geometry/TriangleMesh.hpp>
 
@@ -40,6 +41,10 @@ class DistanceFieldBuilder {
 	                                                           const std::string &filePrefix,
                                                                const Vec3d &boundingMin,
                                                                const Vec3d &boundingMax);
+                                                               
+       static AdaptiveDistanceField *BuildAdaptiveDistanceField(const std::string& objFileName,  const std::string &filePrefix,
+                                                                double subdivideRadius, int maxAdfLevel, double maxError);
+                                                               
 };
 
 #endif
