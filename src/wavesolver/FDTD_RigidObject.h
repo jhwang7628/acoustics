@@ -3,7 +3,7 @@
 
 #include <TYPES.h>
 #include <config.h>
-//#include <distancefield/closestPointField.h>
+#include <distancefield/closestPointField.h>
 #include <distancefield/AdaptiveDistanceField.h>
 #include <distancefield/FieldBuilder.h>
 #include <parser/Parser.h>
@@ -37,8 +37,11 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
         int                                 _signedDistanceFieldResolution;
         std::string                         _signedDistanceFieldFilePrefix; 
-        //std::shared_ptr<ClosestPointField>  _signedDistanceField; 
+#ifndef USE_ADF
+        std::shared_ptr<ClosestPointField>  _signedDistanceField; 
+#else
         std::shared_ptr<AdaptiveDistanceField>  _signedDistanceField; 
+#endif
 
         bool                                _parsed; 
 
@@ -71,8 +74,11 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline bool Exist(){return (_mesh!=0);}
         inline std::shared_ptr<TriangleMesh<REAL>> GetMeshPtr(){return _mesh;} 
         inline const std::shared_ptr<TriangleMesh<REAL>> &GetMeshPtr() const {return _mesh;} 
-        //inline std::shared_ptr<ClosestPointField> GetSignedDistanceFieldPtr(){return _signedDistanceField;} 
+#ifndef USE_ADF
+        inline std::shared_ptr<ClosestPointField> GetSignedDistanceFieldPtr(){return _signedDistanceField;} 
+#else
         inline std::shared_ptr<AdaptiveDistanceField> GetSignedDistanceFieldPtr(){return _signedDistanceField;} 
+#endif
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
         inline void SetMeshID(const int &ID){_meshID = ID;}

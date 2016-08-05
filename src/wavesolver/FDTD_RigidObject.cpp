@@ -47,19 +47,22 @@ Initialize(const bool &buildFromTetMesh)
         if (!IO::ExistFile(tetSurfaceMeshFile))
             MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
 
-        //_signedDistanceField.reset(
-        //        DistanceFieldBuilder::BuildSignedClosestPointField(
-        //            tetMeshFile.c_str(), 
-        //            _signedDistanceFieldResolution, 
-        //            _signedDistanceFieldFilePrefix.c_str()
-        //            )
-        //        );
+#ifndef USE_ADF
+        _signedDistanceField.reset(
+                DistanceFieldBuilder::BuildSignedClosestPointField(
+                    tetSurfaceMeshFile.c_str(), 
+                    _signedDistanceFieldResolution, 
+                    _signedDistanceFieldFilePrefix.c_str()
+                    )
+                );
+#else
         _signedDistanceField.reset(
                 DistanceFieldBuilder::BuildAdaptiveDistanceField(
-                    tetMeshFile.c_str(),
+                    tetSurfaceMeshFile.c_str(),
                     _signedDistanceFieldFilePrefix.c_str(),
                     0.01*sqrt(3.0), 9, 0.00001)
                 );
+#endif
     }
     else // build from surface mesh
     {
@@ -76,19 +79,22 @@ Initialize(const bool &buildFromTetMesh)
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
 
-        //_signedDistanceField.reset(
-        //        DistanceFieldBuilder::BuildSignedClosestPointField(
-        //            meshFile.c_str(), 
-        //            _signedDistanceFieldResolution, 
-        //            _signedDistanceFieldFilePrefix.c_str()
-        //            )
-        //        );
+#ifndef USE_ADF
+        _signedDistanceField.reset(
+                DistanceFieldBuilder::BuildSignedClosestPointField(
+                    meshFile.c_str(), 
+                    _signedDistanceFieldResolution, 
+                    _signedDistanceFieldFilePrefix.c_str()
+                    )
+                );
+#else
         _signedDistanceField.reset(
                 DistanceFieldBuilder::BuildAdaptiveDistanceField(
                     meshFile.c_str(),
                     _signedDistanceFieldFilePrefix.c_str(),
-                    0.01*sqrt(3.0), 9, 0.00001)
+                    0.0025*sqrt(3.0), 9, 0.00001)
                 );
+#endif
     }
  
     UpdateBoundingBox();
