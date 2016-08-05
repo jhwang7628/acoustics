@@ -30,6 +30,9 @@ class PML_WaveSolver_Settings;
     for (ii=start.x; ii<start.x+range.x; ++ii) \
         for (jj=start.y; jj<start.y+range.y; ++jj) \
             for (kk=start.z; kk<start.z+range.z; ++kk)
+
+// use adaptive distance field
+#define USE_ADF
             
 //##############################################################################
 // Typedefs 
@@ -63,6 +66,12 @@ const double MODE_SHAPE_CUTOFF_FREQ = 44100.0;
 
 const REAL D_INF = std::numeric_limits<REAL>::infinity(); 
 const int I_INF = std::numeric_limits<int>::infinity(); 
+
+#ifdef USE_ADF
+const double ADF_SUBDIVIDE_RADIUS = 0.0025*sqrt(3.0);
+const int ADF_MAX_OCTREE_LEVELS = 9; 
+const double ADF_ERROR_TOLERANCE = 0.00001;
+#endif
 
 //##############################################################################
 // Enum

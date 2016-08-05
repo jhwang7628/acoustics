@@ -60,7 +60,10 @@ Initialize(const bool &buildFromTetMesh)
                 DistanceFieldBuilder::BuildAdaptiveDistanceField(
                     tetSurfaceMeshFile.c_str(),
                     _signedDistanceFieldFilePrefix.c_str(),
-                    0.01*sqrt(3.0), 9, 0.00001)
+                    ADF_SUBDIVIDE_RADIUS,
+                    ADF_MAX_OCTREE_LEVELS,
+                    ADF_ERROR_TOLERANCE
+                    )
                 );
 #endif
     }
@@ -92,8 +95,11 @@ Initialize(const bool &buildFromTetMesh)
                 DistanceFieldBuilder::BuildAdaptiveDistanceField(
                     meshFile.c_str(),
                     _signedDistanceFieldFilePrefix.c_str(),
-                    0.0025*sqrt(3.0), 9, 0.00001)
-                );
+                    ADF_SUBDIVIDE_RADIUS,
+                    ADF_MAX_OCTREE_LEVELS,
+                    ADF_ERROR_TOLERANCE
+                    )
+                ); 
 #endif
     }
  
