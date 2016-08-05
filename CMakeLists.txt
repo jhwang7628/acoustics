@@ -23,6 +23,7 @@ option(USE_DEBUG "Turn on the debug mode" OFF)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
 option(USE_CUDA "Use CUDA" OFF)
+option(USE_VLFEAT "Use VLFeat for KNN" ON)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -179,6 +180,11 @@ if (USE_CUDA)
     find_package(CUDA)
     add_definitions(-DUSE_CUDA)
 endif (USE_CUDA)
+
+if (USE_VLFEAT)
+    find_package(VLFeat REQUIRED)
+    add_definitions(-DUSE_VLFeat)
+endif (USE_VLFEAT)
 
 # check if we're using Intel's compiler
 if ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )

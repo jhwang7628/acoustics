@@ -16,6 +16,13 @@ set(MESH_UTILS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/TetMeshIndexToSurfaceMesh.cpp
     CACHE FILE "Mesh Utils sources")
 
+if (USE_VLFEAT)
+    set(MESH_UTILS_SRC
+        ${MESH_UTILS_SRC}
+        ${CMAKE_CURRENT_SOURCE_DIR}/TriangleMeshKDTree.hpp
+        CACHE FILE "Mesh Utils sources")
+endif (USE_VLFEAT)
+
 set(EIGENIO_SRC
     /home/jui-hsien/Research/code/TurbulentHead/tools/IO/IO.h
     CACHE FILE "Eigen IO sources")
