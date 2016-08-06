@@ -14,6 +14,9 @@ extern "C" {
 #include <boost/timer/timer.hpp>
 #endif
 
+// uncomment if want the timer for each query
+//#define DEBUG_KDTREE
+
 //##############################################################################
 // This class will put the triangle mesh class into a kd-tree and support
 // subsequent query about nearest neighbours. 
@@ -30,7 +33,6 @@ class TriangleMeshKDTree : public TriangleMesh<T>
 
     protected:
         std::shared_ptr<VlKDForest>         _nnForest; 
-        std::shared_ptr<VlKDForestSearcher> _nnForestSearcher; 
         RowMajorMatrixXd                    _triangleCentroids; 
 
     public: 
@@ -73,10 +75,9 @@ BuildKDTree()
         _triangleCentroids(t_idx, 2) = centroid.z;
     }
 
-    // build forest and searcher
+    // build forest
     _nnForest.reset(vl_kdforest_new(VL_TYPE_DOUBLE, 3, 1, VlDistanceL2)); 
     vl_kdforest_build(_nnForest.get(), N_triangles, _triangleCentroids.data()); 
-    _nnForestSearcher.reset(vl_kdforest_new_searcher(_nnForest.get())); 
 }
 
 //##############################################################################
@@ -89,12 +90,11 @@ template <typename T>
 REAL TriangleMeshKDTree<T>::
 FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices)
 {
-#if defined(USE_BOOST)
-    boost::timer::auto_cpu_timer timer("Boost timer: Query takes %w seconds\n" );
+#if defined(USE_BOOST) && defined(DEBUG_KDTREE)
+    boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
 #endif
     VlKDForestNeighbor neighbours[k]; 
-    //vl_kdforest_query(_nnForest.get(), neighbours, k, &point); 
-    vl_kdforestsearcher_query(_nnForestSearcher.get(), neighbours, k, &point);
+    vl_kdforest_query(_nnForest.get(), neighbours, k, &point); 
     triangleIndices.resize(k); 
     for (int nn_idx=0; nn_idx<k; ++nn_idx)
         triangleIndices.at(nn_idx) = neighbours[nn_idx].index; 
