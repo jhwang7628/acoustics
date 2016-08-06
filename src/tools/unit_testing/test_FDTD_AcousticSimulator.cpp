@@ -9,6 +9,7 @@
 #include <linearalgebra/Vector3.hpp>
 #include <geometry/BoundingBox.h> 
 #include <boost/timer/timer.hpp>
+#include <io/TglMeshReader.hpp>
 
 //##############################################################################
 // Submodules 
@@ -122,7 +123,14 @@ void TestFDTD_RigidObject_Animator()
 //##############################################################################
 void Test_TriangleMeshKDTree()
 {
-    TriangleMeshKDTree<REAL> mesh; 
+    const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate/plate.tet.obj"); 
+    std::shared_ptr<TriangleMeshKDTree<REAL> > mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+    MeshObjReader::read(meshFile.c_str(), *(std::dynamic_pointer_cast<TriangleMesh<REAL> >(mesh)), false, false, 1.0); 
+    mesh->generate_normals(); 
+    std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
+
+    mesh->BuildKDTree();
+    mesh->TestKDTree(15);
 }
 
 //##############################################################################
@@ -133,10 +141,12 @@ int main(int argc, char ** argv)
     //TestScalarFieldSubindices();
     
     //TestFDTD_RigidObject_Animator();
-    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    if (argc>1) 
-        xmlName = std::string(argv[1]);
-    TestAcousticSimulatorRun(xmlName); 
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //if (argc>1) 
+    //    xmlName = std::string(argv[1]);
+    //TestAcousticSimulatorRun(xmlName); 
+
+    Test_TriangleMeshKDTree();
 
     return 0;
 }

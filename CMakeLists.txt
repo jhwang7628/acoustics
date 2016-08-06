@@ -24,6 +24,7 @@ option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
 option(USE_CUDA "Use CUDA" OFF)
 option(USE_VLFEAT "Use VLFeat for KNN" ON)
+option(USE_BOOST "Use Boost" ON)
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -82,8 +83,10 @@ endif ( USE_64BIT_ARCH )
 #===================================================================
 ## Libraries
 # check boost libraries
-find_package(Boost 1.33 REQUIRED)
-add_definitions(-DUSE_BOOST)
+if (USE_BOOST)
+    find_package(Boost 1.33 REQUIRED)
+    add_definitions(-DUSE_BOOST)
+endif (USE_BOOST)
 
 option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
 

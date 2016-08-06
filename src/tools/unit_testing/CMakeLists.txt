@@ -177,6 +177,7 @@ if (BUILD_UNIT_TESTING)
         ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
         boost_thread
         boost_system                    
         boost_timer

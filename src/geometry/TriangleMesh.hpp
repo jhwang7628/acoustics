@@ -201,7 +201,7 @@ class TriangleMesh
         void get_vtx_tgls(std::vector< std::set<int> >&) const;
 
 #endif /* DIFF_DEFINE */
-    private:
+    protected:
         double                      m_totArea;
         std::vector< Point3<T> >    m_vertices;
         std::vector< Vector3<T> >   m_normals;
