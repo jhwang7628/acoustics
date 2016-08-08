@@ -214,7 +214,7 @@ class TriangleMesh
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 
         // need FindKNearestTriangles()
-        REAL GetClosestPointToTriangle(const Vector3d &queryPoint, Vector3d &closestPoint); 
+        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle); 
 
     protected:
         double                      m_totArea;
@@ -606,8 +606,98 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
 
 template <typename T> 
 REAL TriangleMesh<T>::
-GetClosetPointToTriangle(const Vector3d &queryPoint, Vector3d &closestPoint)
+ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle)
 {
+    const int N_neighbours = 1; 
+    std::vector<int> triangleIndices; 
+    FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
+    assert(triangleIndices.size() > 0);
+
+    REAL minDistance = std::numeric_limits<REAL>::max(); 
+    for (const int &t_idx : triangleIndices)
+    {
+        // points CCW ordering
+        const Tuple3ui &triangle = this->triangle_ids(t_idx); 
+        const Point3<T> &p0 = this->vertex(triangle.x); 
+        const Point3<T> &p1 = this->vertex(triangle.y); 
+        const Point3<T> &p2 = this->vertex(triangle.z); 
+
+        // edges w.r.t p0
+        const Vector3<T> e0 = p2 - p0; 
+        const Vector3<T> e1 = p1 - p0; 
+
+        // dot products
+        const REAL dot00 = e0.dotProduct(e0); 
+        const REAL dot01 = e0.dotProduct(e1); 
+        const REAL dot11 = e1.dotProduct(e1); 
+
+        // normal n corresponds to CCW point ordering and plane spanned by three
+        // points n_x x + n_y y + n_z z = d, for all (x, y, z) in this plane.
+        const Vector3<T> triangleNormal = e1.crossProduct(e0); 
+        const REAL d = triangleNormal.x * p0.x + triangleNormal.y * p0.y + triangleNormal.z * p0.z; 
+
+        // to find projection of query point on this plane, first find the time
+        // travelled t for the ray emitted from the query point to this plane.
+        const REAL t = (d - triangleNormal.x*queryPoint.x - triangleNormal.y*queryPoint.y - triangleNormal.z*queryPoint.z) / (triangleNormal.lengthSqr()); 
+        const Vector3<T> projectedPoint = queryPoint + triangleNormal * t; 
+
+        // compute barycentric coordinates of this projected point (u, v)
+        // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
+        const Vector3<T> e2 = projectedPoint - p0; 
+        const REAL dot02 = e0.dotProduct(e2); 
+        const REAL dot12 = e1.dotProduct(e2); 
+        const REAL invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
+        const REAL u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
+        const REAL v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
+
+        // distinguish cases and compute distance, closestPoint
+        // There are six cases other than lie inside triangle
+        // closest to points p0, p1, p2, 
+        // or edges (p0, p1), (p1, p2), (p0, p2)
+        if (u>=0 && v>=0 && (u+v)<1) // inside triangle
+        {
+            closestPoint = Vector3<T>(projectedPoint); 
+        }
+        else if (u<0 && v>=0 && (u+v)<1) // closest to edge e = e1(p0, p1)
+        {
+            closestPoint = projectedPoint + (e1 * dot12/e1.lengthSqr() - e2);
+        }
+        else if (u>=0 && v<0 && (u+v)<1) // closest to edge e = e0(p0, p2)
+        {
+            closestPoint = projectedPoint + (e0 * dot02/e0.lengthSqr() - e2); 
+        }
+        else if (u>=0 && v>=0 && (u+v)>=1) // closest to edge e = e(p1, p2)
+        {
+            const Vector3<T> e12 = p2 - p1; 
+            const Vector3<T> o12 = projectedPoint - p1; 
+            closestPoint = projectedPoint + (e12 * o12.dotProduct(e12)/e12.lengthSqr() - o12);
+        }
+        else if (u<0 && v<0 && (u+v)<1) // closest to p0
+        {
+            closestPoint = Vector3<T>(p0); 
+        }
+        else if (u<0 && v>=0 && (u+v)>=1) // closest to p1
+        {
+            closestPoint = Vector3<T>(p1); 
+        }
+        else if (u>=0 && v<0 && (u+v)>=1) // closest to p2
+        {
+            closestPoint = Vector3<T>(p2); 
+        }
+        else // remaining case is u<0, v<0, (u+v)>=1 but this case is impossible
+        {
+            throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
+        }
+        const REAL distance = (queryPoint - closestPoint).length();
+
+        // keep closest
+        if (distance < minDistance) 
+        {
+            minDistance = distance; 
+            closestTriangle = t_idx; 
+        }
+    }
+    return minDistance; 
 }
 
 #ifdef USE_NAMESPACE

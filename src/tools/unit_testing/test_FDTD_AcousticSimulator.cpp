@@ -124,13 +124,24 @@ void TestFDTD_RigidObject_Animator()
 void Test_TriangleMeshKDTree()
 {
     const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate/plate.tet.obj"); 
-    std::shared_ptr<TriangleMeshKDTree<REAL> > mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
-    MeshObjReader::read(meshFile.c_str(), *(std::dynamic_pointer_cast<TriangleMesh<REAL> >(mesh)), false, false, 1.0); 
+    std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+    MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
     mesh->generate_normals(); 
     std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
 
-    mesh->BuildKDTree();
-    mesh->TestKDTree(15);
+    std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->BuildKDTree();
+    std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->TestKDTree(15);
+
+    const Vector3d queryPoint(0, 0, 0); 
+    Vector3d closestPoint; 
+    int closestTriangle;
+    REAL distance = mesh->ComputeClosestPointOnMesh(queryPoint, closestPoint, closestTriangle); 
+    std::cout << "=== closest triangle test === \n";
+    COUT_SDUMP(queryPoint); 
+    COUT_SDUMP(closestPoint); 
+    COUT_SDUMP(distance); 
+    COUT_SDUMP(closestTriangle);
+    std::cout << "============================= \n";
 }
 
 //##############################################################################
