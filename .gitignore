@@ -1,35 +1,33 @@
-temp* 
-data*
-
-*.avi
-*.mp4
-
-*.scpf
-
+# intermediate/cached/swap/local files
+CMakeFiles*
+*.pyc
 *.swp 
 *.swo 
 .*.swp 
 .*.swo 
-
 .*.sw?
+.qglviewer.xml
 
+# distance field files
+*.adf
+*.scpf
+
+# data files
 *.vtk
 *.dat
+*.csv
 *.png
-
-*.pyc
+*.avi
+*.mp4
+*.obj
 *.gz
 *.tar
+*.xml
 
-*.obj
+work/near-field/test_movies
 
-CMakeFiles*
-
-temp*
-
-*.csv
-
-
+# data directories
+data*
 build*
 gcc-build
 work/impulse-response/test
@@ -37,19 +35,18 @@ work/impulse-response/integral_freespace
 work/impulse-response/test2
 work/impulse-response/test3
 work/impulse-response/test*
-
+work/meshes
+work/ball_0p1
+work/mug
+work/plate
+work/plate_drop_test
 work/head_test/*
 work/sphericalhead_test
 work/impulse-response/geometry
 work/impulse-response/*.xml
-
 work/near-field/ball_experiment
 work/near-field/not_scaled_omega_ball
-
 work/near-field/solver_config*xml
 work/near-field/default_test.xml
-
 work/plate_copy
-
 work/unit_testing*
-
