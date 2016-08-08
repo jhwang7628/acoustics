@@ -204,14 +204,7 @@ class TriangleMesh
         void get_vtx_neighborship(std::vector< std::set<int> >&) const;
         //! Get the adjacent triangles of each vertex
         void get_vtx_tgls(std::vector< std::set<int> >&) const;
-
 #endif /* DIFF_DEFINE */
-    protected:
-        double                      m_totArea;
-        std::vector< Point3<T> >    m_vertices;
-        std::vector< Vector3<T> >   m_normals;
-        std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
-        std::valarray<T>            m_vtxAreas;     // area of each triangles
 
         // abstract nearest triangles lookup that should be specific to data
         // structures of choice. 
@@ -219,6 +212,16 @@ class TriangleMesh
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
         virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex)
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
+
+        // need FindKNearestTriangles()
+        REAL GetClosestPointToTriangle(const Vector3d &queryPoint, Vector3d &closestPoint); 
+
+    protected:
+        double                      m_totArea;
+        std::vector< Point3<T> >    m_vertices;
+        std::vector< Vector3<T> >   m_normals;
+        std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
+        std::valarray<T>            m_vtxAreas;     // area of each triangles
 };
 
 template <typename T>
@@ -599,6 +602,12 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
         vtx_ts[ m_triangles[i].z ].insert(i);
     }
 #endif /* DIFF_DEFINE */
+}
+
+template <typename T> 
+REAL TriangleMesh<T>::
+GetClosetPointToTriangle(const Vector3d &queryPoint, Vector3d &closestPoint)
+{
 }
 
 #ifdef USE_NAMESPACE

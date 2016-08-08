@@ -35,15 +35,14 @@ class TriangleMeshKDTree : public TriangleMesh<T>
         std::shared_ptr<VlKDForest>         _nnForest; 
         RowMajorMatrixXd                    _triangleCentroids; 
 
-        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
-        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex); 
-
     public: 
         ~TriangleMeshKDTree()
         {
             //vl_kdforest_delete(_nnForest.get());
         }
 
+        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
+        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex); 
         void BuildKDTree();
 
         ///// debugging methods /////
