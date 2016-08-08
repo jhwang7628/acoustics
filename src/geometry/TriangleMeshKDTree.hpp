@@ -35,6 +35,9 @@ class TriangleMeshKDTree : public TriangleMesh<T>
         std::shared_ptr<VlKDForest>         _nnForest; 
         RowMajorMatrixXd                    _triangleCentroids; 
 
+        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
+        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex); 
+
     public: 
         ~TriangleMeshKDTree()
         {
@@ -42,7 +45,6 @@ class TriangleMeshKDTree : public TriangleMesh<T>
         }
 
         void BuildKDTree();
-        REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
 
         ///// debugging methods /////
         void TestKDTree(const int &k); 
@@ -99,6 +101,28 @@ FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &tri
     for (int nn_idx=0; nn_idx<k; ++nn_idx)
         triangleIndices.at(nn_idx) = neighbours[nn_idx].index; 
     return neighbours[0].distance; 
+}
+
+//##############################################################################
+// This function is a special case of finding k nearest neighbours. However for
+// performace I copied some of the codes.
+//
+// @param k Number of nearest neighbours
+// @param point Sample point position
+// @param triangleIndices Output triangles indices
+// @return smallest distance
+//##############################################################################
+template <typename T> 
+REAL TriangleMeshKDTree<T>::
+FindNearestTriangle(const Vector3d &point, int &triangleIndex)
+{
+#if defined(USE_BOOST) && defined(DEBUG_KDTREE)
+    boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
+#endif
+    VlKDForestNeighbor neighbours; 
+    vl_kdforest_query(_nnForest.get(), &neighbours, 1, &point); 
+    triangleIndex = neighbours.index; 
+    return neighbours.distance; 
 }
 
 //##############################################################################

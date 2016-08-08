@@ -12,6 +12,7 @@
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_MovableObject.h> 
+#include <geometry/TriangleMeshKDTree.hpp>
 #include <geometry/TetMeshIndexToSurfaceMesh.h> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 

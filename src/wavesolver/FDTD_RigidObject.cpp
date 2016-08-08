@@ -27,7 +27,8 @@ Initialize(const bool &buildFromTetMesh)
         std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
         if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
         {
-            _mesh.reset(new TriangleMesh<REAL>()); 
+            _mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+            //_mesh.reset(new TriangleMesh<REAL>()); 
             tetMesh->extract_surface(_mesh.get()); 
             _mesh->generate_normals(); 
             _mesh->update_vertex_areas(); 
@@ -75,8 +76,9 @@ Initialize(const bool &buildFromTetMesh)
 
         if (!IO::ExistFile(meshFile))
             throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
-
-        _mesh.reset(new TriangleMesh<REAL>());
+        
+        _mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+        //_mesh.reset(new TriangleMesh<REAL>());
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
             _mesh->generate_normals(); 
         else

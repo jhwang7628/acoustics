@@ -42,6 +42,7 @@
 #include "Triangle.hpp"
 #include "Point3.hpp"
 #include "linearalgebra/Vector3.hpp"
+#include <stdexcept>
 
 #ifdef USE_NAMESPACE
 namespace carbine
@@ -62,6 +63,10 @@ class TriangleMesh
             : m_totArea(0)
         {
         }
+
+        // needed since now it can be a base class to mesh class that can
+        // search for nearest neighbours.
+        virtual ~TriangleMesh(){}
 
         void clear()
         {
@@ -207,6 +212,13 @@ class TriangleMesh
         std::vector< Vector3<T> >   m_normals;
         std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
         std::valarray<T>            m_vtxAreas;     // area of each triangles
+
+        // abstract nearest triangles lookup that should be specific to data
+        // structures of choice. 
+        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices)
+        { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
+        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex)
+        { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 };
 
 template <typename T>
