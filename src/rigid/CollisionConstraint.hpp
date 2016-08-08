@@ -11,6 +11,7 @@ class CollisionConstraint
         typedef typename TCollProc::TTreeNode   TTreeNode;
 
     public:
+        virtual ~CollisionConstraint(){} // complained by compiler
         /* return if this constraint is fixed constraint 
          * the ground, static wall are all fixed constraints
          */
