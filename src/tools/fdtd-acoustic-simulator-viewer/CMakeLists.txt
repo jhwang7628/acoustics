@@ -78,6 +78,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
         boost_thread
         boost_system                    
         boost_timer
