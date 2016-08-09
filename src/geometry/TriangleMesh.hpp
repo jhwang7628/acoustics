@@ -623,13 +623,13 @@ template <typename T>
 REAL TriangleMesh<T>::
 ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint)
 {
-    const int N_neighbours = 1; 
+    const int N_neighbours = 10; 
     std::vector<int> triangleIndices; 
     FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
     assert(triangleIndices.size() > 0);
 
     REAL minDistance = std::numeric_limits<REAL>::max(); 
-    Vector3d closestPointBuffer;
+    Vector3d closestPointBuffer, projectedPointBuffer;
     for (const int t_idx : triangleIndices)
     {
         // points CCW ordering
@@ -655,11 +655,11 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         // to find projection of query point on this plane, first find the time
         // travelled t for the ray emitted from the query point to this plane.
         const REAL t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
-        projectedPoint = queryPoint + triangleNormal * t;
+        projectedPointBuffer = queryPoint + triangleNormal * t;
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
-        const Vector3<T> e2 = projectedPoint - p0; 
+        const Vector3<T> e2 = projectedPointBuffer - p0; 
         const REAL dot02 = e0.dotProduct(e2); 
         const REAL dot12 = e1.dotProduct(e2); 
         const REAL invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
@@ -672,21 +672,36 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         // or edges (p0, p1), (p1, p2), (p0, p2)
         if (u>=0 && v>=0 && (u+v)<1) // inside triangle
         {
-            closestPointBuffer = Vector3<T>(projectedPoint); 
+            closestPointBuffer = Vector3<T>(projectedPointBuffer); 
         }
         else if (u<0 && v>=0 && (u+v)<1) // closest to edge e = e1(p0, p1)
         {
-            closestPointBuffer = projectedPoint + (e1 * dot12/e1.lengthSqr() - e2);
+            const REAL l = std::max<REAL>(dot12, 0.0);
+            const REAL e1Sqr = e1.lengthSqr(); 
+            if (l > e1Sqr)
+                closestPointBuffer = projectedPointBuffer + (e1 - e2);
+            else
+                closestPointBuffer = projectedPointBuffer + (e1 * l/e1Sqr - e2);
         }
         else if (u>=0 && v<0 && (u+v)<1) // closest to edge e = e0(p0, p2)
         {
-            closestPointBuffer = projectedPoint + (e0 * dot02/e0.lengthSqr() - e2); 
+            const REAL l = std::max<REAL>(dot02, 0.0);
+            const REAL e0Sqr = e0.lengthSqr(); 
+            if (l > e0Sqr)
+                closestPointBuffer = projectedPointBuffer + (e0 - e2);
+            else
+                closestPointBuffer = projectedPointBuffer + (e0 * l/e0Sqr - e2);
         }
         else if (u>=0 && v>=0 && (u+v)>=1) // closest to edge e = e(p1, p2)
         {
             const Vector3<T> e12 = p2 - p1; 
-            const Vector3<T> o12 = projectedPoint - p1; 
-            closestPointBuffer = projectedPoint + (e12 * o12.dotProduct(e12)/e12.lengthSqr() - o12);
+            const Vector3<T> o12 = projectedPointBuffer - p1; 
+            const REAL l = std::max<REAL>(o12.dotProduct(e12), 0.0);
+            const REAL e12Sqr = e12.lengthSqr(); 
+            if (l > e12Sqr)
+                closestPointBuffer = projectedPointBuffer + (e12 - o12);
+            else
+                closestPointBuffer = projectedPointBuffer + (e12 * l/e12Sqr - o12);
         }
         else if (u<0 && v<0 && (u+v)<1) // closest to p0
         {
@@ -711,7 +726,8 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         {
             minDistance = distance; 
             closestTriangle = t_idx; 
-            closestPoint = Vector3d(closestPointBuffer);
+            closestPoint = closestPointBuffer;
+            projectedPoint = projectedPointBuffer; 
         }
     }
     return minDistance; 

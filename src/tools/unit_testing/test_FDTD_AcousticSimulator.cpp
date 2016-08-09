@@ -39,7 +39,7 @@ void TestBoundingBox()
     timer[0].Start();
     const int N_test = 1000000;
     int p_return=0, n_return=0; 
-    srand(time(NULL));
+    //srand(time(NULL));
     for (int ii=0; ii<N_test; ii++) 
     {
         //const Vector3d vec(0.2,0.3,0.5); 
@@ -130,18 +130,35 @@ void Test_TriangleMeshKDTree()
     std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
 
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->BuildKDTree();
-    std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->TestKDTree(15);
-
-    const Vector3d queryPoint(0, 0, 0); 
-    Vector3d closestPoint; 
+    Vector3d queryPoint, projectedPoint, closestPoint; 
     int closestTriangle;
-    REAL distance = mesh->ComputeClosestPointOnMesh(queryPoint, closestPoint, closestTriangle); 
-    std::cout << "=== closest triangle test === \n";
-    COUT_SDUMP(queryPoint); 
-    COUT_SDUMP(closestPoint); 
-    COUT_SDUMP(distance); 
-    COUT_SDUMP(closestTriangle);
-    std::cout << "============================= \n";
+
+    const int N_tests = 50; 
+    std::ofstream of("Test_TriangleMeshKDTree.txt"); 
+    const double r = mesh->boundingSphereRadius(Point3d(0, 0, 0)); 
+    //srand(time(NULL)); 
+    for (int t_idx=0; t_idx<N_tests; ++t_idx)
+    {
+        std::cout << "\r" << t_idx << "/" << N_tests << std::endl;
+        const double x = (double)rand()/(double)RAND_MAX * 2.0*r - r; 
+        const double y = (double)rand()/(double)RAND_MAX * 2.0*r - r; 
+        const double z = (double)rand()/(double)RAND_MAX * 2.0*r - r; 
+        queryPoint.set(x, y, z);
+        //queryPoint.set(-0.101063680118473, 0.1055460887829576, 0.006106259099252123);
+
+
+        REAL distance = mesh->ComputeClosestPointOnMesh(queryPoint, closestPoint, closestTriangle, projectedPoint); 
+        const Tuple3ui &triangle = mesh->triangle_ids(closestTriangle);
+        const Point3d &v0 = mesh->vertex(triangle.x); 
+        const Point3d &v1 = mesh->vertex(triangle.y); 
+        const Point3d &v2 = mesh->vertex(triangle.z); 
+        const Vector3d normal = closestPoint - queryPoint; 
+        of << std::setprecision(16); 
+        of << queryPoint.x << " " << queryPoint.y << " " << queryPoint.z << " "
+           << normal.x << " " << normal.y << " " << normal.z << "\n";
+    }
+    std::cout << std::endl;
+    of.close(); 
 }
 
 //##############################################################################
