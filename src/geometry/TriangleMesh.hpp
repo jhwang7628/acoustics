@@ -43,6 +43,7 @@
 #include "Point3.hpp"
 #include "linearalgebra/Vector3.hpp"
 #include <stdexcept>
+#include <utils/STL_Wrapper.h>
 
 #ifdef USE_NAMESPACE
 namespace carbine
@@ -214,7 +215,7 @@ class TriangleMesh
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 
         // need FindKNearestTriangles()
-        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle); 
+        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint); 
 
     protected:
         double                      m_totArea;
@@ -604,9 +605,23 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
 #endif /* DIFF_DEFINE */
 }
 
+/* 
+ * This function finds a point on the mesh that is closest to the queryPoint. 
+ *
+ * First a list of N_neighbours triangles that have distance closest to the queryPoint 
+ * is retrived. How distance metric is defined depends on the KNN search, if 
+ * TriangleMeshKDTree class is used then its the quadratic L2 distance between triangle 
+ * centroid and queryPoint. Next, the point is projected onto the plane defined by the 
+ * triangle vertices and its barycentric coordinates (u, v) were computed. We can then 
+ * reason about the closest feature (vertex, edge, or interior) using the (u, v) 
+ * coordinates. Notations are similar to the website:
+ *
+ * www.blackpawn.com/texts/pointinpoly
+ * 
+ */
 template <typename T> 
 REAL TriangleMesh<T>::
-ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle)
+ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint)
 {
     const int N_neighbours = 1; 
     std::vector<int> triangleIndices; 
@@ -614,7 +629,8 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
     assert(triangleIndices.size() > 0);
 
     REAL minDistance = std::numeric_limits<REAL>::max(); 
-    for (const int &t_idx : triangleIndices)
+    Vector3d closestPointBuffer;
+    for (const int t_idx : triangleIndices)
     {
         // points CCW ordering
         const Tuple3ui &triangle = this->triangle_ids(t_idx); 
@@ -638,8 +654,8 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
 
         // to find projection of query point on this plane, first find the time
         // travelled t for the ray emitted from the query point to this plane.
-        const REAL t = (d - triangleNormal.x*queryPoint.x - triangleNormal.y*queryPoint.y - triangleNormal.z*queryPoint.z) / (triangleNormal.lengthSqr()); 
-        const Vector3<T> projectedPoint = queryPoint + triangleNormal * t; 
+        const REAL t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
+        projectedPoint = queryPoint + triangleNormal * t;
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
@@ -656,45 +672,46 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         // or edges (p0, p1), (p1, p2), (p0, p2)
         if (u>=0 && v>=0 && (u+v)<1) // inside triangle
         {
-            closestPoint = Vector3<T>(projectedPoint); 
+            closestPointBuffer = Vector3<T>(projectedPoint); 
         }
         else if (u<0 && v>=0 && (u+v)<1) // closest to edge e = e1(p0, p1)
         {
-            closestPoint = projectedPoint + (e1 * dot12/e1.lengthSqr() - e2);
+            closestPointBuffer = projectedPoint + (e1 * dot12/e1.lengthSqr() - e2);
         }
         else if (u>=0 && v<0 && (u+v)<1) // closest to edge e = e0(p0, p2)
         {
-            closestPoint = projectedPoint + (e0 * dot02/e0.lengthSqr() - e2); 
+            closestPointBuffer = projectedPoint + (e0 * dot02/e0.lengthSqr() - e2); 
         }
         else if (u>=0 && v>=0 && (u+v)>=1) // closest to edge e = e(p1, p2)
         {
             const Vector3<T> e12 = p2 - p1; 
             const Vector3<T> o12 = projectedPoint - p1; 
-            closestPoint = projectedPoint + (e12 * o12.dotProduct(e12)/e12.lengthSqr() - o12);
+            closestPointBuffer = projectedPoint + (e12 * o12.dotProduct(e12)/e12.lengthSqr() - o12);
         }
         else if (u<0 && v<0 && (u+v)<1) // closest to p0
         {
-            closestPoint = Vector3<T>(p0); 
+            closestPointBuffer = Vector3<T>(p0); 
         }
         else if (u<0 && v>=0 && (u+v)>=1) // closest to p1
         {
-            closestPoint = Vector3<T>(p1); 
+            closestPointBuffer = Vector3<T>(p1); 
         }
         else if (u>=0 && v<0 && (u+v)>=1) // closest to p2
         {
-            closestPoint = Vector3<T>(p2); 
+            closestPointBuffer = Vector3<T>(p2); 
         }
         else // remaining case is u<0, v<0, (u+v)>=1 but this case is impossible
         {
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
-        const REAL distance = (queryPoint - closestPoint).length();
+        const REAL distance = (queryPoint - closestPointBuffer).length();
 
         // keep closest
         if (distance < minDistance) 
         {
             minDistance = distance; 
             closestTriangle = t_idx; 
+            closestPoint = Vector3d(closestPointBuffer);
         }
     }
     return minDistance; 
