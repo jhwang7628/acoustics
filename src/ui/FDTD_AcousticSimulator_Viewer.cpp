@@ -24,13 +24,16 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
     setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
     setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
-    setKeyDescription(Qt::Key_C, "Clear all debug draw"); 
+    setKeyDescription(Qt::Key_C, "Clear all debug sphere"); 
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
+    setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file"); 
+    setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file"); 
 }
 
 //##############################################################################
@@ -292,6 +295,7 @@ DrawListeningPoints()
 void FDTD_AcousticSimulator_Viewer::
 DrawLights()
 {
+    glEnable(GL_LIGHT0);
     const GLfloat GLOBAL_AMBIENT[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     const GLfloat SPECULAR_COLOR[] = { 0.6f, 0.6f, 0.6f, 1.0 };
 
@@ -316,9 +320,7 @@ DrawLights()
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHT0);
 }
 
 //##############################################################################
@@ -412,18 +414,21 @@ DrawSlices(const int &dataPointer)
 void FDTD_AcousticSimulator_Viewer::
 DrawDebugCin()
 {
+    glEnable(GL_LIGHTING);
     // debug sphere
     for (size_t sph_idx=0; sph_idx<_sphereCin.size(); ++sph_idx)
     {
-        const REAL &x = _sphereCin.at(sph_idx).x; 
-        const REAL &y = _sphereCin.at(sph_idx).y; 
-        const REAL &z = _sphereCin.at(sph_idx).z; 
+        const auto &sphere = _sphereCin.at(sph_idx); 
+        const REAL &x = sphere.origin.x; 
+        const REAL &y = sphere.origin.y; 
+        const REAL &z = sphere.origin.z; 
         glPushMatrix();
         glTranslatef(x, y, z); 
         glColor3f(0.0f, 1.0f, 0.0f); 
-        GL_Wrapper::DrawSphere(5E-4, 10, 10);
+        GL_Wrapper::DrawSphere(5E-4 * sphere.scale, 10, 10);
         glPopMatrix();
     }
+    glDisable(GL_LIGHTING);
    
     const REAL arrowScale = 1;
     // debug arrows
@@ -483,16 +488,15 @@ keyPressEvent(QKeyEvent *e)
             DrawOneFrameForward(); 
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::NoButton)) {
-            Vector3f x; 
-            std::cout << "Sphere Location <x, y, z>: "; 
-            std::cin >> x.x >> x.y >> x.z; 
-            _sphereCin.push_back(x); 
+            Sphere sphere;
+            std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
+            std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
+            _sphereCin.push_back(sphere); 
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ShiftModifier)) {
-
         // write to disk 
         std::string filename; 
-        std::cout << "Debug: failed reflection arrow filename: "; 
+        std::cout << "Debug: failed reflection arrow filename: " << std::flush; 
         std::cin >> filename; 
         auto &sceneObjects = _simulator->GetSceneObjects(); 
         const int N = sceneObjects->N();
@@ -513,11 +517,43 @@ keyPressEvent(QKeyEvent *e)
             }
         }
     }
+    else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ControlModifier)) {
+        std::string filename; 
+        std::cout << "To-draw arrow filename: " << std::flush; 
+        std::cin >> filename; 
+        std::ifstream inFile(filename.c_str()); 
+        Vector3f x, n; 
+        while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
+        {
+            Arrow arrow; 
+            arrow.start = x; 
+            arrow.normal = n; 
+            _arrowCin.push_back(arrow); 
+        }
+        std::cout << " " << _arrowCin.size() << " arrows read and ready to draw.\n" << std::flush;
+    }
+    else if ((e->key() == Qt::Key_P) && (modifiers == Qt::AltModifier)) {
+        std::string filename; 
+        std::cout << "To-draw sphere filename: " << std::flush; 
+        std::cin >> filename; 
+        REAL scale; 
+        std::cout << "To-draw sphere scale: " << std::flush; 
+        std::cin >> scale; 
+        std::ifstream inFile(filename.c_str()); 
+        Sphere sphere;
+        Vector3f &x = sphere.origin;
+        while(inFile >> x.x >> x.y >> x.z)
+        {
+            sphere.scale = scale; 
+            _sphereCin.push_back(sphere); 
+        }
+        std::cout << " " << _sphereCin.size() << " spheres read and ready to draw.\n" << std::flush;
+    }
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)) {
             Vector3f x, n; 
-            std::cout << "Arrow start location <x, y, z>: "; 
+            std::cout << "Arrow start location <x, y, z>: " << std::flush; 
             std::cin >> x.x >> x.y >> x.z; 
-            std::cout << "Arrow normal <x, y, z>: "; 
+            std::cout << "Arrow normal <x, y, z>: " << std::flush; 
             std::cin >> n.x >> n.y >> n.z; 
             Arrow arrow; 
             arrow.start = x; 
@@ -526,7 +562,7 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_M) && (modifiers == Qt::NoButton)) {
         std::string filename; 
-        std::cout << "Read debug arrow files: "; 
+        std::cout << "Read debug arrow files: " << std::flush; 
         std::cin >> filename; 
         std::ifstream inFile(filename.c_str()); 
         if (inFile)
@@ -543,9 +579,9 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::NoButton)) {
         Slice slice; 
-        std::cout << "Slice dim: "; 
+        std::cout << "Slice dim: " << std::flush; 
         std::cin >> slice.dim;
-        std::cout << "Slice origin: "; 
+        std::cout << "Slice origin: " << std::flush; 
         std::cin >> slice.origin.x >> slice.origin.y >> slice.origin.z; 
         ConstructSliceSamples(slice);
         _sliceCin.push_back(slice); 
@@ -556,6 +592,9 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 
+    }
+    else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
+            _arrowCin.clear(); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
         DrawOneFrameForward(); 
