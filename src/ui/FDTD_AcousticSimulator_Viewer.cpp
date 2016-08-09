@@ -32,6 +32,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
+    setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file"); 
     setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file"); 
 }
@@ -475,7 +476,7 @@ keyPressEvent(QKeyEvent *e)
         _wireframe = (_wireframe+1)%4; 
         optionsChanged = true;
     }
-    if ((e->key() == Qt::Key_G) && (modifiers == Qt::ShiftModifier)) {
+    if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
         _sliceWireframe = (_sliceWireframe+1)%4; 
         optionsChanged = true;
     }
@@ -531,6 +532,9 @@ keyPressEvent(QKeyEvent *e)
             _arrowCin.push_back(arrow); 
         }
         std::cout << " " << _arrowCin.size() << " arrows read and ready to draw.\n" << std::flush;
+    }
+    else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ControlModifier)) {
+        _sliceCin.clear(); 
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::AltModifier)) {
         std::string filename; 
