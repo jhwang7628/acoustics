@@ -90,9 +90,9 @@ void CSpline<_T, _CopyData, _Acc>::init(
     m_yp2.resize(n);
 
     //// lower boundary condition
-    if ( yp1 > 0.99e+99 )
+    if ( yp1 > 0.99e+99 ) // natural boundary condition
         m_yp2[0] = u[0] = 0;
-    else
+    else // have specified first derivatives
     {
         m_yp2[0] = -0.5;
         u[0] = ((_T)3/(xv[1]-xv[0])) * ((yv[1]-yv[0])/(xv[1]-xv[0])-yp1);
@@ -109,9 +109,10 @@ void CSpline<_T, _CopyData, _Acc>::init(
         u[i]  = ((_T)6*u[i]/(xv[i+1]-xv[i-1])-sig*u[i-1]) / p;
     }
 
+    //// upper boundary condition
     if ( ypn > 0.99e+99 )
-        qn = un = 0;
-    else
+        qn = un = 0; // natural boundary condition
+    else // have specified first derivatives
     {
         qn = 0.5;
         un = (3.0/(xv[n-1]-xv[n-2]))*(ypn-(yv[n-1]-yv[n-2])/(xv[n-1]-xv[n-2]));
