@@ -104,7 +104,9 @@ Initialize(const bool &buildFromTetMesh)
                 ); 
 #endif
     }
- 
+
+    // build kd-tree for query
+    std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(_mesh)->BuildKDTree(); 
     UpdateBoundingBox();
 }
 
@@ -177,10 +179,6 @@ DistanceToMesh(const Vector3d &position)
 //
 //  For points: vec2 = transformation          * vec1
 //  For vector: vec2 = transformation.linear() * vec1
-//
-//  TODO 
-//  too many conversions in this call
-//
 //##############################################################################
 bool FDTD_RigidObject::
 NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal)
@@ -243,16 +241,17 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 // Reflect the given point against the boundary. check if the reflected point 
 // is indeed outside the boundary (of current object). 
 //
-// produce warning if the following scenario occurs 
-//  1. erected normal deviates from the boundary normal by too much. 
-//  2. image point is still inside the geometry. 
+// If reflection fails to push the point out of the obundary, then we fall back 
+// to the nearest neighbour triangle search in order to establish a valid boundary 
+// point and reflection. The checked condition is:
+//  1. If image point is still inside the geometry. 
 //##############################################################################
 bool FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
     assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
-    //erectedNormal = _signedDistanceField->gradient(originalPoint); 
+    // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
     distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
@@ -261,25 +260,30 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
     const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
 
-    if (true) 
+    // error checking here to see if triangle search is needed
+    if (!reflectSuccess)
     {
-        Vector3d boundaryNormal;
-        NormalToMesh(boundaryPoint.x, boundaryPoint.y, boundaryPoint.z, boundaryNormal); 
-        //Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
-        boundaryNormal.normalize(); 
-        if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
+        // distance field based query failed. switch to kd-tree search.
+        const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
+        int closestTriangleIndex; 
+        Vector3d projectedPoint; // object space
+        distanceTravelled = 2.0 * _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
+        erectedNormal = boundaryPoint - originalPoint; // world space
+        reflectedPoint = originalPoint + erectedNormal; 
+
+#ifdef DEBUG
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
         {
-            std::cerr << "**WARNING** erected normal and true normal deviates. This might cause inaccuracy for the imposed Neumann boundary condition at original point : " 
-                      << originalPoint 
-                      << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
-        }
-        if (!reflectSuccess)
-        {
-            std::cerr << "**ERROR** reflected point " << originalPoint << "->" << reflectedPoint << " still inside object : " << newDistance << std::endl; 
-            erectedNormal *= (boundaryPoint-originalPoint).length(); // so that it ends at boundary points
+            // write these special points for debugging purpose 
             _debugArrowStart.push_back(originalPoint); 
             _debugArrowNormal.push_back(erectedNormal); 
         }
+#endif
+
+        erectedNormal.normalize();  // keep the behavior same as the distance field based query
     }
 
     return reflectSuccess;
