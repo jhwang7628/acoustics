@@ -724,13 +724,13 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         // keep closest
         if (distance < minDistance) 
         {
-            minDistance = sqrt(distance); 
+            minDistance = distance; 
             closestTriangle = t_idx; 
             closestPoint = closestPointBuffer;
             projectedPoint = projectedPointBuffer; 
         }
     }
-    return minDistance; 
+    return sqrt(minDistance); 
 }
 
 #ifdef USE_NAMESPACE
