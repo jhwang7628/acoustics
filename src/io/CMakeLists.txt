@@ -14,3 +14,9 @@ set(RIGID_IO_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ImpulseSeriesReader.cpp 
 
     CACHE FILE "Rigid IO Source")
+
+set(BEM_SRC
+    ${BEM_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/FBemReader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FBemReader.cpp
+    CACHE FILE "BEM solution sources")

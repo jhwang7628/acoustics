@@ -5,14 +5,17 @@
 #include <io/TglMeshReader.hpp>
 #include <io/RigidObjDispReader.h> 
 #include <io/ImpulseSeriesReader.h> 
-#include <modal_model/ModalAnalysis.h>
-#include <sndgen/RigidModal.h> 
+#include <modal_model/ModalAnalysisObject.h>
+//#include <sndgen/RigidModal.h> 
 #include <modal_model/ImpulseSeriesObject.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <parser/ImpulseResponseParser.h>
 #include <modal_model/ModalMaterialList.h>
 #include <modal_model/ModalMaterial.h>
 #include <modal_model/ModalODESolver.h>
+#include <modal_model/BEMSolutionMode.h> 
+#include <io/FBemReader.h>
+
 #include <libconfig.h++> 
 
 void TestRigidBodySim()
@@ -72,10 +75,11 @@ void TestRigidSoundObject()
 {
     std::cout << "test RigidSoundObject\n";
 
-    const std::string meshFileName("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj");
-    const std::string sdfFilePrefix("/home/jui-hsien/code/acoustics/work/meshes/small_ball/small_ball.obj.1m.dist");
+    const std::string workingDirectory("/home/jui-hsien/code/acoustics/work/meshes/small_ball");
+    const std::string prefix("small_ball"); 
     const int sdfResolution = 100; 
-    FDTD_RigidSoundObject object(meshFileName, sdfResolution, sdfFilePrefix); 
+    const bool buildFromTet = false; 
+    FDTD_RigidSoundObject object(workingDirectory, sdfResolution, prefix, buildFromTet); 
     std::cout << object.Initialized() << std::endl; 
     //object.SetID(5); 
     //object.SetMesh(object.GetMeshPtr()); 
@@ -120,10 +124,29 @@ void TestModalODESolver()
     auto materialPtr = materials.at(0); 
     const REAL dt = 0.01; 
     const REAL omegaSquared = 0.99;
-    const REAL Q = 0.0;
+    //const REAL Q = 0.0;
     ModalODESolver solver;
     solver.Initialize(materialPtr, omegaSquared, dt); 
-    solver.StepSystem(Q);
+    //solver.StepSystem(Q);
+}
+
+void TestBEMSolution()
+{
+    FBemReader reader; 
+
+    // read mesh
+    const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/proj.tet.obj"); 
+    std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMesh<REAL> >(); 
+    if (MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0) == SUCC_RETURN)
+        mesh->generate_normals();
+    else 
+        throw std::runtime_error("Object read failed.");
+
+    // read FBem solution
+    std::shared_ptr<BEMSolutionMode> solution = std::make_shared<BEMSolutionMode>(); 
+    const std::string solutionFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
+    reader.CheckFBemInputAgainstMesh(mesh, solutionFile);
+    reader.ReadFBemOutputToInfo(solution, solutionFile); 
 }
 
 int main() 
@@ -134,6 +157,7 @@ int main()
     //TestModal(); 
     //TestRigidSoundObject(); 
     //TestMaterialParser();
-    TestModalODESolver(); 
+    //TestModalODESolver(); 
+    TestBEMSolution();
     return 0; 
 }

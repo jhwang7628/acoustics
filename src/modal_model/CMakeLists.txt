@@ -11,3 +11,7 @@ set(MODAL_MATERIAL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalMaterial.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalMaterialList.h
     CACHE FILE "Modal material sources")
+
+set(BEM_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/BEMSolutionMode.h
+    CACHE FILE "BEM solution sources") 

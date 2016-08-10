@@ -115,6 +115,7 @@ if (BUILD_UNIT_TESTING)
         ${MODAL_MATERIAL_SRC}
         ${GENERIC_SRC}
         ${RIGID_PARSER_SRC}
+        ${BEM_SRC}
         ) 
 
     add_executable(unit_testing_Eigen
@@ -192,6 +193,7 @@ if (BUILD_UNIT_TESTING)
         ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
         boost_thread
         boost_system                    
         boost_timer
