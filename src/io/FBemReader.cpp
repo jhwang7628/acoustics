@@ -115,10 +115,62 @@ bool FBemReader::
 CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile)
 {
     std::cout << "check input\n";
+
+    // read input using legacy code
     std::vector<Point3d> vertices; 
     std::vector<Tuple3ui> triangles; 
     const bool readSuccess = _ReadFBemInputToGeometry(fBemInputFile.c_str(), vertices, triangles); 
     std::cout << "Check if FBEM input has the same mesh as the current one using tolerance: " << _meshCheckTolerance << std::endl;
+    if (!readSuccess)
+    {
+        std::cerr << "**ERROR** Cannot read FBem input file.\n";
+        return false;
+    }
+
+    bool checkSuccess = true;
+    // first check vertex positions
+    const int N_vertices = vertices.size(); 
+    if (N_vertices != mesh->num_vertices())
+    {
+        std::cerr << "**ERROR** FBem vertex count differs from input mesh vertex count\n";
+        checkSuccess = false; 
+    }
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        const Point3d &vMesh = mesh->vertex(v_idx); 
+        const Point3d &vFBem = vertices.at(v_idx); 
+        if ((vMesh-vFBem).length() > _meshCheckTolerance)
+        {
+            std::cerr << "**ERROR** FBem vertex position at " << vFBem << " differs from input mesh vertex position at " << vMesh << "\n";
+            checkSuccess = false; 
+        }
+    }
+
+    // next check triangles
+    const int N_triangles = triangles.size(); 
+    if (N_triangles != mesh->num_triangles())
+    {
+        std::cerr << "**ERROR** FBem triangle count differs from input mesh triangle count\n";
+        checkSuccess = false; 
+    }
+    for (int t_idx=0; t_idx<N_vertices; ++t_idx)
+    {
+        const Tuple3ui &iMesh = mesh->triangle_ids(t_idx); 
+        const Tuple3ui &iFBem = triangles.at(t_idx); 
+        const bool indexAligned = (iMesh.x == iFBem.x && iMesh.y == iFBem.y && iMesh.z == iFBem.z);
+        const bool flippedIndexAligned = (iMesh.x == iFBem.x && iMesh.y == iFBem.z && iMesh.z == iFBem.y); // see fbem_input_gen.cpp
+
+        if ((!indexAligned && !_checkAllowFlipNormal) || (!indexAligned && !flippedIndexAligned && _checkAllowFlipNormal))
+        {
+            std::cerr << "**ERROR** FBem triangle indices " << iFBem << " differs from input mesh triangle indices " << iMesh << "\n";
+            checkSuccess = false; 
+        }
+    }
+
+    if (checkSuccess)
+        std::cout << "Check passed.\n";
+
+    return checkSuccess; 
 }
 
 //##############################################################################

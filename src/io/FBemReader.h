@@ -22,6 +22,7 @@ class FBemReader
 {
     private:
         const REAL _meshCheckTolerance = 1E-4; 
+        const bool _checkAllowFlipNormal = true; // FBem mesh seems to have normals flipped, do a flip back when checking
         bool _ReadFBemInputToGeometry(const char *fBemInputFile, std::vector<Point3d> &vertices, std::vector<Tuple3ui> &triangles); 
 
     public: 
