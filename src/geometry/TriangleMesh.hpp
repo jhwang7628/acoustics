@@ -719,12 +719,12 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         {
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
-        const REAL distance = (queryPoint - closestPointBuffer).length();
+        const REAL distance = (queryPoint - closestPointBuffer).lengthSqr();
 
         // keep closest
         if (distance < minDistance) 
         {
-            minDistance = distance; 
+            minDistance = sqrt(distance); 
             closestTriangle = t_idx; 
             closestPoint = closestPointBuffer;
             projectedPoint = projectedPointBuffer; 
