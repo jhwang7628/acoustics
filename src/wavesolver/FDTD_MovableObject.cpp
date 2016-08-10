@@ -1,5 +1,6 @@
 #include <wavesolver/FDTD_MovableObject.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
+#include <utils/Conversions.h>
 
 //##############################################################################
 //##############################################################################
@@ -56,6 +57,45 @@ SetTransform(const double &x, const double &y, const double &z, const double &an
     // compute inverse and update bounding box
     _modelingTransformInverse = _modelingTransform.inverse(); 
     UpdateBoundingBox(); 
+}
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_MovableObject::
+WorldToObjectPoint(const Vector3d &worldPoint)
+{
+    Eigen::Vector3d position = Conversions::ToEigen(worldPoint); 
+    position = _modelingTransformInverse*position.eval(); 
+    return Conversions::ToVector3(position); 
+}
+
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_MovableObject::
+ObjectToWorldPoint(const Vector3d &objectPoint)
+{
+    Eigen::Vector3d position = Conversions::ToEigen(objectPoint); 
+    position = _modelingTransform*position.eval(); 
+    return Conversions::ToVector3(position); 
+}
+
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_MovableObject::
+WorldToObjectVector(const Vector3d &worldVector)
+{
+    Eigen::Vector3d vector_e = Conversions::ToEigen(worldVector); 
+    vector_e = _modelingTransformInverse.linear()*vector_e.eval(); 
+    return Conversions::ToVector3(vector_e); 
+}
+
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_MovableObject::
+ObjectToWorldVector(const Vector3d &objectVector)
+{
+    Eigen::Vector3d vector_e = Conversions::ToEigen(objectVector); 
+    vector_e = _modelingTransform.linear()*vector_e.eval(); 
+    return Conversions::ToVector3(vector_e); 
 }
 
 //##############################################################################

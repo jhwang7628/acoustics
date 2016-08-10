@@ -109,6 +109,10 @@ class FDTD_MovableObject
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
         virtual void ApplyRotation(const Quaternion<REAL> &quaternion);
         virtual void SetTransform(const double &x, const double &y, const double &z, const double &angle, const double &rotationVectorx, const double &rotationVectory, const double &rotationVectorz);
+        virtual Vector3d WorldToObjectPoint(const Vector3d &worldPoint); 
+        virtual Vector3d ObjectToWorldPoint(const Vector3d &objectPoint); 
+        virtual Vector3d WorldToObjectVector(const Vector3d &worldVector); 
+        virtual Vector3d ObjectToWorldVector(const Vector3d &objectVector); 
 
         //// debug methods //// 
         void PrintBoundingBox(); 
