@@ -2,7 +2,7 @@
 <impulse_response>
     <material_list>
         <modal_material
-            alpha = "40" 
+            alpha = "6" 
             beta = "1.0E-7" 
             density = "2300" 
             /> 
@@ -22,8 +22,8 @@
                  get rigidsim data, for these objects, id needs to be integer to cope with rigidsim and impulses register -->
             <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
             <rigid_sound_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/plate"
-                object_prefix="plate"  
+                working_directory="/home/jui-hsien/code/acoustics/work/plate_drop_long"
+                object_prefix="proj"  
                 id="0" 
                 fieldresolution="400"
                 scale="1.0" 
@@ -31,9 +31,9 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 material_id="0"
-                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/modalImpulses.txt"
-                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/plate_drop_test/default.cfg"
-                mode_file="/home/jui-hsien/code/acoustics/work/plate/plate.modes"
+                impulse_file="/home/jui-hsien/code/acoustics/work/plate_drop_long/impulses.txt"
+                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/plate_drop_long/drop.cfg"
+                mode_file="/home/jui-hsien/code/acoustics/work/plate_drop_long/proj.modes"
                 modal_ODE_step_frequency="176400"
                 /> 
             <!--
@@ -64,7 +64,7 @@
         density="1.0" 
         cellsize="0.005" 
         gridresolution="80"
-        stop_time="0.01"
+        stop_time="3"
         substeps="1"
         timestepfrequency="176400"
         output_pattern="work/near-field/data_test/test_%s"
@@ -73,7 +73,7 @@
         use_mesh="1"
         use_ghost_cell="1"
         boundary_condition_preset="0"
-        write_pressure_field_to_disk="1"
+        write_pressure_field_to_disk="0"
         /> 
 
     <pressure_source> 
@@ -94,7 +94,6 @@
     </pressure_source> 
 
     <listening_point_list>
-        <!--
         <listening_point x="0.0" y="0.0" z="0.0"/>
         <listening_point x="0.0" y="0.0" z="0.0825"/>
         <listening_point x="0.0" y="0.0" z="-0.0825"/>
@@ -104,6 +103,7 @@
         <listening_point x="0.1325" y="0.01" z="0.1325"/>
         <listening_point x="-0.1325" y="0.01" z="0.1325"/>
         <listening_point x="0.1325" y="0.01" z="-0.1325"/>
+        <!--
         -->
     </listening_point_list> 
 
