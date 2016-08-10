@@ -144,9 +144,10 @@ void TestBEMSolution()
 
     // read FBem solution
     std::shared_ptr<BEMSolutionMode> solution = std::make_shared<BEMSolutionMode>(); 
-    const std::string solutionFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
-    reader.CheckFBemInputAgainstMesh(mesh, solutionFile);
-    reader.ReadFBemOutputToInfo(solution, solutionFile); 
+    const std::string fBemInputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt");
+    const std::string fBemOutputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
+    reader.CheckFBemInputAgainstMesh(mesh, fBemInputFile);
+    reader.ReadFBemOutputToInfo(solution, fBemOutputFile); 
 }
 
 int main() 
