@@ -280,6 +280,7 @@ DrawListeningPoints()
     const auto &settings = _simulator->GetSolverSettings(); 
     const auto &points = settings->listeningPoints; 
     const int N_points = points.size(); 
+    glEnable(GL_LIGHTING);
     for (int pt_idx=0; pt_idx<N_points; ++pt_idx)
     {
         const Vector3d &vertex = points.at(pt_idx); 
@@ -289,6 +290,7 @@ DrawListeningPoints()
         GL_Wrapper::DrawSphere(5E-3, 10, 10); 
         glPopMatrix(); 
     }
+    glDisable(GL_LIGHTING);
 }
 
 //##############################################################################
