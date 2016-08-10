@@ -223,6 +223,29 @@ _SaveListeningData(const std::string &filename)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
+_SaveModalFrequencies(const std::string &filename)
+{
+    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    for (const auto &object : objects)
+    {
+        if (object->IsModalObject())
+        {
+            const std::string objFilename = filename + "_" + object->GetMeshName();
+            std::ofstream of(objFilename.c_str()); 
+            of << setprecision(20);
+            const int N_modes = object->N_Modes(); 
+            for (int m_idx=0; m_idx<N_modes; ++m_idx)
+            {
+                of << object->GetModeFrequency(m_idx) << "\n";
+            }
+            of.close(); 
+        }
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
 InitializeSolver()
 {
     if (!_canInitializeSolver)
@@ -249,7 +272,7 @@ InitializeSolver()
     _SetPressureSources();
 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources() && _sceneObjectsAnimator)
+    if (!_sceneObjects->HasExternalPressureSources())
     {
         const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
         ResetStartTime(startTime);
@@ -378,9 +401,10 @@ Run()
 void FDTD_AcousticSimulator::
 SaveSolverConfig()
 {
-    const string solverSettings_s = _CompositeFilename("solver_settings.txt"); 
-    const string vertexPosition_s = _CompositeFilename("pressure_vertex_position.dat"); 
-    const string listeningPosition_s = _CompositeFilename("listening_position.dat"); 
+    const std::string solverSettings_s = _CompositeFilename("solver_settings.txt"); 
+    const std::string vertexPosition_s = _CompositeFilename("pressure_vertex_position.dat"); 
+    const std::string listeningPosition_s = _CompositeFilename("listening_position.dat"); 
+    const std::string modalFrequencies_s = _CompositeFilename("modal_frequencies.txt");
     _SaveSolverSettings(solverSettings_s);
     _SavePressureCellPositions(vertexPosition_s); 
     for (int dim=0; dim<3; ++dim) 
@@ -390,6 +414,8 @@ SaveSolverConfig()
     }
     if (_acousticSolverSettings->listening)
         _SaveListeningPositions(listeningPosition_s); 
+
+    _SaveModalFrequencies(modalFrequencies_s); 
 }
 
 //##############################################################################

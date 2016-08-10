@@ -50,6 +50,7 @@ class FDTD_AcousticSimulator
         void _SavePressureTimestep(const std::string &filename); 
         void _SaveVelocityTimestep(const std::string &filename, const int &dim); 
         void _SaveListeningData(const std::string &filename);
+        void _SaveModalFrequencies(const std::string &filename); 
 
     public: 
         FDTD_AcousticSimulator()
