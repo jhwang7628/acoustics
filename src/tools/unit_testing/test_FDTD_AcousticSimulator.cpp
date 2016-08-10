@@ -147,11 +147,8 @@ void Test_TriangleMeshKDTree()
         //queryPoint.set(-0.101063680118473, 0.1055460887829576, 0.006106259099252123);
 
 
-        REAL distance = mesh->ComputeClosestPointOnMesh(queryPoint, closestPoint, closestTriangle, projectedPoint); 
-        const Tuple3ui &triangle = mesh->triangle_ids(closestTriangle);
-        const Point3d &v0 = mesh->vertex(triangle.x); 
-        const Point3d &v1 = mesh->vertex(triangle.y); 
-        const Point3d &v2 = mesh->vertex(triangle.z); 
+        mesh->ComputeClosestPointOnMesh(queryPoint, closestPoint, closestTriangle, projectedPoint); 
+        //const Tuple3ui &triangle = mesh->triangle_ids(closestTriangle);
         const Vector3d normal = closestPoint - queryPoint; 
         of << std::setprecision(16); 
         of << queryPoint.x << " " << queryPoint.y << " " << queryPoint.z << " "
@@ -169,12 +166,12 @@ int main(int argc, char ** argv)
     //TestScalarFieldSubindices();
     
     //TestFDTD_RigidObject_Animator();
-    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    //if (argc>1) 
-    //    xmlName = std::string(argv[1]);
-    //TestAcousticSimulatorRun(xmlName); 
+    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    if (argc>1) 
+        xmlName = std::string(argv[1]);
+    TestAcousticSimulatorRun(xmlName); 
 
-    Test_TriangleMeshKDTree();
+    //Test_TriangleMeshKDTree();
 
     return 0;
 }
