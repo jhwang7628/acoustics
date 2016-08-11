@@ -13,7 +13,9 @@ class KirchhoffIntegralSolver
 {
     public: 
         static const std::complex<REAL> j; 
+
     private: 
+        REAL                                            _distanceLowBound = 1E-3; // won't be evaluated if distance lower than this value.
         std::shared_ptr<TriangleMesh<REAL> >            _mesh; 
         std::vector<std::shared_ptr<BEMSolutionMode> >  _BEMSolutions; 
 

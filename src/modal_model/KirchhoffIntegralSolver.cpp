@@ -68,6 +68,7 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
     // get BEM solution and calculate wavenumber
     std::shared_ptr<BEMSolutionMode> bemSolution = _BEMSolutions.at(modeIndex); 
     const REAL k = bemSolution->omega / bemSolution->soundSpeed; 
+    bool abortCompute = false; 
 
     // initialize fields
 #ifdef USE_OPENMP
@@ -95,9 +96,13 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
         normal.normalize(); 
         const Vector3d surfacePoint = (p0 + p1 + p2)/3.0;
 
+        const REAL r = (listeningPoint - surfacePoint).length(); 
+        if (r < _distanceLowBound)
+            abortCompute = true; // this listening point is too close to the surface
+
         // compute necessary fields
-        const std::complex<REAL> G = Evaluate_G(k, listeningPoint, surfacePoint); 
-        const std::complex<REAL> dG_dn = Evaluate_dG_dn(k, listeningPoint, surfacePoint, normal); 
+        const std::complex<REAL> G = Evaluate_G(k, listeningPoint, surfacePoint, r); 
+        const std::complex<REAL> dG_dn = Evaluate_dG_dn(k, listeningPoint, surfacePoint, normal, r); 
         const std::complex<REAL> p = bemSolution->pressures.at(e_idx); 
         const std::complex<REAL> dp_dn = -j * bemSolution->omega * bemSolution->density * bemSolution->velocities.at(e_idx); 
 
@@ -109,6 +114,9 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 #endif
         transferAllThreads.at(threadId) += (G * dp_dn - dG_dn * p) * area;
     }
+
+    if (abortCompute)
+        return std::complex<REAL>(0.0, 0.0);
 
     return std::accumulate(transferAllThreads.begin(), transferAllThreads.end(), std::complex<double>(0, 0));
 }
