@@ -9,6 +9,7 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/FDTD_Objects.h>
 #include <wavesolver/PML_WaveSolver_Settings.h>
+#include <modal_model/KirchhoffIntegralSolver.h> 
 #include <utils/GL_Wrapper.h>
 #include <config.h>
 #include <iostream>
@@ -28,6 +29,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
@@ -84,18 +86,12 @@ draw()
     DrawListeningPoints();
     DrawDebugCin();
     if (_sliceDataPointer == 0)
-    {
         DrawSlices(0); 
-    }
     else if (_sliceDataPointer == 1)
-    {
         DrawSlices(1); 
-    }
     else
-    {
-        DrawSlices(0); 
-        DrawSlices(1); 
-    }
+        DrawSlices(2); 
+
     glColor3f(1.0, 1.0, 1.0);
     drawText(10, height()-20, _message); 
 
@@ -344,9 +340,17 @@ DrawSlices(const int &dataPointer)
         const auto &slice = _sliceCin.at(s_idx); 
         Eigen::MatrixXd &data = dataSlices.at(s_idx); 
         if (dataPointer == 0)
+        {
             _simulator->GetSolver()->FetchPressureData(slice.samples, data);
+        } 
         else if (dataPointer == 1)
+        {
             _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+        } 
+        else 
+        {
+
+        }
 
         maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 
         minCoeffSlices = min(minCoeffSlices, data.minCoeff()); 
@@ -593,14 +597,39 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%2; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%3; 
         optionsChanged = true;
+        if (_sliceDataPointer == 2 && !_bemSolver)
+            InitializeBEMSolver();
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
             _arrowCin.clear(); 
+    }
+    else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ShiftModifier)) {
+        //std::string inputFile, outputFile; 
+        //std::cout << "FBem input file: " << std::flush;
+        //std::cin >> inputFile; 
+        //std::cout << "FBem output file: " << std::flush;
+        //std::cin >> outputFile; 
+        //std::cout << std::endl;
+
+        //REAL frequency; 
+        //std::cout << "Frequency for this mode (Hz): " << std::flush;
+        //std::cin >> frequency; 
+        //std::cout << std::endl;
+
+        //FIXME debug
+        const REAL frequency = 1020.01;
+        const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt"); 
+        const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
+
+        _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
+
+        // always points to the latest mode
+        _bemModePointer = _bemSolver->N_Modes()-1;  
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
         DrawOneFrameForward(); 
@@ -634,6 +663,21 @@ void FDTD_AcousticSimulator_Viewer::
 postSelection(const QPoint &point)
 {
     _messageSelection = QString("Vertex ID= " + QString::number(selectedName()));
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+InitializeBEMSolver()
+{
+    if (!_bemSolver)
+        _bemSolver = std::make_shared<KirchhoffIntegralSolver>(); 
+    int bemMeshID; 
+    std::cout << "Input BEM solution mesh id in the simulator: " << std::flush; 
+    std::cin >> bemMeshID; 
+    std::shared_ptr<TriangleMesh<REAL> > bemMesh = _simulator->GetSceneObjects()->GetPtr(bemMeshID)->GetMeshPtr();
+    _bemSolver->SetMesh(bemMesh);
+    std::cout << " Set BEM solution corresponding mesh to " << _simulator->GetSceneObjects()->GetMeshName(bemMeshID) << std::endl;
 }
 
 //##############################################################################

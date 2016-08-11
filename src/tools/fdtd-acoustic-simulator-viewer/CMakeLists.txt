@@ -64,6 +64,8 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${RIGID_IO_SRC} 
         ${RIGID_PARSER_SRC}
         ${UI_SRC}
+        ${BEM_SRC}
+        ${BEM_IO_SRC}
         )
 
     target_link_libraries(fdtd-acoustic-simulator-viewer

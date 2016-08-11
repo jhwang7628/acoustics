@@ -4,6 +4,7 @@
 #include <QGLViewer/qglviewer.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
+#include <modal_model/KirchhoffIntegralSolver.h>
 #include <linearalgebra/Vector3.hpp>
 #include <colormap/ColorMap.h>
 #include <config.h>
@@ -15,6 +16,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 {
     public: 
         typedef std::shared_ptr<FDTD_AcousticSimulator> SimulatorPtr; 
+        typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
         struct Slice{int dim; Vector3d origin; Vector3Array samples; Vector3Array gridLines; int N_sample_per_dim; REAL minBound; REAL maxBound; };
@@ -35,8 +37,12 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         REAL                    _drawAbsMax; 
 
         // slice related fields
-        int             _sliceDataPointer; // 0: pressure; 1: cell id
+        int             _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer
         std::shared_ptr<ColorMap> _sliceColorMap; 
+
+        // frequency transfer solver
+        BEMSolverPtr    _bemSolver;
+        int             _bemModePointer; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
@@ -65,6 +71,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             _simulator->InitializeSolver(); 
         }
 
+        void InitializeBEMSolver(); 
         void ConstructSliceSamples(Slice &slice); 
         void DrawOneFrameForward(); 
         void RestoreDefaultDrawOptions(); 
