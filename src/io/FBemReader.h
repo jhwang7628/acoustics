@@ -27,7 +27,7 @@ class FBemReader
 
     public: 
         bool CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile); 
-        bool ReadFBemOutputToInfo(std::shared_ptr<BEMSolutionMode> &solution, const std::string &fBemOutputFile); 
+        bool ReadFBemOutputToInfo(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, std::shared_ptr<BEMSolutionMode> &solution); 
 };
 
 #endif

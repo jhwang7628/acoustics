@@ -1,5 +1,6 @@
 #include <fstream> 
 #include <io/FBemReader.h> 
+#include <utils/STL_Wrapper.h>
 
 //##############################################################################
 // This function is directly copied from
@@ -114,7 +115,7 @@ _ReadFBemInputToGeometry(const char *fBemInputFile, std::vector<Point3d> &verts,
 bool FBemReader::
 CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile)
 {
-    std::cout << "check input\n";
+    std::cout << "\nChecking FBem input\n";
 
     // read input using legacy code
     std::vector<Point3d> vertices; 
@@ -174,9 +175,134 @@ CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std:
 }
 
 //##############################################################################
+// This function is adopted from
+//  modec/src/multipole/fast_fit_multipole.cpp:fbemOutToInfo
 //##############################################################################
 bool FBemReader::
-ReadFBemOutputToInfo(std::shared_ptr<BEMSolutionMode> &solution, const std::string &fBemOutputFile)
+ReadFBemOutputToInfo(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, std::shared_ptr<BEMSolutionMode> &solution)
 {
-    std::cout << "check output\n";
+    std::cout << "\nReading FBem output\n";
+    if (!solution)
+        solution = std::make_shared<BEMSolutionMode>(); 
+
+    // open file
+    std::ifstream fileObj;
+    fileObj.open(fBemOutputFile, std::ios_base::in);
+    if(!fileObj.good())
+    {
+        std::cerr << "FAIL: opening FBEM out file" << std::endl;
+        fileObj.close();
+        return false;
+    }
+
+    std::vector<std::complex<REAL> > &pressures = solution->pressures; 
+    std::vector<std::complex<REAL> > &velocities = solution->velocities; 
+
+    const int numElements = mesh->num_triangles(); 
+    pressures.resize(numElements);
+    velocities.resize(numElements);
+
+    std::string lineString;
+
+    do
+    {
+        std::getline(fileObj, lineString);
+    }
+    while (lineString.find_first_of('#') == std::string::npos);
+
+    // Element #            Pressure              SPL (dB)             Velocity            SIL (dB_SIL)
+    //         1  (-0.28493E+07,-0.17386E+08)   0.23890E+03  ( 0.00000E+00, 0.16553E+06)   0.24158E+03
+
+    int eid;
+
+    std::complex<double> pressure;
+    //double SPL;
+    std::complex<double> velocity;
+    //double SIL;
+
+    double re, im;
+
+    for(int i = 0; i < numElements; i++)
+    {
+        std::getline(fileObj, lineString);
+        std::string line = lineString;
+
+        //std::cout << "line: \"" << line << "\"" << std::endl;
+
+        size_t eidInd = line.find_first_not_of(' ');
+        assert(eidInd != std::string::npos);
+        size_t pxInd = line.find_first_of('(', eidInd+1) + 1;
+        assert(pxInd != std::string::npos);
+        size_t pyInd = line.find_first_of(',', pxInd+1) + 1;
+        assert(pyInd != std::string::npos);
+        size_t pDoneInd = line.find_first_of(')', pyInd+1);
+        assert(pDoneInd != std::string::npos);
+        size_t SPLInd = line.find_first_not_of(' ', pDoneInd+1);
+        assert(SPLInd != std::string::npos);
+        size_t vxInd = line.find_first_of('(', SPLInd+1) + 1;
+        assert(vxInd != std::string::npos);
+        size_t vyInd = line.find_first_of(',', vxInd+1) + 1;
+        assert(vyInd != std::string::npos);
+        size_t vDoneInd = line.find_first_of(')', vyInd+1);
+        assert(vDoneInd != std::string::npos);
+        size_t SILInd = line.find_first_not_of(' ', vDoneInd+1);
+        assert(SILInd != std::string::npos);
+
+        std::stringstream eidStream(line.substr(eidInd, pxInd - eidInd - 1));
+
+        std::stringstream pxStream(line.substr(pxInd, pyInd - pxInd - 1));
+        std::stringstream pyStream(line.substr(pyInd, pDoneInd - pyInd));
+
+        std::stringstream vxStream(line.substr(vxInd, vyInd - vxInd - 1));
+        std::stringstream vyStream(line.substr(vyInd, vDoneInd - vyInd));
+
+        //std::stringstream SPLStream(line.substr(SPLInd, vxInd - SPLInd - 1));
+        //std::stringstream SILStream(line.substr(SILInd));
+
+        eidStream >> eid;
+        if(eid - 1 >= numElements)
+        {
+            std::cerr << "FAIL: out_tri " << eid - 1 << " >= "
+                      << numElements << std::endl;
+            fileObj.close();
+            return false;
+        }
+
+        pxStream >> re;
+        pyStream >> im;
+        pressure = std::complex<double>(re, im);
+
+        //SPLStream >> SPL;
+
+        vxStream >> re;
+        vyStream >> im;
+        velocity = std::complex<double>(re, im);
+
+        //SILStream >> SIL;
+
+        pressures[eid-1] = pressure;
+        //SPLs[eid-1] = SPL;
+        velocities[eid-1] = velocity;
+        //SILs[eid-1] = SIL;
+    }
+
+    // close and return
+    if(!fileObj.good())
+    {
+        std::cerr << "FAIL: error at some point" << std::endl;
+        fileObj.close();
+        return false;
+    }
+
+    fileObj.close();
+
+    std::cout << " number of elements read: " << numElements << std::endl;
+    std::cout << " pressure read in: \n  "; 
+    STL_Wrapper::PrintVectorContent(std::cout, pressures, 5); 
+    std::cout << " velocities read in: \n  "; 
+    STL_Wrapper::PrintVectorContent(std::cout, velocities, 5); 
+    std::cout << "\n";
+
+    std::cout << "FBEM output loaded successfully." << std::endl;
+    return true;
 }
