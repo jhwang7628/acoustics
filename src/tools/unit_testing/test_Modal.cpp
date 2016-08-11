@@ -151,7 +151,7 @@ void TestBEMSolution()
     //reader.ReadFBemOutputToInfo(mesh, fBemOutputFile, solution); 
 
     KirchhoffIntegralSolver solver;
-    solver.ReadFromFBem(fBemInputFile, fBemOutputFile);
+    solver.AddFBemSolution(fBemInputFile, fBemOutputFile);
 }
 
 int main() 

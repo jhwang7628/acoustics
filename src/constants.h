@@ -49,5 +49,6 @@ inline REAL contact_rest_coeff(int id)
 const REAL LEVELSET_RES = 80; //128 - 9;
 
 const REAL GRAVITY      = 9.8;
+
 #endif
 
