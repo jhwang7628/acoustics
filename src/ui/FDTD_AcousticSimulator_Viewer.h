@@ -19,7 +19,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
-        struct Slice{int dim; Vector3d origin; Vector3Array samples; Vector3Array gridLines; int N_sample_per_dim; REAL minBound; REAL maxBound; };
+        struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; REAL minBound; REAL maxBound; bool dataReady = false;};
 
     private: 
         SimulatorPtr            _simulator; 
@@ -37,12 +37,12 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         REAL                    _drawAbsMax; 
 
         // slice related fields
-        int             _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer
-        std::shared_ptr<ColorMap> _sliceColorMap; 
+        int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer
+        std::shared_ptr<ColorMap>   _sliceColorMap; 
 
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;
-        int             _bemModePointer; 
+        int             _bemModePointer = 0; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
@@ -71,8 +71,10 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             _simulator->InitializeSolver(); 
         }
 
+        inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
         void InitializeBEMSolver(); 
         void ConstructSliceSamples(Slice &slice); 
+        void ComputeAndCacheSliceData(const int &dataPointer, Slice &slice); 
         void DrawOneFrameForward(); 
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 

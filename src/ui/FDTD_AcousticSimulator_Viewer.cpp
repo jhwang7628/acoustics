@@ -3,6 +3,7 @@
 #include <QMouseEvent>
 #include <QMap>
 #include <QCursor>
+#include <complex>
 #include <math.h>
 #include <stdlib.h> // RAND_MAX
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
@@ -331,42 +332,12 @@ DrawSlices(const int &dataPointer)
         return;
 
     const int N_slices = _sliceCin.size();
-    std::vector<Eigen::MatrixXd> dataSlices(N_slices); 
-    REAL maxCoeffSlices = std::numeric_limits<REAL>::min(); 
-    REAL minCoeffSlices = std::numeric_limits<REAL>::max(); 
-    // first fetch all data and compute min, max
-    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
-    {
-        const auto &slice = _sliceCin.at(s_idx); 
-        Eigen::MatrixXd &data = dataSlices.at(s_idx); 
-        if (dataPointer == 0)
-        {
-            _simulator->GetSolver()->FetchPressureData(slice.samples, data);
-        } 
-        else if (dataPointer == 1)
-        {
-            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
-        } 
-        else 
-        {
-
-        }
-
-        maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 
-        minCoeffSlices = min(minCoeffSlices, data.minCoeff()); 
-    }
-
-    minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
-    if (dataPointer == 0)
-        _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices); 
-    else if (dataPointer == 1) 
-        _sliceColorMap->set_interpolation_range(-1.0, 1.0); 
-
     // draw slices 
     for (int s_idx=0; s_idx<N_slices; ++s_idx) 
     {
-        const auto &slice = _sliceCin.at(s_idx); 
-        const Eigen::MatrixXd &data = dataSlices.at(s_idx); 
+        auto &slice = _sliceCin.at(s_idx); 
+        ComputeAndCacheSliceData(dataPointer, slice); // do-nothing if cached
+        const Eigen::MatrixXd &data = slice.data; 
         if (_sliceWireframe == 0 || _sliceWireframe == 1)
         {
             glLineWidth(1.0f);
@@ -594,6 +565,7 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "Slice origin: " << std::flush; 
         std::cin >> slice.origin.x >> slice.origin.y >> slice.origin.z; 
         ConstructSliceSamples(slice);
+        slice.dataReady = false;
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
@@ -601,6 +573,7 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
         if (_sliceDataPointer == 2 && !_bemSolver)
             InitializeBEMSolver();
+        SetAllSliceDataReady(false); 
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
             _sphereCin.clear(); 
@@ -609,27 +582,23 @@ keyPressEvent(QKeyEvent *e)
             _arrowCin.clear(); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ShiftModifier)) {
-        //std::string inputFile, outputFile; 
-        //std::cout << "FBem input file: " << std::flush;
-        //std::cin >> inputFile; 
-        //std::cout << "FBem output file: " << std::flush;
-        //std::cin >> outputFile; 
-        //std::cout << std::endl;
+        std::string inputFile, outputFile; 
+        std::cout << "FBem input file: " << std::flush;
+        std::cin >> inputFile; 
+        std::cout << "FBem output file: " << std::flush;
+        std::cin >> outputFile; 
+        std::cout << std::endl;
 
-        //REAL frequency; 
-        //std::cout << "Frequency for this mode (Hz): " << std::flush;
-        //std::cin >> frequency; 
-        //std::cout << std::endl;
-
-        //FIXME debug
-        const REAL frequency = 1020.01;
-        const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt"); 
-        const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
+        REAL frequency; 
+        std::cout << "Frequency for this mode (Hz): " << std::flush;
+        std::cin >> frequency; 
+        std::cout << std::endl;
 
         _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
 
         // always points to the latest mode
         _bemModePointer = _bemSolver->N_Modes()-1;  
+        SetAllSliceDataReady(false); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
         DrawOneFrameForward(); 
@@ -678,6 +647,13 @@ InitializeBEMSolver()
     std::shared_ptr<TriangleMesh<REAL> > bemMesh = _simulator->GetSceneObjects()->GetPtr(bemMeshID)->GetMeshPtr();
     _bemSolver->SetMesh(bemMesh);
     std::cout << " Set BEM solution corresponding mesh to " << _simulator->GetSceneObjects()->GetMeshName(bemMeshID) << std::endl;
+
+    //FIXME debug
+    const REAL frequency = 1020.01;
+    const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt"); 
+    const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
+    _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
+    _bemModePointer = _bemSolver->N_Modes()-1;  
 }
 
 //##############################################################################
@@ -691,8 +667,11 @@ ConstructSliceSamples(Slice &slice)
     Vector3Array &gridLines = slice.gridLines; 
 
     const auto &settings = _simulator->GetSolverSettings(); 
-    const REAL cellSize = settings->cellSize; 
-    const int division = settings->cellDivisions; 
+    //const REAL cellSize = settings->cellSize; 
+    //const int division = settings->cellDivisions; 
+    const int division = 100; // FIXME debug
+    const REAL cellSize = settings->cellSize*(REAL)settings->cellDivisions / (REAL)division; 
+
     const REAL halfLength = (REAL)division*cellSize / 2.0; 
     const REAL minBound = -halfLength + cellSize/2.0; 
 
@@ -710,7 +689,6 @@ ConstructSliceSamples(Slice &slice)
     slice.N_sample_per_dim = division; 
     slice.minBound = minBound; 
     slice.maxBound = minBound + (REAL)(division-1)*cellSize; 
-
 
     // horizontal grid lines
     const REAL xStart = slice.minBound - cellSize/2.0; 
@@ -754,12 +732,76 @@ ConstructSliceSamples(Slice &slice)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
+{
+    bool updateColormap = false; 
+    const int N_slices = _sliceCin.size();
+    REAL maxCoeffSlices = std::numeric_limits<REAL>::min(); 
+    REAL minCoeffSlices = std::numeric_limits<REAL>::max(); 
+    // first fetch all data and compute min, max
+    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
+    {
+        auto &slice = _sliceCin.at(s_idx); 
+        if (slice.dataReady)
+            continue; 
+        Eigen::MatrixXd &data = slice.data; 
+        if (dataPointer == 0)
+        {
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data);
+        } 
+        else if (dataPointer == 1)
+        {
+            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+        } 
+        else 
+        {
+            const int N_samples = slice.samples.size(); 
+            data.resize(N_samples, 1);
+            int count = 0;
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+            for (int d_idx=0; d_idx<N_samples; ++d_idx)
+            {
+                const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
+                data(d_idx, 0) = std::abs(transferValue);
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+                {
+                    count ++; 
+                    std::cout << "\r" << (REAL)count / (REAL)N_samples * 100.0 << "\% completed" << std::flush;
+                }
+            }
+            std::cout << std::endl;
+        }
+
+        maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 
+        minCoeffSlices = min(minCoeffSlices, data.minCoeff()); 
+        updateColormap = true; 
+        slice.dataReady = true;
+    }
+
+    if (updateColormap)
+    {
+        minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
+        if (dataPointer == 1) 
+            _sliceColorMap->set_interpolation_range(-1.0, 1.0); 
+        else
+            _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
     _currentFrame++;
     PrintFrameInfo();
     //_simulator->TestAnimateObjects(150); 
     _simulator->RunForSteps(1); 
+    SetAllSliceDataReady(false); 
     updateGL(); 
 }
 
