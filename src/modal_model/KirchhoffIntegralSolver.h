@@ -25,6 +25,7 @@ class KirchhoffIntegralSolver
         
         inline void SetMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh){_mesh = mesh;}
         inline int N_Modes(){return _BEMSolutions.size();}
+        inline void ClearSolutions(){_BEMSolutions.clear();}
 
         void AddFBemSolution(const std::string &fBemConfigFile, const std::string &fBemOutputFile, const REAL &omega);
         std::complex<REAL> Evaluate_G(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const REAL &rCached = -1.0) const; 
