@@ -147,11 +147,13 @@ void TestBEMSolution()
     std::shared_ptr<BEMSolutionMode> solution = std::make_shared<BEMSolutionMode>(); 
     const std::string fBemInputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt");
     const std::string fBemOutputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
+    const REAL omega = 2.0 * M_PI * 1020.01;
     //reader.CheckFBemInputAgainstMesh(mesh, fBemInputFile);
-    //reader.ReadFBemOutputToInfo(mesh, fBemOutputFile, solution); 
+    //reader.ReadFBemOutputToInfo(mesh, fBemOutputFile, omega, solution); 
 
-    KirchhoffIntegralSolver solver;
-    solver.AddFBemSolution(fBemInputFile, fBemOutputFile);
+    KirchhoffIntegralSolver solver(mesh);
+    solver.AddFBemSolution(fBemInputFile, fBemOutputFile, omega);
+    solver.Solve(0, Vector3d(0, 0, 0));
 }
 
 int main() 

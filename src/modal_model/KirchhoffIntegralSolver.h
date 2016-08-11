@@ -24,10 +24,12 @@ class KirchhoffIntegralSolver
         {}
         
         inline void SetMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh){_mesh = mesh;}
+        inline int N_Modes(){return _BEMSolutions.size();}
 
-        std::complex<REAL> Evaluate_G(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const REAL &rCached = -1.0); 
-        std::complex<REAL> Evaluate_dG_dn(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const Vector3d &normal, const REAL &rCached = -1.0); 
-        void AddFBemSolution(const std::string &fBemConfigFile, const std::string &fBemOutputFile);
+        void AddFBemSolution(const std::string &fBemConfigFile, const std::string &fBemOutputFile, const REAL &omega);
+        std::complex<REAL> Evaluate_G(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const REAL &rCached = -1.0) const; 
+        std::complex<REAL> Evaluate_dG_dn(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const Vector3d &normal, const REAL &rCached = -1.0) const; 
+        std::complex<REAL> Solve(const int &modeIndex, const Vector3d &listeningPoint) const; 
 };
 
 #endif
