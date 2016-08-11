@@ -113,7 +113,7 @@ _ReadFBemInputToGeometry(const char *fBemInputFile, std::vector<Point3d> &verts,
 //##############################################################################
 //##############################################################################
 bool FBemReader::
-CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile)
+CheckFBemInputAgainstMesh(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile)
 {
     std::cout << "\nChecking FBem input\n";
 
@@ -179,7 +179,7 @@ CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std:
 //  modec/src/multipole/fast_fit_multipole.cpp:fbemOutToInfo
 //##############################################################################
 bool FBemReader::
-ReadFBemOutputToInfo(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, std::shared_ptr<BEMSolutionMode> &solution)
+ReadFBemOutputToInfo(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, const REAL &omega, std::shared_ptr<BEMSolutionMode> &solution)
 {
     std::cout << "\nReading FBem output\n";
     if (!solution)

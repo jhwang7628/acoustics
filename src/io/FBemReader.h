@@ -26,8 +26,8 @@ class FBemReader
         bool _ReadFBemInputToGeometry(const char *fBemInputFile, std::vector<Point3d> &vertices, std::vector<Tuple3ui> &triangles); 
 
     public: 
-        bool CheckFBemInputAgainstMesh(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile); 
-        bool ReadFBemOutputToInfo(std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, std::shared_ptr<BEMSolutionMode> &solution); 
+        bool CheckFBemInputAgainstMesh(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemInputFile); 
+        bool ReadFBemOutputToInfo(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std::string &fBemOutputFile, const REAL &omega, std::shared_ptr<BEMSolutionMode> &solution); 
 };
 
 #endif
