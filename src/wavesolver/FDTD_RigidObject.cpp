@@ -105,6 +105,12 @@ Initialize(const bool &buildFromTetMesh)
 #endif
     }
 
+    std::cout << "Read in TriangleMesh: \n"
+              << " name:       " << GetMeshName() << "\n"
+              << " #vertices:  " << _mesh->num_vertices() << "\n"
+              << " #triangles: " << _mesh->num_triangles() << "\n";
+
+
     // build kd-tree for query
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(_mesh)->BuildKDTree(); 
     UpdateBoundingBox();
