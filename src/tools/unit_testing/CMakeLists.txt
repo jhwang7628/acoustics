@@ -116,6 +116,7 @@ if (BUILD_UNIT_TESTING)
         ${GENERIC_SRC}
         ${RIGID_PARSER_SRC}
         ${BEM_SRC}
+        ${BEM_IO_SRC}
         ) 
 
     add_executable(unit_testing_Eigen

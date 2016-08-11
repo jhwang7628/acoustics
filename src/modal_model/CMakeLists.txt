@@ -14,4 +14,7 @@ set(MODAL_MATERIAL_SRC
 
 set(BEM_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/BEMSolutionMode.h
-    CACHE FILE "BEM solution sources") 
+    ${CMAKE_CURRENT_SOURCE_DIR}/KirchhoffIntegralSolver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/KirchhoffIntegralSolver.cpp
+    CACHE FILE "BEM Source"
+    ) 
