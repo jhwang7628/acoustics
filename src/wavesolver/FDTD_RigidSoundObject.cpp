@@ -270,27 +270,28 @@ SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, c
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
-    if (EQUAL_FLOATS(sampleTime, _time - 1.5*_ODEStepSize)) // sample at current time
+
+    // nearest neighbour lookup
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
     {
-        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
-        const int N_vertices = vertices.size(); 
-        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+        const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+        if (distance < closestDistance)
         {
-            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
-            if (distance < closestDistance)
-            {
-                closestIndex = vert_idx; 
-                closestDistance = distance; 
-            }
+            closestIndex = vert_idx; 
+            closestDistance = distance; 
         }
-        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDot_c_minus); 
-        return sampledValue; 
     }
+
+    // evaluate sample value
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time - 1.5*_ODEStepSize)) // sample at current time
+        sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDot_c_minus); 
     else
-    {
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal velocity sampling. Double check.");
-    }
-    return 0.0;
+
+    return sampledValue;
 }
 
 //##############################################################################
@@ -304,42 +305,29 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
+
+    // nearest neighbour lookup
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+    {
+        const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+        if (distance < closestDistance)
+        {
+            closestIndex = vert_idx; 
+            closestDistance = distance; 
+        }
+    }
+
+    // evaluate sample values
+    REAL sampledValue; 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
-    {
-        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
-        const int N_vertices = vertices.size(); 
-        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
-        {
-            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
-            if (distance < closestDistance)
-            {
-                closestIndex = vert_idx; 
-                closestDistance = distance; 
-            }
-        }
-        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
-        return sampledValue; 
-    }
+        sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
     else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize)) // sample at current time
-    {
-        const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
-        const int N_vertices = vertices.size(); 
-        for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
-        {
-            const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
-            if (distance < closestDistance)
-            {
-                closestIndex = vert_idx; 
-                closestDistance = distance; 
-            }
-        }
-        const REAL sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
-        return sampledValue; 
-    }
+        sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
     else
-    {
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-    }
-    return 0.0;
+
+    return sampledValue;
 }
 
