@@ -185,6 +185,9 @@ ReadFBemOutputToInfo(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std
     if (!solution)
         solution = std::make_shared<BEMSolutionMode>(); 
 
+    // rewrite pointer for solution
+    solution->mesh = mesh; 
+
     // open file
     std::ifstream fileObj;
     fileObj.open(fBemOutputFile, std::ios_base::in);
