@@ -31,9 +31,10 @@ class PML_WaveSolver_Settings;
         for (jj=start.y; jj<start.y+range.y; ++jj) \
             for (kk=start.z; kk<start.z+range.z; ++kk)
 
-// use adaptive distance field
-#define USE_ADF
-            
+
+#define USE_ADF // use adaptive distance field
+#define DEBUG_PERFECT_MODAL_HARMONICS 0 // replace q(t) by cos(omega t)
+           
 //##############################################################################
 // Typedefs 
 //##############################################################################

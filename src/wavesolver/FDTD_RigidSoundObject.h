@@ -5,6 +5,7 @@
 #include <modal_model/ModalAnalysisObject.h> 
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/FDTD_RigidObject.h>
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <utils/SimpleTimer.h>
 
 //##############################################################################
@@ -105,6 +106,14 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+
+        ///// debug methods /////
+
+        // Perfect harmonics: q(t) = cos(omega * t), omega is angular frequency
+        // of mode
+        REAL PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        void PrintAllVelocity(const std::string &filename, const int &mode) const;
 };
 
 #endif

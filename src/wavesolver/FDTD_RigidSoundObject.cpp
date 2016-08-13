@@ -323,7 +323,7 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
     REAL sampledValue; 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
         sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
-    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize)) // sample at current time
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
     else
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
@@ -331,3 +331,91 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
     return sampledValue;
 }
 
+//##############################################################################
+// Brute force looping for now
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
+{
+    int closestIndex = -1;
+    REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    // transform the sample point to object frame
+    const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
+    const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
+
+    // nearest neighbour lookup
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+    {
+        const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+        if (distance < closestDistance)
+        {
+            closestIndex = vert_idx; 
+            closestDistance = distance; 
+        }
+    }
+
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time - 1.5*_ODEStepSize)) // sample at current time
+        sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega * sin(omega * sampleTime)); 
+    else
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal velocity sampling. Double check.");
+
+    return sampledValue;
+}
+
+//##############################################################################
+// Brute force looping for now
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
+{
+    int closestIndex = -1;
+    REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    // transform the sample point to object frame
+    const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
+    const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
+
+    // nearest neighbour lookup
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+    {
+        const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+        if (distance < closestDistance)
+        {
+            closestIndex = vert_idx; 
+            closestDistance = distance; 
+        }
+    }
+
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))
+        sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega*omega * cos(omega * sampleTime)); 
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+        sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega*omega * cos(omega * sampleTime)); 
+    else
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+
+    return sampledValue;
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidSoundObject::
+PrintAllVelocity(const std::string &filename, const int &mode) const
+{
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
+    std::ofstream of(filename.c_str()); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        std::cout << "vid=" << v_idx << ", velocity BC = " << _eigenVectorsNormal(v_idx, mode) * (-omega) << std::endl;
+        of << v_idx << " " << _eigenVectorsNormal(v_idx, mode) * (-omega) << std::endl;
+    }
+    of.close();
+}

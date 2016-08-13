@@ -1,5 +1,6 @@
 #include <wavesolver/ModalVibrationalSource.h> 
 #include <wavesolver/FDTD_RigidSoundObject.h>
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 
 ModalVibrationalSource::
 ModalVibrationalSource(RigidObjectPtr owner)
@@ -13,7 +14,11 @@ ModalVibrationalSource(RigidObjectPtr owner)
 REAL ModalVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
+#ifndef DEBUG_PERFECT_MODAL_HARMONICS
     return _modalObjectOwner->SampleModalAcceleration(position, normal, time); 
+#else
+    return _modalObjectOwner->PerfectHarmonics_SampleModalAcceleration(DEBUG_PERFECT_MODAL_HARMONICS, position, normal, time); 
+#endif
 }
 
 
@@ -23,7 +28,11 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL ModalVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
+#ifndef DEBUG_PERFECT_MODAL_HARMONICS
     return _modalObjectOwner->SampleModalVelocity(position, normal, time); 
+#else
+    return _modalObjectOwner->PerfectHarmonics_SampleModalVelocity(DEBUG_PERFECT_MODAL_HARMONICS, position, normal, time); 
+#endif
 }
 
 //##############################################################################
