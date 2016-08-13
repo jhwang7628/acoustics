@@ -154,6 +154,8 @@ void TestBEMSolution()
     KirchhoffIntegralSolver solver(mesh);
     solver.AddFBemSolution(fBemInputFile, fBemOutputFile, omega);
     solver.Solve(0, Vector3d(0, 0, 0));
+
+    solver.PrintFBemVelocityBC(0, "allVelocityFBem.txt");
 }
 
 int main() 

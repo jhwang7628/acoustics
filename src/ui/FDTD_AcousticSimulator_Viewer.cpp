@@ -32,6 +32,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
@@ -470,6 +471,13 @@ keyPressEvent(QKeyEvent *e)
             std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
             std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
             _sphereCin.push_back(sphere); 
+    }
+    else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ShiftModifier)) {
+        // print all velocity BC
+        std::cout << "Debug: execute some debug function" << std::endl;
+        auto &sceneObjects = _simulator->GetSceneObjects(); 
+        const auto &object = sceneObjects->GetPtr(0); 
+        object->PrintAllVelocity("allVelocityFDTD.txt", 0);
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ShiftModifier)) {
         // write to disk 
