@@ -272,7 +272,7 @@ InitializeSolver()
     _SetPressureSources();
 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources())
+    if (!_sceneObjects->HasExternalPressureSources() && _acousticSolverSettings->fastForwardToEvent)
     {
         const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
         ResetStartTime(startTime);

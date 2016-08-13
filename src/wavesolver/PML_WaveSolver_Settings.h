@@ -42,6 +42,7 @@ struct PML_WaveSolver_Settings
     std::string     fileDisplacement; 
     std::string     fileVelocity; 
     std::string     fileAcceleration;
+    bool            fastForwardToEvent; 
 };
 
 #endif
