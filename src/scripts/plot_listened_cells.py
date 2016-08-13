@@ -7,8 +7,8 @@ import sys
 import glob
 import scipy
 
-if (len(sys.argv) != 4): 
-    print '**Usage: %s <listening_position_dat> <listening_data_dat_prefix> <rate(Hz)>' %(sys.argv[0])
+if (len(sys.argv) < 4): 
+    print '**Usage: %s <listening_position_dat> <listening_data_dat_prefix> <rate(Hz)> [single_plot_cell]' %(sys.argv[0])
     sys.exit()
 
 listeningPositions = IO.readMatrixXdBinary(sys.argv[1]) 
@@ -40,4 +40,15 @@ plt.legend(loc=2)
 plt.xlabel('frame') 
 plt.ylabel('Pressure (Pascal)')
 # plt.title('Monitor points for ball drop using ghost cell')
+
+if len(sys.argv) == 5: 
+    plot_index = int(sys.argv[4]) 
+    data = listenedData[:, plot_index] 
+    plt.figure() 
+    plt.plot(data[::4], label=listeningPositions[plot_index, :]) 
+    plt.xlabel('frame') 
+    plt.ylabel('Pressure (Pascal)')
+
 plt.show()
+
+
