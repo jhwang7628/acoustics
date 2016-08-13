@@ -55,7 +55,7 @@ class ModalAnalysisObject
         inline int N_vertices() const {return N_DOF()/3;}
         inline REAL GetODESolverTime(){return _time;}
         inline void SetModeFile(const std::string &modeFile){_modeFile = modeFile; _modeFileSet = true;}
-        inline REAL GetModeFrequency(const int modeIndex){return (modeIndex>=0 && modeIndex<N_Modes()) ? sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI) : -1;}
+        inline REAL GetModeFrequency(const int modeIndex) const {return sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI);}
         inline bool IDTypeIsSurf(){return _idType==SURF_CULLED;}
         void ReadModeFromFile(); 
         // Get U^T f, where U is the eigenvector (modal) matrix. Input vertexID should be in zero-based, tet mesh id. 
