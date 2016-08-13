@@ -120,3 +120,20 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 
     return std::accumulate(transferAllThreads.begin(), transferAllThreads.end(), std::complex<double>(0, 0));
 }
+
+//##############################################################################
+//##############################################################################
+void KirchhoffIntegralSolver::
+PrintFBemVelocityBC(const int &mode, const std::string &outFile)
+{
+    std::shared_ptr<BEMSolutionMode> solution = _BEMSolutions.at(mode); 
+    const int N_elements = _mesh->num_triangles(); 
+    std::ofstream of(outFile.c_str()); 
+    for (int e_idx=0; e_idx<N_elements; ++e_idx) 
+    {
+        const auto &velocity = solution->velocities.at(e_idx);
+        of << velocity.real() << " " << velocity.imag() << "\n";
+    }
+    of.close(); 
+}
+

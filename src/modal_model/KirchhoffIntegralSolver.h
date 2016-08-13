@@ -33,6 +33,9 @@ class KirchhoffIntegralSolver
         std::complex<REAL> Evaluate_G(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const REAL &rCached = -1.0) const; 
         std::complex<REAL> Evaluate_dG_dn(const REAL &k, const Vector3d &listeningPoint, const Vector3d &surfacePoint, const Vector3d &normal, const REAL &rCached = -1.0) const; 
         std::complex<REAL> Solve(const int &modeIndex, const Vector3d &listeningPoint) const; 
+
+        ///// debug methods ///// 
+        void PrintFBemVelocityBC(const int &mode, const std::string &outFile); 
 };
 
 #endif
