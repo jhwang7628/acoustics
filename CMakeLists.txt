@@ -53,7 +53,8 @@ option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wave
 option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
 option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 
 option(BUILD_DIFFERENTIATE_INTERPOLATE_HRIR  "Compiles HRIR differentiation tools" ON) 
-option(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER  "Compile FDTD Acoustic Simulator viewer" ON)
+option(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER  "Compiles FDTD Acoustic Simulator viewer" ON)
+option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER        "Compiles Kirchhoff integral solver for acoustic transfer" ON) 
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases

@@ -38,11 +38,9 @@ if (BUILD_PAT_PRECOMPUTE_GUI)
     # ===================
     # Target
     # ===================
-        if(USE_QT5)
-            include_directories(${QT_USE_FILE})
-        else(USE_QT5)
+        if(NOT USE_QT5)
             include(${QT_USE_FILE})
-        endif(USE_QT5)
+        endif(NOT USE_QT5)
 
         set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -113,5 +111,62 @@ if (BUILD_PAT_PRECOMPUTE_GUI)
 
         set_target_properties(precompute-pat-gui PROPERTIES LINK_FLAGS ${LINK_FLAGS})
 endif ( BUILD_PAT_PRECOMPUTE_GUI )
+
+
+################################################################################
+## Builds Kirchhoff integral solver
+################################################################################
+if (BUILD_KIRCHHOFF_INTEGRAL_SOLVER)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    add_definitions(-DUSE_RECORDER)
+
+    add_executable(kirchhoff-transfer-solver
+        kirchhoff-transfer-solver.cpp
+        ${IO_SRC}
+        ${GENERAL_TESTING_SRCS} 
+        ${LINEARALGEBRA_SRC} 
+        ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${GEOMETRY_SRC}
+        ${LOGGING_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${SNDGEN_SRC}
+        ${MODAL_MODEL_SRC}
+        ${WAVESOLVER_SRC}
+        ${MESH_UTILS_SRC}
+        ${FIELD_SRC}                      
+        ${DISTANCEFIELD_SRC}              
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${UTILS_SRC}                      
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${MATH_SRC} 
+        ${MODAL_MATERIAL_SRC}
+        ${GENERIC_SRC}
+        ${RIGID_PARSER_SRC}
+        ${BEM_SRC}
+        ${BEM_IO_SRC}
+        ) 
+
+    target_link_libraries(kirchhoff-transfer-solver
+        ${MKL_LIBRARY}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
+        boost_thread
+        boost_system                    
+        boost_timer
+        boost_filesystem
+        boost_regex) 
+
+endif (BUILD_KIRCHHOFF_INTEGRAL_SOLVER) 
 
 add_subdirectory(python)

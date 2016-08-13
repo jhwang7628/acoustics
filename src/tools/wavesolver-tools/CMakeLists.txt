@@ -42,6 +42,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${GLIB_LIBRARIES}               ${CGAL_LIBRARIES}
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
         boost_thread
         boost_timer
         boost_system                    
