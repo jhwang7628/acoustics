@@ -187,6 +187,7 @@ ReadFBemOutputToInfo(const std::shared_ptr<TriangleMesh<REAL> > &mesh, const std
 
     // rewrite pointer for solution
     solution->mesh = mesh; 
+    solution->omega = omega;
 
     // open file
     std::ifstream fileObj;
