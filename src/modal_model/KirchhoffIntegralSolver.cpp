@@ -52,12 +52,13 @@ Evaluate_dG_dn(const REAL &k, const Vector3d &listeningPoint, const Vector3d &su
     const Vector3d &y = surfacePoint; 
     const Vector3d &n = normal;
     const REAL r = (rCached > 0 ? rCached : (listeningPoint - surfacePoint).length()); 
-    return -std::exp(-j*k*r)/(4.0*M_PI*pow(r,3))*(1.0+j*k*r)*((x-y).dotProduct(n)); 
+    return -std::exp(-j*k*r)/(4.0*M_PI*pow(r,3))*(1.0+j*k*r)*((x-y).dotProduct(n));
 }
 
 //##############################################################################
 // This function solves the Kirchhoff integral and return the value as complex
-// value at listening point. 
+// value at listening point. If the listening point is too close to the
+// surface, as compared to variable _distanceLowBound, then return 0.
 //
 // @param modeIndex index in the solution array
 // @param listeningPoint 
@@ -91,7 +92,9 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
         const Point3d &p2 = _mesh->vertex(triangle.z); 
 
         // compute geometry information about element
-        Vector3d normal = ((p1 - p0).crossProduct(p2 - p0)) * 0.5;  // see TriangleMesh.hpp::generate_normals()
+        // The normal is flipped because this is the normal for the Helmholtz
+        // exterior problem. Normal of this domain should point "into" the mesh.
+        Vector3d normal = -((p1 - p0).crossProduct(p2 - p0)) * 0.5;  // see TriangleMesh.hpp::generate_normals() and fbem_input_gen.cpp:218
         const REAL area = normal.length(); 
         normal.normalize(); 
         const Vector3d surfacePoint = (p0 + p1 + p2)/3.0;
