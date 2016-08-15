@@ -125,6 +125,21 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 }
 
 //##############################################################################
+// This function tests the solver by solving a small neighbour hood around
+// testing point and check if it satisfies the Helmholtz equation using
+// finite-difference. 
+//
+//  Helmholtz eq: 
+//   laplacian(p(x)) + k^2 p(x) = 0
+//##############################################################################
+bool KirchhoffIntegralSolver::
+TestSolver(const Vector3d &testingPoint, const REAL &evaluateRadiusArg)
+{
+    const REAL evaluateRadius = (evaluateRadiusArg > 0 ? evaluateRadiusArg : _defaultTestEvaluateRadius); 
+
+}
+
+//##############################################################################
 //##############################################################################
 void KirchhoffIntegralSolver::
 PrintFBemVelocityBC(const int &mode, const std::string &outFile)
@@ -139,4 +154,3 @@ PrintFBemVelocityBC(const int &mode, const std::string &outFile)
     }
     of.close(); 
 }
-

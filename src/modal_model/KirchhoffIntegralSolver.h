@@ -19,6 +19,9 @@ class KirchhoffIntegralSolver
         std::shared_ptr<TriangleMesh<REAL> >            _mesh; 
         std::vector<std::shared_ptr<BEMSolutionMode> >  _BEMSolutions; 
 
+        // for debug and testing
+        REAL                                            _defaultTestEvaluateRadius = 1E-3;
+
     public: 
         KirchhoffIntegralSolver(){}
         KirchhoffIntegralSolver(std::shared_ptr<TriangleMesh<REAL> > &mesh)
@@ -35,6 +38,7 @@ class KirchhoffIntegralSolver
         std::complex<REAL> Solve(const int &modeIndex, const Vector3d &listeningPoint) const; 
 
         ///// debug methods ///// 
+        bool TestSolver(const Vector3d &testingPoint, const REAL &evaluateRadius = -1); 
         void PrintFBemVelocityBC(const int &mode, const std::string &outFile); 
 };
 
