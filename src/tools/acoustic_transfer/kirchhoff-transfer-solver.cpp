@@ -19,11 +19,11 @@ static void parse_cmd(int argc, char **argv)
     namespace po = boost::program_options; 
     po::options_description description("Allowed options");
     description.add_options()
-        ("help,h", "Display help message")
-        ("listening_point,l", po::value<std::vector<REAL> >()->multitoken(), "Listening Point for transfer function"); 
+        ("help", "Display help message")
+        ("listening_point", po::value<std::vector<REAL> >()->multitoken(), "Listening Point for transfer function"); 
 
     po::variables_map vm; 
-    po::store(po::parse_command_line(argc, argv, description), vm); 
+    po::store(po::parse_command_line(argc, argv, description, po::command_line_style::unix_style ^ po::command_line_style::allow_short), vm); 
     po::notify(vm); 
 
     std::vector<REAL> tmp_listeningPoint; 
@@ -69,6 +69,13 @@ void SingleFrequencySolve()
     KirchhoffIntegralSolver solver(mesh); 
     solver.AddFBemSolution(fBemInputFile, fBemOutputFile, omega);
     std::complex<REAL> transferValue = solver.Solve(0, listeningPoint);
+
+    // additional scaling due to fbem input scaling. In particular, the fbem input in dataset is missing a 2pi
+    // scaling for velocity BC. since the helmholtz equation is linear, I can scale the output solution by this
+    // factor.
+    const REAL extraScaling = 2.0 * M_PI; 
+    transferValue *= extraScaling; 
+    std::cout << "Transfer value scaled by: " << extraScaling << std::endl;
 
     const REAL tStart = 0.0; 
     const REAL tStep = 1.0/176400.0; 
