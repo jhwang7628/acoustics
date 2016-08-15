@@ -161,6 +161,7 @@ if (BUILD_KIRCHHOFF_INTEGRAL_SOLVER)
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
+        boost_program_options
         boost_thread
         boost_system                    
         boost_timer

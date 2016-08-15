@@ -6,6 +6,41 @@
 #include <io/TglMeshReader.hpp>
 #include <modal_model/KirchhoffIntegralSolver.h> 
 #include <geometry/TriangleMesh.hpp> 
+#include <boost/program_options.hpp>
+
+static Vector3d listeningPoint; 
+
+//##############################################################################
+// This function parses input arguments. 
+//##############################################################################
+static void parse_cmd(int argc, char **argv)
+{
+    std::cout << "\nPARSE COMMAND LINE INPUTS: \n";
+    namespace po = boost::program_options; 
+    po::options_description description("Allowed options");
+    description.add_options()
+        ("help,h", "Display help message")
+        ("listening_point,l", po::value<std::vector<REAL> >()->multitoken(), "Listening Point for transfer function"); 
+
+    po::variables_map vm; 
+    po::store(po::parse_command_line(argc, argv, description), vm); 
+    po::notify(vm); 
+
+    std::vector<REAL> tmp_listeningPoint; 
+    if (!vm["listening_point"].empty() && (tmp_listeningPoint = vm["listening_point"].as<std::vector<REAL> >()).size() == 3)
+    {
+        listeningPoint.x = tmp_listeningPoint.at(0);
+        listeningPoint.y = tmp_listeningPoint.at(1);
+        listeningPoint.z = tmp_listeningPoint.at(2);
+        std::cout << " listening point = " << listeningPoint << "\n\n";
+    }
+    else 
+    {
+        std::cerr << "**ERROR** Specify three floating point numbers after listening flag"; 
+        std::cerr << description << std::endl;
+        exit(1);
+    }
+}
 
 //##############################################################################
 //##############################################################################
@@ -16,9 +51,9 @@ REAL Compute_q(const REAL &omega, const REAL &t)
 
 //##############################################################################
 //##############################################################################
-void Test_PerfectHarmonic()
+void SingleFrequencySolve()
 {
-    std::cout << "test\n";
+    std::cout << "\nSINGLE FREQUENCY SOLVE: \n";
 
     // read mesh
     const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/proj.tet.obj"); 
@@ -29,7 +64,7 @@ void Test_PerfectHarmonic()
     const std::string fBemInputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt");
     const std::string fBemOutputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
     const REAL omega = 2.0 * M_PI * 1020.01;
-    const Vector3d listeningPoint(0.0, 0.0, 0.0825); 
+    //const Vector3d listeningPoint(0.0, 0.0, 0.0825); 
 
     KirchhoffIntegralSolver solver(mesh); 
     solver.AddFBemSolution(fBemInputFile, fBemOutputFile, omega);
@@ -55,8 +90,9 @@ void Test_PerfectHarmonic()
 
 //##############################################################################
 //##############################################################################
-int main()
+int main(int argc, char **argv)
 {
-    Test_PerfectHarmonic(); 
+    parse_cmd(argc, argv);
+    SingleFrequencySolve(); 
     return 0;
 }
