@@ -3,6 +3,7 @@
 import my_io as IO
 import numpy as np 
 import matplotlib.pyplot as plt
+from matplotlib import cm 
 import sys
 import glob
 import scipy
@@ -32,9 +33,10 @@ maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 
 # plotting
+colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
 plt.figure()
 for ii in range(N_points): 
-    plt.plot(listenedData[:,ii]/maxValue, label=listeningPositions[ii, :]) 
+    plt.plot(listenedData[:,ii], label=listeningPositions[ii, :], color=colors[ii], linewidth=2) 
     scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedData[:,ii]/maxValue)
 plt.legend(loc=2)
 plt.xlabel('frame') 
