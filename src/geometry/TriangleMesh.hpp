@@ -207,6 +207,8 @@ class TriangleMesh
         void get_vtx_tgls(std::vector< std::set<int> >&) const;
 #endif /* DIFF_DEFINE */
 
+        Vector3d ComputeCentroid() const; 
+
         // abstract nearest triangles lookup that should be specific to data
         // structures of choice. 
         virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices)
@@ -603,6 +605,22 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
         vtx_ts[ m_triangles[i].z ].insert(i);
     }
 #endif /* DIFF_DEFINE */
+}
+
+/* 
+ * This function computes an approximate centroid of the mesh by averaging all
+ * vertex position. 
+ */
+template <typename T> 
+Vector3d TriangleMesh<T>::
+ComputeCentroid() const
+{
+    Vector3d accumulate(0, 0, 0); 
+    const int N_vertices = num_vertices(); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+        accumulate += vertex(v_idx); 
+    accumulate /= (REAL)N_vertices; 
+    return accumulate; 
 }
 
 /* 
