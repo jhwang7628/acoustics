@@ -57,4 +57,4 @@ if len(sys.argv) == 5:
     dataExtracted = data[-N_extract::]
     print 'End %.2f percent of the listened data was extracted. Its max = %f' %(extractEndPercentage*100.0, np.absolute(dataExtracted).max())
 
-# plt.show()
+plt.show()
