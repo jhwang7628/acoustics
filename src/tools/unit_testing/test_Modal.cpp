@@ -16,7 +16,6 @@
 #include <modal_model/BEMSolutionMode.h> 
 #include <modal_model/KirchhoffIntegralSolver.h>
 #include <io/FBemReader.h>
-
 #include <libconfig.h++> 
 
 void TestRigidBodySim()
@@ -180,6 +179,7 @@ void TestBEMSolution()
 
 int main() 
 {
+
     std::cout << "Unit Test: Modal Sound\n"; 
     //TestIO(); 
     //TestRigidBodySim(); 

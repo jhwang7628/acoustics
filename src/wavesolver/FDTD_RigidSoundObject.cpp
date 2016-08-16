@@ -394,7 +394,7 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &sample
     const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
     REAL sampledValue; 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))
-        sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega*omega * cos(omega * sampleTime)); 
+        sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega*omega * cos(omega * sampleTime));
     else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         sampledValue = _eigenVectorsNormal(closestIndex, mode) * (-omega*omega * cos(omega * sampleTime)); 
     else
