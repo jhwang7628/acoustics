@@ -20,7 +20,7 @@ class KirchhoffIntegralSolver
         std::vector<std::shared_ptr<BEMSolutionMode> >  _BEMSolutions; 
 
         // for debug and testing
-        REAL                                            _defaultTestEvaluateRadius = 1E-6;
+        REAL                                            _defaultTestEvaluateRadius = 1E-4;
         REAL                                            _defaultTestErrorTolerance = 1E-6;
 
     public: 
