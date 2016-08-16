@@ -91,6 +91,7 @@ draw()
 
     glColor3f(1.0, 1.0, 1.0);
     drawText(10, height()-20, _message); 
+    drawText(10, height()-40, _messageColormap); 
 
     glLineWidth(3.0f);
     if (_drawBox)
@@ -775,7 +776,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
                     // if distance > threashold, computes transfer residual
                     REAL transferResidual; 
                     const REAL distance = _simulator->GetSceneObjects()->LowestObjectDistance(slice.samples.at(d_idx)); 
-                    if (distance > 0.01)
+                    if (distance > 0.02)
                         _bemSolver->TestSolver(_bemModePointer, _bemSolver->GetMode_k(_bemModePointer), slice.samples.at(d_idx), transferResidual);
                     else
                         transferResidual = 0.0; 
@@ -806,9 +807,18 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
     {
         minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
         if (dataPointer == 1) 
+        {
             _sliceColorMap->set_interpolation_range(-1.0, 1.0); 
+            _sliceColorMapRange.x = -1; 
+            _sliceColorMapRange.y =  1; 
+        }
         else
+        {
             _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices); 
+            _sliceColorMapRange.x = minCoeffSlices; 
+            _sliceColorMapRange.y = maxCoeffSlices; 
+        }
+        _messageColormap = "Colormap range = [" + QString::number(_sliceColorMapRange.x) + ", " + QString::number(_sliceColorMapRange.y) + "]"; 
     }
 }
 
@@ -859,5 +869,4 @@ PrintFrameInfo()
     //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
-    _message += "max= " + QString::number(_drawAbsMax) + "; "; 
 }

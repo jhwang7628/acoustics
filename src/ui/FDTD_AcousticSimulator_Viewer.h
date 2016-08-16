@@ -6,6 +6,7 @@
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
 #include <modal_model/KirchhoffIntegralSolver.h>
 #include <linearalgebra/Vector3.hpp>
+#include <linearalgebra/Vector2.hpp>
 #include <colormap/ColorMap.h>
 #include <config.h>
 
@@ -27,6 +28,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                     _currentFrame = 0;
         QString                 _message; 
         QString                 _messageSelection;
+        QString                 _messageColormap; 
         int                     _wireframe;
         int                     _sliceWireframe;
         bool                    _drawBox; 
@@ -39,6 +41,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         // slice related fields
         int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer; 3: frequency transfer residual
         std::shared_ptr<ColorMap>   _sliceColorMap; 
+        Vector2d                    _sliceColorMapRange; 
 
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;
