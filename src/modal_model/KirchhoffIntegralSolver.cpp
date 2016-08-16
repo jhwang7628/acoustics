@@ -101,10 +101,7 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 
         const REAL r = (listeningPoint - surfacePoint).length(); 
         if (r < _distanceLowBound)
-        {
             abortCompute = true; // this listening point is too close to the surface
-            throw std::runtime_error("**ERROR** this should not happen"); // FIXME debug
-        }
 
         // compute necessary fields
         const std::complex<REAL> G = Evaluate_G(k, listeningPoint, surfacePoint, r); 
