@@ -478,19 +478,23 @@ keyPressEvent(QKeyEvent *e)
         {
             std::cout << " Writing all slice data to file: " << filename << "\n"; 
             const int N_slices = _sliceCin.size(); 
+            of << std::setprecision(16); 
             of << "# <number slices> <_sliceDataPointer>\n"; 
             of << N_slices << " " << _sliceDataPointer << "\n"; 
             for (int s_idx=0; s_idx<N_slices; ++s_idx)
             {
                 auto &slice = _sliceCin.at(s_idx); 
                 auto &data = slice.data;
+                auto &samples = slice.samples; 
                 const int N_probes = data.rows(); 
                 const int N_dimension = data.cols(); 
                 of << "# <slice index> <number of data probes on slice> <data dimension per probe> \n"; 
                 of << s_idx << " " << N_probes << " " << N_dimension << "\n"; 
-                of << "# data for this slice starts\n"; 
+                of << "# <position_x> <position_y> <position_z> <data_1> <data_2> ... <data_dim>\n"; 
                 for (int p_idx=0; p_idx<N_probes; ++p_idx)
                 {
+                    auto &vertex = samples.at(p_idx); 
+                    of << vertex.x << " " << vertex.y << " " << vertex.z << " ";
                     for (int d_idx=0; d_idx<N_dimension; ++d_idx)
                     {
                         of << data(p_idx, d_idx) << " ";
