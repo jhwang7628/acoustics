@@ -20,6 +20,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRE
 # compile option
 option(USE_QT5 "Turn on for QT5. Turn off for QT4" ON)
 option(USE_DEBUG "Turn on the debug mode" OFF)
+option(USE_DEBUG_PRINT "Turn on debug print (can still be compiled with release mode" ON)
 option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
 option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
 option(USE_CUDA "Use CUDA" OFF)
@@ -76,6 +77,10 @@ else ( USE_DEBUG )
     add_definitions(-Wall)
 endif ( USE_DEBUG )
 
+if (USE_DEBUG_PRINT)
+    add_definitions(-DDEBUG_PRINT)
+endif (USE_DEBUG_PRINT)
+
 if ( USE_64BIT_ARCH )
     add_definitions(-m64)
     set(LINK_FLAGS -m64)
@@ -88,6 +93,7 @@ if (USE_BOOST)
     find_package(Boost 1.33 REQUIRED)
     add_definitions(-DUSE_BOOST)
 endif (USE_BOOST)
+
 
 option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
 

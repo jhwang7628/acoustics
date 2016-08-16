@@ -150,6 +150,7 @@ TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, co
 bool KirchhoffIntegralSolver::
 TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, REAL &residual, const REAL &evaluateRadiusArg)
 {
+
     const REAL evaluateRadius = (evaluateRadiusArg > 0 ? evaluateRadiusArg : _defaultTestEvaluateRadius); 
 
     // evaluate pressure. notation:
@@ -179,6 +180,7 @@ TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, RE
     residual = std::abs(laplacian_p + pow(k, 2) * p000); 
     const bool testPassed = (residual < _defaultTestErrorTolerance); 
 
+#ifdef DEBUG_PRINT
     std::cout << "\n\nTEST HELMHOLTZ RESIDUAL\n";
     std::cout << "TestSolver()::\n"
               << " Evaluate point = " << testingPoint << "\n"
@@ -189,6 +191,7 @@ TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, RE
     else
         std::cout << " **Test passed\n";
     std::cout << std::flush; 
+#endif
 
     return testPassed; 
 }
