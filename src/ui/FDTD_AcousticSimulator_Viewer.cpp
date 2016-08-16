@@ -30,6 +30,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
@@ -467,6 +468,39 @@ keyPressEvent(QKeyEvent *e)
             std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
             std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
             _sphereCin.push_back(sphere); 
+    }
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ShiftModifier)) {
+        std::string filename; 
+        std::cout << "Enter filename for saving all slices data: " << std::flush; 
+        std::cin >> filename; 
+        std::ofstream of(filename.c_str()); 
+        if (of) 
+        {
+            std::cout << " Writing all slice data to file: " << filename << "\n"; 
+            const int N_slices = _sliceCin.size(); 
+            of << "# <number slices> <_sliceDataPointer>\n"; 
+            of << N_slices << " " << _sliceDataPointer << "\n"; 
+            for (int s_idx=0; s_idx<N_slices; ++s_idx)
+            {
+                auto &slice = _sliceCin.at(s_idx); 
+                auto &data = slice.data;
+                const int N_probes = data.rows(); 
+                const int N_dimension = data.cols(); 
+                of << "# <slice index> <number of data probes on slice> <data dimension per probe> \n"; 
+                of << s_idx << " " << N_probes << " " << N_dimension << "\n"; 
+                of << "# data for this slice starts\n"; 
+                for (int p_idx=0; p_idx<N_probes; ++p_idx)
+                {
+                    for (int d_idx=0; d_idx<N_dimension; ++d_idx)
+                    {
+                        of << data(p_idx, d_idx) << " ";
+                    }
+                    of << std::endl; 
+                }
+            }
+            of.close(); 
+            std::cout << " Write complete." << std::endl;
+        }
     }
     else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ShiftModifier)) {
         // print all velocity BC

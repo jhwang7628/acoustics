@@ -101,7 +101,10 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 
         const REAL r = (listeningPoint - surfacePoint).length(); 
         if (r < _distanceLowBound)
+        {
             abortCompute = true; // this listening point is too close to the surface
+            throw std::runtime_error("**ERROR** this should not happen"); // FIXME debug
+        }
 
         // compute necessary fields
         const std::complex<REAL> G = Evaluate_G(k, listeningPoint, surfacePoint, r); 
@@ -177,7 +180,7 @@ TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, RE
     // evaluate laplacian(p) using 2nd central difference
     const REAL inv_r2 = 1.0 / pow(evaluateRadius, 2); 
     const std::complex<REAL> laplacian_p = ((ph00 + pl00) + (p0h0 + p0l0) + (p00h + p00l) - 6.0*p000) * inv_r2; 
-    residual = std::abs(laplacian_p + pow(k, 2) * p000); 
+    residual = std::abs(laplacian_p + pow(k, 2) * p000) / std::abs(p000); 
     const bool testPassed = (residual < _defaultTestErrorTolerance); 
 
 #ifdef DEBUG_PRINT
