@@ -125,18 +125,72 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
 }
 
 //##############################################################################
+//##############################################################################
+bool KirchhoffIntegralSolver::
+TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, const REAL &evaluateRadiusArg)
+{
+    REAL residual; 
+    return TestSolver(modeIndex, k, testingPoint, residual, evaluateRadiusArg); 
+}
+
+//##############################################################################
 // This function tests the solver by solving a small neighbour hood around
 // testing point and check if it satisfies the Helmholtz equation using
 // finite-difference. 
 //
 //  Helmholtz eq: 
 //   laplacian(p(x)) + k^2 p(x) = 0
+//
+//  @param modeIndex
+//  @param k wavenumber = omega / wavespeed
+//  @param testingPoint
+//  @param evaluateRadiusArg Used if >0, otherwise default value is used. This is
+//                           the finite-difference stencil interval
 //##############################################################################
 bool KirchhoffIntegralSolver::
-TestSolver(const Vector3d &testingPoint, const REAL &evaluateRadiusArg)
+TestSolver(const int &modeIndex, const REAL &k, const Vector3d &testingPoint, REAL &residual, const REAL &evaluateRadiusArg)
 {
     const REAL evaluateRadius = (evaluateRadiusArg > 0 ? evaluateRadiusArg : _defaultTestEvaluateRadius); 
 
+    // evaluate pressure. notation:
+    //     h
+    //     |
+    // l---0---h
+    //     | 
+    //     l
+    const Vector3d &position000 = testingPoint; 
+    const Vector3d  positionl00 = testingPoint - Vector3d(evaluateRadius, 0.0, 0.0); 
+    const Vector3d  positionh00 = testingPoint + Vector3d(evaluateRadius, 0.0, 0.0); 
+    const Vector3d  position0l0 = testingPoint - Vector3d(0.0, evaluateRadius, 0.0); 
+    const Vector3d  position0h0 = testingPoint + Vector3d(0.0, evaluateRadius, 0.0); 
+    const Vector3d  position00l = testingPoint - Vector3d(0.0, 0.0, evaluateRadius); 
+    const Vector3d  position00h = testingPoint + Vector3d(0.0, 0.0, evaluateRadius); 
+    const std::complex<REAL> p000 = Solve(modeIndex, position000);
+    const std::complex<REAL> pl00 = Solve(modeIndex, positionl00);
+    const std::complex<REAL> ph00 = Solve(modeIndex, positionh00);
+    const std::complex<REAL> p0l0 = Solve(modeIndex, position0l0);
+    const std::complex<REAL> p0h0 = Solve(modeIndex, position0h0);
+    const std::complex<REAL> p00l = Solve(modeIndex, position00l);
+    const std::complex<REAL> p00h = Solve(modeIndex, position00h);
+
+    // evaluate laplacian(p) using 2nd central difference
+    const REAL inv_r2 = 1.0 / pow(evaluateRadius, 2); 
+    const std::complex<REAL> laplacian_p = ((ph00 + pl00) + (p0h0 + p0l0) + (p00h + p00l) - 6.0*p000) * inv_r2; 
+    residual = std::abs(laplacian_p + pow(k, 2) * p000); 
+    const bool testPassed = (residual < _defaultTestErrorTolerance); 
+
+    std::cout << "\n\nTEST HELMHOLTZ RESIDUAL\n";
+    std::cout << "TestSolver()::\n"
+              << " Evaluate point = " << testingPoint << "\n"
+              << " Evaluate radius = " << evaluateRadius << "\n"
+              << " Tested residual = " << residual << "\n"; 
+    if (!testPassed)
+        std::cout << " **Test failed\n";
+    else
+        std::cout << " **Test passed\n";
+    std::cout << std::flush; 
+
+    return testPassed; 
 }
 
 //##############################################################################

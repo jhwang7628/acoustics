@@ -156,6 +156,26 @@ void TestBEMSolution()
     solver.Solve(0, Vector3d(0, 0, 0));
 
     solver.PrintFBemVelocityBC(0, "allVelocityFBem.txt");
+
+    const int N_tests = 10; 
+    const REAL pushRadius = 50.0;
+    bool testFailed = false; 
+    for (int t_idx=0; t_idx<N_tests; ++t_idx)
+    {
+        // pick a random mesh point and push it away from boundary to be
+        // testing point
+        const int vertexId = rand() % mesh->num_vertices(); 
+        const Vector3d &randomVertex = mesh->vertex(vertexId); 
+        Vector3d normal = mesh->normal(vertexId); 
+        normal.normalize(); 
+        const Vector3d testingPoint = randomVertex + normal * pushRadius; 
+
+        // test solver
+        const bool thisFailed = !solver.TestSolver(0, omega/343.0, testingPoint); 
+        testFailed = (testFailed || thisFailed); 
+    }
+
+    std::cout << "overall test " << (testFailed ? "failed" : "passed") << std::endl; 
 }
 
 int main() 
