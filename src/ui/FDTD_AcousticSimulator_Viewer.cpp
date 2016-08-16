@@ -761,9 +761,6 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
             const int N_samples = slice.samples.size(); 
             data.resize(N_samples, 1);
             int count = 0;
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
             for (int d_idx=0; d_idx<N_samples; ++d_idx)
             {
                 if (dataPointer == 2) 
@@ -782,13 +779,8 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
                         transferResidual = 0.0; 
                     data(d_idx, 0) = transferResidual;
                 }
-#ifdef USE_OPENMP
-#pragma omp critical
-#endif
-                {
-                    count ++; 
-                    std::cout << "\r" << (REAL)count / (REAL)N_samples * 100.0 << "\% completed" << std::flush;
-                }
+                count ++; 
+                std::cout << "\r" << (REAL)count / (REAL)N_samples * 100.0 << "\% completed" << std::flush;
             }
             std::cout << std::endl;
         }
