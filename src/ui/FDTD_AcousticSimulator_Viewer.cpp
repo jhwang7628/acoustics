@@ -87,12 +87,7 @@ draw()
     DrawMesh(); 
     DrawListeningPoints();
     DrawDebugCin();
-    if (_sliceDataPointer == 0)
-        DrawSlices(0); 
-    else if (_sliceDataPointer == 1)
-        DrawSlices(1); 
-    else
-        DrawSlices(2); 
+    DrawSlices(_sliceDataPointer); 
 
     glColor3f(1.0, 1.0, 1.0);
     drawText(10, height()-20, _message); 
@@ -577,10 +572,8 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%3; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%4; 
         optionsChanged = true;
-        if (_sliceDataPointer == 2 && !_bemSolver)
-            InitializeBEMSolver();
         SetAllSliceDataReady(false); 
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
@@ -647,16 +640,17 @@ postSelection(const QPoint &point)
 void FDTD_AcousticSimulator_Viewer::
 InitializeBEMSolver()
 {
+    //FIXME debug: 1) always set mesh id to 0; 2) hard-coded frequency and read
+    //files
     if (!_bemSolver)
         _bemSolver = std::make_shared<KirchhoffIntegralSolver>(); 
-    int bemMeshID; 
-    std::cout << "Input BEM solution mesh id in the simulator: " << std::flush; 
-    std::cin >> bemMeshID; 
+    int bemMeshID = 0; 
+    //std::cout << "Input BEM solution mesh id in the simulator: " << std::flush; 
+    //std::cin >> bemMeshID; 
     std::shared_ptr<TriangleMesh<REAL> > bemMesh = _simulator->GetSceneObjects()->GetPtr(bemMeshID)->GetMeshPtr();
     _bemSolver->SetMesh(bemMesh);
     std::cout << " Set BEM solution corresponding mesh to " << _simulator->GetSceneObjects()->GetMeshName(bemMeshID) << std::endl;
 
-    //FIXME debug
     const REAL frequency = 1020.01;
     const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt"); 
     const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
@@ -677,7 +671,7 @@ ConstructSliceSamples(Slice &slice)
     const auto &settings = _simulator->GetSolverSettings(); 
     //const REAL cellSize = settings->cellSize; 
     //const int division = settings->cellDivisions; 
-    const int division = 100; // FIXME debug
+    const int division = 80; // FIXME debug
     const REAL cellSize = settings->cellSize*(REAL)settings->cellDivisions / (REAL)division; 
 
     const REAL halfLength = (REAL)division*cellSize / 2.0; 
@@ -761,7 +755,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         {
             _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
         } 
-        else 
+        else if (dataPointer == 2 || dataPointer == 3) 
         {
             const int N_samples = slice.samples.size(); 
             data.resize(N_samples, 1);
@@ -771,8 +765,22 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
 #endif
             for (int d_idx=0; d_idx<N_samples; ++d_idx)
             {
-                const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
-                data(d_idx, 0) = std::abs(transferValue);
+                if (dataPointer == 2) 
+                {
+                    const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
+                    data(d_idx, 0) = std::abs(transferValue);
+                }
+                else if (dataPointer == 3) 
+                {
+                    // if distance > threashold, computes transfer residual
+                    REAL transferResidual; 
+                    const REAL distance = _simulator->GetSceneObjects()->LowestObjectDistance(slice.samples.at(d_idx)); 
+                    if (distance > 0.01)
+                        _bemSolver->TestSolver(_bemModePointer, _bemSolver->GetMode_k(_bemModePointer), slice.samples.at(d_idx), transferResidual);
+                    else
+                        transferResidual = 0.0; 
+                    data(d_idx, 0) = transferResidual;
+                }
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
@@ -782,6 +790,10 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
                 }
             }
             std::cout << std::endl;
+        }
+        else 
+        {
+            throw std::runtime_error("**ERROR** dataPointer out of range");
         }
 
         maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 

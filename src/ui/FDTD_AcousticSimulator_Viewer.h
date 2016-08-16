@@ -37,7 +37,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         REAL                    _drawAbsMax; 
 
         // slice related fields
-        int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer
+        int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer; 3: frequency transfer residual
         std::shared_ptr<ColorMap>   _sliceColorMap; 
 
         // frequency transfer solver
@@ -69,6 +69,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
+            InitializeBEMSolver();
         }
 
         inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
