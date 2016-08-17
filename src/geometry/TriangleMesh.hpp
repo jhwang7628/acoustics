@@ -644,6 +644,9 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
     const int N_neighbours = 10; 
     std::vector<int> triangleIndices; 
 
+    // the reason why we need critical directive is because the search in
+    // vlfeat is only conditionally thread safe:
+    //  http://www.vlfeat.org/api/threads.html
 #pragma omp critical
     FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
     assert(triangleIndices.size() > 0);
