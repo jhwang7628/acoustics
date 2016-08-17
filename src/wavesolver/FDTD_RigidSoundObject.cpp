@@ -391,6 +391,20 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &sample
         }
     }
 
+#ifdef DEBUG
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+        {
+            const Point3<REAL> &vertex = vertices.at(closestIndex); 
+            const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
+            const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
+            // write these special points for debugging purpose 
+            _debugArrowStart.push_back(vertexWorld); 
+            _debugArrowNormal.push_back(-vertexWorld + samplePoint); 
+        }
+#endif
+
     const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
     REAL sampledValue; 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize))

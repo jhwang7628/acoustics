@@ -34,7 +34,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw debug arrows stored in FDTD_RigidObject class"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_D, "Change slice division (default: 80)"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices"); 

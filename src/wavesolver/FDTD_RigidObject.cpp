@@ -277,18 +277,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
         erectedNormal = boundaryPoint - originalPoint; // world space
         reflectedPoint = originalPoint + erectedNormal; 
-
-#ifdef DEBUG
-#ifdef USE_OPENMP
-#pragma omp critical
-#endif
-        {
-            // write these special points for debugging purpose 
-            _debugArrowStart.push_back(originalPoint); 
-            _debugArrowNormal.push_back(erectedNormal); 
-        }
-#endif
-
         erectedNormal.normalize();  // keep the behavior same as the distance field based query
     }
 
