@@ -207,6 +207,7 @@ class TriangleMesh
         void get_vtx_tgls(std::vector< std::set<int> >&) const;
 #endif /* DIFF_DEFINE */
 
+        void BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vector3d &baryCentricCoordinates) const; 
         Vector3d ComputeCentroid() const; 
 
         // abstract nearest triangles lookup that should be specific to data
@@ -608,6 +609,41 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
 }
 
 /* 
+ * This function computes barycentric coordinates given a query point and
+ * triangle index.
+ * @param queryPoint 
+ * @param triangleIndex
+ * #param baryCentricCoordinates 3-vector that can be used for
+ * interpolation. Suppose the triangle has index (i0, i1, i2), then for some
+ * scalar c defined on the triangle, the interpolation is given by
+ *
+ *  c(queryPoint) = c(vertex(i0)) * baryCentricCoordinates.x
+ *                + c(vertex(i1)) * baryCentricCoordinates.y
+ *                + c(vertex(i2)) * baryCentricCoordinates.z
+ */ 
+template <typename T> 
+void TriangleMesh<T>::
+BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vector3d &baryCentricCoordinates) const
+{
+    const Tuple3ui &triangle = this->triangle_ids(triangleIndex); 
+    const Point3<T> &p0 = this->vertex(triangle.x); 
+    const Point3<T> &p1 = this->vertex(triangle.y); 
+    const Point3<T> &p2 = this->vertex(triangle.z); 
+    const Vector3<T> e0 = p2 - p0; 
+    const Vector3<T> e1 = p1 - p0; 
+    const Vector3<T> e2 = queryPoint - p0; 
+    const REAL dot00 = e0.dotProduct(e0); 
+    const REAL dot01 = e0.dotProduct(e1); 
+    const REAL dot11 = e1.dotProduct(e1); 
+    const REAL dot02 = e0.dotProduct(e2); 
+    const REAL dot12 = e1.dotProduct(e2); 
+    const REAL invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
+    const REAL u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
+    const REAL v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
+    baryCentricCoordinates.set(1.0-u-v, v, u);
+}
+
+/* 
  * This function computes an approximate centroid of the mesh by averaging all
  * vertex position. 
  */
@@ -682,6 +718,7 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
+        //                = (1-u-v)*p0 + u*p2 + v*p1
         const Vector3<T> e2 = projectedPointBuffer - p0; 
         const REAL dot02 = e0.dotProduct(e2); 
         const REAL dot12 = e1.dotProduct(e2); 
@@ -753,6 +790,7 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
             projectedPoint = projectedPointBuffer; 
         }
     }
+
     return sqrt(minDistance); 
 }
 
