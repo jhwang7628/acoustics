@@ -42,6 +42,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer; 3: frequency transfer residual
         std::shared_ptr<ColorMap>   _sliceColorMap; 
         Vector2d                    _sliceColorMapRange; 
+        int                         _sliceDivision = 80; 
+        bool                        _fixedSliceColorMapRange = false; 
 
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;

@@ -36,9 +36,12 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw failed reflections arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_D, "Change slice division (default: 80)"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file"); 
+    setKeyDescription(Qt::ControlModifier + Qt::Key_F, "Toggle fixed colormap"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer forward"); 
+    setKeyDescription(Qt::ControlModifier + Qt::Key_Y, "Toggle slice data pointer backward"); 
     setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file"); 
 }
 
@@ -451,6 +454,10 @@ keyPressEvent(QKeyEvent *e)
         _wireframe = (_wireframe+1)%4; 
         optionsChanged = true;
     }
+    if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
+        std::cout << "Input slice division: " << std::flush; 
+        std::cin >> _sliceDivision; 
+    }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
         _sliceWireframe = (_sliceWireframe+1)%4; 
         optionsChanged = true;
@@ -537,6 +544,22 @@ keyPressEvent(QKeyEvent *e)
             }
         }
     }
+    else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ControlModifier)) {
+        _fixedSliceColorMapRange = !_fixedSliceColorMapRange; 
+        if (_fixedSliceColorMapRange) 
+        {
+            REAL cMin, cMax; 
+            while (true)
+            {
+                std::cout << "Input colormap range <cmin> <cmax>: " << std::flush; 
+                std::cin >> cMin >> cMax; 
+                if (cMin < cMax)
+                    break; 
+            }
+            _sliceColorMapRange.x = cMin; 
+            _sliceColorMapRange.y = cMax;  
+        }
+    }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ControlModifier)) {
         std::string filename; 
         std::cout << "To-draw arrow filename: " << std::flush; 
@@ -612,6 +635,11 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
         _sliceDataPointer = (_sliceDataPointer + 1)%4; 
+        optionsChanged = true;
+        SetAllSliceDataReady(false); 
+    }
+    else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ControlModifier)) {
+        _sliceDataPointer = std::max<int>(_sliceDataPointer - 1, 0); 
         optionsChanged = true;
         SetAllSliceDataReady(false); 
     }
@@ -710,7 +738,7 @@ ConstructSliceSamples(Slice &slice)
     const auto &settings = _simulator->GetSolverSettings(); 
     //const REAL cellSize = settings->cellSize; 
     //const int division = settings->cellDivisions; 
-    const int division = 80; // FIXME debug
+    const int division = _sliceDivision;
     const REAL cellSize = settings->cellSize*(REAL)settings->cellDivisions / (REAL)division; 
 
     const REAL halfLength = (REAL)division*cellSize / 2.0; 
@@ -811,7 +839,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
                     // if distance > threashold, computes transfer residual
                     REAL transferResidual; 
                     const REAL distance = _simulator->GetSceneObjects()->LowestObjectDistance(slice.samples.at(d_idx)); 
-                    if (distance > 0.02)
+                    if (distance > 0.005)
                         _bemSolver->TestSolver(_bemModePointer, _bemSolver->GetMode_k(_bemModePointer), slice.samples.at(d_idx), transferResidual);
                     else
                         transferResidual = 0.0; 
@@ -833,7 +861,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         slice.dataReady = true;
     }
 
-    if (updateColormap)
+    if (updateColormap && !_fixedSliceColorMapRange)
     {
         minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
         if (dataPointer == 1) 
@@ -848,8 +876,8 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
             _sliceColorMapRange.x = minCoeffSlices; 
             _sliceColorMapRange.y = maxCoeffSlices; 
         }
-        _messageColormap = "Colormap range = [" + QString::number(_sliceColorMapRange.x) + ", " + QString::number(_sliceColorMapRange.y) + "]"; 
     }
+    _messageColormap = "Colormap range = [" + QString::number(_sliceColorMapRange.x) + ", " + QString::number(_sliceColorMapRange.y) + "]"; 
 }
 
 //##############################################################################
