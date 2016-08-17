@@ -643,6 +643,8 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
 {
     const int N_neighbours = 10; 
     std::vector<int> triangleIndices; 
+
+#pragma omp critical
     FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
     assert(triangleIndices.size() > 0);
 

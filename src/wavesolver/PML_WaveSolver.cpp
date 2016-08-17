@@ -384,7 +384,7 @@ void PML_WaveSolver::stepLeapfrog()
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
         _freshCellTimer.pause(); 
-
+        
         // update ghost cells 
         _ghostCellTimer.start(); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
