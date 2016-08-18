@@ -372,13 +372,48 @@ PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoin
 REAL FDTD_RigidSoundObject::
 PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
 {
-    int closestIndex = -1;
-    REAL closestDistance = std::numeric_limits<REAL>::max(); 
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
 
+#if 1
+    // fetch closest point on mesh in object frame, and compute interpolation
+    // weights
+    int closestTriangleIndex; 
+    Vector3d closestPoint, projectedPoint, baryCentricCoordinates; 
+    _mesh->ComputeClosestPointOnMesh(samplePointObject, closestPoint, closestTriangleIndex, projectedPoint); 
+    _mesh->BaryCentricCoordinates(closestPoint, closestTriangleIndex, baryCentricCoordinates); 
+
+    // compute interpolated normal modal displacement
+    const Tuple3ui &triangle = _mesh->triangle_ids(closestTriangleIndex); 
+    const REAL normalModalDisplacement = _eigenVectorsNormal(triangle.x, mode) * baryCentricCoordinates.x
+                                       + _eigenVectorsNormal(triangle.y, mode) * baryCentricCoordinates.y
+                                       + _eigenVectorsNormal(triangle.z, mode) * baryCentricCoordinates.z; 
+
+#ifdef DEBUG
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+        {
+            const Vector3d &vertex = closestPoint; 
+            const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
+            const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
+            // write these special points for debugging purpose 
+            _debugArrowStart.push_back(vertexWorld); 
+            _debugArrowNormal.push_back(-vertexWorld + samplePoint); 
+        }
+#endif
+
+    // estimate modal acceleration
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode); 
+    if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime)); 
+    return sampledValue; 
+#else
     // nearest neighbour lookup
+    int closestIndex = -1;
+    REAL closestDistance = std::numeric_limits<REAL>::max(); 
     const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
     const int N_vertices = vertices.size(); 
     for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
@@ -415,6 +450,7 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &sample
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
 
     return sampledValue;
+#endif
 }
 
 //##############################################################################
