@@ -70,10 +70,14 @@ void SingleFrequencySolve()
     solver.AddFBemSolution(fBemInputFile, fBemOutputFile, omega);
     std::complex<REAL> transferValue = solver.Solve(0, listeningPoint);
 
-    // additional scaling due to fbem input scaling. In particular, the fbem input in dataset is missing a 2pi
-    // scaling for velocity BC. since the helmholtz equation is linear, I can scale the output solution by this
-    // factor.
-    const REAL extraScaling = 2.0 * M_PI; 
+    // additional scaling due to fbem input scaling. In particular, the 
+    // fbem input in dataset is missing a 2pi scaling for velocity BC. 
+    // since the helmholtz equation is linear, I can scale the output solution 
+    // by this factor. Notice another bug in fbem_input_gen.cpp, when the 
+    // velocity BC is constructed, there should be an extra minus sign since 
+    // its the normal for the Helmholtz solve, which points inside the mesh. 
+    // Added a minus sign here to compensate. 
+    const REAL extraScaling = -2.0 * M_PI; 
     transferValue *= extraScaling; 
     std::cout << "Transfer value scaled by: " << extraScaling << std::endl;
 

@@ -91,10 +91,10 @@ Solve(const int &modeIndex, const Vector3d &listeningPoint) const
         const Point3d &p1 = _mesh->vertex(triangle.y); 
         const Point3d &p2 = _mesh->vertex(triangle.z); 
 
-        // compute geometry information about element
+        // compute geometry information about element.
         // The normal is flipped because this is the normal for the Helmholtz
-        // exterior problem. Normal of this domain should point "into" the mesh. // FIXME debug nml inner product in fbem_input_gen.cpp:231 is defined as non-flipped mesh normal..
-        Vector3d normal = ((p1 - p0).crossProduct(p2 - p0)) * 0.5;  // see TriangleMesh.hpp::generate_normals() and fbem_input_gen.cpp:218
+        // exterior problem. Normal of this domain should point "into" the mesh.
+        Vector3d normal = -((p1 - p0).crossProduct(p2 - p0)) * 0.5;  // see TriangleMesh.hpp::generate_normals() and fbem_input_gen.cpp:218
         const REAL area = normal.length(); 
         normal.normalize(); 
         const Vector3d surfacePoint = (p0 + p1 + p2)/3.0;
