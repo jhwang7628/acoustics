@@ -1555,8 +1555,8 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
 
                 _velocityInterfacialCells[ dimension ].push_back( cell_idx );
                 _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
-                _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+                _interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
+                //_interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
 
                 // Determine a scaling coefficient based on the angle between
                 // the boundary normal and the rasterized boundary normal
