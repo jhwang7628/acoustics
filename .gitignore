@@ -22,7 +22,7 @@ CMakeFiles*
 *.obj
 *.gz
 *.tar
-*.xml
+# *.xml
 
 work/near-field/test_movies
 
