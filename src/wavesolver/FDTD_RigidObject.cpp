@@ -251,18 +251,40 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 // to the nearest neighbour triangle search in order to establish a valid boundary 
 // point and reflection. The checked condition is:
 //  1. If image point is still inside the geometry. 
+//
+// If the original query point is already outside the boundary, this function
+// will extend it in the normal direction and still perform a "reflection". 
+// See below diagram.
+//
+//           /
+// RP  OP  BP
+//  o---o---o  inside boundary
+//          |  
+//          |
 //##############################################################################
 bool FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField!=nullptr && (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
+    assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
-    distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
-    boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
-    reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
+    distanceTravelled = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z);
+    if (distanceTravelled > DISTANCE_TOLERANCE) // located outside the boundary already, push it further
+    {
+        boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
+        reflectedPoint= originalPoint + erectedNormal * (distanceTravelled); 
+    }
+    else // inside the boundary, follow a similar procedure as the ghost cell method 
+    {
+        boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
+        reflectedPoint= originalPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
+    }
+    // FIXME old code commented out
+    //distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
+    //boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
+    //reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
     const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
 
@@ -284,65 +306,12 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 }
 
 //##############################################################################
-// Without a better name, this function finds the image point (IP) for the fresh 
-// cell in ghost-cell implementation by extending the current query point (CU)
-// to find IP. Boundary point (BI) will also be located for boundary condition
-// evaluation later. The fresh cell is contracted to be outside the boundary 
-// when this function is called.
-//
-//           /
-// IP  CU  BI
-//  o---o---o  inside boundary
-//          |  
-//          |
-//
+// This function is now deprecated. kall ReflectAgainstBoundary directly.
 //##############################################################################
 bool FDTD_RigidObject::
 FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
-    assert(_signedDistanceField != nullptr);
-    //assert(_signedDistanceField!=nullptr && (DistanceToMesh(currentPoint.x,currentPoint.y,currentPoint.z)>DISTANCE_TOLERANCE));
-
-    //erectedNormal = _signedDistanceField->gradient(currentPoint); 
-    NormalToMesh(currentPoint.x, currentPoint.y, currentPoint.z, erectedNormal);
-    erectedNormal.normalize(); 
-    //distanceTravelled = -_signedDistanceField->distance(currentPoint)*2; 
-    distanceTravelled = DistanceToMesh(currentPoint.x, currentPoint.y, currentPoint.z);
-    if (distanceTravelled > DISTANCE_TOLERANCE) // located correctly outside the boundary
-    {
-        boundaryPoint = currentPoint - erectedNormal * (distanceTravelled);
-        imagePoint    = currentPoint + erectedNormal * (distanceTravelled); 
-    }
-    else // inside the buffer, follow a similar procedure as the ghost cell method 
-    {
-        boundaryPoint = currentPoint - erectedNormal * (distanceTravelled);
-        imagePoint    = currentPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
-    }
-
-    const REAL newDistance = DistanceToMesh(imagePoint);
-    const bool isExterior = (newDistance > DISTANCE_TOLERANCE); 
-    if (true) 
-    {
-        Vector3d boundaryNormal;
-        NormalToMesh(boundaryPoint.x, boundaryPoint.y, boundaryPoint.z, boundaryNormal); 
-        //Vector3d boundaryNormal = _signedDistanceField->gradient(boundaryPoint); 
-        boundaryNormal.normalize(); 
-        if (erectedNormal.dotProduct(boundaryNormal) < 0.5)
-        {
-            std::cerr << "**WARNING** erected normal and true normal deviates. This might cause inaccuracy for the imposed Neumann boundary condition at original point : " 
-                      << currentPoint 
-                      << "; the dot product is : " << erectedNormal.dotProduct(boundaryNormal) << std::endl; 
-        }
-        if (!isExterior)
-        {
-            std::cerr << "**ERROR** reflected point " << currentPoint << "->" << imagePoint << " still inside object : " << newDistance << std::endl; 
-            erectedNormal *= (boundaryPoint-currentPoint).length(); 
-            _debugArrowStart.push_back(currentPoint); 
-            _debugArrowNormal.push_back(erectedNormal); 
-        }
-    }
-
-    return isExterior;
+    return ReflectAgainstBoundary(currentPoint, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
 }
 //##############################################################################
 //##############################################################################

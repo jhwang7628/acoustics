@@ -955,7 +955,7 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
             throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. Distance: " + std::to_string(distance)); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceTravelled; 
-        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+        _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
@@ -1052,7 +1052,7 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceToMesh;
-        _objects->Get(objectID).FindImageFreshCell(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
+        _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
@@ -1091,7 +1091,7 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
                     const Vector3d cellPositionNeighbour = _velocityField[dim].cellPosition(neighbour_idx);
                     REAL distanceNeighbour; 
                     Vector3d imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour; 
-                    _objects->Get(objectID).FindImageFreshCell(cellPositionNeighbour, imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour, distanceNeighbour); 
+                    _objects->Get(objectID).ReflectAgainstBoundary(cellPositionNeighbour, imagePointNeighbour, boundaryPointNeighbour, erectedNormalNeighbour, distanceNeighbour); 
                     Vector3d gradient; 
                     _objects->ObjectNormal(objectID, boundaryPointNeighbour, gradient);
                     gradient.normalize(); 
