@@ -56,6 +56,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawLights(); 
         void DrawSlices(const int &dataPointer);
         void DrawDebugCin();
+        inline void ResetSliceColormap(){_sliceColorMap->set_interpolation_range(_sliceColorMapRange.x, _sliceColorMapRange.y);}
 
     protected: 
         virtual void draw(); 

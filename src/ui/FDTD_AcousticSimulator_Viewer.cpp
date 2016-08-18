@@ -426,11 +426,13 @@ DrawDebugCin()
         glVertex3f(stop_x, stop_y, stop_z); 
         glEnd();
 
+        glEnable(GL_LIGHTING);
         glPushMatrix();
         glTranslatef(start_x, start_y, start_z); 
         glColor3f(1.0f, 1.0f, 0.0f); 
-        GL_Wrapper::DrawSphere(5E-4, 10, 10);
+        GL_Wrapper::DrawSphere(2.5E-4, 10, 10);
         glPopMatrix();
+        glDisable(GL_LIGHTING);
     }
 }
 
@@ -559,6 +561,7 @@ keyPressEvent(QKeyEvent *e)
             _sliceColorMapRange.x = cMin; 
             _sliceColorMapRange.y = cMax;  
         }
+        ResetSliceColormap(); 
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ControlModifier)) {
         std::string filename; 
