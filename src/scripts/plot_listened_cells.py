@@ -44,17 +44,18 @@ plt.ylabel('Pressure (Pascal)')
 # plt.title('Monitor points for ball drop using ghost cell')
 
 if len(sys.argv) == 5: 
-    plot_index = int(sys.argv[4]) 
-    data = listenedData[:, plot_index] 
-    plt.figure() 
-    plt.plot(data[::4], label=listeningPositions[plot_index, :]) 
-    plt.xlabel('frame') 
-    plt.ylabel('Pressure (Pascal)')
-    print 'Listening point = ', listeningPositions[plot_index, :]
-    # try to extract the max in the last couple of cycles
-    extractEndPercentage = 0.2
-    N_extract = N_steps * extractEndPercentage
-    dataExtracted = data[-N_extract::]
-    print 'End %.2f percent of the listened data was extracted. Its max = %f' %(extractEndPercentage*100.0, np.absolute(dataExtracted).max())
+    for plot_index in range(N_points):
+        # plot_index = int(sys.argv[4]) 
+        data = listenedData[:, plot_index] 
+        plt.figure() 
+        plt.plot(data[::4], label=listeningPositions[plot_index, :]) 
+        plt.xlabel('frame') 
+        plt.ylabel('Pressure (Pascal)')
+        print 'Listening point = ', listeningPositions[plot_index, :]
+        # try to extract the max in the last couple of cycles
+        extractEndPercentage = 0.2
+        N_extract = N_steps * extractEndPercentage
+        dataExtracted = data[-N_extract::]
+        print 'End %.2f percent of the listened data was extracted. Its max = %f' %(extractEndPercentage*100.0, np.absolute(dataExtracted).max())
 
-plt.show()
+# plt.show()
