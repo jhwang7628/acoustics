@@ -115,7 +115,7 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     //_vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), _N );
 
     _grid.initFieldRasterized( useBoundary );
-    _grid.classifyCellsDynamic(_pFull, _p, _v, useBoundary, true); // FIXME debug: shouldn't be here. haven't fixed classify completely
+    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
 
     //if ( _listeningPositions )
     //{
@@ -387,10 +387,10 @@ void PML_WaveSolver::stepLeapfrog()
         
         // update ghost cells 
         _ghostCellTimer.start(); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
         _ghostCellTimer.pause(); 
     }
     else 

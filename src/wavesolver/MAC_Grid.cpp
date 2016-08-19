@@ -743,27 +743,30 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 //    }
 }
 
-void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
+void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(_ghostCells.size()); 
 
+    const int N_ghostCells = _ghostCellPositions.size(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+    //for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+    for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
 
-        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
-        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
-        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
+        const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
+        const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
+        //const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
+        //const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
+        //const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
         //const int       boundaryObject = _containingObject[cellIndex]; 
 
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
-        //FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
         _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
 
         // get the box enclosing the image point; 
@@ -775,30 +778,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         int hasGC=-1; 
         //int coupled=0; 
 
-        std::vector<int> coupledGhostCells; 
-        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
-        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
-
-        for (size_t ii=0; ii<neighbours.size(); ii++) 
-        {
-            if (neighbours[ii] == cellIndex) 
-            {
-                hasGC = ii;
-            }
-            else  
-            {
-                // if not itself but a ghost cell then add an edge to graph
-                // adjacency matrix
-                if (_isGhostCell[neighbours[ii]]) 
-                {
-                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
-                    coupledGhostCellsNeighbours.push_back(ii); 
-                }
-                else
-                    uncoupledGhostCellsNeighbours.push_back(ii);
-            }
-        }
-
         // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
         Eigen::MatrixXd V(8,8); 
         Tuple3i     indicesBuffer;
@@ -807,29 +786,69 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
  
         // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
         const REAL bcEval = _objects->EvaluateNearestVibrationalSources(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density);
-        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
 
-        for (size_t row=0; row<neighbours.size(); row++) 
+        // some coupling information
+        std::vector<int> coupledGhostCells; 
+        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
+        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
+
+        for (size_t ii=0; ii<neighbours.size(); ii++) 
         {
-            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
-            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
-            
-            if ((int)row!=hasGC)
+            if (neighbours[ii] == gcParentIndex) 
             {
-                FillVandermondeRegular(row,positionBuffer, V);
-                pressureNeighbours(row) = p(neighbours[row],0); 
+                hasGC = ii;
+                FillVandermondeBoundary(ii, boundaryPoint, erectedNormal, V);
+                pressureNeighbours(ii) = bcEval; 
             }
-            else 
+            else  
             {
-                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-                pressureNeighbours(row) = bcEval; 
+                // this cell contains a ghost cell.
+                if (_isGhostCell[neighbours[ii]]) 
+                {
+                    // access its children and find the closest children index
+                    const int gcArrayPosition = _ghostCellsInverse.at(neighbours[ii]); 
+                    const IntArray &gcChildren = _ghostCellsChildren.at(gcArrayPosition); 
+
+                    const int N_children = gcChildren.size(); 
+                    assert(N_children>0); 
+
+                    int bestChild = -1; 
+                    REAL bestChildDistance = std::numeric_limits<REAL>::max(); 
+                    for (int c_idx=0; c_idx<N_children; ++c_idx) 
+                    {
+                        const Vector3d &gcChildrenPosition = _ghostCellPositions.at(gcChildren.at(c_idx)); 
+                        const REAL distanceSqr = (gcChildrenPosition - imagePoint).lengthSqr(); 
+                        if ( distanceSqr < bestChildDistance)
+                        {
+                            bestChild = gcChildren.at(c_idx); 
+                            bestChildDistance = distanceSqr; 
+                        }
+                    }
+
+                    coupledGhostCells.push_back(bestChild); 
+                    //coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
+                    coupledGhostCellsNeighbours.push_back(ii); 
+                    FillVandermondeRegular(ii, _ghostCellPositions.at(bestChild), V); 
+                    pressureNeighbours(ii) = pGC.at(bestChild); 
+                }
+                else
+                {
+                    uncoupledGhostCellsNeighbours.push_back(ii);
+
+                    // use the regular pressure field position to fill
+                    // vandermonde row
+                    indicesBuffer = _pressureField.cellIndex(neighbours.at(ii)); 
+                    positionBuffer= _pressureField.cellPosition(indicesBuffer); 
+                    FillVandermondeRegular(ii, positionBuffer, V);
+                    pressureNeighbours(ii) = p(neighbours.at(ii), 0); 
+                }
             }
         }
 
         // want beta = V^-T b, equivalent to solving V^T beta = b
         Eigen::MatrixXd b(1,8); // row vector
 
-        FillVandermondeRegular(0,imagePoint,b); 
+        FillVandermondeRegular(0, imagePoint, b); 
         b.transposeInPlace();  // column vector
         V.transposeInPlace(); 
 
@@ -880,9 +899,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, const REAL &timeS
         {
             const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
             // if there are nnz, update them 
-            p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
+            //p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
+            pGC.at(ghost_cell_idx) = data.RHS; 
             for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
-                p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
+                //p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
+                pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC.at(data.nnzIndex[cc]); 
         }
     }
 }
@@ -1393,8 +1414,16 @@ void MAC_Grid::classifyCells( bool useBoundary )
 //         (2) classify velocity cells as either bulk or interfacial, depending on
 //             its neighbouring pressure cells 
 //
+//  @param pFull full pressure array
+//  @param p component pressure array
+//  @param pGCFull ghost cell full pressure array, this array will be resized depending on classification results.
+//  @param pGC same as above, for ghost cell components
+//  @param v velocities
+//  @param useBoundary
+//  @param verbose If classification results are printed.
+//
 //##############################################################################
-void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose)
+void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose)
 {
     const int numPressureCells = _pressureField.numCells(); 
     Vector3d cellPos;
@@ -1479,6 +1508,8 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
                     // We have a bulk neighbour so this is a ghost cell
                     newIsGhostCell = true; 
                     _ghostCells.push_back(cell_idx); 
+                    IntArray children; 
+                    _ghostCellsChildren.push_back(children); 
                     break;
                 }
             }
@@ -1493,14 +1524,20 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
         }
         ComputeGhostCellInverseMap(); 
     }
+
     // step 4b : classify velocity cells for rasterized boundary
+    pGCFull.clear(); 
+    _ghostCellParents.clear(); 
+    _ghostCellPositions.clear(); 
     for (int dim=0; dim<3; ++dim)
     {
         _velocityInterfacialCells[dim].clear(); 
         _interfacialBoundaryIDs[dim].clear(); 
         _interfacialBoundaryDirections[dim].clear(); 
         _interfacialBoundaryCoefficients[dim].clear(); 
+        _interfacialGhostCellID[dim].clear(); 
         _velocityBulkCells[dim].clear(); 
+        pGC[dim].clear(); 
     }
     int numSolidCells[3] = {0, 0, 0}; 
     for (int dimension = 0; dimension < 3; dimension++)
@@ -1573,6 +1610,20 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+
+                // initialize a ghost cell dedicated to this interfacial cell
+                const int ghostCellIndex = pGCFull.size(); 
+                _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
+                Vector3d ghostCellPosition = position;
+                ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
+                _ghostCellParents.push_back(pressure_cell_idx2);
+                _ghostCellPositions.push_back(ghostCellPosition); 
+                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).push_back(ghostCellIndex); 
+
+                pGC[0].push_back(0.0); 
+                pGC[1].push_back(0.0); 
+                pGC[2].push_back(0.0); 
+                pGCFull.push_back(0.0);
             }
             else if ( !_isBulkCell[ pressure_cell_idx1 ]
                     && _isBulkCell[ pressure_cell_idx2 ] )
@@ -1605,6 +1656,20 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+
+                // initialize a ghost cell dedicated to this interfacial cell
+                const int ghostCellIndex = pGCFull.size(); 
+                _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
+                Vector3d ghostCellPosition = position;
+                ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
+                _ghostCellParents.push_back(pressure_cell_idx1);
+                _ghostCellPositions.push_back(ghostCellPosition); 
+                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).push_back(ghostCellIndex); 
+
+                pGC[0].push_back(0.0); 
+                pGC[1].push_back(0.0); 
+                pGC[2].push_back(0.0); 
+                pGCFull.push_back(0.0);
             }
             else // both sides aren't bulk, this is a solid cell
             {

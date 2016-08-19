@@ -41,35 +41,11 @@
 //////////////////////////////////////////////////////////////////////
 class MAC_Grid 
 {
-    public: 
-        // EXPERIMENT cell types FIXME
-        typedef unsigned char CellType; 
-        // bit flags : http://www.cplusplus.com/forum/general/1590/
-        // [1|2|3|4|5|6|7|8]: 
-        //   1: whether its solid cell: enclosed by object using sdf
-        //   2: whether its interface cell: mixed cells (not all solid or all
-        //      fluids) 
-        //   3: if cell has solid on left  in x-direction, 
-        //   4: if cell has solid on right in x-direction.
-        //   5: if cell has solid on left  in y-direction, 
-        //   6: if cell has solid on right in y-direction.
-        //   7: if cell has solid on left  in z-direction, 
-        //   8: if cell has solid on right in z-direction.
-        enum InterfacialInfo {  IS_SOLID     =0x80,
-                                IS_INTERFACE =0x40,
-                                X_SOLID_ON_LEFT =0x20, 
-                                X_SOLID_ON_RIGHT=0x10, 
-                                Y_SOLID_ON_LEFT =0x08, 
-                                Y_SOLID_ON_RIGHT=0x04, 
-                                Z_SOLID_ON_LEFT =0x02, 
-                                Z_SOLID_ON_RIGHT=0x01, }; 
-
     private:
         typedef TriangleMesh<REAL>  TriMesh;
 
         // used for jacobi iteration of the ghost cell values in pressure update
-        struct JacobiIterationData
-        {
+        struct JacobiIterationData {
             std::vector<int>    nnzIndex; 
             std::vector<double> nnzValue; 
             double              RHS; 
@@ -86,10 +62,8 @@ class MAC_Grid
         ScalarField              _velocityField[ 3 ];
 
         // isBulkCell and isGhostCell refer to cells in the pressure grid
-        BoolArray                _isBulkCell;
-        BoolArray                _isGhostCell;
-        // TODO not yet implemented bitwise operation for types
-        std::vector<CellType>    _cellTypes; 
+        BoolArray                   _isBulkCell;
+        BoolArray                   _isGhostCell;
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
@@ -100,6 +74,7 @@ class MAC_Grid
 
         IntArray                 _bulkCells;
         IntArray                 _ghostCells;
+        std::vector<IntArray>    _ghostCellsChildren; 
 
         BoolArray                _pressureCellHasValidHistory; 
         BoolArray                _velocityCellHasValidHistory[3]; 
@@ -109,13 +84,15 @@ class MAC_Grid
         IntArray                 _velocityBulkCells[ 3 ];
         IntArray                 _velocityInterfacialCells[ 3 ];
 
-        IntArray                 _pressureGhostCells;
-
         IntArray                 _interfacialBoundaryIDs[ 3 ];
         FloatArray               _interfacialBoundaryDirections[ 3 ];
         FloatArray               _interfacialBoundaryCoefficients[ 3 ];
-
         IntArray                 _containingObject;
+
+        // for subdivided ghost cells
+        IntArray                 _interfacialGhostCellID[ 3 ]; // map to ghost cell index
+        IntArray                 _ghostCellParents;
+        std::vector<Vector3d>    _ghostCellPositions; 
 
         // Dimensionality of the data we are working with
         int                      _N;
@@ -201,7 +178,7 @@ class MAC_Grid
 
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
-        void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+        void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
@@ -254,7 +231,7 @@ class MAC_Grid
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void visualizeClassifiedCells(); 
-        void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
     private:
         // Classifies cells as either a bulk cell, ghost cell, or

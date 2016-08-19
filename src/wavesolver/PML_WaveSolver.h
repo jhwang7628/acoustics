@@ -64,6 +64,8 @@ class PML_WaveSolver : public Solver
         MATRIX                   _v[ 3 ];
         MATRIX                   _p[ 3 ];
         MATRIX                   _pFull;
+        FloatArray               _pGhostCells[ 3 ]; 
+        FloatArray               _pGhostCellsFull;
 
         MATRIX                   _pLastTimestep;      // for restarting
         MATRIX                   _pThisTimestep;      // for restarting
