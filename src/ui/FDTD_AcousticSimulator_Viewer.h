@@ -75,7 +75,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
-            InitializeBEMSolver();
+            if (_simulator->SceneHasModalObject())
+                InitializeBEMSolver();
         }
 
         inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
