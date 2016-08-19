@@ -816,6 +816,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     REAL bestChildDistance = std::numeric_limits<REAL>::max(); 
                     for (int c_idx=0; c_idx<N_children; ++c_idx) 
                     {
+                        if (gcChildren == -1) // child does not exist, skip
+                            continue; 
                         const Vector3d &gcChildrenPosition = _ghostCellPositions.at(gcChildren.at(c_idx)); 
                         const REAL distanceSqr = (gcChildrenPosition - imagePoint).lengthSqr(); 
                         if ( distanceSqr < bestChildDistance)
@@ -1508,7 +1510,7 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                     // We have a bulk neighbour so this is a ghost cell
                     newIsGhostCell = true; 
                     _ghostCells.push_back(cell_idx); 
-                    IntArray children; 
+                    IntArray children(6, -1);  // always fully subdivided
                     _ghostCellsChildren.push_back(children); 
                     break;
                 }
@@ -1618,7 +1620,9 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
                 _ghostCellParents.push_back(pressure_cell_idx2);
                 _ghostCellPositions.push_back(ghostCellPosition); 
-                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).push_back(ghostCellIndex); 
+
+                const int childArrayPosition = dimension*2 + 1; // this is the childArrayPosition-th child in the tree
+                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
 
                 pGC[0].push_back(0.0); 
                 pGC[1].push_back(0.0); 
@@ -1664,7 +1668,9 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
                 _ghostCellParents.push_back(pressure_cell_idx1);
                 _ghostCellPositions.push_back(ghostCellPosition); 
-                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).push_back(ghostCellIndex); 
+
+                const int childArrayPosition = dimension*2; // this is the childArrayPosition-th child in the tree
+                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
 
                 pGC[0].push_back(0.0); 
                 pGC[1].push_back(0.0); 
