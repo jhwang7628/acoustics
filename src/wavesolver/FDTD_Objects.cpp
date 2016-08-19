@@ -169,7 +169,7 @@ ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vec
     for (int ii=0; ii<maxIteration; ++ii)
     {
         _rigidObjects[objectID]->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distanceTravelled); 
-        accumulatedBoundaryConditionValue += -distanceTravelled*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *(-density);
+        accumulatedBoundaryConditionValue += 2.0*fabs(distanceTravelled)*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
         objectID = OccupyByObject(reflectedPoint); 
         if (objectID == -1)
             return true; 

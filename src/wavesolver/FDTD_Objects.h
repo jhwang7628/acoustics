@@ -27,6 +27,7 @@ class FDTD_Objects
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
         inline const std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects() const {return _rigidObjects;}
         inline std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects(){return _rigidObjects;}
+        inline bool HasModalObject() const {bool has=false; for (const auto &object : _rigidObjects) has = (has || object->IsModalObject()); return has;}
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
         void AddObject(const std::string &objectName, RigidSoundObjectPtr &object); 
