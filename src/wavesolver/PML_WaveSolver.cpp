@@ -409,9 +409,9 @@ void PML_WaveSolver::stepLeapfrog()
 
     // Update velocity in each direction
     _gradientTimer.start();
-    _grid.PML_velocityUpdate( _pFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
-    _grid.PML_velocityUpdate( _pFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
-    _grid.PML_velocityUpdate( _pFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
+    _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
     _gradientTimer.pause();
 
     // Use the new velocity to update pressure

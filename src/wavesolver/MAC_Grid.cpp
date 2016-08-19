@@ -259,12 +259,14 @@ void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
     }
 }
 
-void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
+void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
 {
     const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
     const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
     const ScalarField     &field                        = _velocityField[ dimension ];
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
+    const REAL             minus_one_over_density       = -1.0 / density; 
+    const REAL             one_over_three_quarters_cellsize      = 1.0 / (0.75 * _waveSolverSettings->cellSize); 
 
     // Handle all bulk cells
     PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, bulkCells); 
@@ -272,7 +274,50 @@ void MAC_Grid::PML_velocityUpdate( const MATRIX &p, MATRIX &v, int dimension, RE
     // Handle interfacial cells
     if (_useGhostCellBoundary)
     {
-        PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, interfacialCells); 
+        //PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, interfacialCells); 
+        #ifdef USE_OPENMP
+        #pragma omp parallel for schedule(static) default(shared)
+        #endif
+        for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size(); interfacial_cell_idx++ )
+        {
+            const int cell_idx = interfacialCells[ interfacial_cell_idx ];
+            const REAL boundaryDirection = _interfacialBoundaryDirections[dimension].at(interfacial_cell_idx); 
+
+            // fetch regular pressure cell and subdivided ghost cell
+            const Tuple3i velocityCellIndices = field.cellIndex(cell_idx); 
+            Tuple3i leftPressureCellIndices = velocityCellIndices; 
+            leftPressureCellIndices[dimension] -= 1;
+            Tuple3i rightPressureCellIndices = velocityCellIndices; 
+
+            // one index points to regular pressure cell, the other to
+            // subdivided ghost cell
+            int h_over_2_cell_index = 0, h_over_4_cell_index = 0; 
+            int gcParent; 
+            if (boundaryDirection > 0.5)  // it can take only 1 or -1 
+            {
+                h_over_2_cell_index = _pressureField.cellIndex(rightPressureCellIndices); 
+                gcParent = _pressureField.cellIndex(leftPressureCellIndices); 
+                // get child index in ghost cell pressure array. its position
+                // in the tree depends on the boundaryDirection
+                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2 + 1); 
+            }
+            else if (boundaryDirection < -0.5)
+            {
+                h_over_2_cell_index = _pressureField.cellIndex(leftPressureCellIndices); 
+                gcParent = _pressureField.cellIndex(rightPressureCellIndices); 
+                // get child index in ghost cell pressure array. its position
+                // in the tree depends on the boundaryDirection
+                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2); 
+            }
+            else
+            {
+                throw std::runtime_error("**ERROR** boundary direction undefined."); 
+            }
+
+            // finite-difference estimate of acceleration using pressure at the
+            // two locations.
+            v(cell_idx, 0) += timeStep * minus_one_over_density * (p(h_over_2_cell_index, 0)-pGC.at(h_over_4_cell_index)) * one_over_three_quarters_cellsize * boundaryDirection; 
+        }
     }
     else
     {
@@ -816,13 +861,14 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     REAL bestChildDistance = std::numeric_limits<REAL>::max(); 
                     for (int c_idx=0; c_idx<N_children; ++c_idx) 
                     {
-                        if (gcChildren == -1) // child does not exist, skip
+                        const int child = gcChildren.at(c_idx); 
+                        if (child == -1) // child does not exist, skip
                             continue; 
-                        const Vector3d &gcChildrenPosition = _ghostCellPositions.at(gcChildren.at(c_idx)); 
+                        const Vector3d &gcChildrenPosition = _ghostCellPositions.at(child); 
                         const REAL distanceSqr = (gcChildrenPosition - imagePoint).lengthSqr(); 
                         if ( distanceSqr < bestChildDistance)
                         {
-                            bestChild = gcChildren.at(c_idx); 
+                            bestChild = child; 
                             bestChildDistance = distanceSqr; 
                         }
                     }

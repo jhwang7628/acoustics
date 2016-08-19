@@ -153,7 +153,7 @@ class MAC_Grid
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
-        void PML_velocityUpdate( const MATRIX &p,
+        void PML_velocityUpdate( const MATRIX &p, const FloatArray &pGC, 
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
 
