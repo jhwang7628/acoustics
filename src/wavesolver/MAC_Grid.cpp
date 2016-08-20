@@ -938,6 +938,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
 
+    // TODO bug found: its the off-diagonal entries being no longer much
+    // smaller than one. Found this by comparing to regular ghost cell.
     const int maxIteration = 200;
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
