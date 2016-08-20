@@ -295,7 +295,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
         int closestTriangleIndex; 
         Vector3d projectedPoint; // object space
-        distanceTravelled = 2.0 * _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
         boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
         erectedNormal = boundaryPoint - originalPoint; // world space
         reflectedPoint = originalPoint + erectedNormal; 
