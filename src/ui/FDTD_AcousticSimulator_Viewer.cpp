@@ -551,12 +551,12 @@ keyPressEvent(QKeyEvent *e)
         if (_fixedSliceColorMapRange) 
         {
             REAL cMin, cMax; 
-            while (true)
+            std::cout << "Input colormap range <cmin> <cmax>: " << std::flush; 
+            while (std::cin >> cMin >> cMax)
             {
-                std::cout << "Input colormap range <cmin> <cmax>: " << std::flush; 
-                std::cin >> cMin >> cMax; 
                 if (cMin < cMax)
                     break; 
+                std::cout << "Invalid range. Input colormap range <cmin> <cmax>: " << std::flush; 
             }
             _sliceColorMapRange.x = cMin; 
             _sliceColorMapRange.y = cMax;  
