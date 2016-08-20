@@ -302,7 +302,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         erectedNormal.normalize();  // keep the behavior same as the distance field based query
     }
 
-#ifdef DEBUG
+//#ifdef DEBUG
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
@@ -314,7 +314,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
             _debugArrowStart.push_back(originalPoint); 
             _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
         }
-#endif
+//#endif
 
     return reflectSuccess;
 }
