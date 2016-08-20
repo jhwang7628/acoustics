@@ -822,9 +822,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
         // hasGC  : has self as interpolation stencil
-        // coupled: if at least one interpolation stencil is another ghost-cell 
         int hasGC=-1; 
-        //int coupled=0; 
 
         // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
         Eigen::MatrixXd V(8,8); 
@@ -858,8 +856,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     const IntArray &gcChildren = _ghostCellsChildren.at(gcArrayPosition); 
 
                     const int N_children = gcChildren.size(); 
-                    assert(N_children>0); 
-
                     int bestChild = -1; 
                     REAL bestChildDistance = std::numeric_limits<REAL>::max(); 
                     for (int c_idx=0; c_idx<N_children; ++c_idx) 
@@ -869,7 +865,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                             continue; 
                         const Vector3d &gcChildrenPosition = _ghostCellPositions.at(child); 
                         const REAL distanceSqr = (gcChildrenPosition - imagePoint).lengthSqr(); 
-                        if ( distanceSqr < bestChildDistance)
+                        if (distanceSqr < bestChildDistance)
                         {
                             bestChild = child; 
                             bestChildDistance = distanceSqr; 
@@ -918,14 +914,15 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         //              << "problematic matrix: \n"
         //              << V << std::endl;
         //}
-        
+       
+        // this step forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
         for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
         {
             if (fabs(beta(coupledGhostCellsNeighbours[cc])) > 1E-14)
             {
-              jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
-              jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
+                jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
+                jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
             }
         } 
 
@@ -941,7 +938,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
 
-    const int maxIteration = 50;
+    const int maxIteration = 200;
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         #ifdef USE_OPENMP
@@ -949,7 +946,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         #endif
         for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ghost_cell_idx++) 
         {
-            const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
+            const JacobiIterationData &data = _ghostCellCoupledData.at(ghost_cell_idx); 
             // if there are nnz, update them 
             //p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
             pGC.at(ghost_cell_idx) = data.RHS; 
@@ -957,6 +954,27 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                 //p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
                 pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC.at(data.nnzIndex[cc]); 
         }
+    }
+    
+    // check the residual of the linear system
+    const bool checkResidual = true; 
+    if (checkResidual)
+    {
+        Eigen::VectorXd residual(N_ghostCells); 
+        REAL maxOffDiagonal = std::numeric_limits<REAL>::min(); 
+        for (int r_idx=0; r_idx<N_ghostCells; ++r_idx)
+        {
+            const JacobiIterationData &data = _ghostCellCoupledData.at(r_idx); 
+            residual(r_idx) = data.RHS;
+            const int N_entries = data.nnzIndex.size(); 
+            residual(r_idx) -= pGC.at(r_idx); 
+            for (int e_idx=0; e_idx<N_entries; ++e_idx)
+            {
+                residual(r_idx) -= data.nnzValue[e_idx]*pGC.at(data.nnzIndex[e_idx]); 
+                maxOffDiagonal = max(maxOffDiagonal, fabs(data.nnzValue[e_idx])); 
+            }
+        }
+        std::cout << " Jacobi iteration for ghost cell: N=" << maxIteration << "; residual = [" << residual.minCoeff() << ", " << residual.maxCoeff() << "]; max off-diagonal = " << maxOffDiagonal << std::endl;
     }
 }
 
