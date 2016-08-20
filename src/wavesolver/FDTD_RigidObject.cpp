@@ -302,6 +302,20 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         erectedNormal.normalize();  // keep the behavior same as the distance field based query
     }
 
+#ifdef DEBUG
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+        {
+            //const Vector3d &vertex = closestPoint; 
+            //const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
+            //const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
+            // write these special points for debugging purpose 
+            _debugArrowStart.push_back(originalPoint); 
+            _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
+        }
+#endif
+
     return reflectSuccess;
 }
 

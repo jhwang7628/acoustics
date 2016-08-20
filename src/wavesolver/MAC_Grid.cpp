@@ -314,6 +314,9 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
                 throw std::runtime_error("**ERROR** boundary direction undefined."); 
             }
 
+            if (h_over_4_cell_index == -1) 
+                throw std::runtime_error("**ERROR** queried child node does not exist."); 
+
             // finite-difference estimate of acceleration using pressure at the
             // two locations.
             v(cell_idx, 0) += timeStep * minus_one_over_density * (p(h_over_2_cell_index, 0)-pGC.at(h_over_4_cell_index)) * one_over_three_quarters_cellsize * boundaryDirection; 
@@ -791,10 +794,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
 
-    _ghostCellCoupledData.clear(); 
-    _ghostCellCoupledData.resize(_ghostCells.size()); 
-
     const int N_ghostCells = _ghostCellPositions.size(); 
+    _ghostCellCoupledData.clear(); 
+    _ghostCellCoupledData.resize(N_ghostCells); 
+
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -872,6 +875,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                             bestChildDistance = distanceSqr; 
                         }
                     }
+                    assert(bestChild != -1); 
 
                     coupledGhostCells.push_back(bestChild); 
                     //coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
@@ -943,7 +947,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         #ifdef USE_OPENMP
         #pragma omp parallel for schedule(static) default(shared)
         #endif
-        for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
+        for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ghost_cell_idx++) 
         {
             const JacobiIterationData &data = _ghostCellCoupledData[ghost_cell_idx]; 
             // if there are nnz, update them 
@@ -1532,9 +1536,10 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
     }
 
     // step 4a : classify pressure ghost cells
-    if (_useGhostCellBoundary) 
+    //if (_useGhostCellBoundary)  // FIXME debug 
     {
         _ghostCells.clear(); 
+        _ghostCellsChildren.clear(); 
 
         // examine ghost cells 
         for ( int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx )
@@ -1667,7 +1672,7 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 _ghostCellParents.push_back(pressure_cell_idx2);
                 _ghostCellPositions.push_back(ghostCellPosition); 
 
-                const int childArrayPosition = dimension*2 + 1; // this is the childArrayPosition-th child in the tree
+                const int childArrayPosition = dimension*2; // this is the childArrayPosition-th child in the tree
                 _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
 
                 pGC[0].push_back(0.0); 
@@ -1715,8 +1720,8 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 _ghostCellParents.push_back(pressure_cell_idx1);
                 _ghostCellPositions.push_back(ghostCellPosition); 
 
-                const int childArrayPosition = dimension*2; // this is the childArrayPosition-th child in the tree
-                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
+                const int childArrayPosition = dimension*2 + 1; // this is the childArrayPosition-th child in the tree
+                _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).at(childArrayPosition) = ghostCellIndex; 
 
                 pGC[0].push_back(0.0); 
                 pGC[1].push_back(0.0); 
@@ -1751,6 +1756,16 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
     }
+
+
+    // FIXME debug
+    const int N_gc = _ghostCellsChildren.size(); 
+    for (int g_idx=0; g_idx<N_gc; ++g_idx)
+    {
+        std::cout << g_idx << ": "; 
+        STL_Wrapper::PrintVectorContent(std::cout, _ghostCellsChildren.at(g_idx)); 
+    }
+    std::cout << std::flush;
 }
 
 //##############################################################################
