@@ -57,8 +57,16 @@ init()
     //setGridIsDrawn();
     SetAllKeyDescriptions();
     setAnimationPeriod(40); // in milliseconds
-
     init_gl();
+
+    // determine if this program is run remotely
+    char *vDISPLAY = getenv("DISPLAY"); 
+    if (strcmp(vDISPLAY, ":0") != 0) 
+    {
+        _remoteConnection = true;
+        std::cout << "Remote connection detected. Some functions might be skipped.\n";
+    }
+
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
 }
 
@@ -93,9 +101,13 @@ draw()
     DrawDebugCin();
     DrawSlices(_sliceDataPointer); 
 
-    glColor3f(1.0, 1.0, 1.0);
-    drawText(10, height()-20, _message); 
-    drawText(10, height()-40, _messageColormap); 
+    // for some reason drawText causes bug if run remotely
+    if (!_remoteConnection)
+    {
+        glColor3f(1.0, 1.0, 1.0);
+        drawText(10, height()-20, _message); 
+        drawText(10, height()-40, _messageColormap); 
+    }
 
     glLineWidth(3.0f);
     if (_drawBox)

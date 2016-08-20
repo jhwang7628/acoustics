@@ -25,6 +25,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
     private: 
         SimulatorPtr            _simulator; 
 
+        bool                    _remoteConnection = false; 
         int                     _currentFrame = 0;
         QString                 _message; 
         QString                 _messageSelection;
