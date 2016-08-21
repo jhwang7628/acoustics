@@ -4,6 +4,7 @@
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <wavesolver/FDTD_RigidObject_Animator.h>
+#include <wavesolver/WaterVibrationalSource.h>
 #include <geometry/TriangleMeshKDTree.hpp>
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
@@ -159,19 +160,28 @@ void Test_TriangleMeshKDTree()
 }
 
 //##############################################################################
+void TestWaterVibrationalSource()
+{
+    std::cout << "TestWaterVibrationalSource()\n";
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //FDTD_AcousticSimulator simulator(xmlName);
+    //simulator.InitializeSolver(); 
+}
+
+//##############################################################################
 int main(int argc, char ** argv)
 {
     //TestBoundingBox();
     //TestParseMeshList(); 
     //TestScalarFieldSubindices();
-    
     //TestFDTD_RigidObject_Animator();
-    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    if (argc>1) 
-        xmlName = std::string(argv[1]);
-    TestAcousticSimulatorRun(xmlName); 
-
     //Test_TriangleMeshKDTree();
+    TestWaterVibrationalSource();
+        
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //if (argc>1) 
+    //    xmlName = std::string(argv[1]);
+    //TestAcousticSimulatorRun(xmlName); 
 
     return 0;
 }

@@ -2,6 +2,8 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 
+//##############################################################################
+//##############################################################################
 ModalVibrationalSource::
 ModalVibrationalSource(RigidObjectPtr owner)
     : VibrationalSource(owner) 
