@@ -93,6 +93,7 @@ class MAC_Grid
         IntArray                 _interfacialGhostCellID[ 3 ]; // map to ghost cell index
         IntArray                 _ghostCellParents;
         std::vector<Vector3d>    _ghostCellPositions; 
+        IntArray                 _ghostCellBoundaryIDs; 
 
         // Dimensionality of the data we are working with
         int                      _N;

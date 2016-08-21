@@ -153,22 +153,17 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
 //                                     by travelled distance for all steps
 //##############################################################################
 bool FDTD_Objects::
-ReflectAgainstAllBoundaries(const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration)
+ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration)
 {
-    int objectID = OccupyByObject(originalPoint);
+    assert(startObjectID >= 0);
+    int objectID = startObjectID;
     accumulatedBoundaryConditionValue = 0.0;
-    if (objectID == -1)  // the input point is not inside any objects in the scene
-    {
-        reflectedPoint = originalPoint; 
-        return true; 
-    }
-
     Vector3d intermediatePoint; 
     REAL distanceTravelled; 
     intermediatePoint = originalPoint; 
     for (int ii=0; ii<maxIteration; ++ii)
     {
-        _rigidObjects[objectID]->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distanceTravelled); 
+        _rigidObjects.at(objectID)->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distanceTravelled); 
         accumulatedBoundaryConditionValue += 2.0*fabs(distanceTravelled)*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
         objectID = OccupyByObject(reflectedPoint); 
         if (objectID == -1)

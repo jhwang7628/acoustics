@@ -807,6 +807,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 
         const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
+        const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
         //const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
         //const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
         //const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
@@ -815,7 +816,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         // find point BI and IP in the formulation
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL accumulatedBoundaryConditionValue; 
-        _objects->ReflectAgainstAllBoundaries(cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
+        _objects->ReflectAgainstAllBoundaries(boundaryObject, cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -904,16 +905,28 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
         Eigen::VectorXd beta = svd.solve(b); 
         //Eigen::VectorXd beta = V.householderQr().solve(b); 
-        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-        //if (conditionNumber > 1E5 && replaced) 
-        //{
-        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
-        //              << "            the solution can be inaccurate.\n"
-        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
-        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
-        //              << "problematic matrix: \n"
-        //              << V << std::endl;
-        //}
+        const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+        if (conditionNumber > 1E10) 
+        {
+            std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
+                      << "            the solution can be inaccurate.\n"
+                      << "largest  singular value = " << svd.singularValues()(0) << "\n"
+                      << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
+                      << "problematic matrix: \n"
+                      << V << std::endl;
+
+            // FIXME debug:
+            std::cout << "neighbour information:\n";
+            for (size_t n_idx=0; n_idx<neighbours.size(); ++n_idx)
+            {
+                std::cout << neighbours[n_idx] << ": " 
+                          << "isGhostCell = " << _isGhostCell[neighbours[n_idx]]
+                          << "position = " << _pressureField.cellPosition(neighbours[n_idx]) << std::endl;
+            }
+        }
        
         // this step forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
@@ -1602,6 +1615,7 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
     pGCFull.clear(); 
     _ghostCellParents.clear(); 
     _ghostCellPositions.clear(); 
+    _ghostCellBoundaryIDs.clear(); 
     for (int dim=0; dim<3; ++dim)
     {
         _velocityInterfacialCells[dim].clear(); 
@@ -1691,6 +1705,7 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
                 _ghostCellParents.push_back(pressure_cell_idx2);
                 _ghostCellPositions.push_back(ghostCellPosition); 
+                _ghostCellBoundaryIDs.push_back(boundaryObject); 
 
                 const int childArrayPosition = dimension*2; // this is the childArrayPosition-th child in the tree
                 _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
@@ -1739,6 +1754,7 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
                 _ghostCellParents.push_back(pressure_cell_idx1);
                 _ghostCellPositions.push_back(ghostCellPosition); 
+                _ghostCellBoundaryIDs.push_back(boundaryObject); 
 
                 const int childArrayPosition = dimension*2 + 1; // this is the childArrayPosition-th child in the tree
                 _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).at(childArrayPosition) = ghostCellIndex; 
