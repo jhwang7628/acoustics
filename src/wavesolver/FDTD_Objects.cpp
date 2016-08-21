@@ -156,19 +156,28 @@ bool FDTD_Objects::
 ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration)
 {
     assert(startObjectID >= 0);
+
+    // reflection for fixed amount of times, can break early if any
+    // intermediate point is outside of all objects (not first iteration
+    // though)
+    REAL distance; 
     int objectID = startObjectID;
     accumulatedBoundaryConditionValue = 0.0;
-    Vector3d intermediatePoint; 
-    REAL distanceTravelled; 
-    intermediatePoint = originalPoint; 
+    Vector3d intermediatePoint = originalPoint; 
     for (int ii=0; ii<maxIteration; ++ii)
     {
-        _rigidObjects.at(objectID)->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distanceTravelled); 
-        accumulatedBoundaryConditionValue += 2.0*fabs(distanceTravelled)*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+        _rigidObjects.at(objectID)->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distance); 
+        if (distance < 0) // originalPoint was inside the object
+            accumulatedBoundaryConditionValue += -2.0*distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+        else if (distance >= 0) // originalPoint was outside the object
+            accumulatedBoundaryConditionValue += distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+
+        // if new reflectedPoint is outside object, break the loop
         objectID = OccupyByObject(reflectedPoint); 
         if (objectID == -1)
             return true; 
-        intermediatePoint = reflectedPoint; 
+        else
+            intermediatePoint = reflectedPoint; 
     }
     return false; 
 }
