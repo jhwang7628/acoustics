@@ -87,7 +87,8 @@ void TestAcousticSimulatorRun(const std::string &xmlName)
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
     //simulator.TestAnimateObjects(1);
-    simulator.Run();
+    //simulator.Run();
+    simulator.RunForSteps(1);
     //simulator.TestAllComponents();
 }
 
@@ -209,12 +210,12 @@ int main(int argc, char ** argv)
     //TestFDTD_RigidObject_Animator();
     //Test_TriangleMeshKDTree();
     //TestWaterVibrationalSource();
-    TestWavRead(); 
+    //TestWavRead(); 
         
-    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    //if (argc>1) 
-    //    xmlName = std::string(argv[1]);
-    //TestAcousticSimulatorRun(xmlName); 
+    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    if (argc>1) 
+        xmlName = std::string(argv[1]);
+    TestAcousticSimulatorRun(xmlName); 
 
     return 0;
 }

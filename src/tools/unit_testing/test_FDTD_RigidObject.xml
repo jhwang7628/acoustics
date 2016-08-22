@@ -37,11 +37,29 @@
                 mode_file="/home/jui-hsien/code/acoustics/work/plate_drop_long/proj.modes"
                 modal_ODE_step_frequency="176400"
                 /> 
-                -->
-            <!--
+            <rigid_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/big_plane"
+                object_prefix="big_plane_rotated" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                /> 
             <rigid_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/small_plane"
-                object_prefix="small_plane_rotated" 
+                object_prefix="small_plane_rotated2" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                /> 
+            <rigid_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/tank"
+                object_prefix="tank" 
                 id="0" 
                 fieldresolution="400"
                 scale="1.0" 
@@ -50,6 +68,29 @@
                 initial_position_z="0.0"
                 /> 
                 -->
+            <water_surface_object
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/tank"
+                object_prefix="tank_water" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                input_recording="/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav"
+                /> 
+            <!--
+            <water_surface_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
+                object_prefix="small_ball_r_0p05" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                input_recording="/home/jui-hsien/code/acoustics/work/droplet_recordings/test.wav"
+                /> 
             <rigid_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
                 object_prefix="small_ball_r_0p05" 
@@ -60,13 +101,14 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 /> 
+                -->
     </scene> 
     <solver
         sound_speed="343.0"
         density="1.184" 
         cellsize="0.01" 
-        gridresolution="70"
-        stop_time="0.05"
+        gridresolution="50"
+        stop_time="0.0035"
         substeps="1"
         timestepfrequency="176400"
         output_pattern="work/near-field/data_test/test_%s"
@@ -84,7 +126,7 @@
         <gaussian_pressure_source
         source_width_time="0.00005"
         source_position_x="0.0" 
-        source_position_y="0.12" 
+        source_position_y="-0.12" 
         source_position_z="0.0" 
         />
         <gaussian_pressure_source
