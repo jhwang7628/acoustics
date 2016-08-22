@@ -18,8 +18,10 @@ class WavReader
         SF_INFO                     _sfInfo; 
         std::shared_ptr<SNDFILE>    _sndFile; 
 
-        // this contains a list of all signed types supported by sndfile library
-        template<typename TRead> struct type {};
+        template<typename TRead> 
+            struct type {};
+        template<typename TRead>
+            sf_count_t ReadAux(std::vector<T> &data, const int &frames);
         sf_count_t ReadAux(type<double>, std::vector<T> &data, const int &frames);
         sf_count_t ReadAux(type<float>, std::vector<T> &data, const int &frames);
         sf_count_t ReadAux(type<short>, std::vector<T> &data, const int &frames);
@@ -29,9 +31,6 @@ class WavReader
         bool Open(const std::string &wavFile);
         void Close();
         void Read(std::vector<T> &data); 
-
-        template<typename TRead>
-        sf_count_t ReadAux(std::vector<T> &data, const int &frames);
 };
 
 //##############################################################################
