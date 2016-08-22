@@ -10,6 +10,7 @@ set(SNDGEN_SRC
 
 set(SND_IO_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/WavReader.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/WavReader.cpp
 
     CACHE FILE "Sound IO Sources")
 

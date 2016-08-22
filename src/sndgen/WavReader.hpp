@@ -34,12 +34,9 @@ class WavReader
 };
 
 //##############################################################################
-// Deleter for SNDFILE used in smarter pointer.
+// Class helper function declaration
 //##############################################################################
-void DeleteSNDFILE(SNDFILE *sndFile)
-{
-    sf_close(sndFile); 
-}
+void DeleteSNDFILE(SNDFILE *sndFile); 
 
 //##############################################################################
 //##############################################################################
