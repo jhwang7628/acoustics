@@ -30,10 +30,8 @@ class WavReader
         void Close();
         void Read(std::vector<T> &data); 
 
-        // specialized helper function that interfaces sndfile using overload:
-        //   http://stackoverflow.com/questions/5512910/explicit-specialization-of-template-class-member-function
         template<typename TRead>
-        sf_count_t ReadAux(std::vector<T> &data, const int &frames){return ReadAux(type<TRead>(), data, frames);}
+        sf_count_t ReadAux(std::vector<T> &data, const int &frames);
 };
 
 //##############################################################################
@@ -87,6 +85,18 @@ Read(std::vector<T> &data)
 
     const sf_count_t frameCount = ReadAux<T>(data, _sfInfo.frames); 
     std::cout << " Actual frames read: " << frameCount << std::endl;
+}
+
+//#############################################################################
+// This function is a specialized helper function that interfaces sndfile using 
+// overload. Ref:
+//   http://stackoverflow.com/questions/5512910/explicit-specialization-of-template-class-member-function
+//#############################################################################
+template<typename T> template<typename TRead>
+sf_count_t WavReader<T>::
+ReadAux(std::vector<T> &data, const int &frames)
+{
+    return ReadAux(type<TRead>(), data, frames);
 }
 
 //##############################################################################
