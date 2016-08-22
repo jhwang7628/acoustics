@@ -35,7 +35,7 @@ _SetBoundaryConditions()
             const REAL phase = 0.0;
             std::cout << "Add vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
             VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-            objectPtr->AddVibrationalSource(sourcePtr); 
+            //objectPtr->AddVibrationalSource(sourcePtr); 
             //objectPtr->TestObjectBoundaryCondition();
         }
     }

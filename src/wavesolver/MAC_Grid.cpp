@@ -1792,16 +1792,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
     }
-
-
-    // FIXME debug
-    const int N_gc = _ghostCellsChildren.size(); 
-    for (int g_idx=0; g_idx<N_gc; ++g_idx)
-    {
-        std::cout << g_idx << ": "; 
-        STL_Wrapper::PrintVectorContent(std::cout, _ghostCellsChildren.at(g_idx)); 
-    }
-    std::cout << std::flush;
 }
 
 //##############################################################################
@@ -2100,6 +2090,17 @@ void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldN
                 << "   max: " << maxField << "\n" ; 
 
     std::cout << std::flush; 
+}
+
+void MAC_Grid::PrintGhostCellTreeInfo() 
+{
+    const int N_gc = _ghostCellsChildren.size(); 
+    for (int g_idx=0; g_idx<N_gc; ++g_idx)
+    {
+        std::cout << g_idx << ": "; 
+        STL_Wrapper::PrintVectorContent(std::cout, _ghostCellsChildren.at(g_idx)); 
+    }
+    std::cout << std::flush;
 }
 
 std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)

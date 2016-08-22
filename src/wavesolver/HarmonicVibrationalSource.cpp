@@ -22,7 +22,7 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
 //##############################################################################
 //##############################################################################
 REAL HarmonicVibrationalSource::
-EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time) // TODO!
+EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
     throw std::runtime_error("**ERROR** not implemented"); 
 }
