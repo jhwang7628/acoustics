@@ -31,6 +31,7 @@ class WavReader
         bool Open(const std::string &wavFile);
         void Close();
         void Read(std::vector<T> &data); 
+        void ReadChannel(std::vector<T> &data, const int &channel); 
 };
 
 //##############################################################################
@@ -46,6 +47,7 @@ Open(const std::string &wavFile)
 {
     // API: set format to zero before sf_open(), except for the case of RAW file.
     _sfInfo.format = 0;
+    _sfInfo.channels = 0;
     _sndFile.reset(sf_open(wavFile.c_str(), SFM_READ, &_sfInfo), DeleteSNDFILE);
     if (!_sndFile)
         throw std::runtime_error("**ERROR** Cannot open wavfile:" + wavFile); 
@@ -81,6 +83,29 @@ Read(std::vector<T> &data)
 
     const sf_count_t frameCount = ReadAux<T>(data, _sfInfo.frames); 
     std::cout << " Actual frames read: " << frameCount << std::endl;
+}
+
+//##############################################################################
+//##############################################################################
+template<typename T>
+void WavReader<T>::
+ReadChannel(std::vector<T> &data, const int &channel)
+{
+    // create temporary data and read all channels
+    std::vector<T> allData; 
+    Read(allData); 
+
+    // fetch the specific channel
+    if (channel < _sfInfo.channels)
+    {
+        data.resize(_sfInfo.frames); 
+        for (int f_idx=0; f_idx<_sfInfo.frames; ++f_idx)
+            data.at(f_idx) = allData.at(f_idx*_sfInfo.channels + channel); 
+    }
+    else
+    {
+        throw std::runtime_error("**ERROR** Input channel out of bounds."); 
+    }
 }
 
 //#############################################################################
