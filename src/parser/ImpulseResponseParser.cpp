@@ -1,6 +1,7 @@
 #include <wavesolver/GaussianPressureSource.h>
 #include <parser/ImpulseResponseParser.h> 
 #include <io/ImpulseSeriesReader.h>
+#include <wavesolver/WaterVibrationalSource.h> 
 
 //##############################################################################
 // parse meshes from xml into objects 
@@ -22,7 +23,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
 
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response"); 
     GET_FIRST_CHILD_ELEMENT_GUARD(inputRoot, root, "scene"); 
-    
+   
     const std::string rigidSoundObjectNodeName("rigid_sound_object"); 
     const std::string rigidObjectNodeName("rigid_object"); 
 
@@ -68,7 +69,6 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
 
         // load modes from file
         const std::string modeFile = queryRequiredAttr(rigidSoundObjectNode, "mode_file");
-        const std::string parseFile("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
         ModalMaterialList materials; 
         GetModalMaterials(materials); 
         const int materialID = queryRequiredInt(rigidSoundObjectNode, "material_id");
@@ -110,6 +110,40 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
+    }
+
+    // parse and build water surface objects. Right now use rigid object to
+    // test, but water surface might deform so its not suitable.  // TODO
+    const std::string waterSurfaceObjectNodeName("water_surface_object"); 
+    TiXmlElement *waterSurfaceObjectNode;
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(waterSurfaceObjectNode, inputRoot, waterSurfaceObjectNodeName.c_str()); 
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No rigid_object found\n";
+    }
+    while (waterSurfaceObjectNode != NULL)
+    {
+        const int meshID = queryRequiredInt(waterSurfaceObjectNode, "id"); 
+        const std::string meshName = std::to_string(meshID); 
+        const std::string workingDirectory = queryRequiredAttr(waterSurfaceObjectNode, "working_directory"); 
+        const std::string objectPrefix = queryRequiredAttr(waterSurfaceObjectNode, "object_prefix"); 
+        const int sdfResolutionValue = queryRequiredInt(waterSurfaceObjectNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(waterSurfaceObjectNode, "scale", 1.0); 
+        const REAL initialPosition_x = queryOptionalReal(waterSurfaceObjectNode, "initial_position_x", 0.0); 
+        const REAL initialPosition_y = queryOptionalReal(waterSurfaceObjectNode, "initial_position_y", 0.0); 
+        const REAL initialPosition_z = queryOptionalReal(waterSurfaceObjectNode, "initial_position_z", 0.0); 
+        const std::string inputRecordingFile = queryRequiredAttr(waterSurfaceObjectNode, "input_recording"); 
+
+        const bool buildFromTetMesh = false; 
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
+        VibrationalSourcePtr sourcePtr(new WaterVibrationalSource(object)); 
+        object->AddVibrationalSource(sourcePtr); 
+        objects->AddObject(meshName, object); 
+        waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
     }
 }
 

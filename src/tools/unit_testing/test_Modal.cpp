@@ -187,6 +187,6 @@ int main()
     //TestRigidSoundObject(); 
     //TestMaterialParser();
     //TestModalODESolver(); 
-    TestBEMSolution();
+    //TestBEMSolution();
     return 0; 
 }

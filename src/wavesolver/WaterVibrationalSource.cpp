@@ -12,21 +12,47 @@ WaterVibrationalSource(RigidObjectPtr owner)
 
 //##############################################################################
 //##############################################################################
-WaterVibrationalSource::
-REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+REAL WaterVibrationalSource::
+Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+{
+    return 0.0; 
+}
+
+//##############################################################################
+//##############################################################################
+REAL WaterVibrationalSource::
+EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
+{
+    return 0.0; 
+}
+
+//##############################################################################
+//##############################################################################
+REAL WaterVibrationalSource::
+EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
+{
+    return 0.0; 
+}
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSource::
+Initialize(const std::string &wavFile)
+{
+    ReadOscillatorFromWav(wavFile); 
+    ComputeVelocityAndAcceleration();
+}
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSource::
+ReadOscillatorFromWav(const std::string &wavFile)
 {
 }
 
 //##############################################################################
 //##############################################################################
-WaterVibrationalSource::
-REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
-{
-}
-
-//##############################################################################
-//##############################################################################
-WaterVibrationalSource::
-REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
+void WaterVibrationalSource::
+ComputeVelocityAndAcceleration()
 {
 }
