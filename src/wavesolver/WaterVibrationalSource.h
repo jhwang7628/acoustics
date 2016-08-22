@@ -14,12 +14,13 @@ class WaterVibrationalSource : public VibrationalSource
 {
     private: 
         std::shared_ptr<TriangleMesh<REAL> >    _surfaceMesh; 
+        REAL                                    _oscillatorSampleRate; 
         FloatArray                              _oscillatorDisplacement;  
         FloatArray                              _oscillatorVelocity; 
         FloatArray                              _oscillatorAcceleration;
 
     public:
-        WaterVibrationalSource(RigidObjectPtr owner);
+        WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile);
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
