@@ -8,6 +8,11 @@ set(SNDGEN_SRC
 
     CACHE FILE "SoundGen Sources")
 
+set(SND_IO_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/WavReader.hpp
+
+    CACHE FILE "Sound IO Sources")
+
 set(SNDPLAYER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/player/SoundPlayer.h         ${CMAKE_CURRENT_SOURCE_DIR}/player/SoundPlayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/player/SineWavePlayer.h

@@ -85,6 +85,7 @@ if (BUILD_UNIT_TESTING)
         ${RIGID_SRC}
         ${RIGID_IO_SRC} 
         ${RIGID_PARSER_SRC}
+        ${SND_IO_SRC}
         test_FDTD_AcousticSimulator.cpp
         ) 
 
@@ -180,6 +181,7 @@ if (BUILD_UNIT_TESTING)
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
+        sndfile
         boost_thread
         boost_system                    
         boost_timer
