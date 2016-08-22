@@ -1,6 +1,7 @@
 #ifndef STL_WRAPPER_H
 #define STL_WRAPPER_H
 
+#include <iostream>
 #include <algorithm>
 #include <vector> 
 
