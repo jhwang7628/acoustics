@@ -140,7 +140,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const bool buildFromTetMesh = false; 
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        VibrationalSourcePtr sourcePtr(new WaterVibrationalSource(object)); 
+        VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSource>(object, inputRecordingFile); 
         object->AddVibrationalSource(sourcePtr); 
         objects->AddObject(meshName, object); 
         waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
