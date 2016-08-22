@@ -11,6 +11,7 @@
 #include <geometry/BoundingBox.h> 
 #include <boost/timer/timer.hpp>
 #include <io/TglMeshReader.hpp>
+#include <sndgen/WavReader.hpp>
 
 //##############################################################################
 // Submodules 
@@ -160,12 +161,43 @@ void Test_TriangleMeshKDTree()
 }
 
 //##############################################################################
-void TestWaterVibrationalSource()
+void TestWavRead()
 {
-    std::cout << "TestWaterVibrationalSource()\n";
-    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    //FDTD_AcousticSimulator simulator(xmlName);
-    //simulator.InitializeSolver(); 
+    std::vector<double> data;
+    WavReader<double> reader; 
+    const std::string wavFile("/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav");
+    reader.Open(wavFile); 
+    reader.Read(data); 
+    reader.Close(); 
+    STL_Wrapper::PrintVectorContent(std::cout, data, 10); 
+    std::cout << std::endl;
+
+    std::vector<float> f_data;
+    WavReader<float> f_reader; 
+    //const std::string wavFile("/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav");
+    f_reader.Open(wavFile); 
+    f_reader.Read(f_data); 
+    f_reader.Close(); 
+    STL_Wrapper::PrintVectorContent(std::cout, f_data, 10); 
+    std::cout << std::endl;
+
+    std::vector<short> s_data;
+    WavReader<short> s_reader; 
+    //const std::string wavFile("/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav");
+    s_reader.Open(wavFile); 
+    s_reader.Read(s_data); 
+    s_reader.Close(); 
+    STL_Wrapper::PrintVectorContent(std::cout, s_data, 10); 
+    std::cout << std::endl;
+
+    std::vector<int> i_data;
+    WavReader<int> i_reader; 
+    //const std::string wavFile("/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav");
+    i_reader.Open(wavFile); 
+    i_reader.Read(i_data); 
+    i_reader.Close(); 
+    STL_Wrapper::PrintVectorContent(std::cout, i_data, 10); 
+    std::cout << std::endl;
 }
 
 //##############################################################################
@@ -176,7 +208,8 @@ int main(int argc, char ** argv)
     //TestScalarFieldSubindices();
     //TestFDTD_RigidObject_Animator();
     //Test_TriangleMeshKDTree();
-    TestWaterVibrationalSource();
+    //TestWaterVibrationalSource();
+    TestWavRead(); 
         
     //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
     //if (argc>1) 
