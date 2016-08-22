@@ -28,6 +28,9 @@ class WavReader
         sf_count_t ReadAux(type<int>, std::vector<T> &data, const int &frames);
 
     public: 
+        inline int N_Channels(){return _sfInfo.channels;}
+        inline int SampleFrequency(){return _sfInfo.samplerate;} 
+        inline T SampleRate(){return 1.0 / (T)SampleFrequency();}
         bool Open(const std::string &wavFile);
         void Close();
         void Read(std::vector<T> &data); 
