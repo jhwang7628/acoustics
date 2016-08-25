@@ -67,8 +67,7 @@ _T CSpline<_T, _CopyData, _Acc>::eval(_T x) const
 
     if ( fabs(h) < 1E-10 ) 
     {
-        fprintf(stderr, "x value should be monotonically increased");
-        exit(1);
+        throw std::runtime_error("**ERROR** x value should be monotonically increased"); 
     }
 
     _T invh = (_T)1 / h;

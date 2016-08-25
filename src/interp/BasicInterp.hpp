@@ -11,22 +11,43 @@ namespace carbine
 {
 #endif
 
+//##############################################################################
+// This accessor applies when all samples are with fixed sampling width. The
+// data can be monotonically increasing or decreasing. O(1) search.
+//##############################################################################
+template <typename _T>
+struct FixAcc
+{
+    int operator() (int n, const _T* xx, _T x) const 
+    {
+        if ( n < 2 )
+            throw std::runtime_error("**ERROR** data size is too short:" + std::to_string(n)); 
+
+        if ( x < fmin(xx[0], xx[n-1]) || x > fmax(xx[0], xx[n-1]) )
+            throw std::runtime_error("**ERROR** given value is out of range");
+
+        if (x == xx[n-1])
+            return n-1;
+        else 
+            return (int)((x - xx[0]) / (xx[1] - xx[0]));
+    }
+}; 
+
+//##############################################################################
+// This accessor applies when samples are monotonically increasing or
+// decreasing. The samples can have varying sampling width. This incurs O(log
+// n) search cost. 
+//##############################################################################
 template <typename _T>
 struct BisecAcc
 {
     int operator() (int n, const _T* xx, _T x) const
     {
         if ( n < 2 )
-        {
-            fprintf(stderr, "ERROR: data size is too short %d\n", n);
-            exit(1);
-        }
+            throw std::runtime_error("**ERROR** data size is too short:" + std::to_string(n)); 
 
         if ( x < fmin(xx[0], xx[n-1]) || x > fmax(xx[0], xx[n-1]) )
-        {
-            fprintf(stderr, "ERROR: given value is out of range\n");
-            exit(1);
-        }
+            throw std::runtime_error("**ERROR** given value is out of range");
 
         bool ascnd = xx[n-1] >= xx[0];
         int jl = 0, jm, ju = n-1;
