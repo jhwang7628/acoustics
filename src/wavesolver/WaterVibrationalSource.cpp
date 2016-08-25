@@ -13,7 +13,7 @@ WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile)
 {
     Initialize(wavFile); 
     // FIXME debug
-    TestSpline(); 
+    TestSpline();
 }
 
 //##############################################################################
@@ -85,6 +85,11 @@ ComputeVelocityAndAcceleration()
     assert(N_frames > 0); 
     _oscillatorVelocity.resize(N_frames); 
     _oscillatorAcceleration.resize(N_frames); 
+    _oscillatorTime.resize(N_frames); 
+
+    // compute time and store
+    for (int t_idx=0; t_idx<N_frames; ++t_idx)
+        _oscillatorTime.at(t_idx) = _startTime + _sampleRate*(REAL)t_idx; 
 
     const REAL half_over_h = 0.5 / _sampleRate; 
     const REAL one_over_h  = 1.0 / _sampleRate; 
@@ -135,12 +140,9 @@ PrecomputeInterpolation()
 
     assert(_oscillatorVelocity.size()>0 && _oscillatorAcceleration.size()>0); 
     const int N_frames = _oscillatorAcceleration.size(); 
-    _oscillatorTime.resize(N_frames); 
-    //FloatArray oscillatorTime(N_frames); 
-    for (int t_idx=0; t_idx<N_frames; ++t_idx)
-        _oscillatorTime.at(t_idx) = _startTime + _sampleRate*(REAL)t_idx; 
+    _interpolatorVelocity.init(N_frames, &_oscillatorTime[0], &_oscillatorVelocity[0]); 
     _interpolatorAcceleration.init(N_frames, &_oscillatorTime[0], &_oscillatorAcceleration[0]); 
-    std::cout << " Preocompute completed.\n"; 
+    std::cout << " Precompute completed.\n"; 
 }
 
 //##############################################################################
@@ -151,7 +153,7 @@ TestSpline()
     std::cout << "Testing acceleration interpolator C-Spline\n"; 
 
     std::ofstream ofRaw("rawSignal.txt"); 
-    std::ofstream ofInterp("interpolatedSignal.txt"); 
+    std::ofstream ofInterp("interpolatedSignal_FixAcc.txt"); 
 
     std::cout << " Interpolator Time range:\n"; 
     STL_Wrapper::PrintVectorContent(std::cout, _oscillatorTime, 10); 
@@ -175,5 +177,5 @@ TestSpline()
     std::cout << " Queried Time range:\n"; 
     STL_Wrapper::PrintVectorContent(std::cout, interpTime, 10);
 
-    std::cout << "Results written to files 'rawSignal.txt' and 'interpolatedSignal.txt'" << std::endl;
+    std::cout << " Results written to files 'rawSignal.txt' and 'interpolatedSignal.txt'" << std::endl;
 }

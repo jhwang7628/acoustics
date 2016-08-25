@@ -2,6 +2,7 @@
 #define WATER_VIBRATIONAL_SOURCE_H 
 
 #include <TYPES.h>
+#include <interp/BasicInterp.hpp>
 #include <interp/CSpline.hpp>
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/FDTD_RigidObject.h> 
@@ -13,7 +14,9 @@
 class WaterVibrationalSource : public VibrationalSource
 {
     public: 
-        typedef CSpline<REAL, false> T_CSpline; 
+        typedef CSpline<REAL, false, FixAcc<REAL> > T_CSpline; 
+        //typedef CSpline<REAL, false, BisecAcc<REAL> > T_CSpline; 
+
     private: 
         std::shared_ptr<TriangleMesh<REAL> >    _surfaceMesh; 
         REAL                                    _sampleRate; 
