@@ -122,7 +122,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
     }
     catch (const std::runtime_error &error)
     {
-        std::cout << "No rigid_object found\n";
+        std::cout << "No water_surface_object found\n";
     }
     while (waterSurfaceObjectNode != NULL)
     {
