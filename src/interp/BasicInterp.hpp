@@ -27,7 +27,7 @@ struct FixAcc
             throw std::runtime_error("**ERROR** given value is out of range");
 
         if (x == xx[n-1])
-            return n-1;
+            return n-2; // consistent with what was returned by BisecAcc
         else 
             return (int)((x - xx[0]) / (xx[1] - xx[0]));
     }

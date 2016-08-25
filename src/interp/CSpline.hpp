@@ -62,7 +62,7 @@ template <typename _T, bool _CopyData, class _Acc>
 _T CSpline<_T, _CopyData, _Acc>::eval(_T x) const
 {
     int klo = _acc(m_n, m_xx, x);
-    int khi = klo + 1;
+    int khi = klo + 1; 
     _T  h   = m_xx[khi] - m_xx[klo];
 
     if ( fabs(h) < 1E-10 ) 
