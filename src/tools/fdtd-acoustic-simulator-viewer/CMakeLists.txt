@@ -66,6 +66,8 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${UI_SRC}
         ${BEM_SRC}
         ${BEM_IO_SRC}
+        ${SND_IO_SRC}
+        ${INTERP_SRC}
         )
 
     target_link_libraries(fdtd-acoustic-simulator-viewer
@@ -81,6 +83,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
+        sndfile
         boost_thread
         boost_system                    
         boost_timer
