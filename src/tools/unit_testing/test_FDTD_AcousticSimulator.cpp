@@ -161,6 +161,17 @@ void Test_TriangleMeshKDTree()
     of.close(); 
 }
 
+void TestWaterVibrationalSource()
+{
+    const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
+    std::shared_ptr<FDTD_Objects> objects = std::make_shared<FDTD_Objects>(); 
+    ImpulseResponseParser parser(xmlName); 
+    parser.GetObjects(objects); 
+    std::shared_ptr<FDTD_RigidSoundObject> object; 
+    object = objects->GetPtr(0); 
+    std::cout << object << std::endl;
+}
+
 //##############################################################################
 void TestWavRead()
 {
@@ -209,13 +220,13 @@ int main(int argc, char ** argv)
     //TestScalarFieldSubindices();
     //TestFDTD_RigidObject_Animator();
     //Test_TriangleMeshKDTree();
-    //TestWaterVibrationalSource();
+    TestWaterVibrationalSource();
     //TestWavRead(); 
         
-    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    if (argc>1) 
-        xmlName = std::string(argv[1]);
-    TestAcousticSimulatorRun(xmlName); 
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //if (argc>1) 
+    //    xmlName = std::string(argv[1]);
+    //TestAcousticSimulatorRun(xmlName); 
 
     return 0;
 }
