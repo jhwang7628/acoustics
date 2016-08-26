@@ -8,12 +8,10 @@
 //##############################################################################
 //##############################################################################
 WaterVibrationalSource::
-WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile)
-    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
+WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile, const REAL &decayRadius)
+    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr()), _decayRadius(decayRadius)
 {
     Initialize(wavFile); 
-    // FIXME debug
-    TestSpline();
 }
 
 //##############################################################################
@@ -21,7 +19,13 @@ WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile)
 REAL WaterVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    return 0.0; 
+    if (normal.dotProduct(_wantedNormal)/normal.length() > _validAngleThreshold)
+    {
+        const REAL decay = Decay(position); 
+        return _interpolatorAcceleration.eval(time) * decay; 
+    }
+    else
+        return 0.0; 
 }
 
 //##############################################################################
@@ -29,7 +33,13 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL WaterVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    throw std::runtime_error("**ERROR** not implemented"); 
+    if (normal.dotProduct(_wantedNormal)/normal.length() > _validAngleThreshold)
+    {
+        const REAL decay = Decay(position); 
+        return _interpolatorVelocity.eval(time) * decay; 
+    }
+    else
+        return 0.0; 
 }
 
 //##############################################################################
@@ -49,7 +59,51 @@ Initialize(const std::string &wavFile)
     ReadOscillatorFromWav(wavFile); 
     ComputeVelocityAndAcceleration();
     PrecomputeInterpolation(); 
+    InitializeDecayModel(); 
 }
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSource::
+InitializeDecayModel()
+{
+    std::cout << "Initializing decay model\n"; 
+
+    // estimate Gaussian center by averging through all valid vertex
+    const int N_vertices = _surfaceMesh->num_vertices(); 
+    Vector3d &center = _decayModel.center; 
+    int count = 0;
+    center.set(0, 0, 0); 
+    if (!_surfaceMesh->has_normals())
+        _surfaceMesh->generate_normals(); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        const Vector3d &normal = _surfaceMesh->normal(v_idx); 
+        if (normal.dotProduct(_wantedNormal)/normal.length() <= _validAngleThreshold)
+            continue; 
+        center += _surfaceMesh->vertex(v_idx); 
+        count ++; 
+    }
+    center /= (REAL)count; 
+
+    // compute stddev using max distance of all valid vertices
+    REAL maxDistance = std::numeric_limits<REAL>::min(); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        const Vector3d &normal = _surfaceMesh->normal(v_idx); 
+        if (normal.dotProduct(_wantedNormal)/normal.length() <= _validAngleThreshold)
+            continue; 
+        const REAL distance = (_surfaceMesh->vertex(v_idx) - center).lengthSqr(); 
+        maxDistance = std::max<REAL>(distance, maxDistance); 
+    }
+    maxDistance = sqrt(maxDistance); 
+        std::cout << "decay radius set to be " << _decayRadius << std::endl;
+    _decayModel.stddev = maxDistance / _decayRadius;
+    
+    std::cout << " Gaussian center = " << _decayModel.center << std::endl; 
+    std::cout << " Gaussian stddev = " << _decayModel.stddev << std::endl; 
+}
+
 
 //##############################################################################
 //##############################################################################

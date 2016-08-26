@@ -280,7 +280,9 @@ InitializeSolver()
     }
     else 
     {
-        ResetStartTime(0.0);
+        //ResetStartTime(0.0);
+        //FIXME debug
+        ResetStartTime(0.15);
     }
 
     // save settings
@@ -292,6 +294,7 @@ InitializeSolver()
 void FDTD_AcousticSimulator::
 ResetStartTime(const REAL &startTime)
 {
+    std::cout << "Reset system start time to " << startTime << std::endl;
     _stepIndex = 0; 
     _simulationTime = startTime; 
     if (_acousticSolverSettings->rigidsimDataRead)

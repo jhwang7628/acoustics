@@ -14,27 +14,39 @@
 class WaterVibrationalSource : public VibrationalSource
 {
     public: 
+        typedef std::shared_ptr<TriangleMesh<REAL> > TriangleMeshPtr;
         typedef CSpline<REAL, false, FixAcc<REAL> > T_CSpline; 
-        //typedef CSpline<REAL, false, BisecAcc<REAL> > T_CSpline; 
+        struct GaussianDecayModel
+        {
+            Vector3d    center; 
+            REAL        stddev; 
+        }; 
 
     private: 
-        std::shared_ptr<TriangleMesh<REAL> >    _surfaceMesh; 
-        REAL                                    _sampleRate; 
-        REAL                                    _startTime = 0.0; 
-        FloatArray                              _oscillatorTime; 
-        FloatArray                              _oscillatorDisplacement;  
-        FloatArray                              _oscillatorVelocity; 
-        FloatArray                              _oscillatorAcceleration;
-        T_CSpline                               _interpolatorVelocity; 
-        T_CSpline                               _interpolatorAcceleration; 
+        Vector3d            _wantedNormal = Vector3d(0, 1, 0);
+        REAL                _validAngleThreshold = 0.5; // use to determine if the vertex has source. See Evaluate() for usage.
+        TriangleMeshPtr     _surfaceMesh; 
+        REAL                _sampleRate; 
+        REAL                _startTime = 0.0; 
+        FloatArray          _oscillatorTime; 
+        FloatArray          _oscillatorDisplacement;  
+        FloatArray          _oscillatorVelocity; 
+        FloatArray          _oscillatorAcceleration;
+        T_CSpline           _interpolatorVelocity; 
+        T_CSpline           _interpolatorAcceleration; 
+        GaussianDecayModel  _decayModel; 
+        REAL                _decayRadius;
 
     public:
-        WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile);
+        WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile, const REAL &decayRadius);
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        inline REAL Decay(const Vector3d &samplePoint){
+            return exp(-(samplePoint - _decayModel.center).lengthSqr() / (2.0 * pow(_decayModel.stddev,2)));} 
         void Initialize(const std::string &wavFile); 
+        void InitializeDecayModel(); 
         void ReadOscillatorFromWav(const std::string &wavFile); 
         void ComputeVelocityAndAcceleration(); 
         void PrecomputeInterpolation(); 
