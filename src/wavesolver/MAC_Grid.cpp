@@ -973,7 +973,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     
     // check the residual of the linear system
     const bool checkResidual = true; 
-    if (checkResidual)
+    if (checkResidual && _waveSolverSettings->useMesh)
     {
         Eigen::VectorXd residual(N_ghostCells); 
         REAL maxOffDiagonal = std::numeric_limits<REAL>::min(); 
