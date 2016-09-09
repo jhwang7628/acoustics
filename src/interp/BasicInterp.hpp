@@ -1,6 +1,7 @@
 #ifndef INTERP_BASIC_INTERP_HPP
 #   define INTERP_BASIC_INTERP_HPP
 
+#include <stdexcept>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
