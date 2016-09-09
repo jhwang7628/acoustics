@@ -24,7 +24,7 @@ class WaterVibrationalSource : public VibrationalSource
 
     private: 
         Vector3d            _wantedNormal = Vector3d(0, 1, 0);
-        REAL                _validAngleThreshold = 0.5; // use to determine if the vertex has source. See Evaluate() for usage.
+        REAL                _validAngleThreshold = 0.5; // use to determine if the vertex has source. See Evaluate() for usage. default: 0.5
         TriangleMeshPtr     _surfaceMesh; 
         REAL                _sampleRate; 
         REAL                _startTime = 0.0; 
@@ -44,7 +44,7 @@ class WaterVibrationalSource : public VibrationalSource
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         inline REAL Decay(const Vector3d &samplePoint){
-            return exp(-(samplePoint - _decayModel.center).lengthSqr() / (2.0 * pow(_decayModel.stddev,2)));} 
+            return exp(-(_owner->WorldToObjectPoint(samplePoint) - _decayModel.center).lengthSqr() / (2.0 * pow(_decayModel.stddev,2)));} 
         void Initialize(const std::string &wavFile); 
         void InitializeDecayModel(); 
         void ReadOscillatorFromWav(const std::string &wavFile); 

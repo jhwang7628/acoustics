@@ -216,7 +216,6 @@ TestSpline()
         ofRaw << _oscillatorTime.at(f_idx) << " " << _oscillatorAcceleration.at(f_idx) << std::endl;
     ofRaw.close(); 
 
-
     const int factor = 10;
     const int N_interpFrames = N_frames * factor - (factor-1); // end at last frame of raw
     const REAL interpSampleRate = _sampleRate / (REAL)factor; 
