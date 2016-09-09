@@ -271,19 +271,13 @@ InitializeSolver()
     _SetBoundaryConditions();
     _SetPressureSources();
 
+    REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources() && _acousticSolverSettings->fastForwardToEvent)
-    {
-        const REAL startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
-        ResetStartTime(startTime);
-        std::cout << "Shift solver time to the first impact event at " << startTime << std::endl;
-    }
+    if (!_sceneObjects->HasExternalPressureSources() && _acousticSolverSettings->fastForwardToEarliestImpact)
+        startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
     else 
-    {
-        //ResetStartTime(0.0);
-        //FIXME debug
-        ResetStartTime(0.15);
-    }
+        startTime = _acousticSolverSettings->fastForwardToEventTime; 
+    ResetStartTime(startTime);
 
     // save settings
     SaveSolverConfig();
@@ -294,7 +288,7 @@ InitializeSolver()
 void FDTD_AcousticSimulator::
 ResetStartTime(const REAL &startTime)
 {
-    std::cout << "Reset system start time to " << startTime << std::endl;
+    std::cout << "\nReset system start time to " << startTime << std::endl;
     _stepIndex = 0; 
     _simulationTime = startTime; 
     if (_acousticSolverSettings->rigidsimDataRead)
