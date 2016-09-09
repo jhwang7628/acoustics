@@ -378,10 +378,10 @@ DrawSlices(const int &dataPointer)
                     const int idx_0_1 =  dim_0_idx     *divisions + dim_1_idx + 1; 
                     const int idx_1_1 = (dim_0_idx + 1)*divisions + dim_1_idx; 
                     const int idx_1_0 = (dim_0_idx + 1)*divisions + dim_1_idx + 1; 
-                    const Tuple3f c_0_0 = _sliceColorMap->get_interpolated_color(data(idx_0_0)); 
-                    const Tuple3f c_0_1 = _sliceColorMap->get_interpolated_color(data(idx_0_1)); 
-                    const Tuple3f c_1_0 = _sliceColorMap->get_interpolated_color(data(idx_1_0)); 
-                    const Tuple3f c_1_1 = _sliceColorMap->get_interpolated_color(data(idx_1_1)); 
+                    const Tuple3f c_0_0 = _sliceColorMap->get_interpolated_color(data(idx_0_0, 0)); 
+                    const Tuple3f c_0_1 = _sliceColorMap->get_interpolated_color(data(idx_0_1, 0)); 
+                    const Tuple3f c_1_0 = _sliceColorMap->get_interpolated_color(data(idx_1_0, 0)); 
+                    const Tuple3f c_1_1 = _sliceColorMap->get_interpolated_color(data(idx_1_1, 0)); 
                     const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
                     const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
                     const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
