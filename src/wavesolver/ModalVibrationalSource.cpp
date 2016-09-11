@@ -16,7 +16,7 @@ ModalVibrationalSource(RigidObjectPtr owner)
 REAL ModalVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-#ifndef DEBUG_PERFECT_MODAL_HARMONICS
+#if DEBUG_PERFECT_MODAL_HARMONICS == 0
     return _modalObjectOwner->SampleModalAcceleration(position, normal, time); 
 #else
     return _modalObjectOwner->PerfectHarmonics_SampleModalAcceleration(DEBUG_PERFECT_MODAL_HARMONICS, position, normal, time); 
@@ -30,7 +30,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL ModalVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-#ifndef DEBUG_PERFECT_MODAL_HARMONICS
+#if DEBUG_PERFECT_MODAL_HARMONICS == 0
     return _modalObjectOwner->SampleModalVelocity(position, normal, time); 
 #else
     return _modalObjectOwner->PerfectHarmonics_SampleModalVelocity(DEBUG_PERFECT_MODAL_HARMONICS, position, normal, time); 

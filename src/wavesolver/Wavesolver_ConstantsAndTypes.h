@@ -33,7 +33,7 @@ class PML_WaveSolver_Settings;
 
 
 #define USE_ADF // use adaptive distance field
-#define DEBUG_PERFECT_MODAL_HARMONICS 0 // replace q(t) by cos(omega t)
+#define DEBUG_PERFECT_MODAL_HARMONICS 1 // replace q(t) by cos(omega t)
            
 //##############################################################################
 // Typedefs 
