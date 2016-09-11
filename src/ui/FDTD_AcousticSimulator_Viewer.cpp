@@ -835,6 +835,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         } 
         else if (dataPointer == 1)
         {
+            // 0: bulk cell; 1: solid cell; -1: ghost cell
             _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
         } 
         else if (dataPointer == 2 || dataPointer == 3) 
