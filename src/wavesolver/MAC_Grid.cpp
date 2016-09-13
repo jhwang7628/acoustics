@@ -798,6 +798,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(N_ghostCells); 
 
+    // FIXME debug
+    std::ofstream of_sphere("of_sphere.txt"); 
+
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -879,6 +882,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     coupledGhostCellsNeighbours.push_back(ii); 
                     FillVandermondeRegular(ii, _ghostCellPositions.at(bestChild), V); 
                     pressureNeighbours(ii) = pGC.at(bestChild); 
+
+                    // FIXME debug
+#pragma omp critical
+                    if (erectedNormal.y < 0)
+                    of_sphere << _ghostCellPositions.at(bestChild).x << " " 
+                              << _ghostCellPositions.at(bestChild).y << " " 
+                              << _ghostCellPositions.at(bestChild).z << "\n"; 
                 }
                 else
                 {
@@ -890,6 +900,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     positionBuffer= _pressureField.cellPosition(indicesBuffer); 
                     FillVandermondeRegular(ii, positionBuffer, V);
                     pressureNeighbours(ii) = p(neighbours.at(ii), 0); 
+
+                    // FIXME debug
+#pragma omp critical
+                    if (erectedNormal.y < 0)
+                    of_sphere << positionBuffer.x << " " 
+                              << positionBuffer.y << " " 
+                              << positionBuffer.z << "\n"; 
                 }
             }
         }
@@ -923,7 +940,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             for (size_t n_idx=0; n_idx<neighbours.size(); ++n_idx)
             {
                 std::cout << neighbours[n_idx] << ": " 
-                          << "isGhostCell = " << _isGhostCell[neighbours[n_idx]]
+                          << "isGhostCell = " << _isGhostCell[neighbours[n_idx]] << "; "
                           << "position = " << _pressureField.cellPosition(neighbours[n_idx]) << std::endl;
             }
         }
@@ -951,9 +968,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
 
-    // TODO bug found: its the off-diagonal entries being no longer much
-    // smaller than one. Found this by comparing to regular ghost cell.
-    const int maxIteration = 200;
+    const int maxIteration = 2000;
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         #ifdef USE_OPENMP
@@ -991,6 +1006,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         }
         std::cout << " Jacobi iteration for ghost cell: N=" << maxIteration << "; residual = [" << residual.minCoeff() << ", " << residual.maxCoeff() << "]; max off-diagonal = " << maxOffDiagonal << std::endl;
     }
+
+
+    // FIXME debug
+    of_sphere.close();
 }
 
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
@@ -1551,7 +1570,27 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
 
         cellPos = _pressureField.cellPosition( cell_idx );
         // Check all boundary fields to see if this is a bulk cell
-        _containingObject.at(cell_idx) = _objects->OccupyByObject(cellPos); 
+        int containObjectId = _objects->OccupyByObject(cellPos); 
+        
+        if (containObjectId < 0)
+        {
+            // check additional samples within the cell. use six subdivide
+            // stencils for now.
+            for (int dim=0; dim<3; ++dim)
+            {
+                Vector3d offset(0, 0, 0);
+                offset[dim] += _waveSolverSettings->cellSize*0.25; 
+                // check positive side
+                containObjectId = _objects->OccupyByObject(cellPos + offset); 
+                if (containObjectId >= 0)
+                    break; 
+                // check negative side
+                containObjectId = _objects->OccupyByObject(cellPos - offset); 
+                if (containObjectId >= 0)
+                    break; 
+            }
+        }
+        _containingObject.at(cell_idx) = containObjectId; 
         const bool newIsBulkCell = (_containingObject.at(cell_idx)>=0 ? false : true); 
 
         _isBulkCell.at(cell_idx) = newIsBulkCell; 
