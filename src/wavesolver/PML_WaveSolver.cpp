@@ -319,7 +319,7 @@ bool PML_WaveSolver::stepSystem()
     _timeIndex += 1;
     _stepTimer.pause();
 
-#ifdef DEBUG
+#ifdef DEBUG_PRINT
     printf( "Average time step cost: %f sec\n", _stepTimer.getMsPerCycle() );
     printf( " - Algebra             took %f sec\n", _algebraTimer.getMsPerCycle() );
     printf( " - Memory operations   took %f sec\n", _memoryTimer.getMsPerCycle() );
