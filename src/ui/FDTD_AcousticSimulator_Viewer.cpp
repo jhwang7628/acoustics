@@ -30,6 +30,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
+    setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
@@ -489,6 +490,16 @@ keyPressEvent(QKeyEvent *e)
             std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
             std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
             _sphereCin.push_back(sphere); 
+    }
+    else if ((e->key() == Qt::Key_T) && (modifiers == Qt::NoButton)) {
+      if (camera()->type() == Camera::ORTHOGRAPHIC){
+        camera()->setType(Camera::PERSPECTIVE);
+        std::cout << "camera: perspective\n"; 
+      }
+      else {
+        camera()->setType(Camera::ORTHOGRAPHIC);
+        std::cout << "camera: orthographic\n"; 
+      }
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ShiftModifier)) {
         std::string filename; 
