@@ -225,7 +225,11 @@ int main(int argc, char ** argv)
     std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
     if (argc>1) 
         xmlName = std::string(argv[1]);
-    TestAcousticSimulatorRun(xmlName); 
+
+    {
+        boost::timer::auto_cpu_timer timer;
+        TestAcousticSimulatorRun(xmlName); 
+    }
 
     return 0;
 }
