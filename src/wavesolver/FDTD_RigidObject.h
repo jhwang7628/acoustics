@@ -16,6 +16,7 @@
 #include <geometry/TetMeshIndexToSurfaceMesh.h> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 
+#include <utils/SimpleTimer.h>
 #include <utils/IO/IO.h>
 
 //##############################################################################
@@ -46,6 +47,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
         bool                                _parsed; 
 
+        SimpleTimer                         _reflectionTimer; 
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
 

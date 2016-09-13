@@ -266,7 +266,9 @@ bool FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
+    _reflectionTimer.Start(); 
 
+#if 0 // use sdf for normal query
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
@@ -285,42 +287,53 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     //distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
     //boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
     //reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
-    const REAL newDistance = DistanceToMesh(reflectedPoint);
-    const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
 
-    // error checking here to see if triangle search is needed
-    if (!reflectSuccess)
+#else // use kd-tree for normal query
+
+    const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
+    int closestTriangleIndex; 
+    Vector3d projectedPoint; // object space
+    distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+    boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
+
+    // FIXME debug: quick fix
+    const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
+    if (insideBoundary)
     {
-        // distance field based query failed. switch to kd-tree search.
-        const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
-        int closestTriangleIndex; 
-        Vector3d projectedPoint; // object space
-        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-        boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
         erectedNormal = boundaryPoint - originalPoint; // world space
-        reflectedPoint = originalPoint + erectedNormal; 
-        erectedNormal.normalize();  // keep the behavior same as the distance field based query
+        reflectedPoint = boundaryPoint + erectedNormal; 
     }
+    else 
+    {
+        erectedNormal =-boundaryPoint + originalPoint; // world space
+        reflectedPoint = originalPoint + erectedNormal; 
+    }
+    erectedNormal.normalize();  // keep the behavior same as the distance field based query
 
 #ifdef DEBUG
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
-        {
-            //const Vector3d &vertex = closestPoint; 
-            //const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
-            //const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
-            // write these special points for debugging purpose 
-            _debugArrowStart.push_back(originalPoint); 
-            _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
-        }
+    {
+        //const Vector3d &vertex = closestPoint; 
+        //const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
+        //const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
+        // write these special points for debugging purpose 
+        _debugArrowStart.push_back(originalPoint); 
+        _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
+    }
 #endif
 
+#endif // if 0
+
+    _reflectTimer.Pause(); 
+    const REAL newDistance = DistanceToMesh(reflectedPoint);
+    const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
     return reflectSuccess;
 }
 
 //##############################################################################
-// This function is now deprecated. kall ReflectAgainstBoundary directly.
+// This function is now deprecated. call ReflectAgainstBoundary directly.
 //##############################################################################
 bool FDTD_RigidObject::
 FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
