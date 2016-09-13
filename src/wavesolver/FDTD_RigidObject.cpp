@@ -266,7 +266,6 @@ bool FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
-    _reflectionTimer.Start(); 
 
 #if 0 // use sdf for normal query
     // find boundary point, normal at query point, and reflection point.
@@ -296,7 +295,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 
-    // FIXME debug: quick fix
     const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
     if (insideBoundary)
     {
@@ -309,6 +307,8 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         reflectedPoint = originalPoint + erectedNormal; 
     }
     erectedNormal.normalize();  // keep the behavior same as the distance field based query
+
+#endif // if 0
 
 #ifdef DEBUG
 #ifdef USE_OPENMP
@@ -324,9 +324,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     }
 #endif
 
-#endif // if 0
-
-    _reflectTimer.Pause(); 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
     const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
     return reflectSuccess;

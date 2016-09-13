@@ -47,7 +47,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
 
         bool                                _parsed; 
 
-        SimpleTimer                         _reflectionTimer; 
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
 
