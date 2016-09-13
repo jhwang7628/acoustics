@@ -31,9 +31,9 @@ _SetBoundaryConditions()
         }
         else
         {
-            const REAL omega = 2.0*M_PI*500.0;
+            const REAL omega = 2.0*M_PI*3000.0;
             const REAL phase = 0.0;
-            std::cout << "Add vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
+            std::cout << "Add test vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
             VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
             //objectPtr->AddVibrationalSource(sourcePtr); 
             //objectPtr->TestObjectBoundaryCondition();

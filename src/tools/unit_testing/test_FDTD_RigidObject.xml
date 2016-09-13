@@ -6,6 +6,11 @@
             beta = "1.0E-7" 
             density = "2300" 
             /> 
+        <modal_material
+            alpha = "0" 
+            beta = "2.0E-7" 
+            density = "8800" 
+            /> 
     </material_list>
     <scene> 
             <!-- note: in these data, id of the objects will be used to
@@ -21,6 +26,16 @@
             <!-- right now only the id of rigid_sound_object will be used to
                  get rigidsim data, for these objects, id needs to be integer to cope with rigidsim and impulses register -->
             <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
+            <rigid_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/small_plane"
+                object_prefix="small_plane_rotated2_11y" 
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                /> 
             <!--
             <rigid_sound_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/plate_drop_long"
@@ -37,6 +52,21 @@
                 mode_file="/home/jui-hsien/code/acoustics/work/plate_drop_long/proj.modes"
                 modal_ODE_step_frequency="176400"
                 /> 
+            <rigid_sound_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/coin"
+                object_prefix="proj"  
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                material_id="1"
+                impulse_file="/home/jui-hsien/code/acoustics/work/coin/impulses.txt"
+                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/coin/drop.cfg"
+                mode_file="/home/jui-hsien/code/acoustics/work/coin/proj.modes"
+                modal_ODE_step_frequency="176400"
+                /> 
             <rigid_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/big_plane"
                 object_prefix="big_plane_rotated" 
@@ -47,6 +77,8 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 /> 
+                -->
+            <!--
             <rigid_object 
                 working_directory="/home/jui-hsien/code/acoustics/work/small_plane"
                 object_prefix="small_plane_rotated2" 
@@ -57,43 +89,21 @@
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 /> 
-            <rigid_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/meshes/tank"
-                object_prefix="tank" 
-                id="0" 
-                fieldresolution="400"
-                scale="1.0" 
-                initial_position_x="0.0"
-                initial_position_y="0.0"
-                initial_position_z="0.0"
-                /> 
-                -->
             <water_surface_object
-                working_directory="/home/jui-hsien/code/acoustics/work/meshes/tank"
-                object_prefix="tank_water" 
-                id="0" 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/fish_tank"
+                object_prefix="fish_tank_water_o_0p1" 
+                id="1" 
                 fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
                 initial_position_y="0.0"
                 initial_position_z="0.0"
                 input_recording="/home/jui-hsien/code/acoustics/work/droplet_recordings/36_nr.wav"
-                /> 
-            <!--
-            <water_surface_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
-                object_prefix="small_ball_r_0p05" 
-                id="0" 
-                fieldresolution="400"
-                scale="1.0" 
-                initial_position_x="0.0"
-                initial_position_y="0.0"
-                initial_position_z="0.0"
-                input_recording="/home/jui-hsien/code/acoustics/work/droplet_recordings/test.wav"
+                decay_radius="5"
                 /> 
             <rigid_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/meshes/ball_plane_scene"
-                object_prefix="small_ball_r_0p05" 
+                working_directory="/home/jui-hsien/code/acoustics/work/meshes/fish_tank"
+                object_prefix="fish_tank" 
                 id="0" 
                 fieldresolution="400"
                 scale="1.0" 
@@ -102,13 +112,15 @@
                 initial_position_z="0.0"
                 /> 
                 -->
+            <!--
+                -->
     </scene> 
     <solver
         sound_speed="343.0"
         density="1.184" 
         cellsize="0.01" 
-        gridresolution="50"
-        stop_time="0.0035"
+        gridresolution="80"
+        stop_time="1"
         substeps="1"
         timestepfrequency="176400"
         output_pattern="work/near-field/data_test/test_%s"
@@ -117,18 +129,19 @@
         use_mesh="1"
         use_ghost_cell="1"
         boundary_condition_preset="0"
-        write_pressure_field_to_disk="1"
-        fast_forward_to_event="0"
+        write_pressure_field_to_disk="0"
+        fast_forward_to_earliest_impact="0"
+        fast_forward_to_event_time="0"
         /> 
 
     <pressure_source> 
-    <!--
         <gaussian_pressure_source
         source_width_time="0.00005"
-        source_position_x="0.0" 
-        source_position_y="-0.12" 
+        source_position_x="-0.2" 
+        source_position_y="-0.2" 
         source_position_z="0.0" 
         />
+    <!--
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 
@@ -139,6 +152,15 @@
     </pressure_source> 
 
     <listening_point_list>
+        <listening_point x="0.0" y="0.0625" z="0.0"/>
+        <listening_point x="0.0" y="0.08" z="0.0"/>
+        <listening_point x="0.0" y="0.125" z="0.0"/>
+        <listening_point x="0.0" y="0.2" z="0.0"/>
+        <listening_point x="0.0" y="0.25" z="0.0"/>
+        <listening_point x="0.0" y="0.275" z="0.0"/>
+        <listening_point x="0.2" y="0.275" z="0.3"/>
+        <listening_point x="0.15" y="0.275" z="0.0"/>
+        <listening_point x="-0.15" y="0.275" z="0.0"/>
         <!--
         <listening_point x="0.0" y="0.0" z="0.0"/>
         <listening_point x="0.0" y="0.0" z="0.0825"/>
