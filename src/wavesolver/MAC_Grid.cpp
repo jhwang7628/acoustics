@@ -798,9 +798,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(N_ghostCells); 
 
-    // FIXME debug
-    std::ofstream of_sphere("of_sphere.txt"); 
-
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -882,13 +879,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     coupledGhostCellsNeighbours.push_back(ii); 
                     FillVandermondeRegular(ii, _ghostCellPositions.at(bestChild), V); 
                     pressureNeighbours(ii) = pGC.at(bestChild); 
-
-                    // FIXME debug
-#pragma omp critical
-                    if (erectedNormal.y < 0)
-                    of_sphere << _ghostCellPositions.at(bestChild).x << " " 
-                              << _ghostCellPositions.at(bestChild).y << " " 
-                              << _ghostCellPositions.at(bestChild).z << "\n"; 
                 }
                 else
                 {
@@ -900,13 +890,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                     positionBuffer= _pressureField.cellPosition(indicesBuffer); 
                     FillVandermondeRegular(ii, positionBuffer, V);
                     pressureNeighbours(ii) = p(neighbours.at(ii), 0); 
-
-                    // FIXME debug
-#pragma omp critical
-                    if (erectedNormal.y < 0)
-                    of_sphere << positionBuffer.x << " " 
-                              << positionBuffer.y << " " 
-                              << positionBuffer.z << "\n"; 
                 }
             }
         }
