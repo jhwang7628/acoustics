@@ -931,12 +931,18 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 
         // forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
+        jacobiIterationData.cellId = ghost_cell_idx; 
         for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
         {
-            if (fabs(beta(coupledGhostCellsNeighbours[cc])) > 1E-14)
+            // only stores entries that is significant
+            if (fabs(beta(coupledGhostCellsNeighbours[cc])) > GHOST_CELL_ENTRY_THRESHOLD)
             {
                 jacobiIterationData.nnzIndex.push_back(coupledGhostCells[cc]); 
                 jacobiIterationData.nnzValue.push_back(-beta(coupledGhostCellsNeighbours[cc])); 
+
+                // log couple count to cell. this info is symmetric
+                _ghostCellCoupledData.at(ghost_cell_idx).coupleCount ++; 
+                _ghostCellCoupledData.at(coupledGhostCells[cc]).coupleCount ++; 
             }
         } 
 
@@ -955,15 +961,35 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     timer[0].Pause(); 
     timer[1].Start(); 
 
+    // analyze sparsity pattern and deflate the linear system
+    int maxCoupleCount = std::numeric_limits<int>::min(); 
+    std::vector<int> coupledIndices; 
+    for (int g_idx=0; g_idx<N_ghostCells; ++g_idx) 
+    {
+        const auto &data = _ghostCellCoupledData.at(g_idx); 
+        maxCoupleCount = max(maxCoupleCount, data.coupleCount); 
+        if (data.coupleCount == 0) 
+            pGC.at(data.cellId) = data.RHS; 
+        else
+            coupledIndices.push_back(g_idx); 
+    }
+#ifdef DEBUG_PRINT
+    std::cout << "\nGhost cell linear system analysis result: \n"; 
+    std::cout << " Max cell couple count     : " << maxCoupleCount << std::endl;
+    std::cout << " Decoupled cell percentage : " << (REAL)(N_ghostCells - coupledIndices.size()) / (REAL)N_ghostCells << "\n\n";
+#endif
 
-    const int maxIteration = 500;
+    // solve the linear system
+    const int maxIteration = 50;
+    const int N_coupled = coupledIndices.size(); 
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         #ifdef USE_OPENMP
         #pragma omp parallel for schedule(static) default(shared)
         #endif
-        for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ghost_cell_idx++) 
+        for (int c_idx=0; c_idx<N_coupled; ++c_idx) 
         {
+            const int ghost_cell_idx = coupledIndices.at(c_idx); 
             const JacobiIterationData &data = _ghostCellCoupledData.at(ghost_cell_idx); 
             // if there are nnz, update them 
             //p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
@@ -973,6 +999,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                 pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC.at(data.nnzIndex[cc]); 
         }
     }
+
+    ToFile_GhostCellCoupledMatrix("coupledMatrix.txt"); 
 
     timer[1].Pause(); 
     timer[2].Start(); 
@@ -1007,6 +1035,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     std::cout << "exam : " << timer[2].Duration() << " sec \n"; 
     std::cout << "replaced percentage = " << (REAL)replacedCell / (REAL)N_ghostCells << std::endl;
     std::cout << "--------------" << std::endl;
+    std::cout << "--------------\n" << std::setprecision(6);
 
 
 
@@ -2142,6 +2171,56 @@ void MAC_Grid::PrintGhostCellTreeInfo()
     std::cout << std::flush;
 }
 
+//############################################################################## 
+// This function stores the ghost cell coupled matrix used in jacobi iteration
+// to a file. 
+//
+// format: 
+//
+// N_ghostcells(int)
+// START
+// NNZ_row(int) 
+// entry_0_location(int) entry_0_value(REAL)
+// entry_1_location(int) entry_1_value(REAL)
+// entry_2_location(int) entry_2_value(REAL)
+//                    .
+//                    .
+//                    .
+// NNZ_row(int)
+// entry_0_location(int) entry_0_value(REAL)
+// entry_1_location(int) entry_1_value(REAL)
+// entry_2_location(int) entry_2_value(REAL)
+//                    .
+//                    .
+//                    .
+// END
+//############################################################################## 
+void MAC_Grid::ToFile_GhostCellCoupledMatrix(const std::string &filename)
+{
+    if (!_waveSolverSettings->useGhostCell)
+        return; 
+
+#pragma omp critical
+    {
+        std::ofstream of(filename.c_str()); 
+        const int N_ghostCells = _ghostCellCoupledData.size(); 
+        of << N_ghostCells << "\nSTART\n";
+
+        for (int g_idx=0; g_idx<N_ghostCells; ++g_idx)
+        {
+            const auto &data = _ghostCellCoupledData.at(g_idx); 
+            const int N_nnz = data.nnzIndex.size() + 1;  // in data diagonal entry not stored
+            assert((int)data.nnzValue.size()+1 == N_nnz); 
+
+            of << N_nnz << "\n";
+            of << g_idx << " " << "1.0" << std::endl; // diagonal entry is always 1
+            for (int e_idx=0; e_idx<N_nnz-1; ++e_idx)
+                of << data.nnzIndex.at(e_idx) << " " << data.nnzValue.at(e_idx) << "\n";
+        }
+        of << "END" << std::endl; 
+    }
+}
+
 std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
 {
     const Vector3d pressure_minBound = grid.pressureField().minBound(); 
@@ -2176,11 +2255,4 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
        << std::flush; 
     return os; 
 }
-
-
-
-
-
-
-
 

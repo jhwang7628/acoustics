@@ -45,10 +45,13 @@ class MAC_Grid
         typedef TriangleMesh<REAL>  TriMesh;
 
         // used for jacobi iteration of the ghost cell values in pressure update
-        struct JacobiIterationData {
+        struct JacobiIterationData 
+        {
+            int                 cellId; 
+            int                 coupleCount = 0;
             std::vector<int>    nnzIndex; 
-            std::vector<double> nnzValue; 
-            double              RHS; 
+            std::vector<REAL>   nnzValue; 
+            REAL                RHS; 
         };
 
     private: 
@@ -229,12 +232,15 @@ class MAC_Grid
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
 
+        void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
+
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void PrintGhostCellTreeInfo(); 
         void visualizeClassifiedCells(); 
-        void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
-        void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
+        void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
+
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
