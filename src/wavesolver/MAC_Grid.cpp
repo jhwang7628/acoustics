@@ -793,18 +793,20 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
+    SimpleTimer timer[3]; 
 
     const int N_ghostCells = _ghostCellPositions.size(); 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(N_ghostCells); 
+    int replacedCell = 0;
 
+    timer[0].Start(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
     //for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
-
         const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
         const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
@@ -894,6 +896,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             }
         }
 
+        // accumulate counter
+#pragma omp critical
+        if (hasGC != -1)
+            replacedCell ++; 
+
         // want beta = V^-T b, equivalent to solving V^T beta = b
         Eigen::MatrixXd b(1,8); // row vector
 
@@ -901,34 +908,28 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         b.transposeInPlace();  // column vector
         V.transposeInPlace(); 
 
-        // TODO svd solve is needed? can I use QR? 
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::VectorXd beta = svd.solve(b); 
+        // Linear solve: lu should be fastest, but in practice its marginally
+        // faster in release mode. other options are householder qr and svd. 
+        // condition number of the system is only available if svd is used.
+        Eigen::VectorXd beta = V.partialPivLu().solve(b); 
         //Eigen::VectorXd beta = V.householderQr().solve(b); 
-        const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-#ifdef USE_OPENMP
-#pragma omp critical
-#endif
-        if (conditionNumber > 1E10) 
-        {
-            std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
-                      << "            the solution can be inaccurate.\n"
-                      << "largest  singular value = " << svd.singularValues()(0) << "\n"
-                      << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
-                      << "problematic matrix: \n"
-                      << V << std::endl;
+        //Eigen::VectorXd beta = svd.solve(b); 
+        //Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
+//        const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+//#ifdef USE_OPENMP
+//#pragma omp critical
+//#endif
+//        if (conditionNumber > 1E10) 
+//        {
+//            std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
+//                      << "            the solution can be inaccurate.\n"
+//                      << "largest  singular value = " << svd.singularValues()(0) << "\n"
+//                      << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
+//                      << "problematic matrix: \n"
+//                      << V << std::endl;
+//        }
 
-            // FIXME debug:
-            std::cout << "neighbour information:\n";
-            for (size_t n_idx=0; n_idx<neighbours.size(); ++n_idx)
-            {
-                std::cout << neighbours[n_idx] << ": " 
-                          << "isGhostCell = " << _isGhostCell[neighbours[n_idx]] << "; "
-                          << "position = " << _pressureField.cellPosition(neighbours[n_idx]) << std::endl;
-            }
-        }
-       
-        // this step forms the sparse matrix
+        // forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
         for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
         {
@@ -951,7 +952,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
     }
 
-    const int maxIteration = 2000;
+    timer[0].Pause(); 
+    timer[1].Start(); 
+
+
+    const int maxIteration = 500;
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         #ifdef USE_OPENMP
@@ -968,6 +973,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                 pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC.at(data.nnzIndex[cc]); 
         }
     }
+
+    timer[1].Pause(); 
+    timer[2].Start(); 
     
     // check the residual of the linear system
     const bool checkResidual = true; 
@@ -991,8 +999,17 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     }
 
 
-    // FIXME debug
-    of_sphere.close();
+    timer[2].Pause();
+
+    std::cout << "--------------\n" << std::setprecision(16);
+    std::cout << "setup: " << timer[0].Duration() << " sec \n"; 
+    std::cout << "solve: " << timer[1].Duration() << " sec \n"; 
+    std::cout << "exam : " << timer[2].Duration() << " sec \n"; 
+    std::cout << "replaced percentage = " << (REAL)replacedCell / (REAL)N_ghostCells << std::endl;
+    std::cout << "--------------" << std::endl;
+
+
+
 }
 
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
