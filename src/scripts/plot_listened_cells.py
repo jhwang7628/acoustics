@@ -36,7 +36,7 @@ print 'Normalize all data by max value = %f' %(maxValue)
 for ii in range(N_points): 
     scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedData[:,ii]/maxValue)
 
-plotting = False
+plotting = True
 if plotting:
     # plotting
     colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
@@ -63,4 +63,4 @@ if plotting:
             dataExtracted = data[-N_extract::]
             print 'End %.2f percent of the listened data was extracted. Its max = %f' %(extractEndPercentage*100.0, np.absolute(dataExtracted).max())
     
-    # plt.show()
+    plt.show()
