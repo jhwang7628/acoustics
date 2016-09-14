@@ -793,19 +793,19 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
-    SimpleTimer timer[3]; 
+    SimpleTimer timer[7]; 
 
     const int N_ghostCells = _ghostCellPositions.size(); 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(N_ghostCells); 
     int replacedCell = 0;
 
-    timer[0].Start(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
+    timer[0].Start(); 
         const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
         const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
@@ -814,14 +814,23 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         //const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
         //const int       boundaryObject = _containingObject[cellIndex]; 
 
-        // find point BI and IP in the formulation
+        // find point BI and IP in the formulation and then query boundary
+        // condition
+        timer[4].Start(); 
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
-        REAL accumulatedBoundaryConditionValue; 
-        _objects->ReflectAgainstAllBoundaries(boundaryObject, cellPosition, simulationTime, imagePoint, boundaryPoint, erectedNormal, accumulatedBoundaryConditionValue, density, 1);
+        REAL distance; 
+        auto object = _objects->GetPtr(boundaryObject); 
+        object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
+        const REAL weights = (distance >=0 ? -distance : 2.0*distance);  // finite-difference weight
+        const REAL weightedPressure = bcPressure * weights; 
+        timer[4].Pause(); 
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
+        timer[5].Start(); 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+        timer[5].Pause(); 
 
         // hasGC  : has self as interpolation stencil
         int hasGC=-1; 
@@ -832,8 +841,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         Vector3d    positionBuffer; 
         Eigen::VectorXd pressureNeighbours(8);  // right hand side
  
-        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
-        const REAL bcEval = _objects->EvaluateNearestVibrationalSources(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density);
+
+    timer[0].Pause(); 
+    timer[1].Start(); 
 
         // some coupling information
         std::vector<int> coupledGhostCells; 
@@ -846,7 +856,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             {
                 hasGC = ii;
                 FillVandermondeBoundary(ii, boundaryPoint, erectedNormal, V);
-                pressureNeighbours(ii) = bcEval; 
+                pressureNeighbours(ii) = bcPressure; 
             }
             else  
             {
@@ -900,6 +910,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         if (hasGC != -1)
             replacedCell ++; 
 
+    timer[1].Pause(); 
+    timer[2].Start(); 
+
         // want beta = V^-T b, equivalent to solving V^T beta = b
         Eigen::MatrixXd b(1,8); // row vector
 
@@ -928,6 +941,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 //                      << V << std::endl;
 //        }
 
+    timer[2].Pause(); 
+    timer[3].Start(); 
+
         // forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
         jacobiIterationData.cellId = ghost_cell_idx; 
@@ -947,18 +963,16 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 
         // RHS always exists even when no off-diagonal elements 
         double &RHS = jacobiIterationData.RHS; 
-        RHS = accumulatedBoundaryConditionValue;
-        //RHS = - (imagePoint - cellPosition).length() * bcEval; 
+        RHS = weightedPressure;
         for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
             RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
 
         // if GC itself is coupled, need to add this to the RHS
         if (hasGC != -1) 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-    }
 
-    timer[0].Pause(); 
-    timer[1].Start(); 
+    timer[3].Pause(); 
+    }
 
     // analyze sparsity pattern and deflate the linear system
     int maxCoupleCount = std::numeric_limits<int>::min(); 
@@ -982,7 +996,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     const int maxIteration = 50;
     const int N_coupled = coupledIndices.size(); 
     FloatArray pGC_old; 
-    REAL minResidual, maxResidual, maxOffDiagonal, oldResidual; 
+    REAL minResidual, maxResidual, maxOffDiagonal, oldResidual = -1; 
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
         pGC_old = pGC; 
@@ -1014,22 +1028,16 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 
     ToFile_GhostCellCoupledMatrix("coupledMatrix.txt"); 
 
-    timer[1].Pause(); 
-    timer[2].Start(); 
-    
-
-    timer[2].Pause();
-
     std::cout << "--------------\n" << std::setprecision(16);
-    std::cout << "setup: " << timer[0].Duration() << " sec \n"; 
-    std::cout << "solve: " << timer[1].Duration() << " sec \n"; 
-    std::cout << "exam : " << timer[2].Duration() << " sec \n"; 
+    std::cout << "reflection, boundary condition evaluation: " << timer[0].Duration() << " sec \n"; 
+    std::cout << " reflection                              :  " << timer[4].Duration() << " sec \n"; 
+    std::cout << " enclosing neighbours                    :  " << timer[5].Duration() << " sec \n"; 
+    std::cout << " evaluate vibration                      :  " << timer[6].Duration() << " sec \n"; 
+    std::cout << "gc neighbour information                 : " << timer[1].Duration() << " sec \n"; 
+    std::cout << "transpose, linear solve                  : " << timer[2].Duration() << " sec \n"; 
+    std::cout << "formulate the matrix, rhs                : " << timer[3].Duration() << " sec \n"; 
     std::cout << "replaced percentage = " << (REAL)replacedCell / (REAL)N_ghostCells << std::endl;
-    std::cout << "--------------" << std::endl;
     std::cout << "--------------\n" << std::setprecision(6);
-
-
-
 }
 
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
