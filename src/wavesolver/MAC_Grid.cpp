@@ -804,7 +804,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    //for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
         const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
@@ -982,8 +981,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     // solve the linear system
     const int maxIteration = 50;
     const int N_coupled = coupledIndices.size(); 
+    FloatArray pGC_old; 
+    REAL minResidual, maxResidual, maxOffDiagonal, oldResidual; 
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
+        pGC_old = pGC; 
         #ifdef USE_OPENMP
         #pragma omp parallel for schedule(static) default(shared)
         #endif
@@ -996,36 +998,25 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
             pGC.at(ghost_cell_idx) = data.RHS; 
             for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
                 //p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
-                pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC.at(data.nnzIndex[cc]); 
+                pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC_old.at(data.nnzIndex[cc]); 
         }
+
+        ComputeGhostCellSolveResidual(pGC, minResidual, maxResidual, maxOffDiagonal); 
+        const REAL absResidual = max(fabs(minResidual), fabs(maxResidual)); 
+        // early termination
+        if (EQUAL_FLOATS(oldResidual, absResidual) || absResidual < 1E-8)
+            break; 
+
+        oldResidual = absResidual; 
+        std::cout << "  iteration " << iteration << ": residual = " << std::setprecision(16) << absResidual << std::endl;
     }
+    std::cout << std::setprecision(6);
 
     ToFile_GhostCellCoupledMatrix("coupledMatrix.txt"); 
 
     timer[1].Pause(); 
     timer[2].Start(); 
     
-    // check the residual of the linear system
-    const bool checkResidual = true; 
-    if (checkResidual && _waveSolverSettings->useMesh)
-    {
-        Eigen::VectorXd residual(N_ghostCells); 
-        REAL maxOffDiagonal = std::numeric_limits<REAL>::min(); 
-        for (int r_idx=0; r_idx<N_ghostCells; ++r_idx)
-        {
-            const JacobiIterationData &data = _ghostCellCoupledData.at(r_idx); 
-            residual(r_idx) = data.RHS;
-            const int N_entries = data.nnzIndex.size(); 
-            residual(r_idx) -= pGC.at(r_idx); 
-            for (int e_idx=0; e_idx<N_entries; ++e_idx)
-            {
-                residual(r_idx) -= data.nnzValue[e_idx]*pGC.at(data.nnzIndex[e_idx]); 
-                maxOffDiagonal = max(maxOffDiagonal, fabs(data.nnzValue[e_idx])); 
-            }
-        }
-        std::cout << " Jacobi iteration for ghost cell: N=" << maxIteration << "; residual = [" << residual.minCoeff() << ", " << residual.maxCoeff() << "]; max off-diagonal = " << maxOffDiagonal << std::endl;
-    }
-
 
     timer[2].Pause();
 
@@ -1991,6 +1982,30 @@ void MAC_Grid::classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, cons
 //        printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
 //        printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
 //    }
+}
+
+void MAC_Grid::ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry)
+{
+    const int N_ghostCells = _ghostCellCoupledData.size(); 
+    if (N_ghostCells == 0)
+        return; 
+
+    Eigen::VectorXd residual(N_ghostCells); 
+    maxOffDiagonalEntry = std::numeric_limits<REAL>::min(); 
+    for (int r_idx=0; r_idx<N_ghostCells; ++r_idx)
+    {
+        const JacobiIterationData &data = _ghostCellCoupledData.at(r_idx); 
+        residual(r_idx) = data.RHS;
+        const int N_entries = data.nnzIndex.size(); 
+        residual(r_idx) -= p.at(r_idx); 
+        for (int e_idx=0; e_idx<N_entries; ++e_idx)
+        {
+            residual(r_idx) -= data.nnzValue[e_idx]*p.at(data.nnzIndex[e_idx]); 
+            maxOffDiagonalEntry = max(maxOffDiagonalEntry, fabs(data.nnzValue[e_idx])); 
+        }
+    }
+    minResidual = residual.minCoeff(); 
+    maxResidual = residual.maxCoeff(); 
 }
 
 void MAC_Grid::visualizeClassifiedCells()

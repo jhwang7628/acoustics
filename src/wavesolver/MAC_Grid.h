@@ -48,7 +48,7 @@ class MAC_Grid
         struct JacobiIterationData 
         {
             int                 cellId; 
-            int                 coupleCount = 0;
+            int                 coupleCount = 0; // 0 if fully uncoupled
             std::vector<int>    nnzIndex; 
             std::vector<REAL>   nnzValue; 
             REAL                RHS; 
@@ -234,6 +234,7 @@ class MAC_Grid
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
+        void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
