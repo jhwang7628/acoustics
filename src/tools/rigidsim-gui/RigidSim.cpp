@@ -5,6 +5,7 @@
 #include "demo/DemoShakingPiggy.h"
 #include "demo/DemoDropObjs.h"
 #include "demo/DemoDropObjsWithFixed.h"
+#include "demo/DemoPlanarCollision.h"
 
 RigidSim::~RigidSim()
 {   delete pdemo_; }
@@ -26,7 +27,7 @@ void RigidSim::demo_shaking_piggy()
     if ( file.isEmpty() ) return;
 
     demoId_ = DEMO_SHAKING_PIGGY;
-    pdemo_  = new DemoShakingPiggy(file.toAscii().data(), canvas);
+    pdemo_  = new DemoShakingPiggy(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }
@@ -39,7 +40,7 @@ void RigidSim::demo_drop_objects()
     if ( file.isEmpty() ) return;
 
     demoId_ = DEMO_DROP_OBJS;
-    pdemo_  = new DemoDropObjs(file.toAscii().data(), canvas);
+    pdemo_  = new DemoDropObjs(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }
@@ -51,10 +52,24 @@ void RigidSim::demo_drop_objs_with_fixed()
             ".", "config file (*.cfg);;All files (*)");
     if ( file.isEmpty() ) return;
     demoId_ = DEMO_DROP_OBJS_WITH_FIXED;
-    pdemo_ = new DemoDropObjsWithFixed(file.toAscii().data(), canvas);
+    pdemo_ = new DemoDropObjsWithFixed(file.toStdString().data(), canvas);
     canvas->pdemo_ = pdemo_;
     canvas->updateGL();
 }
+
+void RigidSim::demo_planar_collision()
+{
+    std::cout << "demo_planar_collision\n";
+    //if ( demoId_ != DEMO_UNKNOWN ) return;
+    //QString file = QFileDialog::getOpenFileName(this, "Select the configure file",
+    //        ".", "config file (*.cfg);;All files (*)");
+    //if ( file.isEmpty() ) return;
+    //demoId_ = DEMO_PLANAR_COLLISION;
+    //pdemo_ = new DemoDropObjsWithFixed(file.toAscii().data(), canvas);
+    //canvas->pdemo_ = pdemo_;
+    //canvas->updateGL();
+}
+
 //=============================================================================
 
 int main(int argc, char* argv[])

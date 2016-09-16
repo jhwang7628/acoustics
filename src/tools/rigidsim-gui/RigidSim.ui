@@ -40,6 +40,7 @@
     <addaction name="actionDropObjects"/>
     <addaction name="actionDropObjsWithFixed"/>
     <addaction name="actionShakingPiggy"/>
+    <addaction name="actionPlanarCollision"/>
     <addaction name="separator"/>
     <addaction name="actionStart"/>
     <addaction name="actionStep"/>
@@ -130,6 +131,11 @@
   <action name="actionShakingPiggy">
    <property name="text">
     <string>Shaking piggy bank</string>
+   </property>
+  </action>
+  <action name="actionPlanarCollision">
+   <property name="text">
+    <string>Planar collision</string>
    </property>
   </action>
   <action name="actionStep">

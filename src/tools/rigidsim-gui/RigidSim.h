@@ -22,6 +22,7 @@ class RigidSim : public QMainWindow, private Ui_RigidSim
         void demo_shaking_piggy();
         void demo_drop_objects();
         void demo_drop_objs_with_fixed();
+        void demo_planar_collision(); 
 
     public:
         RigidSim():demoId_(DEMO_UNKNOWN), pdemo_(NULL)
@@ -38,6 +39,8 @@ class RigidSim : public QMainWindow, private Ui_RigidSim
                              SLOT(demo_drop_objs_with_fixed()));
             QObject::connect(actionShakingPiggy, SIGNAL(triggered()), this,
                              SLOT(demo_shaking_piggy()));
+            QObject::connect(actionPlanarCollision, SIGNAL(triggered()), this,
+                             SLOT(demo_planar_collision()));
         }
 
         ~RigidSim();
@@ -48,7 +51,8 @@ class RigidSim : public QMainWindow, private Ui_RigidSim
             DEMO_UNKNOWN = 0,
             DEMO_SHAKING_PIGGY,
             DEMO_DROP_OBJS,
-            DEMO_DROP_OBJS_WITH_FIXED
+            DEMO_DROP_OBJS_WITH_FIXED, 
+            DEMO_PLANAR_COLLISION
         };
 
         DEMO_ID     demoId_;
