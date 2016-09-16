@@ -30,7 +30,7 @@ template <typename T, class TMesh>
 class RigidBody
 {
     public:
-        RigidBody(TMesh* mesh, T density):m_fixed(false), 
+        RigidBody(TMesh* mesh, T density):m_fixed(false), m_subjectToGravity(true), 
                 m_density(density), mp_mesh(mesh), mp_stateSignal(NULL)
         {
             init();
@@ -114,6 +114,10 @@ class RigidBody
             m_v += (J*m_invMass);
             m_omega += (m_invI*L);
         }
+
+        inline void set_subject_to_gravity(const bool &hasGravity)
+        { m_subjectToGravity = hasGravity; }
+
 
         void set_position(const Point3<T>& p, const Quaternion<T>& rot)
         {
@@ -233,6 +237,7 @@ class RigidBody
 
     protected:
         bool            m_fixed;
+        bool            m_subjectToGravity; 
         T               m_density;
 
         /*======= constant quantities =======*/

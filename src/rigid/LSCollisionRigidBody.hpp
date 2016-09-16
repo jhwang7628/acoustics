@@ -40,7 +40,7 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
         LSCollisionRigidBody(int id, TMesh* mesh, T density, T restCoeff, T mu):
                 RigidBody<T, TMesh>(mesh, density), m_id(id), m_predTs(0),
                 m_restCoeff(restCoeff), m_mu(mu), m_cproc(this, mesh), 
-                m_pinned(false), m_subjectToGravity(true)
+                m_pinned(false)
         { 
 #ifdef USE_RECORDER
             init_kdtree();
@@ -120,9 +120,6 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
         inline Vector3<T> predicted_normal(const Vector3<T>& nml) const
         {  return m_predq.rotate(nml); }
 
-        inline void set_subject_to_gravity(const bool &hasGravity)
-        { m_subjectToGravity = hasGravity; }
-
         /*
          * apply impulse on this object, changing the current velocity
          */
@@ -161,6 +158,7 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
 
     protected:
         using RigidBody<T, TMesh>::m_fixed;
+        using RigidBody<T, TMesh>::m_subjectToGravity;
         using RigidBody<T, TMesh>::m_x0;
         using RigidBody<T, TMesh>::m_v;
         using RigidBody<T, TMesh>::m_acc;
@@ -194,7 +192,6 @@ class LSCollisionRigidBody : public RigidBody<T, _TMesh>
          * in shock propagation.
          */
         bool                m_pinned;
-        bool                m_subjectToGravity; 
 
 #ifdef USE_RECORDER
         /* 
