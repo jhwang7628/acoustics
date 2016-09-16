@@ -21,6 +21,8 @@ class XDemo
         virtual void draw()  { }
         virtual bool key_pressed(QKeyEvent*) 
         {  return false; }
+
+        virtual ~XDemo(){}
 };
 
 #endif
