@@ -1,0 +1,4 @@
+This folder is really messed up by some people and is ad hoc to non-gui version
+of rigid body dropping simulation. I think it might be a better idea if we put
+everything in rigidsim-gui folder. I will make all updates in the rigidsim-gui
+folder for now. 
