@@ -108,6 +108,7 @@ DemoPlanarCollision(const char* file, QGLViewer* canvas)
             const MatRec& matref = mats[txt];
             rbodies[i] = new TRigidBody(i, pmesh, matref.density, 
                     matref.rest, matref.friction);
+            rbodies[i]->set_subject_to_gravity(false); // turn off gravity
             double dx, dy, dz;
             Quaternion<double> qrot;
 
