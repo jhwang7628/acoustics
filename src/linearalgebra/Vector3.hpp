@@ -189,6 +189,17 @@ class Vector3 : public Tuple3<T>
         {
             return x * x + y * y + z * z;
         }
+
+        /*! 
+         * Project the vector to the plane that has normal v_n
+         */
+        void ApplyProjectionInplace(const Vector3<T> &v_n)
+        {
+            const T vi_cos_t = this->dotProduct(v_n) / v_n.norm(); 
+            x = x - v_n.x * vi_cos_t; 
+            y = y - v_n.y * vi_cos_t; 
+            z = z - v_n.z * vi_cos_t; 
+        }
        
         /*! Normalize vector */
         void normalize() 
