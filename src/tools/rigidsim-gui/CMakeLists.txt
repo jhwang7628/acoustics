@@ -15,7 +15,6 @@ if ( BUILD_RIGIDSIM_GUI )
 
         if(USE_QT5)
             find_package(Qt5Widgets REQUIRED)
-            include_directories(${QT_USE_FILE})
         else(USE_QT5)
             find_package(Qt4 REQUIRED)
         endif(USE_QT5)
