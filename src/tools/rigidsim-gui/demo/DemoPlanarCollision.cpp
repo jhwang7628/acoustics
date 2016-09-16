@@ -18,12 +18,21 @@
 using namespace std;
 
 //##############################################################################
+// This struct describes materials that can be parsed and assigned to objects.
+//##############################################################################
+struct MatRec
+{
+    double density;
+    double rest;
+    double friction;
+};
+
+//##############################################################################
 //##############################################################################
 DemoPlanarCollision::
 DemoPlanarCollision(const char* file, QGLViewer* canvas)
     : canvas_(canvas)
 {
-#if 0 // old code
     using namespace libconfig;
 
     map<string, MatRec>  mats;
@@ -99,7 +108,7 @@ DemoPlanarCollision(const char* file, QGLViewer* canvas)
             const MatRec& matref = mats[txt];
             rbodies[i] = new TRigidBody(i, pmesh, matref.density, 
                     matref.rest, matref.friction);
-            double dx, dy, dz, rot = 0.;
+            double dx, dy, dz;
             Quaternion<double> qrot;
 
             /*
@@ -125,87 +134,6 @@ DemoPlanarCollision(const char* file, QGLViewer* canvas)
             {
                 printf( "Fixing an object!\n" );
                 rbodies[i]->set_fixed( true );
-            }
-            else
-            {
-                int             animate = 0;
-
-                if ( !ssO[i].lookupValue("animate", animate) ) animate = 0;
-
-                if ( animate )
-                {
-                    Point3d pos = rbodies[i]->mass_center();
-
-                    const Setting &animateDirection = ssO[i]["animate_direction"];
-                    double         animateAmplitude;
-                    double         animateStart;
-                    double         animateEnd;
-                    double         animatePeriod;
-
-                    if ( !ssO[i].lookupValue("animate_amplitude",
-                                animateAmplitude ) )
-                    {
-                        animateAmplitude = 0.0;
-                    }
-                    if ( !ssO[i].lookupValue("animate_start",
-                                animateStart ) )
-                    {
-                        animateStart = 0.0;
-                    }
-                    if ( !ssO[i].lookupValue("animate_end",
-                                animateEnd ) )
-                    {
-                        animateEnd = 0.0;
-                    }
-                    if ( !ssO[i].lookupValue("animate_period",
-                                animatePeriod ) )
-                    {
-                        animatePeriod = 0.0;
-                    }
-
-                    // Check to see if we want to specify an animation state
-                    RigidState     *s = new RigidState();
-
-                    s->positionSignal[ 0 ] = boost::bind(
-                            sinPulse, _1, animateStart, animateEnd,
-                            animatePeriod,
-                            (double)animateDirection[ 0 ] * animateAmplitude,
-                            pos[0] );
-                    s->positionSignal[ 1 ] = boost::bind(
-                            sinPulse, _1, animateStart, animateEnd,
-                            animatePeriod,
-                            (double)animateDirection[ 1 ] * animateAmplitude,
-                            pos[1] );
-                    s->positionSignal[ 2 ] = boost::bind(
-                            sinPulse, _1, animateStart, animateEnd,
-                            animatePeriod,
-                            (double)animateDirection[ 2 ] * animateAmplitude,
-                            pos[2] );
-
-                    s->velocitySignal[ 0 ] = boost::bind( cosPulse, _1,
-                            animateStart,
-                            animateEnd,
-                            animatePeriod,
-                            2.0 * M_PI * (double)animateDirection[ 0 ]
-                            * animateAmplitude / animatePeriod,
-                            0.0 );
-                    s->velocitySignal[ 1 ] = boost::bind( cosPulse, _1,
-                            animateStart,
-                            animateEnd,
-                            animatePeriod,
-                            2.0 * M_PI * (double)animateDirection[ 1 ]
-                            * animateAmplitude / animatePeriod,
-                            0.0 );
-                    s->velocitySignal[ 2 ] = boost::bind( cosPulse, _1,
-                            animateStart,
-                            animateEnd,
-                            animatePeriod,
-                            2.0 * M_PI * (double)animateDirection[ 2 ]
-                            * animateAmplitude / animatePeriod,
-                            0.0 );
-
-                    rbodies[i]->specify_state( s );
-                }
             }
 
             if ( !ssO[i].lookupValue("vx", dx) ) dx = 0;
@@ -239,7 +167,6 @@ DemoPlanarCollision(const char* file, QGLViewer* canvas)
                 "ParseException: %s %s at Line %d\n",
                 e.getError(), e.what(), e.getLine());
     }
-#endif
 }
 
 //##############################################################################

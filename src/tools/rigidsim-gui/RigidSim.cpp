@@ -59,15 +59,14 @@ void RigidSim::demo_drop_objs_with_fixed()
 
 void RigidSim::demo_planar_collision()
 {
-    std::cout << "demo_planar_collision\n";
-    //if ( demoId_ != DEMO_UNKNOWN ) return;
-    //QString file = QFileDialog::getOpenFileName(this, "Select the configure file",
-    //        ".", "config file (*.cfg);;All files (*)");
-    //if ( file.isEmpty() ) return;
-    //demoId_ = DEMO_PLANAR_COLLISION;
-    //pdemo_ = new DemoDropObjsWithFixed(file.toAscii().data(), canvas);
-    //canvas->pdemo_ = pdemo_;
-    //canvas->updateGL();
+    if ( demoId_ != DEMO_UNKNOWN ) return;
+    QString file = QFileDialog::getOpenFileName(this, "Select the configure file",
+            ".", "config file (*.cfg);;All files (*)");
+    if ( file.isEmpty() ) return;
+    demoId_ = DEMO_PLANAR_COLLISION;
+    pdemo_ = new DemoPlanarCollision(file.toStdString().data(), canvas);
+    canvas->pdemo_ = pdemo_;
+    canvas->updateGL();
 }
 
 //=============================================================================
