@@ -18,6 +18,7 @@ void RigidCanvas::init()
     glutInit(&dummy, NULL);
 #endif
 
+    restoreStateFromFile();
     camera()->setZNearCoefficient(0.0001f);
     camera()->setZClippingCoefficient(100.f);
 }
@@ -60,6 +61,16 @@ void RigidCanvas::keyPressEvent(QKeyEvent* e)
         else
             glPolygonMode(GL_FRONT, GL_FILL);
         updateGL();
+    }
+    else if ((e->key() == Qt::Key_T) && (modifiers == Qt::NoButton)) {
+      if (camera()->type() == qglviewer::Camera::ORTHOGRAPHIC){
+        camera()->setType(qglviewer::Camera::PERSPECTIVE);
+        std::cout << "camera: perspective\n"; 
+      }
+      else {
+        camera()->setType(qglviewer::Camera::ORTHOGRAPHIC);
+        std::cout << "camera: orthographic\n"; 
+      }
     }
     else if ( pdemo_ && pdemo_->key_pressed(e) ) 
         updateGL();
