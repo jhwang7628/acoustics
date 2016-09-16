@@ -22,6 +22,13 @@ class RigidBodySimulator
 #ifdef USE_RECORDER
         typedef RigidObjImpRecorder                     TImpRecorder;
 #endif
+        // this struct stores if the rigid body motion is restricted on a plane
+        struct MotionProjection
+        {
+            bool            useProjection; 
+            Vector3<REAL>   projectionNormal; // normal of the plane the motion is allowed on
+            MotionProjection() : useProjection(false){}
+        };
 
     public:
         RigidBodySimulator();
@@ -66,6 +73,12 @@ class RigidBodySimulator
             m_rigidObjs.erase(std::remove(m_rigidObjs.begin(), end, bd), end);
         }
 
+        inline void assign_motion_projection(const Vector3<REAL> &projectionNormal)
+        {
+            m_motionProjection.projectionNormal = projectionNormal; 
+            m_motionProjection.useProjection = true;
+        }
+
 #ifdef USE_RECORDER
         TImpRecorder& impulse_recorder()
         {  return m_impRec; }
@@ -91,9 +104,9 @@ class RigidBodySimulator
         int  collision_constraint_resp(TRigidBody* b, REAL dt);
         /* apply impulse to the rigid bodies */
         void apply_collision_impulse(TRigidBody* b1, TRigidBody* b2, 
-                    const CollisionRec<REAL>& cRec);
+                    CollisionRec<REAL>& cRec);
         void apply_collision_impulse(TRigidBody* b, 
-                    const CollisionRec<REAL>& cRec);
+                    CollisionRec<REAL>& cRec);
 
         /* ========== For Contacts ========== */
         void resolve_contact(REAL dt);
@@ -114,6 +127,7 @@ class RigidBodySimulator
         std::vector<TConstraint*>   m_constraints;  // the constraints like walls
         ContactGraph                m_contactGraph;
         REAL                        m_ts;
+        MotionProjection            m_motionProjection;
 
 #ifdef USE_RECORDER
         TImpRecorder                m_impRec;       // impulse recorder

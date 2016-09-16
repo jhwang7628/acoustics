@@ -235,14 +235,26 @@ int RigidBodySimulator::collision_constraint_resp(TRigidBody* b, REAL dt)
  * Collision response with friction impulse considered.
  */
 void RigidBodySimulator::apply_collision_impulse(
-        TRigidBody* b, const CollisionRec<REAL>& cRec)
+        TRigidBody* b, CollisionRec<REAL>& cRec)
 {
+    if (m_motionProjection.useProjection)
+    {
+        Vector3<REAL> &v_i = cRec.impulseDir; 
+        Vector3<REAL> &v_n = m_motionProjection.projectionNormal; 
+        v_i = v_i * (1.0 - v_i.dotProduct(v_n) / (v_i.norm()*v_n.norm())); // project out the normal component
+    }
+
     //// assuming stick friction, compute the impulse
     const Vector3<REAL> r = cRec.pt - b->m_predx;
     Matrix3<REAL> K;
     collision_matrix(b, r, K);   // K should be a 3x3 matrix
     Vector3<REAL> Jt = K.inverse() * (cRec.impulseDir * 
             (-cRec.eps*cRec.vnrel) - cRec.vrel);
+    if (m_motionProjection.useProjection)
+    {
+        Jt.ApplyProjectionInplace(m_motionProjection.projectionNormal); 
+        cRec.impulseDir.ApplyProjectionInplace(m_motionProjection.projectionNormal); 
+    }
     const REAL JnSqr = M_SQR(Jt.dotProduct(cRec.impulseDir));  // square of normal component of the impulse
     const REAL normJSqr = Jt.lengthSqr();
 
@@ -278,7 +290,7 @@ void RigidBodySimulator::apply_collision_impulse(
  *       is applied in the rigid body \ba
  */
 void RigidBodySimulator::apply_collision_impulse(
-        TRigidBody* ba, TRigidBody* bb, const CollisionRec<REAL>& cRec)
+        TRigidBody* ba, TRigidBody* bb, CollisionRec<REAL>& cRec)
 {
     const Vector3<REAL> ra = cRec.pt - ba->m_predx;
     const Vector3<REAL> rb = cRec.pt - bb->m_predx;
@@ -298,6 +310,11 @@ void RigidBodySimulator::apply_collision_impulse(
 
     Vector3<REAL> Jt = K.inverse() * (cRec.impulseDir * 
             (-cRec.eps*cRec.vnrel) - cRec.vrel);
+    if (m_motionProjection.useProjection)
+    {
+        Jt.ApplyProjectionInplace(m_motionProjection.projectionNormal); 
+        cRec.impulseDir.ApplyProjectionInplace(m_motionProjection.projectionNormal); 
+    }
     const REAL JnSqr = M_SQR(Jt.dotProduct(cRec.impulseDir));
     const REAL normJSqr = Jt.lengthSqr();
 

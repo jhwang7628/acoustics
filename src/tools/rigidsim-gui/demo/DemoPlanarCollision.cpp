@@ -156,6 +156,7 @@ DemoPlanarCollision(const char* file, QGLViewer* canvas)
 
         printf("INFO: Initialize simulator ...\n");
         rsim_.init();
+        rsim_.assign_motion_projection(Vector3<REAL>(0, 1, 0));
     }
     catch (const SettingException e)
     {
