@@ -32,7 +32,7 @@ void RigidCanvas::draw()
 void RigidCanvas::draw_ground() const
 {
     const float GD_SIZE = 0.01;
-    float step = GD_SIZE * 15;
+    float step = GD_SIZE * 10;
 
     glColor3f(0.7, 0.7, 0.7);
 
