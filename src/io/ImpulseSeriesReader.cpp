@@ -124,10 +124,6 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
                  >> impulse.x >> impulse.y >> impulse.z
                  >> impulseType >> endLine && (firstTimestamp == timestamp || count==0)) 
     {
-        if (impulseType != 'S') 
-            throw std::runtime_error("**ERROR** Impulse vertex is prescribed on tetrahedron mesh, this case is not handled."); 
-        if (endLine != 'C')
-            throw std::runtime_error("**ERROR** End of line character is not 'C', check file format."); 
         if (count == 0) 
             firstTimestamp = timestamp; 
 
