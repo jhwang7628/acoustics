@@ -89,13 +89,16 @@ LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects)
 // Load the impulses from file for object identified. The format is the following: 
 //
 //  <timestamp>  <object id(0-based)>  <vertex ID>  <impulse.x>  <impulse.y>
-//  <impulse.z>  <T/S>
+//  <impulse.z>  <T/S> <C/P>
 //  
-//  The last letter "T/S" indicates what kind of vertex ID is used. "T" means
-//  the vertex ID is the id in tetrahedron mesh, whereas "S" means the vertex 
-//  ID is the id in surface triangle mesh.
+//  There are two types of impulse ("C/P"): contraint impulse (C) that records impulses
+//  when object hit the ground (a constraint), and pair impulse (P) that
+//  records impulses between two interacting objects. 
 //
-//  (comments copied from sndgen/RigidSoundObj.hpp)
+//  The letter "T/S" is used to designate the different object in the pair
+//  impulse case. "S" is used for the rigid body of class TRigidBody ba in
+//  RigidObjImpRecorder::record_inter_obj_impulse, and "T" is used for the
+//  rigid body of class TRigidBody bb in the same function.
 //
 //  Note: 
 //   The file is written by the class
