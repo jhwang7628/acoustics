@@ -33,6 +33,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
+        REAL                                _volume = -1; // mesh volume that can be estimated if built from tet mesh
         std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
 
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 

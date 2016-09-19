@@ -38,6 +38,7 @@ Initialize(const bool &buildFromTetMesh)
                 throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
             else 
                 std::cout << " Surface mesh and Tet-Surface mapping built.\n";
+            _volume = tetMesh->total_volume(); // cache volume
         }
         else 
         {
@@ -282,10 +283,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
         reflectedPoint= originalPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
     }
-    // FIXME old code commented out
-    //distanceTravelled = 2.0 * fabs(DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z)); 
-    //boundaryPoint  = originalPoint + erectedNormal * (0.5*distanceTravelled);
-    //reflectedPoint = originalPoint + erectedNormal * (    distanceTravelled); 
 
 #else // use kd-tree for normal query
 

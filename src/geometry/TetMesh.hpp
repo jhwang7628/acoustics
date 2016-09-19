@@ -268,7 +268,7 @@ class TetMesh
          */ 
         inline REAL total_volume() const 
         {
-            return std::accumulate(m_masses.begin(), m_masses.end(), 0); 
+            return std::accumulate(m_masses.begin(), m_masses.end(), 0.0); 
         }
 
     private:
