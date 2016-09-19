@@ -36,7 +36,7 @@ class RigidObjImpRecorder
             }
         }
 
-        void init(const char* file, const char *modalFile, int precision = 10);
+        void init(const char* file, const char *modalFile, int precision = 16);
         /*
          * record the impulse, applied on the vertex (id = cRec.vtxId)
          * of the rigid object (body).
