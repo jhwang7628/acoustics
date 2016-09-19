@@ -250,6 +250,17 @@ UpdateQPointers()
 }
 
 //##############################################################################
+// This function estimates the mass of the object.
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+Mass() const
+{
+    if (_volume <= 0) 
+        throw std::runtime_error("**ERROR** target mesh has zero or negative volume. It is possible improper initialization was performed"); 
+    return _volume * _material->density; 
+}
+
+//##############################################################################
 // Brute force looping for now
 //##############################################################################
 REAL FDTD_RigidSoundObject::
@@ -329,6 +340,27 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
 
     return sampledValue;
+}
+
+//##############################################################################
+// This function estimates the contact time scale for acceleration noises
+// between object a and b (object a is self). See Eq (7-8) in ref:
+//  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed)
+{
+    const auto &object_a = this; 
+    const auto &mesh_a = GetMeshPtr(); 
+    const auto &mesh_b = object_b->GetMeshPtr(); 
+    const auto &material_a = object_a->GetMaterial(); 
+    const auto &material_b = object_a->GetMaterial(); 
+
+    const REAL m = 1./(1./object_a->Mass() + 1./object_b->Mass()); 
+    const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a) + mesh_b->vertex_mean_curvature(vertex_b); 
+    const REAL one_over_E = material_a->one_minus_nu2_over_E + material_b->one_minus_nu2_over_E; 
+
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / contactSpeed, 0.2); 
 }
 
 //##############################################################################

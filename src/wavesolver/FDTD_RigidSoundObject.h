@@ -101,11 +101,13 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         void AdvanceModalODESolvers(const int &N_steps);
         void AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
+        REAL Mass() const; 
         // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
         // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed); 
 
         ///// debug methods /////
 

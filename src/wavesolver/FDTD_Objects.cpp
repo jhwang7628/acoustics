@@ -52,6 +52,9 @@ LowestObjectDistance(const Vector3d &positionWorld)
 
 //##############################################################################
 // Find the closest object with respect to positionWorld
+//
+// Note: this might fail if positionWorld is too far from the region where sdf
+// is defined. 
 //##############################################################################
 void FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
@@ -120,7 +123,7 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
     return sourceValue; 
 }
 
-//##############################################################################
+////##############################################################################
 // Compute the reflected stencils until outside all objects. 
 // 
 // Suppose k reflections are needed to get the stencil, whose original position
@@ -151,6 +154,10 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
 //  erectedNormal: erected normal found at last reflection
 //  accumulatedBoundaryConditionValue: sum of boundary condition multiplied 
 //                                     by travelled distance for all steps
+//
+//
+//
+// THIS FUNCTION IS NO LONGER USED
 //##############################################################################
 bool FDTD_Objects::
 ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration)

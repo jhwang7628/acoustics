@@ -2,39 +2,63 @@
 <impulse_response>
     <material_list>
         <modal_material
-            alpha = "6" 
+            alpha = "40" 
             beta = "1.0E-7" 
             density = "2300" 
+            poisson_ratio = "0.19"
+            youngs_modulus= "7.2E+10"
             /> 
         <modal_material
             alpha = "0" 
             beta = "2.0E-7" 
             density = "8800" 
+            poisson_ratio = "0.19"
+            youngs_modulus= "7.2E+10"
             /> 
     </material_list>
     <scene> 
             <!-- note: in these data, id of the objects will be used to
                  distinguish -->
-                 <!--
             <object_rigidsim_data
-                file_displacement="/home/jui-hsien/code/acoustics/work/plate_drop_test/displace.bin"
-                file_velocity="/home/jui-hsien/code/acoustics/work/plate_drop_test/velocity.bin"
-                file_acceleration="/home/jui-hsien/code/acoustics/work/plate_drop_test/acceleration.bin"
+                file_displacement="/home/jui-hsien/code/acoustics/work/two_sphere_collide/displace.bin"
+                file_velocity="/home/jui-hsien/code/acoustics/work/two_sphere_collide/velocity.bin"
+                file_acceleration="/home/jui-hsien/code/acoustics/work/two_sphere_collide/acceleration.bin"
                 />
+                 <!--
                 -->
             <!-- object_prefix is used to search for: *.tet *.geo.txt *.tet.obj *.dist -->
             <!-- right now only the id of rigid_sound_object will be used to
                  get rigidsim data, for these objects, id needs to be integer to cope with rigidsim and impulses register -->
             <!-- right now modal_ODE_step_frequency should be the same as solver frequency -->
-            <rigid_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/small_plane"
-                object_prefix="small_plane_rotated2_11y" 
+            <rigid_sound_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/two_sphere_collide"
+                object_prefix="sphere_d10cm"  
                 id="0" 
                 fieldresolution="400"
                 scale="1.0" 
                 initial_position_x="0.0"
                 initial_position_y="0.0"
                 initial_position_z="0.0"
+                material_id="0"
+                impulse_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/modalImpulses.txt"
+                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/default.cfg"
+                mode_file=""
+                modal_ODE_step_frequency="176400"
+                /> 
+            <rigid_sound_object 
+                working_directory="/home/jui-hsien/code/acoustics/work/two_sphere_collide"
+                object_prefix="sphere_d10cm"  
+                id="1" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                material_id="0"
+                impulse_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/modalImpulses.txt"
+                impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/default.cfg"
+                mode_file=""
+                modal_ODE_step_frequency="176400"
                 /> 
             <!--
             <rigid_sound_object 
@@ -120,14 +144,14 @@
         density="1.184" 
         cellsize="0.01" 
         gridresolution="80"
-        stop_time="1"
+        stop_time="0.30"
         substeps="1"
         timestepfrequency="176400"
         output_pattern="work/near-field/data_test/test_%s"
         PML_width="3"
         PML_strength="1000000.0" 
         use_mesh="1"
-        use_ghost_cell="1"
+        use_ghost_cell="0"
         boundary_condition_preset="0"
         write_pressure_field_to_disk="0"
         fast_forward_to_earliest_impact="0"
@@ -135,13 +159,13 @@
         /> 
 
     <pressure_source> 
-        <gaussian_pressure_source
-        source_width_time="0.00005"
-        source_position_x="-0.2" 
-        source_position_y="-0.2" 
-        source_position_z="0.0" 
-        />
     <!--
+        <gaussian_pressure_source
+        source_width_time="0.000025"
+        source_position_x="0.1" 
+        source_position_y="0.0" 
+        source_position_z="0.1" 
+        />
         <gaussian_pressure_source
         source_width_time="0.00005" 
         source_position_x="0.4" 
@@ -152,6 +176,7 @@
     </pressure_source> 
 
     <listening_point_list>
+        <!--
         <listening_point x="0.0" y="0.0625" z="0.0"/>
         <listening_point x="0.0" y="0.08" z="0.0"/>
         <listening_point x="0.0" y="0.125" z="0.0"/>
@@ -161,16 +186,6 @@
         <listening_point x="0.2" y="0.275" z="0.3"/>
         <listening_point x="0.15" y="0.275" z="0.0"/>
         <listening_point x="-0.15" y="0.275" z="0.0"/>
-        <!--
-        <listening_point x="0.0" y="0.0" z="0.0"/>
-        <listening_point x="0.0" y="0.0" z="0.0825"/>
-        <listening_point x="0.0" y="0.0" z="-0.0825"/>
-        <listening_point x="0.0" y="0.1325" z="0"/>
-        <listening_point x="0.0" y="-0.1325" z="0"/>
-        <listening_point x="0.1325" y="0.1325" z="0.1325"/>
-        <listening_point x="0.1325" y="0.01" z="0.1325"/>
-        <listening_point x="-0.1325" y="0.01" z="0.1325"/>
-        <listening_point x="0.1325" y="0.01" z="-0.1325"/>
         -->
     </listening_point_list> 
 
