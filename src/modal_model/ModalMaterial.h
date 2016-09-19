@@ -16,7 +16,12 @@ struct ModalMaterial
     REAL alpha; 
     REAL beta; 
     REAL density; // assuming we always have constant, uniform density
-    REAL inverseDensity; // cached
+    REAL poissonRatio; 
+    REAL youngsModulus; 
+
+    // cached fields
+    REAL inverseDensity;
+    REAL one_minus_nu2_over_E; 
     inline REAL xi(const REAL &omega_i){return 0.5*(alpha/omega_i + beta*omega_i);} // eq.10, xi = [0,1]
     inline REAL omega_di(const REAL &omega_i){return omega_i*sqrt(1.0 - pow(xi(omega_i),2));} // eq.12.
 };

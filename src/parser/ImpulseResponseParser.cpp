@@ -309,7 +309,10 @@ GetModalMaterials(ModalMaterialList &modalMaterials)
             material->alpha = queryRequiredReal(materialNode, "alpha"); 
             material->beta = queryRequiredReal(materialNode, "beta"); 
             material->density = queryRequiredReal(materialNode, "density"); 
+            material->poissonRatio = queryRequiredReal(materialNode, "poisson_ratio"); 
+            material->youngsModulus = queryRequiredReal(materialNode, "youngs_modulus"); 
             material->inverseDensity = 1./material->density; 
+            material->one_minus_nu2_over_E = (1.0 - pow(material->poissonRatio, 2)) / material->youngsModulus;
             material->id = modalMaterials.size(); 
             modalMaterials.push_back(material); 
             materialNode = materialNode->NextSiblingElement(materialNodeName.c_str());

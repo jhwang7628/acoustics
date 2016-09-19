@@ -57,6 +57,7 @@ class ModalAnalysisObject
         inline void SetModeFile(const std::string &modeFile){_modeFile = modeFile; _modeFileSet = true;}
         inline REAL GetModeFrequency(const int modeIndex) const {return sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI);}
         inline bool IDTypeIsSurf(){return _idType==SURF_CULLED;}
+        inline std::shared_ptr<ModalMaterial> GetMaterial(){return _material;}
         void ReadModeFromFile(); 
         // Get U^T f, where U is the eigenvector (modal) matrix. Input vertexID should be in zero-based, tet mesh id. 
         //void GetForceInModalSpace(const int &vertexID, const Eigen::Vector3d &impulse, Eigen::VectorXd &forceInModalSpace);
