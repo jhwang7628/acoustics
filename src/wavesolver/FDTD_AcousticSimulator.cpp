@@ -430,8 +430,6 @@ AnimateObjects()
         Quaternion<REAL> quaternion; 
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
-            if (!_sceneObjects->GetPtr(obj_idx)->IsModalObject())
-                continue; 
             const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
             _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
             rotationAngle = quaternion.toAxisRotR(rotationAxis); 
