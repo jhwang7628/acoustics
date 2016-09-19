@@ -260,6 +260,17 @@ class TetMesh
             return true;
         }
 
+        /* 
+         * Return the volume of the entire tet mesh. 
+         *
+         * Note: I called this "volume" because the field m_masses is really
+         * just a volume estimate, which is not weighted by density. 
+         */ 
+        inline REAL total_volume() const 
+        {
+            return std::accumulate(m_masses.begin(), m_masses.end(), 0); 
+        }
+
     private:
         void add_normal(unsigned int a, unsigned int b, unsigned int c,
                 std::vector<int>& cnts);
