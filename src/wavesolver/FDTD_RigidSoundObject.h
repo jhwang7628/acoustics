@@ -37,7 +37,7 @@
 // For safety, I limit the timestamp access when sampling velocity and
 // acceleration to make sure its called correctly. See individual functions. 
 //##############################################################################
-class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObject, public ModalAnalysisObject
+class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObject, public ImpulseSeriesObject
 {
     public: 
         struct ModeAttribute{ REAL modeMax; REAL modeMin; REAL absMax; };
@@ -68,24 +68,24 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         // build object
         FDTD_RigidSoundObject()
             : FDTD_RigidObject(), 
-              ImpulseSeriesObject(), 
-              ModalAnalysisObject()
+              ModalAnalysisObject(),
+              ImpulseSeriesObject()
         {
         }
 
         // build object with mesh, sdf
         FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
             : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, meshName, scale), 
-              ImpulseSeriesObject(GetMeshPtr()), 
-              ModalAnalysisObject()
+              ModalAnalysisObject(),
+              ImpulseSeriesObject(GetMeshPtr())
         {
         }
 
         // build object with mesh, sdf, modes
         FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const std::string &modeFile, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
             : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, meshName, scale), 
-              ImpulseSeriesObject(GetMeshPtr()), 
-              ModalAnalysisObject(modeFile)
+              ModalAnalysisObject(modeFile),
+              ImpulseSeriesObject(GetMeshPtr())
         {
         }
 
@@ -107,7 +107,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ImpulseSeriesObjec
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+
+        REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed); 
         REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed); 
+        REAL SampleANAcceleration(const REAL &sampleTime); 
 
         ///// debug methods /////
 

@@ -344,6 +344,25 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
 
 //##############################################################################
 // This function estimates the contact time scale for acceleration noises
+// between object a and constraint (such as ground). See Eq (7-8) in ref:
+//  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed)
+{
+    const auto &object_a = this; 
+    const auto &mesh_a = GetMeshPtr(); 
+    const auto &material_a = object_a->GetMaterial(); 
+
+    const REAL m = object_a->Mass(); 
+    const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a); 
+    const REAL one_over_E = material_a->one_minus_nu2_over_E; 
+
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
+}
+
+//##############################################################################
+// This function estimates the contact time scale for acceleration noises
 // between object a and b (object a is self). See Eq (7-8) in ref:
 //  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
 //##############################################################################
@@ -361,6 +380,14 @@ EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b,
     const REAL one_over_E = material_a->one_minus_nu2_over_E + material_b->one_minus_nu2_over_E; 
 
     return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / contactSpeed, 0.2); 
+}
+
+//##############################################################################
+//This function computes acceleration noise (AN) acceleration. 
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleANAcceleration(const REAL &sampleTime)
+{
 }
 
 //##############################################################################
