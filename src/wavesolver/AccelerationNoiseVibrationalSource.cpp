@@ -17,6 +17,10 @@ REAL AccelerationNoiseVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
     std::cout << "Evaluate AN acceleration\n"; 
+
+    std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
+    _modalObjectOwner->GetImpulseWithinSupport(time, time+_modalObjectOwnder->_ODEStepSize, impactRecords); 
+
     return 0.0; 
 }
 

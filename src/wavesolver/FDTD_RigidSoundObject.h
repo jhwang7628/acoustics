@@ -6,6 +6,7 @@
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
+#include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <utils/SimpleTimer.h>
 
 //##############################################################################
@@ -110,7 +111,6 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
 
         REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed); 
         REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed); 
-        REAL SampleANAcceleration(const REAL &sampleTime); 
 
         ///// debug methods /////
 
@@ -119,6 +119,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         REAL PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         void PrintAllVelocity(const std::string &filename, const int &mode) const;
+
+    friend class AccelerationNoiseVibrationalSource; 
 };
 
 #endif
