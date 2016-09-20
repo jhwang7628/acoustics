@@ -26,8 +26,13 @@ _SetBoundaryConditions()
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
         if (objectPtr->IsModalObject())
         {
-            VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-            objectPtr->AddVibrationalSource(sourcePtr); 
+            // add modal vibrational source // FIXME debug
+            //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+            //objectPtr->AddVibrationalSource(sourcePtr); 
+
+            // add acceleration noise source
+            VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+            objectPtr->AddVibrationalSource(anSourcePtr);
         }
         else
         {

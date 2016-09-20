@@ -18,6 +18,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h

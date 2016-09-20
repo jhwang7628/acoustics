@@ -8,6 +8,7 @@
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/HarmonicVibrationalSource.h>
 #include <wavesolver/ModalVibrationalSource.h>
+#include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 
