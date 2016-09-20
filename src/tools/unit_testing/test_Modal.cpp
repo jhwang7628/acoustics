@@ -49,14 +49,23 @@ void TestModal()
     else 
         throw std::runtime_error("Object read failed.");
     ImpulseSeriesObject impulseSeriesObject(mesh); 
-    impulseSeriesObject.AddImpulse(0.02, 1, Vector3d(1,2,3)); 
-    impulseSeriesObject.AddImpulse(0.03, 4, Vector3d(3,2,1)); 
+    ImpulseSeriesObject::ImpactRecord record1, record2; 
+    record1.timestamp = 0.02; 
+    record1.appliedVertex = 1; 
+    record1.impactVector = Vector3d(1,2,3); 
+
+    record2.timestamp = 0.03; 
+    record2.appliedVertex = 4; 
+    record2.impactVector = Vector3d(3,2,1); 
+
+    impulseSeriesObject.AddImpulse(record1); 
+    impulseSeriesObject.AddImpulse(record2); 
     REAL timestamp; 
     int vertex; 
     Vector3d impulse; 
     impulseSeriesObject.GetImpulse(1, timestamp, vertex, impulse); 
     REAL firstImpulseTime, lastImpulseTime; 
-    impulseSeriesObject.GetImpulseRange(firstImpulseTime, lastImpulseTime); 
+    impulseSeriesObject.GetRangeOfImpulses(firstImpulseTime, lastImpulseTime); 
 
     std::cout << impulseSeriesObject.Size() << " " << timestamp << " " << vertex << " " << impulse << " " << firstImpulseTime << " " << lastImpulseTime << std::endl;
 
@@ -87,7 +96,7 @@ void TestRigidSoundObject()
     //object.AddImpulse(0.5, 10, impulse);
 
     REAL a, b; 
-    object.GetImpulseRange(a, b); 
+    object.GetRangeOfImpulses(a, b); 
     std::cout << a << " " << b << std::endl;
 }
 

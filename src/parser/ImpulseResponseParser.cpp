@@ -63,7 +63,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         readers.push_back(reader); 
         //reader.LoadImpulses(meshID, objectPtr, objects); 
         //REAL impulseRangeStart, impulseRangeStop; 
-        //object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
+        //object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop); 
         //std::cout << "Impulses Read for object " << meshName << ":\n"
         //          << " Number of impulses: " << object->Size() << "\n"
         //          << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
@@ -91,9 +91,9 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         auto object = objects->GetPtr(o_idx); 
         readers.at(o_idx).LoadImpulses(o_idx, object, objects); 
         REAL impulseRangeStart, impulseRangeStop; 
-        object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
+        object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop); 
         std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
-                  << " Number of impulses: " << object->Size() << "\n"
+                  << " Number of impulses: " << object->N_Impulses() << "\n"
                   << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
                   << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
                   << "\n";

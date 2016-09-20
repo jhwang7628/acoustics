@@ -24,8 +24,8 @@ class ImpulseSeriesObject
         {
             Vector3d impactVector; 
             REAL timestamp; 
-            REAL supportLength; 
-            REAL contactSpeed; 
+            REAL supportLength = 0.0; 
+            REAL contactSpeed = 0.0; 
             int appliedVertex;
         }; 
 
@@ -34,13 +34,9 @@ class ImpulseSeriesObject
         TriangleMeshPtr     _objectMesh; 
 
         // impulse data can be read from modalImpulse.txt
-        int                     _lengthImpulses; 
         REAL                    _firstImpulseTime; 
         REAL                    _lastImpulseTime; 
-        std::vector<Vector3d>   _impulses; 
-        std::vector<REAL>       _impulseTimestamps; 
-        std::vector<REAL>       _impulseSupportLength; 
-        std::vector<int>        _impulseAppliedVertex; 
+        std::vector<ImpactRecord> _impulses; 
 
         // rigidbody configurations can be read from config file
         RigidsimConfigDataPtr   _rigidsimConfigData; 
@@ -50,22 +46,22 @@ class ImpulseSeriesObject
         ImpulseSeriesObject(const TriangleMeshPtr &meshPtr); 
 
         inline Vector3d ConvertImpulseToForce(const Vector3d &impulse){return impulse / _rigidsimConfigData->simulation_step_size; }
-        inline int Size(){return _lengthImpulses;}
-        inline int N_Impulses(){return _lengthImpulses;}
+        inline int N_Impulses(){return _impulses.size();}
         inline REAL GetFirstImpulseTime(){return _firstImpulseTime;}
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
-        inline bool Initialized(){return _objectMesh!=nullptr && _lengthImpulses!=0;}
+        inline bool Initialized(){return _objectMesh!=nullptr && N_Impulses()!=0;}
         inline RigidsimConfigDataPtr GetRigidsimConfigData(){return _rigidsimConfigData;}
         inline void SetRigidsimConfigData(RigidsimConfigDataPtr configData){_rigidsimConfigData = configData;}
         inline REAL GetRigidsimTimeStepSize(){return _rigidsimConfigData->simulation_step_size;}
         void Initialize(); 
-        void AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse, const REAL &supportLength=0); 
-        void AddImpulse(const ImpactRecord &record, const REAL &supportLength=0); 
+        void AddImpulse(const ImpactRecord &record); 
         void GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse); 
         void GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
-        void GetImpulseRange(REAL &firstImpulseTime, REAL &lastImpulseTime);
         void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
+        void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
+
+    friend std::ostream &operator <<(std::ostream &os, const ImpactRecord &record);
 };
 
 #endif 

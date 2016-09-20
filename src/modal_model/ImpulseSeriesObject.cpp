@@ -27,45 +27,24 @@ ImpulseSeriesObject(const TriangleMeshPtr &meshPtr)
 void ImpulseSeriesObject::
 Initialize()
 {
-    _lengthImpulses = 0;
 }
 
 //##############################################################################
-// This function add impulse for this object. The vertex index should be for 
-// surface triangle mesh (not volumetric tetrahedron). 
+// This function add impulses. The vertex index should be for surface triangle 
+// mesh (not volumetric tetrahedron). 
 //##############################################################################
 void ImpulseSeriesObject::
-AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse, const REAL &supportLength)
+AddImpulse(const ImpulseSeriesObject::ImpactRecord &record)
 {
     // need the notion of mesh to check whether appliedVertex makes sense
     if (_objectMesh == nullptr)
         throw std::runtime_error("**ERROR** Adding impulse to an object whose mesh is not defined yet."); 
-    if (appliedVertex >= _objectMesh->num_vertices())
-        throw std::runtime_error("**ERROR** Adding impulse whose applied vertex ID ("+std::to_string(appliedVertex)+") does not make sense (mesh has only "+std::to_string(_objectMesh->num_vertices())+" vertices)."); 
+    if (record.appliedVertex >= _objectMesh->num_vertices())
+        throw std::runtime_error("**ERROR** Adding impulse whose applied vertex ID ("+std::to_string(record.appliedVertex)+") does not make sense (mesh has only "+std::to_string(_objectMesh->num_vertices())+" vertices)."); 
 
-    _impulseTimestamps.push_back(timestamp); 
-    _impulseAppliedVertex.push_back(appliedVertex);
-    _impulses.push_back(impulse); 
-    if (_impulseTimestamps.size() != _impulseAppliedVertex.size() || 
-        _impulseTimestamps.size() != _impulses.size()) 
-        throw std::runtime_error("**ERROR** Number of impulse timestamps not equal to number of applied verticesor impulses."); 
-    if (timestamp < _lastImpulseTime)  // fine if equal 
-        throw std::runtime_error("**ERROR** Added impulse was older than the latest impulse in the series."); 
-    else 
-        _lastImpulseTime = timestamp;
-    _firstImpulseTime = std::min<REAL>(_firstImpulseTime, timestamp); 
-    _lengthImpulses = _impulseTimestamps.size(); 
-
-    // add half pulse support for later query
-    _impulseSupportLength.push_back(supportLength); 
-}
-
-//##############################################################################
-//##############################################################################
-void ImpulseSeriesObject::
-AddImpulse(const ImpulseSeriesObject::ImpactRecord &record, const REAL &supportLength)
-{
-    AddImpulse(record.timestamp, record.appliedVertex, record.impactVector, supportLength); 
+    _lastImpulseTime = record.timestamp;
+    _firstImpulseTime = std::min<REAL>(_firstImpulseTime, record.timestamp); 
+    _impulses.push_back(record); 
 }
 
 //##############################################################################
@@ -74,9 +53,10 @@ AddImpulse(const ImpulseSeriesObject::ImpactRecord &record, const REAL &supportL
 void ImpulseSeriesObject::
 GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse)
 {
-    timestamp = _impulseTimestamps.at(index); 
-    vertex = _impulseAppliedVertex.at(index); 
-    impulse = _impulses.at(index); 
+    const auto &record = _impulses.at(index); 
+    timestamp = record.timestamp; 
+    vertex = record.appliedVertex;
+    impulse = record.impactVector; 
 }
 
 //##############################################################################
@@ -89,18 +69,13 @@ GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord
         return;}
 
     records.clear(); 
-    for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
+    const int N_impulses = N_Impulses(); 
+    for (int frame_idx=0; frame_idx<N_impulses; ++frame_idx) 
     {
-        const REAL &timestamp = _impulseTimestamps.at(frame_idx); 
+        const auto &record = _impulses.at(frame_idx); 
+        const REAL &timestamp = record.timestamp; 
         if (timestamp >= timeStart && timestamp <= timeStop)
-        {
-            ImpactRecord record; 
-            record.impactVector = _impulses.at(frame_idx); 
-            record.timestamp = _impulseTimestamps.at(frame_idx); 
-            record.supportLength = _impulseSupportLength.at(frame_idx); 
-            record.appliedVertex = _impulseAppliedVertex.at(frame_idx); 
             records.push_back(record); 
-        }
     }
 }
 
@@ -114,31 +89,19 @@ GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector
         return;}
 
     records.clear(); 
-    for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
+    const int N_impulses = N_Impulses(); 
+    for (int frame_idx=0; frame_idx<N_impulses; ++frame_idx) 
     {
-        const REAL &timestamp = _impulseTimestamps.at(frame_idx); 
-        const REAL &timestop = timestamp + _impulseSupportLength.at(frame_idx); 
+        const auto &record = _impulses.at(frame_idx); 
+        const REAL &timestamp = record.timestamp; 
+        const REAL &timestop = timestamp + record.supportLength; 
         if ((timestamp >= timeStart && timestamp <= timeStop) ||
             (timestop  >= timeStart && timestop  <= timeStop) || 
             (timestop  <  timeStart && timestop  >  timeStop))
         {
-            ImpactRecord record; 
-            record.impactVector = _impulses.at(frame_idx); 
-            record.timestamp = timestamp; 
-            record.supportLength = timestop; 
-            record.appliedVertex = _impulseAppliedVertex.at(frame_idx); 
             records.push_back(record); 
         }
     }
-}
-
-//##############################################################################
-//##############################################################################
-void ImpulseSeriesObject::
-GetImpulseRange(REAL &firstImpulseTime, REAL &lastImpulseTime)
-{
-    firstImpulseTime = _firstImpulseTime; 
-    lastImpulseTime = _lastImpulseTime; 
 }
 
 //##############################################################################
@@ -154,3 +117,28 @@ GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord>
         records.at(frame_idx).impactVector = ConvertImpulseToForce(records.at(frame_idx).impactVector); 
 }
 
+//##############################################################################
+//##############################################################################
+void ImpulseSeriesObject::
+GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime)
+{
+    firstImpulseTime = _firstImpulseTime; 
+    lastImpulseTime = _lastImpulseTime; 
+}
+
+//##############################################################################
+//##############################################################################
+std::ostream &operator <<(std::ostream &os, const ImpulseSeriesObject::ImpactRecord &record)
+{
+    os << "--------------------------------------------------------------------------------\n" 
+       << "Struct ImpulseSeriesObject::ImpactRecord\n" 
+       << "--------------------------------------------------------------------------------\n"
+       << " timestamp                           : " << record.timestamp << "\n"
+       << " impact vector                       : " << record.impactVector << "\n"
+       << " support length (contact time scale) : " << record.supportLength << "\n"
+       << " contact speed                       : " << record.contactSpeed << "\n"
+       << " applied vertex id                   : " << record.appliedVertex << "\n"
+       << "--------------------------------------------------------------------------------" 
+       << std::flush; 
+    return os; 
+}

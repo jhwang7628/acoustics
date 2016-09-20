@@ -54,8 +54,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
             {
                 // estimate contact time scale between this object and
                 // constraint, and added to impulse train
-                const REAL ts = soundObject->EstimateContactTimeScale(buffer.appliedVertex, buffer.contactSpeed); 
-                object->AddImpulse(buffer, ts);  // assumes point impulse
+                buffer.supportLength = soundObject->EstimateContactTimeScale(buffer.appliedVertex, buffer.contactSpeed); 
+                object->AddImpulse(buffer);  // assumes point impulse
             }
             else if (impulseType == 'P') 
             {
@@ -63,8 +63,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                 {
                     assert(count > 0); // make sure buffer exists
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
-                    const REAL ts = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
-                    object->AddImpulse(buffer, ts);  // assumes point impulse
+                    buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
+                    object->AddImpulse(buffer);  // assumes point impulse
                 }
                 else if (pairOrder == 'S') // need to read one more line to get pair
                 {
@@ -74,8 +74,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                            >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
                            >> pairOrder >> impulseType; 
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
-                    const REAL ts = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
-                    object->AddImpulse(buffer, ts);  // assumes point impulse
+                    buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
+                    object->AddImpulse(buffer);  // assumes point impulse
                 }
             }
             LoadRigidsimConfig(object);
@@ -109,7 +109,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
         {
             if (impulseType == 'C' || impulseType == 'P')
             {
-                object->AddImpulse(buffer, 0.0);  // assumes point impulse
+                // note: here I assume impulse has 0 support (default)
+                object->AddImpulse(buffer);
             }
             LoadRigidsimConfig(object);
         }

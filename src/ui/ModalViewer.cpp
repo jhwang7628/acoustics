@@ -197,7 +197,7 @@ void ModalViewer::
 DrawImpulses()
 {
     const REAL impulseScaling = 0.1 * _timeStepSize;
-    const int N_frames = _rigidSoundObject->Size(); 
+    const int N_frames = _rigidSoundObject->N_Impulses(); 
     _currentImpulseFrame = _currentFrame % N_frames; 
     // get impulse from object
     const REAL timeStart = CurrentTime(); 
@@ -361,11 +361,11 @@ PrepareImpulses()
     ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
     std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(_rigidSoundObject); 
     reader.LoadImpulses(0, objectPtr); 
-    _rigidSoundObject->GetImpulseRange(_impulseRange.start, _impulseRange.stop); 
+    _rigidSoundObject->GetRangeOfImpulses(_impulseRange.start, _impulseRange.stop); 
     _timeStepSize = _rigidSoundObject->GetRigidsimTimeStepSize();  // set the time step size always the same as rigidsim
 
     std::cout << "Impulses Read:\n"
-              << " Number of impulses: " << _rigidSoundObject->Size() << "\n"
+              << " Number of impulses: " << _rigidSoundObject->N_Impulses() << "\n"
               << " Time range of impulses: [" << _impulseRange.start << ", " << _impulseRange.stop << "]\n"
               << "\n";
 }
