@@ -14,81 +14,9 @@ LoadRigidsimConfig(ImpulseSeriesObjectPtr object)
 }
 
 //##############################################################################
-// Load the impulses from file. The format is the following: 
-//
-//  <timestamp>  <object id(0-based)>  <vertex ID>  <impulse.x>  <impulse.y>
-//  <impulse.z>  <T/S>
-//  
-//  The last letter "T/S" indicates what kind of vertex ID is used. "T" means
-//  the vertex ID is the id in tetrahedron mesh, whereas "S" means the vertex 
-//  ID is the id in surface triangle mesh.
-//
-//  (comments copied from sndgen/RigidSoundObj.hpp)
-//
-//  Note: 
-//   The file is written by the class
-//   io/RigidObjImpRecorder::record_constraint_impulse to object m_modalImpulseOut
-//
-//##############################################################################
-void ImpulseSeriesReader::
-LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects)
-{
-    // first check if file exists 
-    std::ifstream inFile(_impulseFile); 
-    if (!inFile) 
-        throw std::runtime_error("**ERROR** Cannot open impulse file: " + _impulseFile);
-
-    // now go through the first couple of lines of the file to see if its
-    // format is correct, and check the dimension of the passed-in objects
-    int count = 0; 
-    std::map<int, int> objectIDMap;  // key: object id from file. value: relative position within first timestamp.
-    
-    double timestamp=-1.0, firstTimestamp=-1.0;
-    int objectID, vertexID; 
-    Vector3d impulse; 
-    char impulseType, endLine; 
-    while(inFile >> timestamp >> objectID  >> vertexID
-                 >> impulse.x >> impulse.y >> impulse.z
-                 >> impulseType >> endLine && (firstTimestamp == timestamp || count==0)) 
-    {
-        if (impulseType != 'S') 
-            throw std::runtime_error("**ERROR** Impulse vertex is prescribed on tetrahedron mesh, this case is not handled."); 
-        if (endLine != 'C')
-            throw std::runtime_error("**ERROR** End of line character is not 'C', check file format."); 
-        if (count == 0) 
-            firstTimestamp = timestamp; 
-
-        // check if the id exists in the map
-        auto search = objectIDMap.find(objectID); 
-        if (search != objectIDMap.end())
-            throw std::runtime_error("**ERROR** Within the first timestamp, there are two impulses registered with the same id. This is not allowed."); 
-        else 
-            objectIDMap[objectID] = count; 
-        count ++; 
-    }
-    inFile.close(); 
-
-    // pass the test, actually read the file and add impulses to objects.
-    const bool reinitializeObjects = (objects.size()!=(size_t)count ? true : false); 
-    if (reinitializeObjects)
-    {
-        throw std::runtime_error("**ERROR** Passed-in vector needs initialization. This means mesh is not defined or vector arrangement is wrong."); 
-    }
-    inFile.open(_impulseFile);
-    while(inFile >> timestamp >> objectID  >> vertexID
-                 >> impulse.x >> impulse.y >> impulse.z
-                 >> impulseType >> endLine) 
-    {
-        ImpulseSeriesObjectPtr &object = objects.at(objectID); 
-        object->AddImpulse(timestamp, vertexID, impulse); 
-        LoadRigidsimConfig(object);
-    }
-}
-
-//##############################################################################
 // Load the impulses from file for object identified. The format is the following: 
 //
-//  <timestamp>  <object id(0-based)>  <vertex ID>  <impulse.x>  <impulse.y>
+//  <timestamp>  <object id(0-based)>  <vertex ID>  <relative speed> <impulse.x>  <impulse.y>
 //  <impulse.z>  <T/S> <C/P>
 //  
 //  There are two types of impulse ("C/P"): contraint impulse (C) that records impulses
@@ -106,59 +34,85 @@ LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects)
 //
 //##############################################################################
 void ImpulseSeriesReader::
-LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
+LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared_ptr<FDTD_Objects> objects)
 {
-    // first check if file exists 
     std::ifstream inFile(_impulseFile); 
     if (!inFile) 
         throw std::runtime_error("**ERROR** Cannot open impulse file: " + _impulseFile);
-
-    // now go through the first couple of lines of the file to see if its
-    // format is correct, and check the dimension of the passed-in objects
-    int count = 0; 
-    std::map<int, int> objectIDMap;  // key: object id from file. value: relative position within first timestamp.
     
-    double timestamp=-1, firstTimestamp=-1;
-    int objectID, vertexID; 
-    Vector3d impulse; 
-    char impulseType, endLine; 
-    bool loadObjectIDFound = false; 
-    while(inFile >> timestamp >> objectID  >> vertexID
-                 >> impulse.x >> impulse.y >> impulse.z
-                 >> impulseType >> endLine && (firstTimestamp == timestamp || count==0)) 
-    {
-        if (count == 0) 
-            firstTimestamp = timestamp; 
-
-        // check if the id exists in the map
-        auto search = objectIDMap.find(objectID); 
-        if (search != objectIDMap.end())
-            throw std::runtime_error("**ERROR** Within the first timestamp, there are two impulses registered with the same id. This is not allowed."); 
-        else 
-            objectIDMap[objectID] = count; 
-
-        if (objectID == loadObjectID) 
-            loadObjectIDFound = true; 
-        count ++; 
-    }
-    inFile.close(); 
-    
-    if (!loadObjectIDFound) 
-    {
-        std::cerr << "**WARNING** No object identified by " << loadObjectID << " found in the file. Returning.\n";
-        return;
-    }
-
-    // pass the test, actually read the file and add impulses to the object
-    inFile.open(_impulseFile);
-    while(inFile >> timestamp >> objectID  >> vertexID
-                 >> impulse.x >> impulse.y >> impulse.z
-                 >> impulseType >> endLine) 
+    RigidSoundObjectPtr soundObject = objects->GetPtr(loadObjectID); 
+    int objectID=-1, objectID_old=-1, count=0; 
+    char pairOrder, impulseType; 
+    ImpulseSeriesObject::ImpactRecord buffer, buffer_old; 
+    while(inFile >> buffer.timestamp >> objectID >> buffer.appliedVertex >> buffer.contactSpeed
+                 >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
+                 >> pairOrder >> impulseType) 
     {
         if (objectID == loadObjectID) 
         {
-            object->AddImpulse(timestamp, vertexID, impulse); 
+            if (impulseType == 'C')
+            {
+                // estimate contact time scale between this object and
+                // constraint, and added to impulse train
+                const REAL ts = soundObject->EstimateContactTimeScale(buffer.appliedVertex, buffer.contactSpeed); 
+                object->AddImpulse(buffer, ts);  // assumes point impulse
+            }
+            else if (impulseType == 'P') 
+            {
+                if (pairOrder == 'T') // old buffer contains the pair 'S'
+                {
+                    assert(count > 0); // make sure buffer exists
+                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
+                    const REAL ts = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
+                    object->AddImpulse(buffer, ts);  // assumes point impulse
+                }
+                else if (pairOrder == 'S') // need to read one more line to get pair
+                {
+                    buffer_old = buffer; 
+                    objectID_old = objectID; 
+                    inFile >> buffer.timestamp >> objectID >> buffer.appliedVertex >> buffer.contactSpeed
+                           >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
+                           >> pairOrder >> impulseType; 
+                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
+                    const REAL ts = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
+                    object->AddImpulse(buffer, ts);  // assumes point impulse
+                }
+            }
+            LoadRigidsimConfig(object);
+        }
+        buffer_old = buffer; 
+        objectID_old = objectID; 
+        count ++; 
+    }
+}
+
+//##############################################################################
+// This function loads impulses but cannot compute contact time scales and thus
+// all impulses are assumed to have zero duration (point impulse). Suitable if
+// only modal vibration is needed.
+//##############################################################################
+void ImpulseSeriesReader::
+LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
+{
+    std::ifstream inFile(_impulseFile); 
+    if (!inFile) 
+        throw std::runtime_error("**ERROR** Cannot open impulse file: " + _impulseFile);
+    
+    int objectID; 
+    char pairOrder, impulseType; 
+    ImpulseSeriesObject::ImpactRecord buffer; 
+    while(inFile >> buffer.timestamp >> objectID >> buffer.appliedVertex >> buffer.contactSpeed
+                 >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
+                 >> pairOrder >> impulseType) 
+    {
+        if (objectID == loadObjectID) 
+        {
+            if (impulseType == 'C' || impulseType == 'P')
+            {
+                object->AddImpulse(buffer, 0.0);  // assumes point impulse
+            }
             LoadRigidsimConfig(object);
         }
     }
 }
+

@@ -6,6 +6,7 @@
 #include <config.h>
 #include <linearalgebra/Vector3.hpp>
 #include <geometry/TriangleMesh.hpp>
+#include <wavesolver/FDTD_Objects.h>
 #include <modal_model/ImpulseSeriesObject.h> 
 
 //##############################################################################
@@ -36,8 +37,8 @@ class ImpulseSeriesReader
             : _impulseFile(impulseFile), _rigidsimConfigFile(rigidsimConfigFile)
         {}
 
-        void LoadImpulses(std::vector<ImpulseSeriesObjectPtr> &objects); 
         void LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object); 
+        void LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared_ptr<FDTD_Objects> objects); 
 };
 
 #endif 

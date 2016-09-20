@@ -31,9 +31,11 @@ Initialize()
 }
 
 //##############################################################################
+// This function add impulse for this object. The vertex index should be for 
+// surface triangle mesh (not volumetric tetrahedron). 
 //##############################################################################
 void ImpulseSeriesObject::
-AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse)
+AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impulse, const REAL &supportLength)
 {
     // need the notion of mesh to check whether appliedVertex makes sense
     if (_objectMesh == nullptr)
@@ -53,9 +55,21 @@ AddImpulse(const REAL &timestamp, const int &appliedVertex, const Vector3d &impu
         _lastImpulseTime = timestamp;
     _firstImpulseTime = std::min<REAL>(_firstImpulseTime, timestamp); 
     _lengthImpulses = _impulseTimestamps.size(); 
+
+    // add half pulse support for later query
+    _impulseSupportLength.push_back(supportLength); 
 }
 
 //##############################################################################
+//##############################################################################
+void ImpulseSeriesObject::
+AddImpulse(const ImpulseSeriesObject::ImpactRecord &record, const REAL &supportLength)
+{
+    AddImpulse(record.timestamp, record.appliedVertex, record.impactVector, supportLength); 
+}
+
+//##############################################################################
+// This function gets single impulse frame by index
 //##############################################################################
 void ImpulseSeriesObject::
 GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse)
@@ -66,6 +80,7 @@ GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse)
 }
 
 //##############################################################################
+// This function gets all impulses that have timestamps within [timeStart, timeStop]
 //##############################################################################
 void ImpulseSeriesObject::
 GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
@@ -82,6 +97,7 @@ GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord
             ImpactRecord record; 
             record.impactVector = _impulses.at(frame_idx); 
             record.timestamp = _impulseTimestamps.at(frame_idx); 
+            record.supportLength = _impulseSupportLength.at(frame_idx); 
             record.appliedVertex = _impulseAppliedVertex.at(frame_idx); 
             records.push_back(record); 
         }
@@ -89,14 +105,31 @@ GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord
 }
 
 //##############################################################################
+// This function gets all impulses that have support at this query time interval
 //##############################################################################
 void ImpulseSeriesObject::
-GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
+GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
 {
-    GetImpulse(timeStart, timeStop, records); 
-    const int N = records.size();
-    for (int frame_idx=0; frame_idx<N; ++frame_idx) 
-        records.at(frame_idx).impactVector = ConvertImpulseToForce(records.at(frame_idx).impactVector); 
+    if (timeStart > timeStop || timeStart > _lastImpulseTime || timeStop < _firstImpulseTime){
+        return;}
+
+    records.clear(); 
+    for (int frame_idx=0; frame_idx<Size(); ++frame_idx) 
+    {
+        const REAL &timestamp = _impulseTimestamps.at(frame_idx); 
+        const REAL &timestop = timestamp + _impulseSupportLength.at(frame_idx); 
+        if ((timestamp >= timeStart && timestamp <= timeStop) ||
+            (timestop  >= timeStart && timestop  <= timeStop) || 
+            (timestop  <  timeStart && timestop  >  timeStop))
+        {
+            ImpactRecord record; 
+            record.impactVector = _impulses.at(frame_idx); 
+            record.timestamp = timestamp; 
+            record.supportLength = timestop; 
+            record.appliedVertex = _impulseAppliedVertex.at(frame_idx); 
+            records.push_back(record); 
+        }
+    }
 }
 
 //##############################################################################
@@ -107,3 +140,17 @@ GetImpulseRange(REAL &firstImpulseTime, REAL &lastImpulseTime)
     firstImpulseTime = _firstImpulseTime; 
     lastImpulseTime = _lastImpulseTime; 
 }
+
+//##############################################################################
+// This function gets all forces (scaled impulses) that have timestamps 
+// [timeStart, timeStop]
+//##############################################################################
+void ImpulseSeriesObject::
+GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
+{
+    GetImpulse(timeStart, timeStop, records); 
+    const int N = records.size();
+    for (int frame_idx=0; frame_idx<N; ++frame_idx) 
+        records.at(frame_idx).impactVector = ConvertImpulseToForce(records.at(frame_idx).impactVector); 
+}
+
