@@ -84,6 +84,7 @@ if (BUILD_UNIT_TESTING)
         ${DEFORMABLE_SRC} 
         ${RIGID_SRC}
         ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
         ${RIGID_PARSER_SRC}
         ${SND_IO_SRC}
         test_FDTD_AcousticSimulator.cpp
@@ -97,6 +98,7 @@ if (BUILD_UNIT_TESTING)
         ${DEFORMABLE_SRC} 
         ${RIGID_SRC}
         ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
         ${GEOMETRY_SRC}
         ${LOGGING_SRC}
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
@@ -132,6 +134,7 @@ if (BUILD_UNIT_TESTING)
         ${DEFORMABLE_SRC} 
         ${RIGID_SRC}
         ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
         ${GEOMETRY_SRC}
         ${LOGGING_SRC}
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}  

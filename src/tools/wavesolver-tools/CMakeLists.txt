@@ -28,6 +28,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${LEASTSQUARESURFACE_SOURCES}
         ${RIGID_SRC} 
         ${RIGID_IO_SRC}
+        ${IMPULSE_SERIES_SRC} 
         ${MODAL_MODEL_SRC}
         ${DEFORMABLE_SRC}
         ${MESH_UTILS_SRC}

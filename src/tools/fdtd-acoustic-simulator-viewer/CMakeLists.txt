@@ -62,6 +62,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${DEFORMABLE_SRC} 
         ${RIGID_SRC}
         ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
         ${RIGID_PARSER_SRC}
         ${UI_SRC}
         ${BEM_SRC}
