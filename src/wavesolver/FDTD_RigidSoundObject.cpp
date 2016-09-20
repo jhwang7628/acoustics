@@ -379,15 +379,7 @@ EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b,
     const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a) + mesh_b->vertex_mean_curvature(vertex_b); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E + material_b->one_minus_nu2_over_E; 
 
-    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / contactSpeed, 0.2); 
-}
-
-//##############################################################################
-//This function computes acceleration noise (AN) acceleration. 
-//##############################################################################
-REAL FDTD_RigidSoundObject::
-SampleANAcceleration(const REAL &sampleTime)
-{
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
 }
 
 //##############################################################################
