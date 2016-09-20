@@ -206,6 +206,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     // Optional settings
     settings->useMesh                 = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
     settings->useGhostCell            = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
+    settings->validateUsingFBem      =  (queryOptionalInt(solverNode, "validate_using_fbem", "0")==1) ? true : false; 
     settings->boundaryConditionPreset = (queryOptionalInt(solverNode, "boundary_condition_preset", "0")); 
     settings->fastForwardToEarliestImpact = (queryOptionalInt(solverNode, "fast_forward_to_earliest_impact", "0")==1) ? true : false; 
     settings->fastForwardToEventTime  = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0); 

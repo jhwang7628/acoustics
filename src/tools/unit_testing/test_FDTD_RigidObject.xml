@@ -42,7 +42,7 @@
                 material_id="0"
                 impulse_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/modalImpulses.txt"
                 impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/default.cfg"
-                mode_file=""
+                mode_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/sphere_d10cm.modes"
                 modal_ODE_step_frequency="176400"
                 /> 
             <rigid_sound_object 
@@ -57,7 +57,7 @@
                 material_id="0"
                 impulse_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/modalImpulses.txt"
                 impulse_rigidsim_config_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/default.cfg"
-                mode_file=""
+                mode_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/sphere_d10cm.modes"
                 modal_ODE_step_frequency="176400"
                 /> 
             <!--
@@ -156,6 +156,8 @@
         write_pressure_field_to_disk="0"
         fast_forward_to_earliest_impact="0"
         fast_forward_to_event_time="0"
+
+        validate_using_fbem="0"
         /> 
 
     <pressure_source> 

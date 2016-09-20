@@ -44,6 +44,9 @@ struct PML_WaveSolver_Settings
     std::string     fileAcceleration;
     bool            fastForwardToEarliestImpact;  
     REAL            fastForwardToEventTime; // in effect only if fastForwardToEarliestImpact = false
+
+    // additional options
+    bool validateUsingFBem; 
 };
 
 #endif

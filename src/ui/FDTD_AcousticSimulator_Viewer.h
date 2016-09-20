@@ -76,7 +76,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
-            if (_simulator->SceneHasModalObject())
+            if (_simulator->SceneHasModalObject() && _simulator->GetSolverSettings()->validateUsingFBem)
                 InitializeBEMSolver();
         }
 
