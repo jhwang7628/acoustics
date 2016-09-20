@@ -78,7 +78,7 @@ void RigidObjImpRecorder::record_constraint_impulse(
             << q.w << ' ' << q.v.x << ' ' << q.v.y << ' ' << q.v.z << endl;
 #endif
     m_modalImpulseOut
-            << ts << ' ' << body->id() << ' ' << cRec.vtxId << ' '
+            << ts << ' ' << body->id() << ' ' << cRec.vtxId << ' ' << cRec.vnrel << ' '
             << impVec.x << ' ' << impVec.y << ' ' << impVec.z << " S C" << endl;
   }
 
@@ -122,7 +122,7 @@ void RigidObjImpRecorder::record_inter_obj_impulse(
     Vector3<REAL> impVec = ba->predicted_inverse_rotation().rotate(imp);
     Vector3<REAL> relVel = ba->predicted_inverse_rotation().rotate(cRec.vrel);
     m_modalImpulseOut
-            << ts << ' ' << ba->id() << ' ' << cRec.vtxId << ' '
+            << ts << ' ' << ba->id() << ' ' << cRec.vtxId << ' ' << cRec.vnrel << ' '
             << impVec.x << ' ' << impVec.y << ' ' << impVec.z << " S P" << endl;
 #if 0
     m_modalImpulseOut
@@ -135,7 +135,7 @@ void RigidObjImpRecorder::record_inter_obj_impulse(
     impVec = bb->predicted_inverse_rotation().rotate(imp);
     relVel = bb->predicted_inverse_rotation().rotate(cRec.vrel);
     m_modalImpulseOut
-            << ts << ' ' << bb->id() << ' ' << vtxIdB << ' '
+            << ts << ' ' << bb->id() << ' ' << vtxIdB << ' ' << cRec.vnrel << ' '
             <<-impVec.x << ' ' <<-impVec.y << ' ' <<-impVec.z << " T P" << endl;
 #if 0
     m_modalImpulseOut
