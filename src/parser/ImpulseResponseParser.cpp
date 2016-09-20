@@ -37,6 +37,8 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
     {
         std::cout << "No rigid_sound_object found\n";
     }
+
+    std::vector<ImpulseSeriesReader> readers; 
     while (rigidSoundObjectNode != NULL)
     {
         //const std::string meshFileName = queryRequiredAttr(rigidSoundObjectNode, "file");
@@ -58,14 +60,15 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const std::string rigidsimConfigFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file");
         ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile); 
         std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(object); 
-        reader.LoadImpulses(meshID, objectPtr); 
-        REAL impulseRangeStart, impulseRangeStop; 
-        object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
-        std::cout << "Impulses Read for object " << meshName << ":\n"
-                  << " Number of impulses: " << object->Size() << "\n"
-                  << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
-                  << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
-                  << "\n";
+        readers.push_back(reader); 
+        //reader.LoadImpulses(meshID, objectPtr, objects); 
+        //REAL impulseRangeStart, impulseRangeStop; 
+        //object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
+        //std::cout << "Impulses Read for object " << meshName << ":\n"
+        //          << " Number of impulses: " << object->Size() << "\n"
+        //          << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
+        //          << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
+        //          << "\n";
 
         // load modes from file
         const std::string modeFile = queryRequiredAttr(rigidSoundObjectNode, "mode_file");
@@ -80,6 +83,20 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
+    }
+
+    const int N_rigidSoundObject = objects->N(); 
+    for (int o_idx=0; o_idx<N_rigidSoundObject; ++o_idx)
+    {
+        auto object = objects->GetPtr(o_idx); 
+        readers.at(o_idx).LoadImpulses(o_idx, object, objects); 
+        REAL impulseRangeStart, impulseRangeStop; 
+        object->GetImpulseRange(impulseRangeStart, impulseRangeStop); 
+        std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
+                  << " Number of impulses: " << object->Size() << "\n"
+                  << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
+                  << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
+                  << "\n";
     }
 
     // parse and build rigid objects. In the implementation, I still use the class
