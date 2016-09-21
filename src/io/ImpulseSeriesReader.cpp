@@ -64,7 +64,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                     assert(count > 0); // make sure buffer exists
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
                     buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
-                    object->AddImpulse(buffer);  // assumes point impulse
+                    object->AddImpulse(buffer); // add the one that's in buffer
                 }
                 else if (pairOrder == 'S') // need to read one more line to get pair
                 {
@@ -74,8 +74,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                            >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
                            >> pairOrder >> impulseType; 
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
-                    buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
-                    object->AddImpulse(buffer);  // assumes point impulse
+                    buffer_old.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed); 
+                    object->AddImpulse(buffer_old); // add the one that's in buffer_old (one labeled 'S')
                 }
             }
             LoadRigidsimConfig(object);
