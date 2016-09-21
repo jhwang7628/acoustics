@@ -16,12 +16,22 @@ AccelerationNoiseVibrationalSource(RigidObjectPtr owner)
 REAL AccelerationNoiseVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    std::cout << "Evaluate AN acceleration\n"; 
-
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
-    _modalObjectOwner->GetImpulseWithinSupport(time, time+_modalObjectOwnder->_ODEStepSize, impactRecords); 
+    _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 
 
-    return 0.0; 
+    Vector3d acceleration(0, 0, 0); 
+    for (const auto &impulse : impactRecords) 
+    {
+        if (impulse.supportLength < SMALL_NUM)
+            continue;
+
+        const REAL S = sin(M_PI*(time - impulse.timestamp)/impulse.supportLength); 
+        // translational acceleration
+        acceleration += impulse.impactVector * (M_PI*S / (2.0*impulse.supportLength*_modalObjectOwner->Mass())); 
+    }
+
+    const REAL a_n = acceleration.dotProduct(normal); 
+    return a_n;
 }
 
 
@@ -31,7 +41,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL AccelerationNoiseVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    std::cout << "Evaluate AN velocity\n"; 
+    std::cerr << "**WARNING** Evaluate AN velocity not implemented\n"; 
     return 0.0; 
 }
 
@@ -40,6 +50,6 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
 REAL AccelerationNoiseVibrationalSource::
 EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    std::cout << "Evaluate AN displacement\n"; 
+    std::cout << "**WARNING** Evaluate AN displacement\n"; 
     return 0.0; 
 }
