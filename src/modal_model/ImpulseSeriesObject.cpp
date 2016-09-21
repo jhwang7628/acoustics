@@ -80,12 +80,12 @@ GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord
 }
 
 //##############################################################################
-// This function gets all impulses that have support at this query time interval
+// This function gets all impulses that have support at this query time point
 //##############################################################################
 void ImpulseSeriesObject::
-GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
+GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &records)
 {
-    if (timeStart > timeStop || timeStart > _lastImpulseTime || timeStop < _firstImpulseTime){
+    if (timeStart > _lastImpulseTime && timeStart < _firstImpulseTime){
         return;}
 
     records.clear(); 
@@ -93,14 +93,8 @@ GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector
     for (int frame_idx=0; frame_idx<N_impulses; ++frame_idx) 
     {
         const auto &record = _impulses.at(frame_idx); 
-        const REAL &timestamp = record.timestamp; 
-        const REAL &timestop = timestamp + record.supportLength; 
-        if ((timestamp >= timeStart && timestamp <= timeStop) ||
-            (timestop  >= timeStart && timestop  <= timeStop) || 
-            (timestop  <  timeStart && timestop  >  timeStop))
-        {
+        if (timeStart >= record.timestamp && timeStart < record.timestamp+record.supportLength)
             records.push_back(record); 
-        }
     }
 }
 

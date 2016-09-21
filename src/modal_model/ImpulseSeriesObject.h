@@ -57,7 +57,7 @@ class ImpulseSeriesObject
         void AddImpulse(const ImpactRecord &record); 
         void GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse); 
         void GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
-        void GetImpulseWithinSupport(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
+        void GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &records); 
         void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
 
