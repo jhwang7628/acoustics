@@ -341,7 +341,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
             Vector3d             normal( 0.0, 0.0, 0.0 ); // normal of the interfacial cell boundary
             Vector3d             x = field.cellPosition( cell_idx ); // position of the interfacial cell
 
-            normal[ dimension ] = 1.0;
+            normal[dimension] = _interfacialBoundaryDirections[dimension].at(interfacial_cell_idx); 
             coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
             //objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
 
@@ -352,6 +352,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
                 bcEval *= coefficient;
                 v( cell_idx, i ) += timeStep * bcEval;
             }
+
         }
     }
 }
@@ -820,17 +821,19 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         auto object = _objects->GetPtr(boundaryObject); 
+        timer[5].Start(); 
         object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        timer[5].Pause(); 
+        timer[6].Start(); 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
+        timer[6].Pause(); 
         const REAL weights = (distance >=0 ? -distance : 2.0*distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
         timer[4].Pause(); 
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
-        timer[5].Start(); 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-        timer[5].Pause(); 
 
         // hasGC  : has self as interpolation stencil
         int hasGC=-1; 
@@ -1031,8 +1034,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     std::cout << "--------------\n" << std::setprecision(16);
     std::cout << "reflection, boundary condition evaluation: " << timer[0].Duration() << " sec \n"; 
     std::cout << " reflection                              :  " << timer[4].Duration() << " sec \n"; 
-    std::cout << " enclosing neighbours                    :  " << timer[5].Duration() << " sec \n"; 
-    std::cout << " evaluate vibration                      :  " << timer[6].Duration() << " sec \n"; 
+    std::cout << "  reflect against boundary               :   " << timer[5].Duration() << " sec \n"; 
+    std::cout << "  bc evaluation                          :   " << timer[6].Duration() << " sec \n"; 
     std::cout << "gc neighbour information                 : " << timer[1].Duration() << " sec \n"; 
     std::cout << "transpose, linear solve                  : " << timer[2].Duration() << " sec \n"; 
     std::cout << "formulate the matrix, rhs                : " << timer[3].Duration() << " sec \n"; 
@@ -1461,6 +1464,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                 Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
 
+                normal[ dimension ] = 1.0;
                 gradient.normalize();
 
                 REAL coefficient = normal.dotProduct( gradient );
