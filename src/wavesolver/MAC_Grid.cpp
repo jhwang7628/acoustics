@@ -334,7 +334,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
         for ( size_t interfacial_cell_idx = 0; interfacial_cell_idx < interfacialCells.size(); interfacial_cell_idx++ )
         {
             int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
-            //int                  objectID;
+            int                  objectID;
             REAL                 bcEval;
             REAL                 coefficient;
 
@@ -343,11 +343,12 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
 
             normal[dimension] = _interfacialBoundaryDirections[dimension].at(interfacial_cell_idx); 
             coefficient = interfaceBoundaryCoefficients[ interfacial_cell_idx ];
-            //objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
+            objectID = _interfacialBoundaryIDs[dimension].at(interfacial_cell_idx);
 
             for ( int i = 0; i < _N; i++ )
             {
-                bcEval = _objects->EvaluateNearestVibrationalSources(x,normal,t); 
+                bcEval = _objects->GetPtr(objectID)->EvaluateBoundaryAcceleration(x, normal, t);
+                //bcEval = _objects->EvaluateNearestVibrationalSources(x,normal,t); 
                 //bcEval = bc( x, normal, objectID, t, i );
                 bcEval *= coefficient;
                 v( cell_idx, i ) += timeStep * bcEval;
