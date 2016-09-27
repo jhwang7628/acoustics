@@ -471,7 +471,9 @@ keyPressEvent(QKeyEvent *e)
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
         std::cout << "Input slice division: " << std::flush; 
+        PRE_CIN_CLEAR;
         std::cin >> _sliceDivision; 
+        POST_CIN_CLEAR;
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
         _sliceWireframe = (_sliceWireframe+1)%4; 
@@ -488,7 +490,9 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::NoButton)) {
             Sphere sphere;
             std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
+            PRE_CIN_CLEAR; 
             std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
+            POST_CIN_CLEAR;
             _sphereCin.push_back(sphere); 
     }
     else if ((e->key() == Qt::Key_T) && (modifiers == Qt::NoButton)) {
@@ -504,7 +508,9 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ShiftModifier)) {
         std::string filename; 
         std::cout << "Enter filename for saving all slices data: " << std::flush; 
+        PRE_CIN_CLEAR;
         std::cin >> filename; 
+        POST_CIN_CLEAR;
         std::ofstream of(filename.c_str()); 
         if (of) 
         {
@@ -549,7 +555,9 @@ keyPressEvent(QKeyEvent *e)
         // write to disk 
         std::string filename; 
         std::cout << "Debug: failed reflection arrow filename: " << std::flush; 
+        PRE_CIN_CLEAR;
         std::cin >> filename; 
+        POST_CIN_CLEAR;
         auto &sceneObjects = _simulator->GetSceneObjects(); 
         const int N = sceneObjects->N();
         sceneObjects->WriteFailedReflections(filename);
@@ -570,6 +578,7 @@ keyPressEvent(QKeyEvent *e)
         }
     }
     else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ControlModifier)) {
+        PRE_CIN_CLEAR; 
         _fixedSliceColorMapRange = !_fixedSliceColorMapRange; 
         if (_fixedSliceColorMapRange) 
         {
@@ -585,11 +594,14 @@ keyPressEvent(QKeyEvent *e)
             _sliceColorMapRange.y = cMax;  
         }
         ResetSliceColormap(); 
+        POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ControlModifier)) {
         std::string filename; 
         std::cout << "To-draw arrow filename: " << std::flush; 
+        PRE_CIN_CLEAR;
         std::cin >> filename; 
+        POST_CIN_CLEAR;
         std::ifstream inFile(filename.c_str()); 
         Vector3f x, n; 
         while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
@@ -605,6 +617,7 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.clear(); 
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::AltModifier)) {
+        PRE_CIN_CLEAR;
         std::string filename; 
         std::cout << "To-draw sphere filename: " << std::flush; 
         std::cin >> filename; 
@@ -620,8 +633,10 @@ keyPressEvent(QKeyEvent *e)
             _sphereCin.push_back(sphere); 
         }
         std::cout << " " << _sphereCin.size() << " spheres read and ready to draw.\n" << std::flush;
+        POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)) {
+            PRE_CIN_CLEAR;
             Vector3f x, n; 
             std::cout << "Arrow start location <x, y, z>: " << std::flush; 
             std::cin >> x.x >> x.y >> x.z; 
@@ -631,8 +646,10 @@ keyPressEvent(QKeyEvent *e)
             arrow.start = x; 
             arrow.normal = n; 
             _arrowCin.push_back(arrow); 
+            POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_M) && (modifiers == Qt::NoButton)) {
+        PRE_CIN_CLEAR;
         std::string filename; 
         std::cout << "Read debug arrow files: " << std::flush; 
         std::cin >> filename; 
@@ -648,13 +665,16 @@ keyPressEvent(QKeyEvent *e)
                 _arrowCin.push_back(arrow); 
             }
         }
+        POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::NoButton)) {
+        PRE_CIN_CLEAR;
         Slice slice; 
         std::cout << "Slice dim: " << std::flush; 
         std::cin >> slice.dim;
         std::cout << "Slice origin: " << std::flush; 
         std::cin >> slice.origin.x >> slice.origin.y >> slice.origin.z; 
+        POST_CIN_CLEAR; 
         ConstructSliceSamples(slice);
         slice.dataReady = false;
         _sliceCin.push_back(slice); 
@@ -676,6 +696,7 @@ keyPressEvent(QKeyEvent *e)
             _arrowCin.clear(); 
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ShiftModifier)) {
+        PRE_CIN_CLEAR; 
         std::string inputFile, outputFile; 
         std::cout << "FBem input file: " << std::flush;
         std::cin >> inputFile; 
@@ -687,6 +708,7 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "Frequency for this mode (Hz): " << std::flush;
         std::cin >> frequency; 
         std::cout << std::endl;
+        POST_CIN_CLEAR; 
 
         _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
 
