@@ -369,7 +369,7 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    //_grid.classifyCellsDynamic(_pFull, _p, _v, _waveSolverSettings->useMesh, true);
+    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
@@ -387,9 +387,9 @@ void PML_WaveSolver::stepLeapfrog()
         
         // update ghost cells 
         _ghostCellTimer.start(); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
         _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
         _ghostCellTimer.pause(); 
     }
