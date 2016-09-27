@@ -428,7 +428,7 @@ StepODEAndStoreResults()
     std::ofstream of1(outFile_displacement.c_str()); 
     std::ofstream of2(outFile_q.c_str()); 
     std::cout << "\n\n" << N_steps << " steps are needed to advance ODE solvers. Store vertex displacements to " << outFile_displacement << "; store q to " << outFile_q << std::endl;
-    _rigidSoundObject->AdvanceModalODESolvers(N_steps, of1, of2); 
+    _rigidSoundObject->AdvanceModalODESolvers(N_steps, 2, of1, of2); 
     of1.close(); 
     of2.close(); 
 }

@@ -142,6 +142,10 @@ GetModalDisplacement(Eigen::VectorXd &displacement)
 
 //##############################################################################
 // Advance the modal ODEs for N_steps
+//
+// Note!
+//  This function does not update timestamp automatically, call
+//  UpdateQPointers() manually.
 //##############################################################################
 void FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps)
@@ -180,10 +184,13 @@ AdvanceModalODESolvers(const int &N_steps)
 }
 
 //##############################################################################
-// Advance the modal ODEs for N_steps with logging file
+// Advance the modal ODEs for N_steps with logging file. 
+// mode = 0: write q
+//      = 1: write displacement
+//      = 2: write both
 //##############################################################################
 void FDTD_RigidSoundObject::
-AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q)
+AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q)
 {
     {
         const int N_rows = N_steps; 
@@ -199,18 +206,31 @@ AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::
     }
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
     {
+        if (ts_idx % 100 == 0)
+            std::cout << "\rts = " << ts_idx << "; time = " << _time << std::flush;
         Eigen::VectorXd displacements; 
         _timer_mainstep[0].Start(); 
         AdvanceModalODESolvers(1);
+        UpdateQPointers();
         _timer_mainstep[0].Pause(); 
-        _timer_mainstep[1].Start(); 
-        GetModalDisplacement(displacements);
-        _timer_mainstep[1].Pause(); 
-        _timer_mainstep[2].Start(); 
-        of_displacement.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
-        of_q.write((char*)_q_c.data(), sizeof(double)*_q_c.size()); 
-        _timer_mainstep[2].Pause(); 
+
+        if (mode >= 1) 
+        {
+            _timer_mainstep[1].Start(); 
+            GetModalDisplacement(displacements);
+            _timer_mainstep[1].Pause(); 
+            _timer_mainstep[2].Start(); 
+            of_displacement.write((char*)displacements.data(), sizeof(double)*displacements.size()); 
+            _timer_mainstep[2].Pause(); 
+        }
+        if (mode == 0 || mode == 2)
+        {
+            _timer_mainstep[2].Start(); 
+            of_q.write((char*)_q_c.data(), sizeof(double)*_q_c.size()); 
+            _timer_mainstep[2].Pause(); 
+        }
     }
+    std::cout << std::endl;
     std::cout << "Total Timing: \n"
               << " Advance ODEs      : " << _timer_mainstep[0].Duration()           << " sec\n"
               << "  Interpolate force: " << _timer_substep_advanceODE[0].Duration() << " sec\n"
@@ -520,3 +540,4 @@ PrintAllVelocity(const std::string &filename, const int &mode) const
     }
     of.close();
 }
+

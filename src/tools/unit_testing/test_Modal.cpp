@@ -67,14 +67,15 @@ void TestModal()
     REAL firstImpulseTime, lastImpulseTime; 
     impulseSeriesObject.GetRangeOfImpulses(firstImpulseTime, lastImpulseTime); 
 
-    std::cout << impulseSeriesObject.Size() << " " << timestamp << " " << vertex << " " << impulse << " " << firstImpulseTime << " " << lastImpulseTime << std::endl;
+    std::cout << impulseSeriesObject.N_Impulses() << " " << timestamp << " " << vertex << " " << impulse << " " << firstImpulseTime << " " << lastImpulseTime << std::endl;
 
     typedef std::shared_ptr<ImpulseSeriesObject> ImpulseSeriesObjectPtr; 
     ImpulseSeriesReader impulseSeriesReader(impulseFile, rigidsimConfigFile); 
     std::vector<ImpulseSeriesObjectPtr> objects(2, std::make_shared<ImpulseSeriesObject>()); 
     objects.at(0)->SetMesh(mesh); 
     objects.at(1)->SetMesh(mesh); 
-    impulseSeriesReader.LoadImpulses(objects); 
+    impulseSeriesReader.LoadImpulses(0, objects.at(0)); 
+    impulseSeriesReader.LoadImpulses(1, objects.at(1)); 
 
     ImpulseSeriesObjectPtr anotherObject = std::make_shared<ImpulseSeriesObject>(mesh);
     impulseSeriesReader.LoadImpulses(0, anotherObject);
@@ -139,6 +140,25 @@ void TestModalODESolver()
     //solver.StepSystem(Q);
 }
 
+void CreateQSeries()
+{
+    const std::string filename("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_plateDrop.xml"); 
+    ImpulseResponseParser parser(filename); 
+    ModalMaterialList materials; 
+    parser.GetModalMaterials(materials); 
+    std::shared_ptr<FDTD_Objects> objectList = std::make_shared<FDTD_Objects>(); 
+    parser.GetObjects(objectList); 
+    std::shared_ptr<FDTD_RigidSoundObject> object = objectList->GetPtr(0); 
+    object->SetODESolverTime(0.31899); 
+
+    const int N_steps = 10000;
+    std::ofstream ofDisplace("test_displacement.txt"); 
+    std::ofstream ofQ("test_q.txt"); 
+    object->AdvanceModalODESolvers(N_steps, 2, ofDisplace, ofQ); 
+    ofDisplace.close(); 
+    ofQ.close(); 
+}
+
 void TestBEMSolution()
 {
     FBemReader reader; 
@@ -190,6 +210,7 @@ int main()
 {
 
     std::cout << "Unit Test: Modal Sound\n"; 
+    CreateQSeries(); 
     //TestIO(); 
     //TestRigidBodySim(); 
     //TestModal(); 

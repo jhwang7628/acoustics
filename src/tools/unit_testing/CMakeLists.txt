@@ -120,6 +120,7 @@ if (BUILD_UNIT_TESTING)
         ${RIGID_PARSER_SRC}
         ${BEM_SRC}
         ${BEM_IO_SRC}
+        ${SND_IO_SRC}
         ) 
 
     add_executable(unit_testing_Eigen
@@ -200,6 +201,7 @@ if (BUILD_UNIT_TESTING)
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
+        sndfile
         boost_thread
         boost_system                    
         boost_timer

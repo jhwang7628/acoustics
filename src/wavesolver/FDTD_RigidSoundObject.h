@@ -100,7 +100,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         void GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement);  // only transform the mode quried
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         void AdvanceModalODESolvers(const int &N_steps);
-        void AdvanceModalODESolvers(const int &N_steps, std::ofstream &of_displacement, std::ofstream &of_q);
+        void AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
         REAL Mass() const; 
         // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
