@@ -106,6 +106,9 @@ Initialize(const bool &buildFromTetMesh)
 #endif
     }
 
+    // compute mesh centroid in object space and cache it 
+    _meshObjectCentroid = _mesh->ComputeCentroid(); 
+
     std::cout << "Read in TriangleMesh: \n"
               << " name:       " << GetMeshName() << "\n"
               << " #vertices:  " << _mesh->num_vertices() << "\n"
@@ -334,6 +337,15 @@ FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d 
 {
     return ReflectAgainstBoundary(currentPoint, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
 }
+
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_RigidObject::
+MeshCentroid()
+{
+    return ObjectToWorldPoint(_meshObjectCentroid); 
+}
+
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::

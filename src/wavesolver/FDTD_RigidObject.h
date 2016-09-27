@@ -33,6 +33,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
+        Vector3d                            _meshObjectCentroid;  // in object space
         REAL                                _volume = -1.0; // mesh volume that can be estimated if built from tet mesh
         std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
 
@@ -100,6 +101,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
+        Vector3d MeshCentroid(); 
 
         //// debug methods //// 
         void TestQueryDistance(); 
