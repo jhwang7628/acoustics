@@ -15,12 +15,17 @@ class AccelerationNoiseVibrationalSource : public VibrationalSource
     private: 
         RigidSoundObjectPtr _modalObjectOwner; 
 
+        REAL ComputeS(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time); 
+        REAL ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time); 
     public:
         AccelerationNoiseVibrationalSource(RigidObjectPtr owner);
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+
+        ///// debug method ///// 
+        virtual REAL EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, const REAL &time, const REAL &density, const REAL &soundSpeed, const REAL &sphereRadius); 
 };
 
 #endif
