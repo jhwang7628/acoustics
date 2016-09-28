@@ -14,6 +14,7 @@ AccelerationNoiseVibrationalSource(RigidObjectPtr owner)
 }
 
 //##############################################################################
+// S is the approximation of half-sine pulse. 
 //##############################################################################
 REAL AccelerationNoiseVibrationalSource::
 ComputeS(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
@@ -26,6 +27,7 @@ ComputeS(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
 }
 
 //##############################################################################
+// S_dot is the approximation of half-sine pulse time derivative. 
 //##############################################################################
 REAL AccelerationNoiseVibrationalSource::
 ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
@@ -34,7 +36,7 @@ ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
     throw std::runtime_error("**ERROR** not implemented SDot computation for half sine"); 
     return 0.0; 
 #else
-    return -12.0 / pow(impulse.supportLength, 2)*(time - impulse.timestamp - impulse.supportLength/2.0)*ComputeS(impulse, time); 
+    return -12.0 / pow(impulse.supportLength, 2) * (time - impulse.timestamp - impulse.supportLength/2.0) * ComputeS(impulse, time); 
 #endif
 }
 
@@ -90,6 +92,9 @@ EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, con
     const Vector3d &x = position; // listening point 
     const Vector3d x0 = _modalObjectOwner->MeshCentroid(); 
     const REAL r = (x - x0).norm(); 
+    const REAL delayedTime = time - r/soundSpeed; 
+    if (delayedTime < 0) // causality condition
+        return 0.0; 
     const REAL rho_a3_over_2c_r = density * pow(sphereRadius, 3) / (2.0*soundSpeed*r); 
 
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
@@ -101,7 +106,6 @@ EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, con
         if (impulse.supportLength < SMALL_NUM)
             continue;
 
-        const REAL delayedTime = time - r/soundSpeed; 
         const REAL S_dot = ComputeSDot(impulse, delayedTime); 
         const REAL cos_t = impulse.impactVector.dotProduct(x-x0) / impulse.impactVector.norm() / r; 
         // acceleration jerk
