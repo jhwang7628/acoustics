@@ -1,9 +1,11 @@
 #include <wavesolver/FDTD_RigidObject.h> 
+#include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <io/TglMeshReader.hpp>
 #include <io/TglMeshWriter.hpp>
 #include <io/TetMeshReader.hpp>
 #include <utils/SimpleTimer.h>
 #include <utils/Conversions.h>
+
 
 //##############################################################################
 //##############################################################################
@@ -224,12 +226,35 @@ NormalToMesh(const Vector3d &position, Vector3d &queriedNormal)
 REAL FDTD_RigidObject::
 EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
 {
-    REAL bcValue=0; 
+    REAL bcValue = 0.0; 
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
-    {
         bcValue += (*it)->Evaluate(boundaryPoint, boundaryNormal, time);
+
+    return bcValue; 
+}
+
+//##############################################################################
+// This function locates acceleration noise source and evaluate the analytical
+// pressure for spheres.
+//##############################################################################
+REAL FDTD_RigidObject::
+EvaluateAccelerationNoiseAnalytical(const Vector3d &listeningPoint, const REAL &time, const REAL &density, const REAL &soundSpeed, const REAL &sphereRadius)
+{
+    REAL bcValue = 0.0;
+    const SourceIterator sourceEnd = _vibrationalSources.end(); 
+    for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it)
+    {
+        AccelerationNoiseVibrationalSource *anSource = dynamic_cast<AccelerationNoiseVibrationalSource*>((*it).get()); 
+        if (anSource)
+        {
+            bcValue += anSource->EvaluatePressureAnalytical(listeningPoint, Vector3d(0,0,0), time, density, soundSpeed, sphereRadius); 
+        }
+        else 
+        {
+        }
     }
+
     return bcValue; 
 }
 

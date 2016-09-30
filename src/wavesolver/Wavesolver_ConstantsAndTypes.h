@@ -82,4 +82,9 @@ const double ADF_ERROR_TOLERANCE = 0.00001;
 enum VibrationalSourceType { HarmonicSource=0 };
 
 //##############################################################################
+// Debugging flags, settings
+//##############################################################################
+#define DEBUG_ANALYTICAL_ACC_NOISE 1
+  
+//##############################################################################
 #endif 

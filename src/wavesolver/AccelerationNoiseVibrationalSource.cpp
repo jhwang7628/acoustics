@@ -2,7 +2,7 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 
-#define USE_GAUSSIAN_APPROXIMATION 1
+#define USE_GAUSSIAN_APPROXIMATION 0
 
 //##############################################################################
 //##############################################################################
@@ -20,7 +20,10 @@ REAL AccelerationNoiseVibrationalSource::
 ComputeS(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
 {
 #if USE_GAUSSIAN_APPROXIMATION == 0
-    return sin(M_PI*(time - impulse.timestamp)/impulse.supportLength); 
+    if (time <= impulse.timestamp+impulse.supportLength && time >= impulse.timestamp)
+        return sin(M_PI*(time - impulse.timestamp)/impulse.supportLength); 
+    else
+        return 0.0;
 #else
     return exp(-6.0*pow((time - impulse.timestamp - impulse.supportLength/2.0)/impulse.supportLength, 2)); 
 #endif
@@ -33,8 +36,10 @@ REAL AccelerationNoiseVibrationalSource::
 ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
 {
 #if USE_GAUSSIAN_APPROXIMATION == 0
-    throw std::runtime_error("**ERROR** not implemented SDot computation for half sine"); 
-    return 0.0; 
+    if (time <= impulse.timestamp+impulse.supportLength && time >= impulse.timestamp)
+      return M_PI/impulse.supportLength * cos(M_PI*(time - impulse.timestamp)/impulse.supportLength); 
+    else
+        return 0.0;
 #else
     return -12.0 / pow(impulse.supportLength, 2) * (time - impulse.timestamp - impulse.supportLength/2.0) * ComputeS(impulse, time); 
 #endif
@@ -98,7 +103,7 @@ EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, con
     const REAL rho_a3_over_2c_r = density * pow(sphereRadius, 3) / (2.0*soundSpeed*r); 
 
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
-    _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 
+    _modalObjectOwner->GetImpulseWithinSupport(delayedTime, impactRecords); 
 
     REAL p = 0.0; 
     for (const auto &impulse : impactRecords) 

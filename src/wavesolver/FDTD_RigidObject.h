@@ -107,6 +107,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         void TestQueryDistance(); 
         void TestObjectBoundaryCondition();
         void WriteDebugArrow(const std::string &file);
+        REAL EvaluateAccelerationNoiseAnalytical(const Vector3d &listeningPoint, const REAL &time, const REAL &density, const REAL &soundSpeed, const REAL &sphereRadius); 
 };
 //##############################################################################
 

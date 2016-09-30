@@ -38,9 +38,9 @@ _SetBoundaryConditions()
         {
             const REAL omega = 2.0*M_PI*3000.0;
             const REAL phase = 0.0;
-            std::cout << "Add test vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
             VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
             //objectPtr->AddVibrationalSource(sourcePtr); 
+            //std::cout << "Add test vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
             //objectPtr->TestObjectBoundaryCondition();
         }
     }
@@ -219,10 +219,28 @@ _SaveListeningData(const std::string &filename)
     if (_acousticSolverSettings->listening)
     {
         Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+        const int N_points = listeningPoints.size(); 
         Eigen::MatrixXd data; 
         _acousticSolver->FetchPressureData(listeningPoints, data); 
         IO::writeMatrixX<double>(data, filename.c_str(), IO::BINARY);
+
+#if DEBUG_ANALYTICAL_ACC_NOISE == 1
+        const std::string filenameAnalytical = filename + std::string(".analytical");
+        std::vector<RigidSoundObjectPtr> &objects = _sceneObjects->GetRigidSoundObjects(); 
+        for (auto &soundObject : objects)
+        {
+            const std::string filenameAnalyticalObject = filenameAnalytical + std::string(".") + soundObject->GetMeshName();
+            Eigen::MatrixXd dataAnalytical(N_points, 1); 
+            for (int p_idx=0; p_idx<N_points; ++p_idx)
+            {
+                const REAL p_AN = soundObject->EvaluateAccelerationNoiseAnalytical(listeningPoints.at(p_idx), _simulationTime, _acousticSolverSettings->airDensity, _acousticSolverSettings->soundSpeed, 0.05); 
+                dataAnalytical(p_idx, 0) = p_AN; 
+            }
+            IO::writeMatrixX<double>(dataAnalytical, filenameAnalyticalObject.c_str(), IO::BINARY);
+        }
+#endif
     }
+
 }
 
 //##############################################################################
