@@ -23,7 +23,6 @@ def GenerateLine(x, y, z):
     return '<listening_point x=\"%f\" y=\"%f\" z=\"%f\"/>' %(x, y, z)
 
 def SampleCircle_Z(center, radius, N): 
-    print 'Sampling on a z-circle'
     dt = 2.0*math.pi/float(N)
     for idx in range(N): 
         theta = dt*idx
@@ -32,8 +31,16 @@ def SampleCircle_Z(center, radius, N):
         z = center
         print GenerateLine(x, y, z)
 
+def SampleCircle_X(center, radius, N): 
+    dt = 2.0*math.pi/float(N)
+    for idx in range(N): 
+        theta = dt*idx
+        z = radius * math.cos(theta)
+        y = radius * math.sin(theta)
+        x = center
+        print GenerateLine(x, y, z)
+
 def SampleLine(start, end, N): 
-    print 'Sampling on a line'
     L = np.linalg.norm(end - start)
     dl = L/float(N-1)
     normal = (end - start) / L
@@ -54,6 +61,7 @@ def Pool15Balls(offset, r):
             count += 1
 
 if __name__ == '__main__': 
-    SampleCircle_Z(0.0, 0.6, 200)
+    SampleCircle_X(0.0, 0.9, 100)
+    SampleCircle_Z(0.5, 0.9, 100)
     # SampleLine(np.array([-0.5, 0.0, 0.0]), np.array([0.5, 0.0, 0.0]), 200)
     # Pool15Balls(np.array([0.1, 0.0, 0.0]), 0.05)

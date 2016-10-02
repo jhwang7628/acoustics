@@ -7,13 +7,22 @@ from matplotlib import cm
 import sys
 import glob
 import scipy
+from scipy import signal
 
 
-def PadZero(data, N_front_pad, N_end_pad):
+def PadZero2D(data, N_front_pad, N_end_pad):
     N_rows = data.shape[0]
     N_cols = data.shape[1]
     newData = np.zeros((N_front_pad+N_rows+N_end_pad, N_cols))
     newData[N_front_pad:N_front_pad+N_rows, :] = data
+    # newData[:, N_front_pad:N_front_pad+N_cols] = data
+
+    return newData
+
+def PadZero(data, N_front_pad, N_end_pad):
+    N_rows = len(data)
+    newData = np.zeros(N_front_pad+N_rows+N_end_pad)
+    newData[N_front_pad:N_front_pad+N_rows] = data
     # newData[:, N_front_pad:N_front_pad+N_cols] = data
 
     return newData
@@ -28,6 +37,8 @@ filenames = sorted(glob.glob(sys.argv[2]+'[0-9]*'))
 N_steps = len(filenames)
 N_points = listeningPositions.shape[0]
 stepRate = int(sys.argv[3])
+wavRate = 44100.
+rateRatio = float(stepRate) / wavRate
 
 print 'Listening position: \n', listeningPositions
 print 'Loading %u files: ' %(len(filenames)), filenames[0], ',', filenames[1], ', ... ,' , filenames[-1]
@@ -44,16 +55,19 @@ maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 
 # writing the wav files
-listenedDataPadded = PadZero(listenedData.copy(), stepRate, stepRate)
+# listenedDataPadded = PadZero(listenedData.copy(), stepRate/2, stepRate)
 for ii in range(N_points): 
     print ii
-    # normalizationConstant = maxValue
-    normalizationConstant = np.absolute(listenedDataPadded[:, ii]).max()
-    if normalizationConstant > 1E-14:
-        listenedDataPadded[:, ii] /= normalizationConstant
+    outputData = listenedData[:, ii]
 
+    normalizationConstant = maxValue
+    # normalizationConstant = np.absolute(outputData.max())
+    if normalizationConstant > 1E-14:
+        outputData /= normalizationConstant
+    outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
+    outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
     # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
-    scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii])
+    scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
 
 # extract minimum and compare with 1/r decay 
 dataMin = np.zeros(N_points)
