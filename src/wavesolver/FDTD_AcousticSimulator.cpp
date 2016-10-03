@@ -119,7 +119,13 @@ _SavePressureCellPositions(const std::string &filename)
                 count ++;
             }
 
-    IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
+    try
+    {
+        IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
+    }
+    catch (const std::runtime_error &e)
+    { 
+    }
 }
 
 //##############################################################################
@@ -144,7 +150,13 @@ _SaveVelocityCellPositions(const std::string &filename, const int &dim)
                 count ++;
             }
 
-    IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
+    try
+    {
+        IO::writeMatrixX<double>(vertexPosition, filename.c_str(), IO::BINARY);
+    }
+    catch (const std::runtime_error &e)
+    { 
+    }
 }
 
 //##############################################################################
@@ -162,7 +174,13 @@ _SaveListeningPositions(const std::string &filename)
         listeningPoints_eigen(ii, 2) = listeningPoints.at(ii).z; 
     }
 
-    IO::writeMatrixX<double>(listeningPoints_eigen, filename.c_str(), IO::BINARY); 
+    try
+    {
+        IO::writeMatrixX<double>(listeningPoints_eigen, filename.c_str(), IO::BINARY); 
+    }
+    catch (const std::runtime_error &e)
+    { 
+    }
 }
 
 //##############################################################################
@@ -184,8 +202,13 @@ _SavePressureTimestep(const std::string &filename)
                 (*vertexPressure)(count, 0) = vPressure[0];
                 count ++; 
             }
-
-    IO::writeMatrixX<double>(*vertexPressure, filename.c_str(), IO::BINARY);
+    try 
+    { 
+        IO::writeMatrixX<double>(*vertexPressure, filename.c_str(), IO::BINARY);
+    }
+    catch (const std::runtime_error &e)
+    { 
+    }
 }
 
 //##############################################################################
@@ -207,8 +230,13 @@ _SaveVelocityTimestep(const std::string &filename, const int &dim)
                 (*vertexVelocity_eigen)(count, 0) = vVelocity[0];
                 count ++; 
             }
-
-    IO::writeMatrixX<double>(*vertexVelocity_eigen, filename.c_str(), IO::BINARY);
+    try 
+    { 
+        IO::writeMatrixX<double>(*vertexVelocity_eigen, filename.c_str(), IO::BINARY);
+    }
+    catch (const std::runtime_error &e)
+    { 
+    }
 }
 
 //##############################################################################
@@ -222,7 +250,13 @@ _SaveListeningData(const std::string &filename)
         const int N_points = listeningPoints.size(); 
         Eigen::MatrixXd data; 
         _acousticSolver->FetchPressureData(listeningPoints, data); 
-        IO::writeMatrixX<double>(data, filename.c_str(), IO::BINARY);
+        try 
+        { 
+            IO::writeMatrixX<double>(data, filename.c_str(), IO::BINARY);
+        }
+        catch (const std::runtime_error &e)
+        { 
+        }
 
 #if DEBUG_ANALYTICAL_ACC_NOISE == 1
         const std::string filenameAnalytical = filename + std::string(".analytical");
@@ -236,7 +270,13 @@ _SaveListeningData(const std::string &filename)
                 const REAL p_AN = soundObject->EvaluateAccelerationNoiseAnalytical(listeningPoints.at(p_idx), _simulationTime, _acousticSolverSettings->airDensity, _acousticSolverSettings->soundSpeed, 0.05); 
                 dataAnalytical(p_idx, 0) = p_AN; 
             }
-            IO::writeMatrixX<double>(dataAnalytical, filenameAnalyticalObject.c_str(), IO::BINARY);
+            try 
+            { 
+                IO::writeMatrixX<double>(dataAnalytical, filenameAnalyticalObject.c_str(), IO::BINARY);
+            }
+            catch (const std::runtime_error &e)
+            { 
+            }
         }
 #endif
     }
