@@ -9,7 +9,6 @@ import glob
 import scipy
 from scipy import signal
 
-
 def PadZero2D(data, N_front_pad, N_end_pad):
     N_rows = data.shape[0]
     N_cols = data.shape[1]
@@ -40,6 +39,13 @@ stepRate = int(sys.argv[3])
 wavRate = 44100.
 rateRatio = float(stepRate) / wavRate
 
+verifyAnalytical = True
+if verifyAnalytical: 
+    print 'Verify with analytical solution'
+    analyticalOutputFolder = 'analytical'
+    analyticalFilenames = sorted(glob.glob(analyticalOutputFolder+'/'+sys.argv[2]+'[0-9]*'))
+    analyticalListenedData = np.zeros((N_steps, N_points))
+
 print 'Listening position: \n', listeningPositions
 print 'Loading %u files: ' %(len(filenames)), filenames[0], ',', filenames[1], ', ... ,' , filenames[-1]
 
@@ -49,6 +55,11 @@ step = 0
 for f in filenames: 
     stepData = IO.readMatrixXdBinary(f, verbose=0)
     listenedData[step, :] = stepData.transpose()
+
+    if (verifyAnalytical):
+        stepData = IO.readMatrixXdBinary(analyticalFilenames[step], verbose=0)
+        analyticalListenedData[step, :] = stepData.transpose()
+
     step += 1
 
 maxValue = np.absolute(listenedData).max()
@@ -56,18 +67,18 @@ print 'Normalize all data by max value = %f' %(maxValue)
 
 # writing the wav files
 # listenedDataPadded = PadZero(listenedData.copy(), stepRate/2, stepRate)
-for ii in range(N_points): 
-    print ii
-    outputData = listenedData[:, ii]
-
-    normalizationConstant = maxValue
-    # normalizationConstant = np.absolute(outputData.max())
-    if normalizationConstant > 1E-14:
-        outputData /= normalizationConstant
-    outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
-    outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
-    # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
-    scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
+# for ii in range(N_points): 
+#     print ii
+#     outputData = listenedData[:, ii]
+# 
+#     normalizationConstant = maxValue
+#     # normalizationConstant = np.absolute(outputData.max())
+#     if normalizationConstant > 1E-14:
+#         outputData /= normalizationConstant
+#     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
+#     outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
+#     # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
+#     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
 
 # extract minimum and compare with 1/r decay 
 dataMin = np.zeros(N_points)
@@ -78,9 +89,9 @@ for pt_idx in range(N_points):
 one_over_r = np.divide(np.ones(N_points), dataR)
 
 # trim data 
-listenedData = listenedData[:, ::20]
-listeningPositions = listeningPositions[::20, :]
-N_points = listeningPositions.shape[0]
+# listenedData = listenedData[:, ::20]
+# listeningPositions = listeningPositions[::20, :]
+# N_points = listeningPositions.shape[0]
 
 plotting = True
 if plotting:
@@ -92,6 +103,9 @@ if plotting:
         # if ii == 0 or ii == N_points-1:
         label = '%.4f %.4f %.4f' %(listeningPositions[ii, 0], listeningPositions[ii, 1], listeningPositions[ii, 2])
         plt.plot(listenedData[:,ii], label=label, color=colors[ii], linewidth=lw) 
+        if verifyAnalytical:
+            print 'max at %u is %f' %(ii, max(analyticalListenedData[:, ii]))
+            plt.plot(analyticalListenedData[:, ii], 'x', color=colors[ii], )
         # else:
             # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
     plt.legend(loc=4)
@@ -111,6 +125,9 @@ if plotting:
         plt.ylabel('Pressure (Pascal)')
         plt.xlim([0, 400])
         plt.grid()
+        if (verifyAnalytical):
+            plt.plot(analyticalListenedData[:, plot_index])
+              
         print 'Listening point = ', listeningPositions[plot_index, :]
         # try to extract the max in the last couple of cycles
         extractEndPercentage = 0.2
