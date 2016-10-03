@@ -785,8 +785,8 @@ ConstructSliceSamples(Slice &slice)
 
     const auto &settings = _simulator->GetSolverSettings(); 
     //const REAL cellSize = settings->cellSize; 
-    //const int division = settings->cellDivisions; 
-    const int division = _sliceDivision;
+    const int division = settings->cellDivisions; 
+    //const int division = _sliceDivision;
     const REAL cellSize = settings->cellSize*(REAL)settings->cellDivisions / (REAL)division; 
 
     const REAL halfLength = (REAL)division*cellSize / 2.0; 
@@ -868,8 +868,15 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         } 
         else if (dataPointer == 1)
         {
-            // 0: bulk cell; 1: solid cell; -1: ghost cell
+            // 0.0: bulk cell; 1: solid cell; -1: ghost cell
             _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+
+            // change the bulk cell so its color is better..
+            for (int r_idx=0; r_idx<data.rows(); ++r_idx)
+            {
+                if (data(r_idx, 0) < 1E-16 && data(r_idx, 0) > -1E-16)
+                    data(r_idx, 0) = 0.5; 
+            }
         } 
         else if (dataPointer == 2 || dataPointer == 3) 
         {
