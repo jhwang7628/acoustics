@@ -349,6 +349,25 @@ RunForSteps(const int &N_steps)
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
+        if (_stepIndex % settings->timeSavePerStep == 0)
+        {
+            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
+            std::ostringstream oss; 
+            oss << std::setw(8) << std::setfill('0') << timeIndex; 
+            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
+            _SaveListeningData(filenameProbe);
+            if (settings->writePressureFieldToDisk)
+            {
+                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
+                _SavePressureTimestep(filenameField); 
+                // uncomment if want to store velocities
+                //for (int dim=0; dim<3; ++dim) 
+                //{
+                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+                //}
+            }
+        }
         // update modal vectors for the next time step
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
             _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
