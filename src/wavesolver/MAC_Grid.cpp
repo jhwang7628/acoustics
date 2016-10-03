@@ -997,7 +997,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 #endif
 
     // solve the linear system
-    const int maxIteration = 50;
+    const int maxIteration = 200;
     const int N_coupled = coupledIndices.size(); 
     FloatArray pGC_old; 
     REAL minResidual, maxResidual, maxOffDiagonal, oldResidual = -1; 
@@ -2019,6 +2019,16 @@ void MAC_Grid::ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResid
     }
     minResidual = residual.minCoeff(); 
     maxResidual = residual.maxCoeff(); 
+}
+
+int MAC_Grid::PressureCellType(const int &idx)
+{
+    if (_isBulkCell.at(idx)) // bulk
+        return 0;  
+    else if (!_isBulkCell.at(idx) && !_isGhostCell.at(idx)) // solid
+        return 1; 
+    else  // ghost
+        return -1;
 }
 
 void MAC_Grid::visualizeClassifiedCells()
