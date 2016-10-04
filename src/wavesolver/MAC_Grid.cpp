@@ -127,149 +127,78 @@ void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
     _PML_absorptionStrength = strength;
 }
 
-void MAC_Grid::velocityDerivative( const MATRIX &p,
-                                   const BoundaryEvaluator &bc,
-                                   MATRIX &dV_dt, int dimension,
-                                   REAL t, REAL alpha ) const
-{
-    const IntArray        &bulkCells = _velocityBulkCells[ dimension ];
-    const IntArray        &interfacialCells
-        = _velocityInterfacialCells[ dimension ];
-    const ScalarField     &field = _velocityField[ dimension ];
-    const IntArray        &interfaceBoundaryIDs
-        = _interfacialBoundaryIDs[ dimension ];
-    const FloatArray      &interfaceBoundaryDirections
-        = _interfacialBoundaryDirections[ dimension ];
-
-    // Handle all bulk cells
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCells.size();
-            bulk_cell_idx++ )
-    {
-        int                  cell_idx = bulkCells[ bulk_cell_idx ];
-        int                  neighbour_idx;
-        Tuple3i              cell_indices = field.cellIndex( cell_idx );
-
-        // If we're on a boundary, then set the derivative to zero (since
-        // we should have d_n p = 0 on the boundary
-        if ( cell_indices[ dimension ] == 0
-                || cell_indices[ dimension ] == field.cellDivisions()[ dimension ] - 1 )
-        {
-            for ( int i = 0; i < _N; i++ )
-            {
-                dV_dt( cell_idx, i ) = 0.0;
-            }
-        }
-
-        // Sample the derivative of the pressure field in the necessary
-        // direction
-        neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-        for ( int i = 0; i < _N; i++ )
-        {
-            dV_dt( cell_idx, i )
-                += alpha * p( neighbour_idx, i ) / _pressureField.cellSize();
-        }
-
-        cell_indices[ dimension ] -= 1;
-        neighbour_idx = _pressureField.cellIndex( cell_indices );
-
-        for ( int i = 0; i < _N; i++ )
-        {
-            dV_dt( cell_idx, i )
-                -= alpha * p( neighbour_idx, i ) / _pressureField.cellSize();
-        }
-    }
-
-    // Handle boundary cells
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for ( size_t interfacial_cell_idx = 0;
-            interfacial_cell_idx < interfacialCells.size();
-            interfacial_cell_idx++ )
-    {
-        int                  cell_idx = interfacialCells[ interfacial_cell_idx ];
-        int                  objectID;
-        REAL                 bcEval;
-
-        Vector3d             normal( 0.0, 0.0, 0.0 );
-        Vector3d             x = field.cellPosition( cell_idx );
-
-        normal[ dimension ] = interfaceBoundaryDirections[ interfacial_cell_idx ];
-
-        objectID = interfaceBoundaryIDs[ interfacial_cell_idx ];
-
-        for ( int i = 0; i < _N; i++ )
-        {
-            bcEval = bc( x, normal, objectID, t, i );
-
-            dV_dt( cell_idx, i ) += alpha * bcEval;
-        }
-    }
-}
-
-void MAC_Grid::pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
-                                   REAL alpha ) const
-{
-    // We only have to worry about bulk cells here
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for ( size_t bulk_cell_idx = 0; bulk_cell_idx < _bulkCells.size();
-            bulk_cell_idx++ )
-    {
-        int                      cell_idx = _bulkCells[ bulk_cell_idx ];
-        int                      neighbour_idx;
-        Tuple3i                  cell_indices;
-
-        cell_indices = _pressureField.cellIndex( cell_idx );
-
-        // Add the divergence term in each direction
-        for ( int dimension = 0; dimension < 3; dimension++ )
-        {
-            const MATRIX          &vd = *( v[ dimension ] );
-
-            cell_indices[ dimension ] += 1;
-            neighbour_idx = _velocityField[ dimension ].cellIndex( cell_indices );
-
-            for ( int i = 0; i < _N; i++ )
-            {
-                REAL addedValue = alpha * vd( neighbour_idx, i );
-                addedValue /= _velocityField[ dimension ].cellSize();
-
-                p( cell_idx, i ) += alpha * vd( neighbour_idx, i )
-                    / _velocityField[ dimension ].cellSize();
-            }
-
-            cell_indices[ dimension ] -= 1;
-            neighbour_idx = _velocityField[ dimension ].cellIndex( cell_indices );
-
-            for ( int i = 0; i < _N; i++ )
-            {
-                REAL addedValue = -1.0 * alpha * vd( neighbour_idx, i );
-                addedValue /= _velocityField[ dimension ].cellSize();
-
-                p( cell_idx, i ) -= alpha * vd( neighbour_idx, i )
-                    / _velocityField[ dimension ].cellSize();
-            }
-        }
-    }
-}
-
 void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
 {
-    const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
+    //const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
     const IntArray        &interfacialCells             = _velocityInterfacialCells[ dimension ];
     const ScalarField     &field                        = _velocityField[ dimension ];
+    const int              N_cells = field.numCells(); 
     const FloatArray      &interfaceBoundaryCoefficients= _interfacialBoundaryCoefficients[ dimension ];
     const REAL             minus_one_over_density       = -1.0 / density; 
     const REAL             one_over_three_quarters_cellsize      = 1.0 / (0.75 * _waveSolverSettings->cellSize); 
+    const REAL             n_dt_over_dx_rho = -timeStep/(_pressureField.cellSize()*density);
 
     // Handle all bulk cells
-    PML_velocityUpdateAux(p, v, dimension, t, timeStep, density, bulkCells); 
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (int cell_idx = 0; cell_idx < N_cells; ++cell_idx)
+    {
+        if (!_isVelocityBulkCell[dimension].at(cell_idx))
+            continue; 
+
+        Tuple3i cell_indices = field.cellIndex( cell_idx );
+        const Vector3d cell_position = field.cellPosition(cell_indices);
+        const REAL      absorptionCoefficient   = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
+        const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
+
+        // If we're on a boundary, then set the derivative to zero (since
+        // we should have d_n p = 0 on the boundary
+        if (cell_indices[dimension] == 0 || cell_indices[dimension] == field.cellDivisions()[dimension] - 1)
+        {
+            for ( int i = 0; i < _N; i++ )
+                v( cell_idx, i ) = 0.0;
+            continue;
+        }
+
+        if (inPML) 
+        {
+            const REAL updateCoefficient    = PML_velocityUpdateCoefficient(absorptionCoefficient, timeStep);
+            const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, timeStep, _pressureField.cellSize(), density);
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) *= updateCoefficient;
+
+            // Sample the derivative of the pressure field in the necessary
+            // direction
+            int     neighbour_idx;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) += gradientCoefficient*p(neighbour_idx, i);
+
+            cell_indices[ dimension ] -= 1;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) -= gradientCoefficient*p(neighbour_idx, i);
+        }
+        else // can collapse a lot of the terms
+        {
+            // updateCoefficient   = 1
+            // gradientCoefficient = -dt/(dx*rho)
+            int neighbour_idx;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) += n_dt_over_dx_rho*p(neighbour_idx, i);
+
+            cell_indices[dimension] -= 1;
+            neighbour_idx = _pressureField.cellIndex(cell_indices);
+
+            for (int i=0; i<_N; ++i)
+                v(cell_idx, i) -= n_dt_over_dx_rho*p(neighbour_idx, i);
+        }
+    }
 
     // Handle interfacial cells
     if (_useGhostCellBoundary)
@@ -358,76 +287,10 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
     }
 }
 
-void MAC_Grid::PML_velocityUpdateAux( const MATRIX &p, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density, const IntArray &bulkCells )
-{
-    const ScalarField &field = _velocityField[ dimension ];
-    const REAL n_dt_over_dx_rho = -timeStep/(_pressureField.cellSize()*density);
-    const int bulkCellSize = bulkCells.size(); 
-
-    // Handle all bulk cells
-    #ifdef USE_OPENMP
-    #pragma omp parallel for schedule(static) default(shared)
-    #endif
-    for (int bulk_cell_idx = 0; bulk_cell_idx < bulkCellSize; ++bulk_cell_idx)
-    {
-        const int       cell_idx                = bulkCells[bulk_cell_idx];
-        Tuple3i cell_indices = field.cellIndex( cell_idx );
-        const Vector3d cell_position = field.cellPosition(cell_indices);
-        const REAL      absorptionCoefficient   = PML_absorptionCoefficient(cell_position, _PML_absorptionWidth, dimension);
-        const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
-
-        // If we're on a boundary, then set the derivative to zero (since
-        // we should have d_n p = 0 on the boundary
-        if (cell_indices[dimension] == 0 || cell_indices[dimension] == field.cellDivisions()[dimension] - 1)
-        {
-            for ( int i = 0; i < _N; i++ )
-                v( cell_idx, i ) = 0.0;
-            continue;
-        }
-
-        if (inPML) 
-        {
-            const REAL updateCoefficient    = PML_velocityUpdateCoefficient(absorptionCoefficient, timeStep);
-            const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, timeStep, _pressureField.cellSize(), density);
-            for (int i=0; i<_N; ++i)
-                v(cell_idx, i) *= updateCoefficient;
-
-            // Sample the derivative of the pressure field in the necessary
-            // direction
-            int     neighbour_idx;
-            neighbour_idx = _pressureField.cellIndex(cell_indices);
-
-            for (int i=0; i<_N; ++i)
-                v(cell_idx, i) += gradientCoefficient*p(neighbour_idx, i);
-
-            cell_indices[ dimension ] -= 1;
-            neighbour_idx = _pressureField.cellIndex(cell_indices);
-
-            for (int i=0; i<_N; ++i)
-                v(cell_idx, i) -= gradientCoefficient*p(neighbour_idx, i);
-        }
-        else // can collapse a lot of the terms
-        {
-            // updateCoefficient   = 1
-            // gradientCoefficient = -dt/(dx*rho)
-            int neighbour_idx;
-            neighbour_idx = _pressureField.cellIndex(cell_indices);
-
-            for (int i=0; i<_N; ++i)
-                v(cell_idx, i) += n_dt_over_dx_rho*p(neighbour_idx, i);
-
-            cell_indices[dimension] -= 1;
-            neighbour_idx = _pressureField.cellIndex(cell_indices);
-
-            for (int i=0; i<_N; ++i)
-                v(cell_idx, i) -= n_dt_over_dx_rho*p(neighbour_idx, i);
-        }
-    }
-}
-
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
-    const size_t bulkCellSize = _bulkCells.size();
+    const int N_cells = numPressureCells(); 
+    //const size_t bulkCellSize = _bulkCells.size();
     //const bool evaluateExternalSource = (sourceEvaluator != nullptr);
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
     const REAL n_rho_c_square_dt = -density*c*c*timeStep;
@@ -437,9 +300,11 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
     #ifdef USE_OPENMP
     #pragma omp parallel for schedule(static) default(shared)
     #endif
-    for (size_t bulk_cell_idx = 0; bulk_cell_idx < bulkCellSize; ++bulk_cell_idx)
+    for (int cell_idx = 0; cell_idx < N_cells; ++cell_idx)
     {
-        const int       cell_idx                = _bulkCells[ bulk_cell_idx ];
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
+
         const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
         const REAL      absorptionCoefficient   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, dimension );
         const bool      inPML = (absorptionCoefficient > 1E-12) ? true : false; 
@@ -1306,15 +1171,11 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].resize( numVcells[ 1 ], false );
     _isVelocityBulkCell[ 2 ].resize( numVcells[ 2 ], false );
 
-    _bulkCells.clear();
     _ghostCells.clear();
 
     _velocityInterfacialCells[ 0 ].clear();
     _velocityInterfacialCells[ 1 ].clear();
     _velocityInterfacialCells[ 2 ].clear();
-    _velocityBulkCells[ 0 ].clear();
-    _velocityBulkCells[ 1 ].clear();
-    _velocityBulkCells[ 2 ].clear();
 
     _interfacialBoundaryIDs[ 0 ].clear();
     _interfacialBoundaryIDs[ 1 ].clear();
@@ -1335,7 +1196,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
         for ( int cell_idx = 0; cell_idx < numPressureCells; cell_idx++ )
         {
             _isBulkCell[ cell_idx ] = true;
-            _bulkCells.push_back( cell_idx );
         }
 
         for ( int dimension = 0; dimension < 3; dimension++ )
@@ -1344,7 +1204,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
             {
                 _isVelocityBulkCell[dimension][cell_idx] = true; 
                 _isVelocityInterfacialCell[dimension][cell_idx] = false; 
-                _velocityBulkCells[dimension].push_back(cell_idx); 
             }
         }
         return;
@@ -1367,11 +1226,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 _containingObject[ cell_idx ] = field_idx;
                 break;
             }
-        }
-
-        if ( _isBulkCell[ cell_idx ] )
-        {
-            _bulkCells.push_back( cell_idx );
         }
     }
 
@@ -1422,8 +1276,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
                     == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
             {
                 _isVelocityBulkCell[ dimension ][ cell_idx ] = true;
-                _velocityBulkCells[ dimension ].push_back( cell_idx );
-
                 continue;
             }
 
@@ -1439,8 +1291,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // Both pressure cell neighbours are bulk cells, so this is
                 // a bulk cell too
                 _isVelocityBulkCell[ dimension ][ cell_idx ] = true;
-
-                _velocityBulkCells[ dimension ].push_back( cell_idx );
             }
             else if ( _isBulkCell[ pressure_cell_idx1 ] 
                     && !_isBulkCell[ pressure_cell_idx2 ] )
@@ -1513,7 +1363,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
 
     printf( "MAC_Grid: classifyCells:\n" );
-    printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
     printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
     printf( "\tFound %d v_x interfacial cells\n",
             (int)_velocityInterfacialCells[ 0 ].size() );
@@ -1521,9 +1370,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
             (int)_velocityInterfacialCells[ 1 ].size() );
     printf( "\tFound %d v_z interfacial cells\n",
             (int)_velocityInterfacialCells[ 2 ].size() );
-    printf( "\tFound %d v_x bulk cells\n", (int)_velocityBulkCells[ 0 ].size() );
-    printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
-    printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
 
     if (_useGhostCellBoundary)
     {
@@ -1567,25 +1413,17 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
     IntArray neighbours;
     neighbours.reserve( ScalarField::NUM_NEIGHBOURS );
 
-    // step 1 : clear relevant arrays
-    _bulkCells.clear(); 
-    for (int dim=0; dim<3; ++dim) 
-        _velocityBulkCells[dim].clear(); 
-
     // step 2 : not using boundary, classification is trivial
     if (!useBoundary)
     {
         if (verbose) 
             std::cout << "No classification (not using boundary)\n"; 
-        for (int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx)
-            _bulkCells.push_back( cell_idx );
         for (int dimension = 0; dimension < 3; ++dimension)
         {
             for (int cell_idx = 0; cell_idx < _velocityField[dimension].numCells(); ++cell_idx)
             {
                 _isVelocityBulkCell[dimension][cell_idx] = true; 
                 _isVelocityInterfacialCell[dimension][cell_idx] = false; 
-                _velocityBulkCells[dimension].push_back(cell_idx); 
             }
         }
         return;
@@ -1628,8 +1466,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
         const bool newIsBulkCell = (_containingObject.at(cell_idx)>=0 ? false : true); 
 
         _isBulkCell.at(cell_idx) = newIsBulkCell; 
-        if (newIsBulkCell)
-            _bulkCells.push_back(cell_idx); 
 
         // since we know for sure non-bulk is solid if ghost cell is off, can clear it now
         if (!newIsBulkCell && !_useGhostCellBoundary) 
@@ -1696,7 +1532,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
         _interfacialBoundaryDirections[dim].clear(); 
         _interfacialBoundaryCoefficients[dim].clear(); 
         _interfacialGhostCellID[dim].clear(); 
-        _velocityBulkCells[dim].clear(); 
         pGC[dim].clear(); 
     }
     int numSolidCells[3] = {0, 0, 0}; 
@@ -1717,7 +1552,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
             if ( cell_coordinates[ dimension ] == 0
               || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
             {
-                _velocityBulkCells[ dimension ].push_back( cell_idx );
                 _isVelocityBulkCell[dimension].at(cell_idx) = true; 
                 _isVelocityInterfacialCell[dimension][cell_idx] = false; 
                 continue;
@@ -1735,7 +1569,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 // a bulk cell too
                 _isVelocityBulkCell[dimension].at(cell_idx) = true; 
                 _isVelocityInterfacialCell[dimension].at(cell_idx) = false; 
-                _velocityBulkCells[ dimension ].push_back( cell_idx );
             }
             else if ( _isBulkCell[ pressure_cell_idx1 ] 
                     && !_isBulkCell[ pressure_cell_idx2 ] )
@@ -1850,7 +1683,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
     if (verbose) 
     {
         printf( "MAC_Grid: classifyCellsDynamic:\n" );
-        printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
         printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
         printf( "\tFound %d v_x interfacial cells\n",
                 (int)_velocityInterfacialCells[ 0 ].size() );
@@ -1858,9 +1690,6 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
                 (int)_velocityInterfacialCells[ 1 ].size() );
         printf( "\tFound %d v_z interfacial cells\n",
                 (int)_velocityInterfacialCells[ 2 ].size() );
-        printf( "\tFound %d v_x bulk cells\n", (int)_velocityBulkCells[ 0 ].size() );
-        printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
-        printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
         printf( "\tFound %d v_x solid cells\n", numSolidCells[0] );
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
@@ -1871,31 +1700,10 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
 //##############################################################################
 void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose)
 {
-    const int numPressureCells = _pressureField.numCells(); 
-
-    // step 1 : clear relevant arrays
-    _bulkCells.clear(); 
-    for (int dim=0; dim<3; ++dim) 
-        _velocityBulkCells[dim].clear(); 
 
     // step 2 : not using boundary, classification is trivial
     if (!useBoundary)
-    {
-        if (verbose) 
-            std::cout << "No classification (not using boundary)\n"; 
-        for (int cell_idx = 0; cell_idx < numPressureCells; ++cell_idx)
-            _bulkCells.push_back( cell_idx );
-        for (int dimension = 0; dimension < 3; ++dimension)
-        {
-            for (int cell_idx = 0; cell_idx < _velocityField[dimension].numCells(); ++cell_idx)
-            {
-                _isVelocityBulkCell[dimension][cell_idx] = true; 
-                _isVelocityInterfacialCell[dimension][cell_idx] = false; 
-                _velocityBulkCells[dimension].push_back(cell_idx); 
-            }
-        }
         return;
-    }
 
     // get all bounding boxes and iteration range
     const int N = _objects->N(); 
@@ -1954,14 +1762,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 
             const bool newIsBulkCell = (containObjectId>=0 ? false : true); 
             _isBulkCell.at(cell_idx) = newIsBulkCell; 
-            if (newIsBulkCell)
-            {
-#ifdef USE_OPENMP
-#pragma omp critical
-#endif
-
-                _bulkCells.push_back(cell_idx); 
-            }
 
             // since we know for sure non-bulk is solid if ghost cell is off, can clear it now
             if (!newIsBulkCell && !_useGhostCellBoundary) 
@@ -2037,7 +1837,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         _interfacialBoundaryDirections[dim].clear(); 
         _interfacialBoundaryCoefficients[dim].clear(); 
         _interfacialGhostCellID[dim].clear(); 
-        _velocityBulkCells[dim].clear(); 
         pGC[dim].clear(); 
     }
     int numSolidCells[3] = {0, 0, 0}; 
@@ -2064,7 +1863,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                 if ( cell_coordinates[ dimension ] == 0
                   || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
                 {
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
                     _isVelocityBulkCell[dimension].at(cell_idx) = true; 
                     _isVelocityInterfacialCell[dimension][cell_idx] = false; 
                     continue;
@@ -2082,7 +1880,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     // a bulk cell too
                     _isVelocityBulkCell[dimension].at(cell_idx) = true; 
                     _isVelocityInterfacialCell[dimension].at(cell_idx) = false; 
-                    _velocityBulkCells[ dimension ].push_back( cell_idx );
                 }
                 else if ( _isBulkCell[ pressure_cell_idx1 ] 
                         && !_isBulkCell[ pressure_cell_idx2 ] )
@@ -2199,7 +1996,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     if (verbose) 
     {
         printf( "MAC_Grid: classifyCellsDynamic:\n" );
-        printf( "\tFound %d bulk cells\n", (int)_bulkCells.size() );
         printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
         printf( "\tFound %d v_x interfacial cells\n",
                 (int)_velocityInterfacialCells[ 0 ].size() );
@@ -2207,9 +2003,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                 (int)_velocityInterfacialCells[ 1 ].size() );
         printf( "\tFound %d v_z interfacial cells\n",
                 (int)_velocityInterfacialCells[ 2 ].size() );
-        printf( "\tFound %d v_x bulk cells\n", (int)_velocityBulkCells[ 0 ].size() );
-        printf( "\tFound %d v_y bulk cells\n", (int)_velocityBulkCells[ 1 ].size() );
-        printf( "\tFound %d v_z bulk cells\n", (int)_velocityBulkCells[ 2 ].size() );
         printf( "\tFound %d v_x solid cells\n", numSolidCells[0] );
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );

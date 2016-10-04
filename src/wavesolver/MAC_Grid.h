@@ -65,17 +65,15 @@ class MAC_Grid
         ScalarField              _velocityField[ 3 ];
 
         // isBulkCell and isGhostCell refer to cells in the pressure grid
-        BoolArray                   _isBulkCell;
-        BoolArray                   _isGhostCell;
+        BoolArray                _isBulkCell;
+        BoolArray                _isGhostCell;
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
         // valid
         BoolArray                _isVelocityBulkCell[ 3 ];
-
         BoolArray                _isVelocityInterfacialCell[ 3 ];
 
-        IntArray                 _bulkCells;
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
 
@@ -84,16 +82,15 @@ class MAC_Grid
 
         std::map<int,int>        _ghostCellsInverse; 
 
-        IntArray                 _velocityBulkCells[ 3 ];
-        IntArray                 _velocityInterfacialCells[ 3 ];
-
-        IntArray                 _interfacialBoundaryIDs[ 3 ];
-        FloatArray               _interfacialBoundaryDirections[ 3 ];
-        FloatArray               _interfacialBoundaryCoefficients[ 3 ];
-        IntArray                 _containingObject;
+        //IntArray                 _velocityBulkCells[ 3 ]; // TODO
+        IntArray                 _velocityInterfacialCells[ 3 ]; // TODO
+        IntArray                 _interfacialBoundaryIDs[ 3 ]; // TODO
+        FloatArray               _interfacialBoundaryDirections[ 3 ]; // TODO
+        FloatArray               _interfacialBoundaryCoefficients[ 3 ]; // TODO
+        IntArray                 _containingObject; // TODO
 
         // for subdivided ghost cells
-        IntArray                 _interfacialGhostCellID[ 3 ]; // map to ghost cell index
+        IntArray                 _interfacialGhostCellID[ 3 ]; // map to ghost cell index 
         IntArray                 _ghostCellParents;
         std::vector<Vector3d>    _ghostCellPositions; 
         IntArray                 _ghostCellBoundaryIDs; 
@@ -144,27 +141,11 @@ class MAC_Grid
         // Width is the number of cells we wish to absorb in
         void setPMLBoundaryWidth( REAL width, REAL strength );
 
-        // Gets the derivative for the given velocity field, based on the
-        // input pressure value
-        void velocityDerivative( const MATRIX &p, const BoundaryEvaluator &bc,
-                                 MATRIX &dV_dt, int dimension,
-                                 REAL t, REAL alpha = 1.0 ) const;
-
-        // Gets the derivative of the pressure field using the current
-        // velocity field values in each direction
-        void pressureDerivative( const MATRIX *v[ 3 ], MATRIX &p,
-                                 REAL alpha = 1.0 ) const;
-
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
         void PML_velocityUpdate( const MATRIX &p, const FloatArray &pGC, 
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
-
-        // Helper function to minimize repeated code
-        void PML_velocityUpdateAux( const MATRIX &p,
-                                    MATRIX &v, int dimension,
-                                    REAL t, REAL timeStep, REAL density, const IntArray &bulkCells);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
