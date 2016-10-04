@@ -232,6 +232,7 @@ class MAC_Grid
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
         int PressureCellType(const int &idx);
