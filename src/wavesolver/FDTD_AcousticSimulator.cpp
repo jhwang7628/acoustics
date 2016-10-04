@@ -355,7 +355,13 @@ ResetStartTime(const REAL &startTime)
     _stepIndex = 0; 
     _simulationTime = startTime; 
     if (_acousticSolverSettings->rigidsimDataRead)
+    {
         AnimateObjects();
+        auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+        for (auto &object : objects) 
+            if (object->IsModalObject())
+                object->ResetUnionBox();
+    }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
     auto &objects = _sceneObjects->GetRigidSoundObjects(); 
     for (auto &object : objects) 
@@ -513,12 +519,15 @@ AnimateObjects()
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
             const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
-            _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
-            rotationAngle = quaternion.toAxisRotR(rotationAxis); 
-            _sceneObjects->GetPtr(obj_idx)->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
+            if (_sceneObjects->GetPtr(rigidsimObjectID)->IsModalObject())
+            {
+                _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
+                rotationAngle = quaternion.toAxisRotR(rotationAxis); 
+                _sceneObjects->GetPtr(obj_idx)->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
 
-#ifdef DEBUG
-            std::cout << "object " << obj_idx << " has translation = " << _sceneObjects->GetPtr(obj_idx)->GetTranslation().transpose() << std::endl;
+#ifdef DEBUG_PRINT
+                std::cout << "object " << obj_idx << " has translation = " << _sceneObjects->GetPtr(obj_idx)->GetTranslation().transpose() << std::endl;
+            }
 #endif
         }
     }

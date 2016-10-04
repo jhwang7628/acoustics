@@ -15,6 +15,7 @@ class Source : public FDTD_MovableObject
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 
         virtual void UpdateBoundingBox(); 
+        virtual void ResetUnionBox(); 
 };
 
 #endif 

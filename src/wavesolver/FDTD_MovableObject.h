@@ -106,6 +106,7 @@ class FDTD_MovableObject
         virtual Eigen::Vector3d GetTranslation() const;
         virtual void GetRotationDegree(REAL &angle, Eigen::Vector3d &axis) const; 
         virtual void UpdateBoundingBox()=0; 
+        virtual void ResetUnionBox()=0;
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
         virtual void ApplyRotation(const Quaternion<REAL> &quaternion);
         virtual void SetTransform(const double &x, const double &y, const double &z, const double &angle, const double &rotationVectorx, const double &rotationVectory, const double &rotationVectorz);
