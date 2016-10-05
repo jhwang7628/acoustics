@@ -973,6 +973,7 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         REAL distance; 
         int objectID; 
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+        
         if (distance < DISTANCE_TOLERANCE)
             throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. Distance: " + std::to_string(distance)); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
@@ -988,8 +989,8 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         Vector3d positionBuffer; 
         Eigen::VectorXd RHS(8); 
         // should evaluate the pressure at the previous time-step
-        //const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density); 
-        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime)*(-density); 
+        const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime + 0.5*timeStep)*(-density); 
+        //const REAL boundaryPressureGradientNormal = _objects->Get(objectID).EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime)*(-density); 
 
         for (size_t row=0; row<neighbours.size(); row++) 
         {
@@ -1073,8 +1074,9 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         int objectID; 
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
-        REAL distanceToMesh;
-        _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceToMesh); 
+        REAL dBuffer;
+        _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, dBuffer); 
+        const REAL distanceToMesh = _objects->GetPtr(objectID)->DistanceToMesh(imagePoint); 
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
@@ -1087,7 +1089,9 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
 
         // evaluate the velocity source in the previous step for velocity
-        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, erectedNormal, simulationTime - 0.5*timeStep) * _interfacialBoundaryCoefficients[dim].at(interfacial_cell_idx); 
+        Vector3d normal(0, 0, 0); 
+        normal[dim] = 1.0;
+        const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, normal, simulationTime - 0.5*timeStep); 
 
         Eigen::MatrixXd V(8,8); 
         Eigen::VectorXd RHS(8); 
@@ -1684,12 +1688,9 @@ void MAC_Grid::classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &p
     {
         printf( "MAC_Grid: classifyCellsDynamic:\n" );
         printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
-        printf( "\tFound %d v_x interfacial cells\n",
-                (int)_velocityInterfacialCells[ 0 ].size() );
-        printf( "\tFound %d v_y interfacial cells\n",
-                (int)_velocityInterfacialCells[ 1 ].size() );
-        printf( "\tFound %d v_z interfacial cells\n",
-                (int)_velocityInterfacialCells[ 2 ].size() );
+        printf( "\tFound %d v_x interfacial cells\n", (int)_velocityInterfacialCells[ 0 ].size() );
+        printf( "\tFound %d v_y interfacial cells\n", (int)_velocityInterfacialCells[ 1 ].size() );
+        printf( "\tFound %d v_z interfacial cells\n", (int)_velocityInterfacialCells[ 2 ].size() );
         printf( "\tFound %d v_x solid cells\n", numSolidCells[0] );
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
@@ -1732,32 +1733,37 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 
             // before doing anything, first update history array, ghost cell is
             // considered having valid history
-            if (IsPressureCellSolid(cell_idx))
+            //if (IsPressureCellSolid(cell_idx)) // FIXME debug
+            //    _pressureCellHasValidHistory.at(cell_idx) = false; 
+            //else 
+            //    _pressureCellHasValidHistory.at(cell_idx) = true; 
+            if (!_isBulkCell.at(cell_idx)) // FIXME debug
                 _pressureCellHasValidHistory.at(cell_idx) = false; 
             else 
                 _pressureCellHasValidHistory.at(cell_idx) = true; 
 
             // Check all boundary fields to see if this is a bulk cell
             int containObjectId = _objects->OccupyByObject(cellPos); 
-            
-            if (containObjectId < 0)
-            {
-                // check additional samples within the cell. use six subdivide
-                // stencils for now.
-                for (int dim=0; dim<3; ++dim)
-                {
-                    Vector3d offset(0, 0, 0);
-                    offset[dim] += _waveSolverSettings->cellSize*0.25; 
-                    // check positive side
-                    containObjectId = _objects->OccupyByObject(cellPos + offset); 
-                    if (containObjectId >= 0)
-                        break; 
-                    // check negative side
-                    containObjectId = _objects->OccupyByObject(cellPos - offset); 
-                    if (containObjectId >= 0)
-                        break; 
-                }
-            }
+           
+            // FIXME debug
+            //if (containObjectId < 0)
+            //{
+            //    // check additional samples within the cell. use six subdivide
+            //    // stencils for now.
+            //    for (int dim=0; dim<3; ++dim)
+            //    {
+            //        Vector3d offset(0, 0, 0);
+            //        offset[dim] += _waveSolverSettings->cellSize*0.25; 
+            //        // check positive side
+            //        containObjectId = _objects->OccupyByObject(cellPos + offset); 
+            //        if (containObjectId >= 0)
+            //            break; 
+            //        // check negative side
+            //        containObjectId = _objects->OccupyByObject(cellPos - offset); 
+            //        if (containObjectId >= 0)
+            //            break; 
+            //    }
+            //}
             _containingObject.at(cell_idx) = containObjectId; 
 
             const bool newIsBulkCell = (containObjectId>=0 ? false : true); 
@@ -2267,6 +2273,16 @@ void MAC_Grid::FindImagePoint(const Vector3d &cellPosition, const int &boundaryO
     }
 
 
+}
+
+void MAC_Grid::ResetCellHistory(const bool &valid)
+{
+    auto &p = _pressureCellHasValidHistory; 
+    auto &v = _velocityCellHasValidHistory; 
+    std::fill(p.begin(), p.end(), valid); 
+    std::fill(v[0].begin(), v[0].end(), valid); 
+    std::fill(v[1].begin(), v[1].end(), valid); 
+    std::fill(v[2].begin(), v[2].end(), valid); 
 }
 
 

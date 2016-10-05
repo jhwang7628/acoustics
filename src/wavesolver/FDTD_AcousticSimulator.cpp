@@ -24,25 +24,21 @@ _SetBoundaryConditions()
     for (int index=0; index<N_objects; ++index)
     {
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-        if (objectPtr->IsModalObject())
-        {
-            // add modal vibrational source // FIXME debug
-            //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-            //objectPtr->AddVibrationalSource(sourcePtr); 
+        // add modal vibrational source // FIXME debug
+        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
 
-            // add acceleration noise source
-            VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-            objectPtr->AddVibrationalSource(anSourcePtr);
-        }
-        else
-        {
-            const REAL omega = 2.0*M_PI*3000.0;
-            const REAL phase = 0.0;
-            VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-            //objectPtr->AddVibrationalSource(sourcePtr); 
-            //std::cout << "Add test vibrational sources to object " << objectPtr->GetMeshName() << std::endl;
-            //objectPtr->TestObjectBoundaryCondition();
-        }
+        // add acceleration noise source
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(anSourcePtr);
+
+        // add debug harmonic source
+        //const REAL omega = 2.0*M_PI*500.0;
+        //const REAL phase = 0.0;
+        ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 100., 0.301997)); 
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
+        //objectPtr->TestObjectBoundaryCondition();
     }
 }
 
@@ -376,6 +372,7 @@ ResetStartTime(const REAL &startTime)
             object->UpdateQPointers(); 
         }
     }
+    _acousticSolver->GetGrid().ResetCellHistory(true);
 }
 
 //##############################################################################
@@ -421,7 +418,9 @@ RunForSteps(const int &N_steps)
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
+        // FIXME debug
         AnimateObjects(); 
+        //TestMoveObjects(); 
 
         if (!continueStepping)
             break; 
@@ -437,6 +436,7 @@ Run()
     bool continueStepping = true; 
     auto &settings = _acousticSolverSettings; 
 
+    int count = 0;
     while(continueStepping) 
     {
         // first step all modal ode, so that its one step ahead of main acoustic
@@ -473,7 +473,12 @@ Run()
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
+        // FIXME debug
         AnimateObjects(); 
+        //if (count > 20) 
+        //    TestMoveObjects(); 
+
+        count ++; 
 
 #ifdef DEBUG
         _acousticSolver->PrintAllFieldExtremum();

@@ -195,6 +195,7 @@ class MAC_Grid
         inline int numVelocityCellsZ() const { return _velocityField[ 2 ].numCells(); }
         inline REAL fieldDiameter() const { return _pressureField.bbox().maxlength(); }
         inline BoundingBox PressureBoundingBox() const {return _pressureField.bbox();}
+        inline BoundingBox VelocityBoundingBox(const int &dim) const {return _velocityField[dim].bbox();}
         inline const ScalarField &pressureField() const { return _pressureField; }
         inline const ScalarField &velocityField(const int &ind) const { return _velocityField[ind]; }
         inline Vector3d pressureFieldPosition(const Tuple3i &index) const { return _pressureField.cellPosition( index ); }
@@ -217,6 +218,7 @@ class MAC_Grid
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
         int PressureCellType(const int &idx);
+        void ResetCellHistory(const bool &valid); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
