@@ -680,7 +680,7 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%4; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%5; 
         optionsChanged = true;
         SetAllSliceDataReady(false); 
     }
@@ -878,19 +878,31 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
                     data(r_idx, 0) = 0.5; 
             }
         } 
-        else if (dataPointer == 2 || dataPointer == 3) 
+        else if (dataPointer == 2)
+        {
+            _simulator->GetSolver()->FetchVelocityData(slice.samples, 0, data);
+        }
+        else if (dataPointer == 3)
+        {
+            _simulator->GetSolver()->FetchVelocityData(slice.samples, 1, data);
+        }
+        else if (dataPointer == 4)
+        {
+            _simulator->GetSolver()->FetchVelocityData(slice.samples, 2, data);
+        }
+        else if (dataPointer == 5 || dataPointer == 6) 
         {
             const int N_samples = slice.samples.size(); 
             data.resize(N_samples, 1);
             int count = 0;
             for (int d_idx=0; d_idx<N_samples; ++d_idx)
             {
-                if (dataPointer == 2) 
+                if (dataPointer == 5) 
                 {
                     const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
                     data(d_idx, 0) = std::abs(transferValue);
                 }
-                else if (dataPointer == 3) 
+                else if (dataPointer == 6) 
                 {
                     // if distance > threashold, computes transfer residual
                     REAL transferResidual; 
@@ -983,4 +995,5 @@ PrintFrameInfo()
     //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
+    _message += "Current Data: " + QString::number(_sliceDataPointer) + "; ";
 }

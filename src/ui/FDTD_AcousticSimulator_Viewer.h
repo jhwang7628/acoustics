@@ -40,7 +40,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         REAL                    _drawAbsMax; 
 
         // slice related fields
-        int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: frequency transfer; 3: frequency transfer residual
+        int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: vx; 3: vy; 4:vz; 5: frequency transfer; 6: frequency transfer residual
         std::shared_ptr<ColorMap>   _sliceColorMap; 
         Vector2d                    _sliceColorMapRange; 
         int                         _sliceDivision = 80; 

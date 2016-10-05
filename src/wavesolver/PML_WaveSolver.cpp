@@ -116,6 +116,7 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
 
     _grid.initFieldRasterized( useBoundary );
     _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
+    _grid.ResetCellHistory(true); // set all history to valid
 
     //if ( _listeningPositions )
     //{
@@ -211,6 +212,30 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
         }
 
         field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+        for (size_t jj=0; jj<N_resultDimension; ++jj) 
+            data(ii, jj) = output(jj);
+    }
+    _writeTimer.pause(); 
+}
+
+void PML_WaveSolver::FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data)
+{
+    const int N = listeningPoints.size(); 
+    if (N==0) return; 
+
+    _writeTimer.start(); 
+    const ScalarField &field = _grid.velocityField(dimension); 
+    MATRIX &v = _v[dimension];
+    const int N_resultDimension = 1; 
+    data.resize(N, N_resultDimension); 
+    VECTOR output(N_resultDimension); 
+    BoundingBox velocityBoundingBox = _grid.VelocityBoundingBox(dimension); 
+    for (int ii=0; ii<N; ++ii) 
+    {
+        if (!velocityBoundingBox.isInside(listeningPoints.at(ii)))
+            continue; 
+
+        field.interpolateVectorField(listeningPoints.at(ii), v, output); 
         for (size_t jj=0; jj<N_resultDimension; ++jj) 
             data(ii, jj) = output(jj);
     }
@@ -369,7 +394,8 @@ void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
+    //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
+    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
