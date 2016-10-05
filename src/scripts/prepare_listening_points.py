@@ -61,7 +61,7 @@ def Pool15Balls(offset, r):
             count += 1
 
 if __name__ == '__main__': 
-    SampleCircle_X(0.0, 0.9, 100)
-    SampleCircle_Z(0.5, 0.9, 100)
+    # SampleCircle_X(0.0, 0., 100)
+    SampleCircle_Z(0.0, 0.2, 10)
     # SampleLine(np.array([-0.5, 0.0, 0.0]), np.array([0.5, 0.0, 0.0]), 200)
     # Pool15Balls(np.array([0.1, 0.0, 0.0]), 0.05)

@@ -39,7 +39,7 @@ stepRate = int(sys.argv[3])
 wavRate = 44100.
 rateRatio = float(stepRate) / wavRate
 
-verifyAnalytical = True
+verifyAnalytical = False
 if verifyAnalytical: 
     print 'Verify with analytical solution'
     analyticalOutputFolder = 'analytical'
@@ -66,19 +66,19 @@ maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 
 # writing the wav files
-# listenedDataPadded = PadZero(listenedData.copy(), stepRate/2, stepRate)
-# for ii in range(N_points): 
-#     print ii
-#     outputData = listenedData[:, ii]
-# 
-#     normalizationConstant = maxValue
-#     # normalizationConstant = np.absolute(outputData.max())
-#     if normalizationConstant > 1E-14:
-#         outputData /= normalizationConstant
-#     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
-#     outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
-#     # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
-#     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
+listenedDataPadded = PadZero2D(listenedData.copy(), stepRate/2, stepRate)
+for ii in range(N_points): 
+    print ii
+    outputData = listenedData[:, ii]
+
+    normalizationConstant = maxValue
+    # normalizationConstant = np.absolute(outputData.max())
+    if normalizationConstant > 1E-14:
+        outputData /= normalizationConstant
+    outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
+    outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
+    # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
+    scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
 
 # extract minimum and compare with 1/r decay 
 dataMin = np.zeros(N_points)
