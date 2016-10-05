@@ -5,7 +5,11 @@
 REAL HarmonicVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    return cos(_omega*time + _phase); 
+    const REAL val = cos(_omega*time + _phase); 
+    if (_decayRate < 0)
+        return val; 
+    else
+        return decayFactor(time) * val;
 }
 
 
@@ -15,8 +19,11 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL HarmonicVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    const REAL returnValue = 1./_omega * sin(_omega*time + _phase); 
-    return returnValue; 
+    const REAL val = 1./_omega * sin(_omega*time + _phase);
+    if (_decayRate < 0)
+        return val;
+    else 
+        return decayFactor(time) * val;
 }
 
 //##############################################################################
