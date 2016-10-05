@@ -32,6 +32,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${MODAL_MODEL_SRC}
         ${DEFORMABLE_SRC}
         ${MESH_UTILS_SRC}
+        ${SND_IO_SRC}
         convert_dat_vtk.cpp) 
 
     add_executable(convert-dat-vtk-nonuniform
@@ -44,6 +45,7 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${GSL_LIBRARY}                  
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
+        sndfile
         boost_thread
         boost_timer
         boost_system                    
