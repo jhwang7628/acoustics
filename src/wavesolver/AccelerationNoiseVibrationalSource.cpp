@@ -73,8 +73,28 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL AccelerationNoiseVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    std::cerr << "**WARNING** Evaluate AN velocity not implemented\n"; 
-    return 0.0; 
+    std::cout << "EVALUATE VELOCITY\n";
+    std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
+    _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 
+
+    Vector3d velocity(0, 0, 0); 
+    for (const auto &impulse : impactRecords) 
+    {
+        if (impulse.supportLength < SMALL_NUM || time < impulse.timestamp)
+            continue;
+
+        if (time <= impulse.timestamp+impulse.supportLength)
+            velocity += (impulse.impactVector / (2.0*_modalObjectOwner->Mass())) * (1.0 - cos(M_PI*(time - impulse.timestamp)/impulse.supportLength));
+        else 
+            velocity += impulse.impactVector / _modalObjectOwner->Mass(); 
+    }
+
+    const REAL v_n = velocity.dotProduct(normal); 
+    std::cout << "DEBUG IMPACT RECORDS LENGTH = " << impactRecords.size() << std::endl;
+    std::cout << "DEBUG EVALUATE VELOCITY VECTOR = " << velocity << std::endl;
+    std::cout << "DEBUG EVALUATE VELOCITY = " << v_n << std::endl;
+    return v_n;
+    //return 0.0;
 }
 
 //##############################################################################
