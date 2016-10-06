@@ -219,9 +219,24 @@ void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighb
 
 }
 
-void ScalarField::GetIterationBox(const Vector3d &minBound, const Vector3d &maxBound, RangeIndices &indices)
+void ScalarField::GetIterationBox(const Vector3d &in_minBound, const Vector3d &in_maxBound, RangeIndices &indices)
 {
-    assert(_bbox.isInside(minBound) && _bbox.isInside(maxBound)); 
+    Vector3d minBound = in_minBound; 
+    Vector3d maxBound = in_maxBound; 
+
+    if (!_bbox.isInside(in_minBound))
+    {
+        minBound.x = std::max<REAL>(_bbox.minBound().x, minBound.x);
+        minBound.y = std::max<REAL>(_bbox.minBound().y, minBound.y);
+        minBound.z = std::max<REAL>(_bbox.minBound().z, minBound.z);
+    }
+    if (!_bbox.isInside(in_maxBound))
+    {
+        maxBound.x = std::min<REAL>(_bbox.maxBound().x, maxBound.x);
+        maxBound.y = std::min<REAL>(_bbox.maxBound().y, maxBound.y);
+        maxBound.z = std::min<REAL>(_bbox.maxBound().z, maxBound.z);
+    }
+    //assert(_bbox.isInside(minBound) && _bbox.isInside(maxBound)); 
     const Vector3d &fieldMinBound = _bbox.minBound();
     for (int d=0; d<3; ++d) 
     {
