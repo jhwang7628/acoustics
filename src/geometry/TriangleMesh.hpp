@@ -177,6 +177,7 @@ class TriangleMesh
 
 #endif /* DIFF_DEFINE */
         void generate_normals();
+        Vector3<T> triangle_normal(const int &triangle_idx) const; 
 #ifndef DIFF_DEFINE
         //! save the current mesh to a file
         int save_mesh(const char* file) const;
@@ -436,6 +437,16 @@ void TriangleMesh<T>::generate_normals()
     }
 }
 
+template <typename T>
+Vector3<T> TriangleMesh<T>::triangle_normal(const int &triangle_idx) const
+{
+        const Point3<T>& p0 = m_vertices[m_triangles[triangle_idx][0]];
+        const Point3<T>& p1 = m_vertices[m_triangles[triangle_idx][1]];
+        const Point3<T>& p2 = m_vertices[m_triangles[triangle_idx][2]];
+        Vector3<T> nml = (p1 - p0).crossProduct(p2 - p0) * 0.5;  // weight = area
+        return nml; 
+}
+
 /*!
  * number of vertices [N/F] number of triangles
  * v0.x v0.y v0.z
@@ -667,8 +678,8 @@ template <typename T>
 REAL TriangleMesh<T>::
 vertex_mean_curvature(const int &vertexId) const // TODO!!
 {
-    std::cerr << "**WARNING** Not yet implemented. for debugging returning 1.0 for now\n";
-    return 1.0;
+    std::cerr << "**WARNING** Not yet implemented. for debugging returning 1.0/0.05 for now\n";
+    return 1.0/0.05;
 }
 
 /* 
