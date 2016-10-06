@@ -12,6 +12,7 @@
 #include <utils/Conversions.h>
 
 #include <math/LeastSquareSurface.h>
+#include <math/MLSModeInterpolator.hpp>
 #include <boost/timer/timer.hpp>
 
 #include <distancefield/trilinearInterpolation.h> 
@@ -353,7 +354,6 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 
             for (int i=0; i<_N; i++)
                 p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
-
 
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
@@ -963,6 +963,13 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
 {
     const int N = _pressureField.numCells(); 
 
+    int count = 0;
+    for (int cell_idx = 0; cell_idx < N; ++cell_idx)
+    {
+        if (!_pressureCellHasValidHistory.at(cell_idx))
+            count ++; 
+    }
+
     for (int cell_idx = 0; cell_idx < N; ++cell_idx)
     {
         // if has valid history or if its not bulk, then no interpolation needed
@@ -984,6 +991,8 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         // the vandermonde part in ghost cell pressure update
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+
+#if 0
         Eigen::MatrixXd V(8,8); 
         Tuple3i indicesBuffer;
         Vector3d positionBuffer; 
@@ -1043,6 +1052,39 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         FillVandermondeRegular(cellPosition, coordinateVector);
         const REAL pressureFreshCell = C.dot(coordinateVector); 
         p(cell_idx, 0) = pressureFreshCell; 
+
+#else
+        // remove invalid neighbours and ready the MLS interpolator
+        T_MLS mls; 
+        MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
+        std::vector<MLSPoint, P_ALLOCATOR> points; 
+        std::vector<MLSVal, V_ALLOCATOR> attributes; 
+        auto test = neighbours;
+        for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+        {
+            if (!_pressureCellHasValidHistory.at(*it))
+                it = neighbours.erase(it); 
+            else
+            {
+                const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
+                const MLSVal val = MLSVal(p(*it, 0)); 
+                points.push_back(pt); 
+                attributes.push_back(val); 
+                ++it; 
+            }
+        }
+        if (neighbours.size() < 4)
+        {
+            throw std::runtime_error("**ERROR** Pressure interpolation error: cannot construct interpolant");
+        }
+        else
+        {
+            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+            p(cell_idx, 0) = mlsVal(0, 0);
+        }
+        std::cout << cell_idx << " " << cellPosition << ";\n";
+        std::cout << "Pressure = " <<  p(cell_idx, 0) << " " << p(cell_idx+1, 0) << " " << p(cell_idx-1, 0) << std::endl;
+#endif
     }
 }
 
@@ -1076,7 +1118,6 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL dBuffer;
         _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, dBuffer); 
-        const REAL distanceToMesh = _objects->GetPtr(objectID)->DistanceToMesh(imagePoint); 
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
@@ -1088,11 +1129,11 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         // boundary velocity will be scaled by the normal difference
         _velocityField[dim].enclosingNeighbours(imagePoint, neighbours); 
 
+#if 0 // Mittal
         // evaluate the velocity source in the previous step for velocity
         Vector3d normal(0, 0, 0); 
         normal[dim] = 1.0;
         const REAL boundaryVelocity = _objects->Get(objectID).EvaluateBoundaryVelocity(boundaryPoint, normal, simulationTime - 0.5*timeStep); 
-
         Eigen::MatrixXd V(8,8); 
         Eigen::VectorXd RHS(8); 
         for (size_t row=0; row<neighbours.size(); row++) 
@@ -1140,10 +1181,56 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
         FillVandermondeRegular(imagePoint, coordinateVector);
         const REAL v_IP = C.dot(coordinateVector); 
         const REAL v_BI = boundaryVelocity;
+        const REAL distanceToMesh = _objects->GetPtr(objectID)->DistanceToMesh(imagePoint); 
         if (distanceToMesh > DISTANCE_TOLERANCE) // cell position is located outside the boundary: the erected normal is BI-CU-IP
             v(cell_idx, 0) = 0.5 * (v_IP + v_BI); 
         else // cell position is located inside the boundary: the erected normal is CU-BI-IP
             v(cell_idx, 0) = 2.0 * v_BI - v_IP;
+#endif 
+#if 0 // MLS
+        // remove invalid neighbours and ready the MLS interpolator
+        T_MLS mls; 
+        MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
+        std::vector<MLSPoint, P_ALLOCATOR> points; 
+        std::vector<MLSVal, V_ALLOCATOR> attributes; 
+        for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+        {
+            if (!_velocityCellHasValidHistory[dim].at(*it))
+                it = neighbours.erase(it); 
+            else
+            {
+                MLSPoint pt = Conversions::ToEigen(_velocityField[dim].cellPosition(*it)); 
+                MLSVal val = MLSVal(v(*it, 0)); 
+                points.push_back(pt); 
+                attributes.push_back(val); 
+                ++it; 
+            }
+        }
+        if (neighbours.size() < 4)
+        {
+            throw std::runtime_error("**ERROR** Velocity interpolation error: cannot construct interpolant");
+        }
+        else
+        {
+            MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+            v(cell_idx, 0) = mlsVal(0, 0);
+        }
+        std::cout << "v dim = " << dim << std::endl;
+        COUT_SDUMP(cellPosition);
+        COUT_SDUMP(v(cell_idx, 0));
+#endif
+#if 1
+        // get nearest neighbour in the right direction
+        int offset = 0;
+        if (erectedNormal[dim] > 0) 
+            offset = 1;
+        else
+            offset = -1;
+
+        indicesBuffer = _velocityField[dim].cellIndex(cell_idx); 
+        indicesBuffer[dim] += offset; 
+        v(cell_idx, 0) = v(_velocityField[dim].cellIndex(indicesBuffer), 0); 
+#endif
     }
 }
 
