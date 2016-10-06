@@ -69,11 +69,12 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 }
 
 //##############################################################################
+// The velocity evaluation of AN source is ill-defined for the fdtd simulator.
 //##############################################################################
 REAL AccelerationNoiseVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    std::cout << "EVALUATE VELOCITY\n";
+#if 0 // using the integral of acceleration profile, but I don't think this is correct.
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
     _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 
 
@@ -90,11 +91,9 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
     }
 
     const REAL v_n = velocity.dotProduct(normal); 
-    std::cout << "DEBUG IMPACT RECORDS LENGTH = " << impactRecords.size() << std::endl;
-    std::cout << "DEBUG EVALUATE VELOCITY VECTOR = " << velocity << std::endl;
-    std::cout << "DEBUG EVALUATE VELOCITY = " << v_n << std::endl;
     return v_n;
-    //return 0.0;
+#endif 
+    return 0.0;
 }
 
 //##############################################################################
