@@ -532,8 +532,8 @@ AnimateObjects()
 
 #ifdef DEBUG_PRINT
                 std::cout << "object " << obj_idx << " has translation = " << _sceneObjects->GetPtr(obj_idx)->GetTranslation().transpose() << std::endl;
-            }
 #endif
+            }
         }
     }
 }
