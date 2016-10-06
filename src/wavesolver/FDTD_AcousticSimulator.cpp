@@ -418,9 +418,7 @@ RunForSteps(const int &N_steps)
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
-        // FIXME debug
         AnimateObjects(); 
-        //TestMoveObjects(); 
 
         if (!continueStepping)
             break; 
@@ -473,10 +471,7 @@ Run()
         _stepIndex ++;
         _simulationTime += settings->timeStepSize; 
 
-        // FIXME debug
         AnimateObjects(); 
-        //if (count > 20) 
-        //    TestMoveObjects(); 
 
         count ++; 
 
