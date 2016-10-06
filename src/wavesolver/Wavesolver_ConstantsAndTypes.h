@@ -46,11 +46,16 @@ typedef std::shared_ptr<PressureSource> PressureSourcePtr;
 typedef std::vector<VibrationalSourcePtr>::iterator SourceIterator; 
 typedef std::shared_ptr<PML_WaveSolver_Settings> PML_WaveSolver_Settings_Ptr;
 
-typedef MLSModeInterpolator<double,3,3> MLSInterpolatorType; 
-typedef MLSInterpolatorType::MLSPoint MLSPoint; 
-typedef MLSInterpolatorType::MLSVal MLSVal; 
-typedef MLSInterpolatorType::MLSMatrix MLSMatrix; 
-typedef MLSInterpolatorType::MLSVector MLSVector;
+typedef MLSModeInterpolator<REAL,3,1> T_MLS; 
+typedef T_MLS::MLSPoint MLSPoint; 
+typedef T_MLS::MLSVal MLSVal; 
+typedef T_MLS::MLSMatrix MLSMatrix; 
+typedef T_MLS::MLSVector MLSVector; 
+//typedef MLSModeInterpolator<double,3,4> MLSInterpolatorType; 
+//typedef MLSInterpolatorType::MLSPoint MLSPoint; 
+//typedef MLSInterpolatorType::MLSVal MLSVal; 
+//typedef MLSInterpolatorType::MLSMatrix MLSMatrix; 
+//typedef MLSInterpolatorType::MLSVector MLSVector;
 typedef Eigen::aligned_allocator<MLSPoint> P_ALLOCATOR; 
 typedef Eigen::aligned_allocator<MLSVal> V_ALLOCATOR; 
 
@@ -76,6 +81,10 @@ const int ADF_MAX_OCTREE_LEVELS = 9;
 const double ADF_ERROR_TOLERANCE = 0.00001;
 #endif
 
+const REAL KD_NEAREST_TOLERANCE = 1E-5; 
+const REAL TRI_NORMAL_PUSH_DIST = 0.0025;
+
+
 //##############################################################################
 // Enum
 //##############################################################################
@@ -84,7 +93,7 @@ enum VibrationalSourceType { HarmonicSource=0 };
 //##############################################################################
 // Debugging flags, settings
 //##############################################################################
-#define DEBUG_ANALYTICAL_ACC_NOISE 1
+#define DEBUG_ANALYTICAL_ACC_NOISE 0
   
 //##############################################################################
 #endif 

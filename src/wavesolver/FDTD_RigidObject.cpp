@@ -328,18 +328,35 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 
-    const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
-    if (insideBoundary)
+    if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
-        erectedNormal = boundaryPoint - originalPoint; // world space
-        reflectedPoint = boundaryPoint + erectedNormal; 
+        // get closest triangle normal and push manually
+        Vector3d t_normal = _mesh->triangle_normal(closestTriangleIndex); 
+        t_normal.normalize(); 
+        reflectedPoint = originalPointObject + t_normal * TRI_NORMAL_PUSH_DIST; 
+        distanceTravelled = (TRI_NORMAL_PUSH_DIST/2.0); 
+
+        // transform
+        reflectedPoint = ObjectToWorldPoint(reflectedPoint); 
+        erectedNormal = ObjectToWorldVector(t_normal); 
+        erectedNormal.normalize(); 
+        boundaryPoint = (originalPoint + reflectedPoint)/2.0;
     }
-    else 
+    else
     {
-        erectedNormal =-boundaryPoint + originalPoint; // world space
-        reflectedPoint = originalPoint + erectedNormal; 
+        const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
+        if (insideBoundary)
+        {
+            erectedNormal = boundaryPoint - originalPoint; // world space
+            reflectedPoint = boundaryPoint + erectedNormal; 
+        }
+        else 
+        {
+            erectedNormal =-boundaryPoint + originalPoint; // world space
+            reflectedPoint = originalPoint + erectedNormal; 
+        }
+        erectedNormal.normalize();  // keep the behavior same as the distance field based query
     }
-    erectedNormal.normalize();  // keep the behavior same as the distance field based query
 
 #endif // if 0
 
