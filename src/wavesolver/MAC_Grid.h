@@ -83,11 +83,11 @@ class MAC_Grid
         std::map<int,int>        _ghostCellsInverse; 
 
         //IntArray                 _velocityBulkCells[ 3 ]; // TODO
-        IntArray                 _velocityInterfacialCells[ 3 ]; // TODO
-        IntArray                 _interfacialBoundaryIDs[ 3 ]; // TODO
-        FloatArray               _interfacialBoundaryDirections[ 3 ]; // TODO
-        FloatArray               _interfacialBoundaryCoefficients[ 3 ]; // TODO
-        IntArray                 _containingObject; // TODO
+        IntArray                 _velocityInterfacialCells[ 3 ];
+        IntArray                 _interfacialBoundaryIDs[ 3 ];
+        FloatArray               _interfacialBoundaryDirections[ 3 ];
+        FloatArray               _interfacialBoundaryCoefficients[ 3 ];
+        IntArray                 _containingObject;
 
         // for subdivided ghost cells
         IntArray                 _interfacialGhostCellID[ 3 ]; // map to ghost cell index 

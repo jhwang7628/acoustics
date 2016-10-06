@@ -243,7 +243,6 @@ _SaveListeningData(const std::string &filename)
     if (_acousticSolverSettings->listening)
     {
         Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
-        const int N_points = listeningPoints.size(); 
         Eigen::MatrixXd data; 
         _acousticSolver->FetchPressureData(listeningPoints, data); 
         try 
@@ -255,6 +254,7 @@ _SaveListeningData(const std::string &filename)
         }
 
 #if DEBUG_ANALYTICAL_ACC_NOISE == 1
+        const int N_points = listeningPoints.size(); 
         const std::string filenameAnalytical = filename + std::string(".analytical");
         std::vector<RigidSoundObjectPtr> &objects = _sceneObjects->GetRigidSoundObjects(); 
         for (auto &soundObject : objects)
