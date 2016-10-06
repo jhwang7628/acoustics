@@ -1074,16 +1074,12 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
             }
         }
         if (neighbours.size() < 4)
-        {
             throw std::runtime_error("**ERROR** Pressure interpolation error: cannot construct interpolant");
-        }
         else
         {
             const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
             p(cell_idx, 0) = mlsVal(0, 0);
         }
-        std::cout << cell_idx << " " << cellPosition << ";\n";
-        std::cout << "Pressure = " <<  p(cell_idx, 0) << " " << p(cell_idx+1, 0) << " " << p(cell_idx-1, 0) << std::endl;
 #endif
     }
 }
