@@ -41,6 +41,19 @@
 //////////////////////////////////////////////////////////////////////
 class MAC_Grid 
 {
+    public: 
+        // use for debugging 
+        struct Cell
+        {
+            int         index; 
+            Vector3d    centroidPosition; 
+            REAL        pDirectional[3]; 
+            REAL        pFull; 
+            REAL        vx[2];
+            REAL        vy[2];
+            REAL        vz[2];
+        }; 
+
     private:
         typedef TriangleMesh<REAL>  TriMesh;
 
@@ -221,6 +234,7 @@ class MAC_Grid
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
         int PressureCellType(const int &idx);
         void ResetCellHistory(const bool &valid); 
+        void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const; 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
@@ -300,6 +314,7 @@ class MAC_Grid
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
 
     friend std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid); 
+    friend std::ostream &operator <<(std::ostream &os, const Cell &cell); 
 };
 
 #endif

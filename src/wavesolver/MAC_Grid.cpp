@@ -2393,6 +2393,33 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
     std::fill(v[2].begin(), v[2].end(), valid); 
 }
 
+void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const
+{
+    cell.index = cellIndex; 
+    cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
+
+    cell.pFull = pFull(cellIndex, 0); 
+    cell.pDirectional[0] = pDirectional[0](cellIndex, 0); 
+    cell.pDirectional[1] = pDirectional[1](cellIndex, 0); 
+    cell.pDirectional[2] = pDirectional[2](cellIndex, 0); 
+
+    // lower velocity cell
+    cell.vx[0] = v[0](cellIndex, 0);
+    cell.vy[0] = v[1](cellIndex, 0);
+    cell.vz[0] = v[2](cellIndex, 0); 
+
+    Tuple3i indicesBuffer = _pressureField.cellIndex(cellIndex); 
+
+    const int xUpper = std::min<int>(indicesBuffer.x + 1, _waveSolverSettings->cellDivisions); 
+    const int yUpper = std::min<int>(indicesBuffer.y + 1, _waveSolverSettings->cellDivisions); 
+    const int zUpper = std::min<int>(indicesBuffer.z + 1, _waveSolverSettings->cellDivisions); 
+
+    // upper velocity cell
+    cell.vx[1] = v[0](_velocityField[0].cellIndex(Tuple3i(xUpper          , indicesBuffer[1], indicesBuffer[2])), 0); 
+    cell.vy[1] = v[1](_velocityField[1].cellIndex(Tuple3i(indicesBuffer[0], yUpper          , indicesBuffer[2])), 0); 
+    cell.vz[1] = v[2](_velocityField[2].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], zUpper          )), 0); 
+
+}
 
 void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V)
 {
@@ -2561,3 +2588,19 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
     return os; 
 }
 
+std::ostream &operator <<(std::ostream &os, const MAC_Grid::Cell &cell)
+{
+    os << "--------------------------------------------------------------------------------\n" 
+       << "Struct MAC_Grid::Cell\n" 
+       << "--------------------------------------------------------------------------------\n"
+       << " index: " << cell.index << "\n"
+       << " centroid position: " << cell.centroidPosition.x << ", " << cell.centroidPosition.y << ", " << cell.centroidPosition.z << "\n"
+       << " pDirectional: " << cell.pDirectional[0]<< ", " << cell.pDirectional[1] << ", " << cell.pDirectional[2] << "\n"
+       << " pFull: " << cell.pFull << "\n"
+       << " vx: " << cell.vx[0] << ", " << cell.vx[1] << "\n"
+       << " vy: " << cell.vy[0] << ", " << cell.vy[1] << "\n"
+       << " vz: " << cell.vz[0] << ", " << cell.vz[1] << "\n"
+       << "--------------------------------------------------------------------------------" 
+       << std::flush; 
+    return os; 
+}
