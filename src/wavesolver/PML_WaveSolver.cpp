@@ -290,6 +290,11 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
     }
 }
 
+void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const
+{
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _v, sampledCells); 
+}
+
 // TODO this currently produce bad results, maybe need to smooth velocity field as well
 bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 {

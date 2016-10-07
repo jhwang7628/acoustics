@@ -32,13 +32,13 @@ _SetBoundaryConditions()
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
         objectPtr->AddVibrationalSource(anSourcePtr);
 
-        // add debug harmonic source
+        //// add debug harmonic source
         //const REAL omega = 2.0*M_PI*500.0;
         //const REAL phase = 0.0;
         ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 100., 0.301997)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
-        //objectPtr->TestObjectBoundaryCondition();
+        ////objectPtr->TestObjectBoundaryCondition();
     }
 }
 
@@ -420,6 +420,9 @@ RunForSteps(const int &N_steps)
 
         AnimateObjects(); 
 
+        _acousticSolver->PrintAllFieldExtremum();
+#ifdef DEBUG
+#endif
         if (!continueStepping)
             break; 
     }

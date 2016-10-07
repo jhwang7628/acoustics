@@ -183,6 +183,7 @@ class PML_WaveSolver : public Solver
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
         void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
+        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
 
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);

@@ -120,6 +120,14 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
+    // draw cell centroid near the slices 
+    for (const auto &slice : _sliceCin)
+    {
+        const REAL offset = slice.origin[slice.dim]; 
+        std::vector<MAC_Grid::Cell> sliceCells; 
+        _simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, sliceCells); 
+    }
+
 //    //// draw rigid sound object mesh
 //    std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
 //    const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
