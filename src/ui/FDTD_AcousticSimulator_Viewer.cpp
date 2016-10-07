@@ -120,33 +120,24 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
+    std::cout << "FDTD_AcousticSimulator_Viewer::drawWithNames()\n";
+    const REAL ballSize = _simulator->GetSolverSettings()->cellSize/2.0; 
     // draw cell centroid near the slices 
-    for (const auto &slice : _sliceCin)
+    for (auto &slice : _sliceCin)
     {
         const REAL offset = slice.origin[slice.dim]; 
-        std::vector<MAC_Grid::Cell> sliceCells; 
-        _simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, sliceCells); 
+        _simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, slice.cells); 
+        for (const auto &cell : slice.cells) 
+        {
+            const Vector3d &vertex = cell.centroidPosition; 
+            glPushMatrix(); 
+            glTranslatef(vertex.x, vertex.y, vertex.z); 
+            glPushName(cell.index); 
+            GL_Wrapper::DrawSphere(ballSize, 3, 3);
+            glPopName(); 
+            glPopMatrix(); 
+        }
     }
-
-//    //// draw rigid sound object mesh
-//    std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
-//    const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-//    const int N_vertices = vertices.size(); 
-//    const REAL ballSize = 3E-4;
-//
-//    // draw points
-//    glPointSize(3.0); 
-//    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
-//    {
-//        const Point3<REAL> &vertex = vertices.at(v_idx); 
-//        glColor3f(0.6f, 0.6f, 0.6f); 
-//        glPushMatrix();
-//        glTranslatef(vertex.x, vertex.y, vertex.z); 
-//        glPushName(v_idx);
-//        GL_Wrapper::DrawSphere(ballSize, 3, 3);
-//        glPopName();
-//        glPopMatrix();
-//    }
 }
 
 //##############################################################################
@@ -172,7 +163,6 @@ DrawMesh()
         const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
         const int N_triangles = triangles.size(); 
         const REAL offsetEpsilon = 1E-5;
-        const REAL ballSize = 3E-4;
 
         // get transformations
         Eigen::Vector3d translation = object->GetTranslation(); 
@@ -183,19 +173,13 @@ DrawMesh()
         glTranslated(translation[0], translation[1], translation[2]); 
         glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
 
-        // draw points only if selected
         if (selectedName() != -1)
         {
-            const int v_idx = selectedName(); 
-            // offset the points to make it more visible
-            const Point3<REAL> &vertex = vertices.at(v_idx); 
-            //const Vector3<REAL> &normal = normals.at(v_idx); 
-            glPointSize(10.0);
-            glColor3f(0.0f, 1.0f, 0.0f); 
-            glPushMatrix(); 
-            glTranslatef(vertex.x, vertex.y, vertex.z); 
-            GL_Wrapper::DrawSphere(ballSize, 3, 3);
-            glPopMatrix(); 
+            const int cell_idx = selectedName(); 
+            MAC_Grid::Cell cell; 
+            _simulator->GetSolver()->FetchCell(cell_idx, cell); 
+            glColor3f(1.0f, 1.0f, 1.0f); 
+            GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
         }
 
         // draw edges of the triangles
@@ -755,7 +739,18 @@ helpString() const
 void FDTD_AcousticSimulator_Viewer::
 postSelection(const QPoint &point)
 {
-    _messageSelection = QString("Vertex ID= " + QString::number(selectedName()));
+    if (selectedName() != -1) 
+    {
+        const int cell_idx = selectedName(); 
+        MAC_Grid::Cell cell; 
+        _simulator->GetSolver()->FetchCell(cell_idx, cell); 
+        std::cout << cell << std::endl; 
+        _listenedCell = cell; 
+    }
+    else
+    {
+        _listenedCell.index = -1; // reset 
+    }
 }
 
 //##############################################################################
@@ -977,6 +972,11 @@ DrawOneFrameForward()
     PrintFrameInfo();
     //_simulator->TestAnimateObjects(150); 
     _simulator->RunForSteps(1); 
+    if (_listenedCell.index >= 0)
+    {
+        _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
+        std::cout << _listenedCell << std::endl;
+    }
     SetAllSliceDataReady(false); 
     updateGL(); 
 }

@@ -420,8 +420,8 @@ RunForSteps(const int &N_steps)
 
         AnimateObjects(); 
 
-        _acousticSolver->PrintAllFieldExtremum();
 #ifdef DEBUG
+        _acousticSolver->PrintAllFieldExtremum();
 #endif
         if (!continueStepping)
             break; 

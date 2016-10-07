@@ -20,7 +20,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
-        struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; REAL minBound; REAL maxBound; bool dataReady = false;};
+        struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; REAL minBound; REAL maxBound; std::vector<MAC_Grid::Cell> cells; bool dataReady = false;};
 
     private: 
         SimulatorPtr            _simulator; 
@@ -38,6 +38,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         std::vector<Arrow>      _arrowCin; 
         std::vector<Slice>      _sliceCin; 
         REAL                    _drawAbsMax; 
+        MAC_Grid::Cell          _listenedCell; 
 
         // slice related fields
         int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: vx; 3: vy; 4:vz; 5: p_x; 6: p_y; 7: p_z; 8: frequency transfer; 9: frequency transfer residual

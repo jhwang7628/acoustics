@@ -290,6 +290,11 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
     }
 }
 
+void PML_WaveSolver::FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const 
+{
+    _grid.GetCell(cellIndex, _p, _pFull, _v, cell); 
+}
+
 void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const
 {
     _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _v, sampledCells); 

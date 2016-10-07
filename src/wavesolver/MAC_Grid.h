@@ -46,8 +46,10 @@ class MAC_Grid
         class Cell
         {
             public: 
-                int         index; 
+                int         index = -1; 
                 Vector3d    centroidPosition; 
+                Vector3d    lowerCorner; 
+                Vector3d    upperCorner; 
                 REAL        pDirectional[3]; 
                 REAL        pFull; 
                 REAL        vx[2];

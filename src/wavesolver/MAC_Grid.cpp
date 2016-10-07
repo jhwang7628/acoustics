@@ -967,7 +967,7 @@ void MAC_Grid::SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX
     const int dim1 = (dim+1)%3;
     const int dim2 = (dim+2)%3; 
     sampledCells.resize(divs[dim1] * divs[dim2]); 
-    const int k = std::min<int>((int)(offset - lowerCorner)/_waveSolverSettings->cellSize, _waveSolverSettings->cellDivisions-1); 
+    const int k = std::min<int>((int)((offset - lowerCorner)/_waveSolverSettings->cellSize), _waveSolverSettings->cellDivisions-1); 
 
     int count = 0;
     for (int i=0; i<divs[dim1]; ++i)
@@ -2420,6 +2420,8 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
 {
     cell.index = cellIndex; 
     cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
+    cell.lowerCorner = cell.centroidPosition - _waveSolverSettings->cellSize/2.0; 
+    cell.upperCorner = cell.centroidPosition + _waveSolverSettings->cellSize/2.0; 
 
     cell.pFull = pFull(cellIndex, 0); 
     cell.pDirectional[0] = pDirectional[0](cellIndex, 0); 
