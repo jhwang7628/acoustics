@@ -680,7 +680,7 @@ keyPressEvent(QKeyEvent *e)
         _sliceCin.push_back(slice); 
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%5; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%8; 
         optionsChanged = true;
         SetAllSliceDataReady(false); 
     }
@@ -890,19 +890,31 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         {
             _simulator->GetSolver()->FetchVelocityData(slice.samples, 2, data);
         }
-        else if (dataPointer == 5 || dataPointer == 6) 
+        else if (dataPointer == 5)
+        {
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data, 0);
+        } 
+        else if (dataPointer == 6)
+        {
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data, 1);
+        } 
+        else if (dataPointer == 7)
+        {
+            _simulator->GetSolver()->FetchPressureData(slice.samples, data, 2);
+        } 
+        else if (dataPointer == 8 || dataPointer == 9) 
         {
             const int N_samples = slice.samples.size(); 
             data.resize(N_samples, 1);
             int count = 0;
             for (int d_idx=0; d_idx<N_samples; ++d_idx)
             {
-                if (dataPointer == 5) 
+                if (dataPointer == 8) 
                 {
                     const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
                     data(d_idx, 0) = std::abs(transferValue);
                 }
-                else if (dataPointer == 6) 
+                else if (dataPointer == 9) 
                 {
                     // if distance > threashold, computes transfer residual
                     REAL transferResidual; 

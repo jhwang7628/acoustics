@@ -192,7 +192,7 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
     printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
 }
 
-void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data)
+void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim)
 {
     const int N = listeningPoints.size(); 
     if (N==0) return; 
@@ -211,7 +211,15 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
             continue; 
         }
 
-        field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+        if (dim == -1) 
+            field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+        else if (dim == 0)
+            field.interpolateVectorField(listeningPoints.at(ii), _p[0], output); 
+        else if (dim == 1)
+            field.interpolateVectorField(listeningPoints.at(ii), _p[1], output); 
+        else if (dim == 2)
+            field.interpolateVectorField(listeningPoints.at(ii), _p[2], output); 
+
         for (size_t jj=0; jj<N_resultDimension; ++jj) 
             data(ii, jj) = output(jj);
     }
@@ -395,7 +403,7 @@ void PML_WaveSolver::stepLeapfrog()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
-    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
@@ -481,6 +489,9 @@ REAL PML_WaveSolver::GetMaxCFL()
 void PML_WaveSolver::PrintAllFieldExtremum()
 {
     _grid.PrintFieldExtremum(_pFull,"_pFull"); 
+    _grid.PrintFieldExtremum(_p[0],"_p[0]"); 
+    _grid.PrintFieldExtremum(_p[1],"_p[1]"); 
+    _grid.PrintFieldExtremum(_p[2],"_p[2]"); 
     _grid.PrintFieldExtremum(_v[0],"_v[0]"); 
     _grid.PrintFieldExtremum(_v[1],"_v[1]"); 
     _grid.PrintFieldExtremum(_v[2],"_v[2]"); 

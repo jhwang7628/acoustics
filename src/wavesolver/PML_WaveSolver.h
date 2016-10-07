@@ -180,7 +180,7 @@ class PML_WaveSolver : public Solver
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
 
         // fetch the pressure data using interpolation
-        void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
+        void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
         void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
 
