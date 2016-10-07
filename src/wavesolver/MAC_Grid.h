@@ -194,6 +194,7 @@ class MAC_Grid
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
         void sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData );
+        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], std::vector<Cell> &sampledCells) const; 
 
         // Smooth field given weights
         void SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3);

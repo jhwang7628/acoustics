@@ -959,6 +959,29 @@ void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
         }
 }
 
+void MAC_Grid::SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], std::vector<Cell> &sampledCells) const
+{
+    const Tuple3i &divs = _pressureField.cellDivisions();
+    const BoundingBox &bbox = _velocityField[dim].bbox(); 
+    const REAL lowerCorner = bbox.minBound()[dim]; 
+    const int dim1 = (dim+1)%3;
+    const int dim2 = (dim+2)%3; 
+    sampledCells.resize(divs[dim1] * divs[dim2]); 
+    const int k = std::min<int>((int)(offset - lowerCorner)/_waveSolverSettings->cellSize, _waveSolverSettings->cellDivisions-1); 
+
+    int count = 0;
+    for (int i=0; i<divs[dim1]; ++i)
+        for (int j = 0; j<divs[dim2]; ++j)
+        {
+            Tuple3i indices; 
+            indices[dim ] = k; 
+            indices[dim1] = i; 
+            indices[dim2] = j; 
+            const int cell_idx = _pressureField.cellIndex(indices); 
+            GetCell(cell_idx, pDirectional, pFull, v, sampledCells.at(count)); 
+            count++; 
+        }
+}
 
 void MAC_Grid::SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3)
 {

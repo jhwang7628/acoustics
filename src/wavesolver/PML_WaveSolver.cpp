@@ -458,7 +458,7 @@ void PML_WaveSolver::stepLeapfrog()
 
     _algebraTimer.start();
     _grid.UpdatePMLPressure(_p, _pFull); 
-:   _algebraTimer.pause();
+    _algebraTimer.pause();
 
     _currentTime += _timeStep;
 }
