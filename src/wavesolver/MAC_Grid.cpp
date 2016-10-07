@@ -288,7 +288,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
     }
 }
 
-void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
+void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX &pFull, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
 {
     const int N_cells = numPressureCells(); 
     //const size_t bulkCellSize = _bulkCells.size();
@@ -321,19 +321,19 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
 
             // Scale the existing pressure value
             for ( int i = 0; i < _N; i++ )
-                p(cell_idx, i) *= updateCoefficient;
+                pDirectional(cell_idx, i) *= updateCoefficient;
 
             cell_indices[dimension] += 1;
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for ( int i = 0; i < _N; i++ )
-                p(cell_idx, i) += divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
+                pDirectional(cell_idx, i) += divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
 
             cell_indices[dimension] -= 1;
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for ( int i = 0; i < _N; i++ )
-                p(cell_idx, i) -= divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
+                pDirectional(cell_idx, i) -= divergenceCoefficient * v(neighbour_idx, i)/_velocityField[dimension].cellSize();
         }
         else  // can collapse a lot of the terms 
         {
@@ -347,18 +347,18 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension, RE
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for (int i=0; i<_N; i++)
-                p(cell_idx, i) += n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
+                pDirectional(cell_idx, i) += n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
 
             cell_indices[dimension] -= 1;
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for (int i=0; i<_N; i++)
-                p(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
+                pDirectional(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
 
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
             if (evaluateExternalSource)
-                p(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+                pDirectional(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
                 //for (int i = 0; i<_N; i++) 
                 //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
         }
@@ -440,6 +440,35 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
             }
         }
     }
+}
+
+void MAC_Grid::UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull)
+{
+#if 0
+    const int N_cells = numPressureCells(); 
+    // update the full pressure in pml region
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (int cell_idx = 0; cell_idx < N_cells; ++cell_idx)
+    {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
+
+        const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+        const REAL absorptionCoefficient_x   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 0);
+        const REAL absorptionCoefficient_y   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 1);
+        const REAL absorptionCoefficient_z   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 2);
+        const bool inPML = (absorptionCoefficient_x > SMALL_NUM || 
+                            absorptionCoefficient_y > SMALL_NUM || 
+                            absorptionCoefficient_z > SMALL_NUM   ) ? true : false; 
+
+        if (inPML) 
+            pFull(cell_idx, 0) = pDirectional[0](cell_idx, 0) + pDirectional[1](cell_idx, 0) + pDirectional[2](cell_idx, 0); 
+    }
+#else
+    pFull.parallelCopyAdd(pDirectional[0], pDirectional[1], pDirectional[2]);
+#endif
 }
 
 // TODO can optimize the sparse linear system setup
@@ -1217,12 +1246,7 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
 #endif
 #if 1
         // get nearest neighbour in the right direction
-        int offset = 0;
-        if (erectedNormal[dim] > 0) 
-            offset = 1;
-        else
-            offset = -1;
-
+        const int offset = (erectedNormal[dim] > 0) ? 1 : -1; 
         indicesBuffer = _velocityField[dim].cellIndex(cell_idx); 
         indicesBuffer[dim] += offset; 
         v(cell_idx, 0) = v(_velocityField[dim].cellIndex(indicesBuffer), 0); 
@@ -1258,6 +1282,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].resize( numVcells[ 1 ], false );
     _isVelocityBulkCell[ 2 ].resize( numVcells[ 2 ], false );
 
+    _pmlCells.clear(); 
     _ghostCells.clear();
 
     _velocityInterfacialCells[ 0 ].clear();

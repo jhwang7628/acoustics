@@ -403,7 +403,7 @@ void PML_WaveSolver::stepLeapfrog()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
-    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
+    //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
@@ -451,14 +451,14 @@ void PML_WaveSolver::stepLeapfrog()
     // Use the new velocity to update pressure
     _divergenceTimer.start();
     //_grid.PML_pressureUpdateFull( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
     _divergenceTimer.pause();
 
     _algebraTimer.start();
-    _pFull.parallelCopyAdd(_p[0], _p[1], _p[2]);
-    _algebraTimer.pause();
+    _grid.UpdatePMLPressure(_p, _pFull); 
+:   _algebraTimer.pause();
 
     _currentTime += _timeStep;
 }

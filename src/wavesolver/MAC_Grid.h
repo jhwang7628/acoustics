@@ -74,6 +74,7 @@ class MAC_Grid
         BoolArray                _isVelocityBulkCell[ 3 ];
         BoolArray                _isVelocityInterfacialCell[ 3 ];
 
+        IntArray                 _pmlCells;  // TODO
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
 
@@ -82,7 +83,6 @@ class MAC_Grid
 
         std::map<int,int>        _ghostCellsInverse; 
 
-        //IntArray                 _velocityBulkCells[ 3 ]; // TODO
         IntArray                 _velocityInterfacialCells[ 3 ];
         IntArray                 _interfacialBoundaryIDs[ 3 ];
         FloatArray               _interfacialBoundaryDirections[ 3 ];
@@ -149,7 +149,7 @@ class MAC_Grid
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
-        void PML_pressureUpdate( const MATRIX &v, MATRIX &p, int dimension,
+        void PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX &pFull, int dimension,
                                  REAL timeStep, REAL c, 
                                  const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime,
                                  REAL density);
@@ -160,6 +160,8 @@ class MAC_Grid
                                                const REAL &timeStep, const REAL &c, 
                                                const ExternalSourceEvaluator *sourceEvaluator, const REAL &simulationTime,
                                                const REAL &density);
+
+        void UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull); 
 
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
