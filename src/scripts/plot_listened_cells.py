@@ -45,8 +45,6 @@ if verifyAnalytical:
     analyticalOutputFolder = 'analytical'
     analyticalFilenames = sorted(glob.glob(analyticalOutputFolder+'/'+sys.argv[2]+'[0-9]*'))
     analyticalListenedData = np.zeros((N_steps, N_points))
-
-print 'Listening position: \n', listeningPositions
 print 'Loading %u files: ' %(len(filenames)), filenames[0], ',', filenames[1], ', ... ,' , filenames[-1]
 
 # get listened data for each step
@@ -66,18 +64,16 @@ maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 
 # writing the wav files
-listenedDataPadded = PadZero2D(listenedData.copy(), stepRate/2, stepRate)
+N_frontPad = int(0.302*wavRate)
 for ii in range(N_points): 
-    print ii
+    print 'Creating wav file for listening position', listeningPositions[ii, :]
     outputData = listenedData[:, ii]
-
     normalizationConstant = maxValue
     # normalizationConstant = np.absolute(outputData.max())
     if normalizationConstant > 1E-14:
         outputData /= normalizationConstant
     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
-    outputData = PadZero(outputData.copy(), wavRate/2, wavRate)
-    # scipy.io.wavfile.write('point_%u.wav' %(ii), stepRate, listenedDataPadded[:,ii]/maxValue)
+    outputData = PadZero(outputData.copy(), N_frontPad, wavRate)
     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
 
 # extract minimum and compare with 1/r decay 
