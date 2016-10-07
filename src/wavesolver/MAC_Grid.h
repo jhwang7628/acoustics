@@ -43,15 +43,26 @@ class MAC_Grid
 {
     public: 
         // use for debugging 
-        struct Cell
+        class Cell
         {
-            int         index; 
-            Vector3d    centroidPosition; 
-            REAL        pDirectional[3]; 
-            REAL        pFull; 
-            REAL        vx[2];
-            REAL        vy[2];
-            REAL        vz[2];
+            public: 
+                int         index; 
+                Vector3d    centroidPosition; 
+                REAL        pDirectional[3]; 
+                REAL        pFull; 
+                REAL        vx[2];
+                REAL        vy[2];
+                REAL        vz[2];
+                REAL        h; // cell size
+
+                inline REAL Divergence() const
+                {
+                    REAL div = 0.0; 
+                    div += (vx[1] - vx[0]) / h; 
+                    div += (vy[1] - vy[0]) / h; 
+                    div += (vz[1] - vz[0]) / h; 
+                    return div; 
+                }
         }; 
 
     private:

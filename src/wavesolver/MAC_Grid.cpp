@@ -2419,6 +2419,7 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
     cell.vy[1] = v[1](_velocityField[1].cellIndex(Tuple3i(indicesBuffer[0], yUpper          , indicesBuffer[2])), 0); 
     cell.vz[1] = v[2](_velocityField[2].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], zUpper          )), 0); 
 
+    cell.h = _waveSolverSettings->cellSize; 
 }
 
 void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V)
@@ -2591,15 +2592,17 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid)
 std::ostream &operator <<(std::ostream &os, const MAC_Grid::Cell &cell)
 {
     os << "--------------------------------------------------------------------------------\n" 
-       << "Struct MAC_Grid::Cell\n" 
+       << "Class MAC_Grid::Cell\n" 
        << "--------------------------------------------------------------------------------\n"
-       << " index: " << cell.index << "\n"
+       << " index            : " << cell.index << "\n"
        << " centroid position: " << cell.centroidPosition.x << ", " << cell.centroidPosition.y << ", " << cell.centroidPosition.z << "\n"
-       << " pDirectional: " << cell.pDirectional[0]<< ", " << cell.pDirectional[1] << ", " << cell.pDirectional[2] << "\n"
-       << " pFull: " << cell.pFull << "\n"
-       << " vx: " << cell.vx[0] << ", " << cell.vx[1] << "\n"
-       << " vy: " << cell.vy[0] << ", " << cell.vy[1] << "\n"
-       << " vz: " << cell.vz[0] << ", " << cell.vz[1] << "\n"
+       << " ......................" << "\n"
+       << " pDirectional     : " << cell.pDirectional[0]<< ", " << cell.pDirectional[1] << ", " << cell.pDirectional[2] << "\n"
+       << " pFull            : " << cell.pFull << "\n"
+       << " vx               : " << cell.vx[0] << ", " << cell.vx[1] << "\n"
+       << " vy               : " << cell.vy[0] << ", " << cell.vy[1] << "\n"
+       << " vz               : " << cell.vz[0] << ", " << cell.vz[1] << "\n"
+       << " divergence       : " << cell.Divergence() << "\n"
        << "--------------------------------------------------------------------------------" 
        << std::flush; 
     return os; 
