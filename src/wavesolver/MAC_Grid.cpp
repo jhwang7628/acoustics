@@ -128,10 +128,11 @@ void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
     _PML_absorptionStrength = strength;
 }
 
-void MAC_Grid::fieldLaplacian(const ScalarField &field, const MATRIX &value, MATRIX &laplacian) const
+void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const
 {
     if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
         laplacian.resizeAndWipe(value.rows(), value.cols()); 
+    const auto &field = _pressureField; 
     const int N_cells = field.numCells(); 
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
     for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
@@ -312,6 +313,46 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
                 v( cell_idx, i ) += timeStep * bcEval;
             }
 
+        }
+    }
+}
+
+void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext)
+{
+    const REAL &timeStep = _waveSolverSettings->timeStepSize; 
+    const REAL c2_k2 = pow(_waveSolverSettings->soundSpeed*timeStep, 2); 
+    const int N_cells = _pressureField.numCells(); 
+    MATRIX laplacian; 
+    pressureFieldLaplacian(pCurr, laplacian); 
+    //pFull = pThisTimestep * 2.0 - pLastTimestep + laplacian * c2_k2; 
+    pNext.clearingAxpy( 2.0, pCurr); 
+    pNext.parallelAxpy(-1.0, pLast); 
+    pNext.parallelAxpy(c2_k2, laplacian); 
+
+    // external sources 
+    const bool evaluateExternalSource = _objects->HasExternalPressureSources();
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (int cell_idx = 0; cell_idx < N_cells; ++cell_idx)
+    {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
+
+        const Vector3d  cell_position           = _pressureField.cellPosition( cell_idx );
+        const REAL absorptionCoefficient_x   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 0);
+        const REAL absorptionCoefficient_y   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 1);
+        const REAL absorptionCoefficient_z   = PML_absorptionCoefficient( cell_position, _PML_absorptionWidth, 2);
+        const bool inPML = (absorptionCoefficient_x > SMALL_NUM || 
+                            absorptionCoefficient_y > SMALL_NUM || 
+                            absorptionCoefficient_z > SMALL_NUM   ) ? true : false; 
+
+        if (!inPML)
+        {
+            // evaluate external sources only happens not in PML
+            // Liu Eq (16) f6x term
+            if (evaluateExternalSource)
+                pNext(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
         }
     }
 }

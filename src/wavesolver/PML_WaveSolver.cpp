@@ -108,8 +108,8 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(),_N );
     _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(),_N );
 
-    //_pLastTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
-    //_pThisTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
+    _pLastTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
+    _pThisTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
     //_vThisTimestep[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), _N );
     //_vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), _N );
     //_vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), _N );
@@ -358,7 +358,8 @@ bool PML_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
 bool PML_WaveSolver::stepSystem()
 {
     _stepTimer.start();
-    stepLeapfrog();
+    //stepLeapfrog();
+    stepCollocated(); 
     _timeIndex += 1;
     _stepTimer.pause();
 
@@ -498,6 +499,75 @@ void PML_WaveSolver::stepLeapfrog()
 
     _algebraTimer.start();
     _grid.UpdatePMLPressure(_p, _pFull); 
+    _algebraTimer.pause();
+
+    _currentTime += _timeStep;
+}
+
+void PML_WaveSolver::stepCollocated()
+{
+    // reclassify cells occupied by objects
+    _cellClassifyTimer.start(); 
+    //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
+    //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _cellClassifyTimer.pause(); 
+
+    //if (_useGhostCellBoundary)
+    //{
+    //    // interpolate fresh cells 
+    //    _freshCellTimer.start(); 
+    //    _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
+    //    _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
+    //    _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
+    //    _freshCellTimer.pause(); 
+    //    
+    //    // update ghost cells 
+    //    _ghostCellTimer.start(); 
+    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    //    _ghostCellTimer.pause(); 
+    //}
+    //else 
+    //{
+    //    // interpolate fresh cells 
+    //    _freshCellTimer.start(); 
+    //    _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+    //    _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
+    //    _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
+    //    _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
+    //    _freshCellTimer.pause(); 
+    //}
+
+    // Update velocity in each direction
+    //_gradientTimer.start();
+    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
+    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
+    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
+    //_gradientTimer.pause();
+
+    // Use the new velocity to update pressure
+    _divergenceTimer.start();
+    _grid.PML_pressureUpdateCollocated(_currentTime, _pLastTimestep, _pThisTimestep, _pFull); 
+    _pLastTimestep.parallelCopy(_pThisTimestep); 
+    _pThisTimestep.parallelCopy(_pFull);
+    
+    //_grid.PML_pressureUpdateFull( _v, _pFull, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    //_grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+    _divergenceTimer.pause();
+
+    _algebraTimer.start();
+    //_grid.UpdatePMLPressure(_p, _pFull); 
     _algebraTimer.pause();
 
     _currentTime += _timeStep;

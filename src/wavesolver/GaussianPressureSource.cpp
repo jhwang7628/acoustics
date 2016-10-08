@@ -18,8 +18,13 @@ Evaluate(const Vector3d &evaluatePosition, const Vector3d &normal, const REAL &t
 
     // integral of a gaussian in time: 
     // http://www.wolframalpha.com/input/?i=int%28+exp%28-%28x-a%29%5E2%2F2%2Fb%5E2+%29+%29+dx
+#if 0 // uncomment if use staggered grid
     value *= erf((time - _offsetTime)/(sqrt_2*_widthTime)) - erf(-_offsetTime/(sqrt_2*_widthTime)); 
     value *= _normalizeConstant; // just to scale it up, the wave equation is linear
+#else
+    value *= exp(-pow((time-_offsetTime)/_widthTime, 2)/2.0); 
+    value *= _normalizeConstant; // just to scale it up, the wave equation is linear
+#endif
 
     return value; 
 }

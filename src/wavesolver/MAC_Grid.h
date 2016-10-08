@@ -167,14 +167,15 @@ class MAC_Grid
         // Width is the number of cells we wish to absorb in
         void setPMLBoundaryWidth( REAL width, REAL strength );
 
-
-        void fieldLaplacian(const ScalarField &field, const MATRIX &value, MATRIX &laplacian) const; 
+        void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
         void PML_velocityUpdate( const MATRIX &p, const FloatArray &pGC, 
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
+
+        void PML_pressureUpdateCollocated(const REAL &simulationTime, MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))

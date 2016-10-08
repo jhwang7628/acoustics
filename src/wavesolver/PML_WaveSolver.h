@@ -215,6 +215,7 @@ class PML_WaveSolver : public Solver
 
     private:
         void stepLeapfrog();
+        void stepCollocated();
 
     friend std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver); 
 };
