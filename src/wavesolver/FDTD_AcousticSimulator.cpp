@@ -381,8 +381,6 @@ bool FDTD_AcousticSimulator::
 RunForSteps(const int &N_steps)
 {
     bool continueStepping = true; 
-    auto &settings = _acousticSolverSettings; 
-
     for (int step_idx=0; step_idx<N_steps; ++step_idx)
     {
         // first step all modal ode, so that its one step ahead of main acoustic
@@ -392,39 +390,7 @@ RunForSteps(const int &N_steps)
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
-        if (_stepIndex % settings->timeSavePerStep == 0)
-        {
-            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
-            std::ostringstream oss; 
-            oss << std::setw(8) << std::setfill('0') << timeIndex; 
-            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
-            _SaveListeningData(filenameProbe);
-            if (settings->writePressureFieldToDisk)
-            {
-                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
-                _SavePressureTimestep(filenameField); 
-                // uncomment if want to store velocities
-                //for (int dim=0; dim<3; ++dim) 
-                //{
-                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-                //}
-            }
-        }
-        // update modal vectors for the next time step
-        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-            _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
-        std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
-        _stepIndex ++;
-        _simulationTime += settings->timeStepSize; 
-
-        AnimateObjects(); 
-
-#ifdef DEBUG
-        _acousticSolver->PrintAllFieldExtremum();
-#endif
-        if (!continueStepping)
-            break; 
+        PostStepping(odeTime); 
     }
     return continueStepping; 
 }
@@ -435,9 +401,6 @@ void FDTD_AcousticSimulator::
 Run()
 {
     bool continueStepping = true; 
-    auto &settings = _acousticSolverSettings; 
-
-    int count = 0;
     while(continueStepping) 
     {
         // first step all modal ode, so that its one step ahead of main acoustic
@@ -447,41 +410,51 @@ Run()
 
         // step acoustic equations
         continueStepping = _acousticSolver->stepSystem();
-        if (_stepIndex % settings->timeSavePerStep == 0)
+        PostStepping(odeTime); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+PostStepping(const REAL &odeTime)
+{
+    auto &settings = _acousticSolverSettings; 
+    // file saving
+    if (_stepIndex % settings->timeSavePerStep == 0)
+    {
+        const int timeIndex = _stepIndex/settings->timeSavePerStep; 
+        std::ostringstream oss; 
+        oss << std::setw(8) << std::setfill('0') << timeIndex; 
+        const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
+        _SaveListeningData(filenameProbe);
+        if (settings->writePressureFieldToDisk)
         {
-            const int timeIndex = _stepIndex/settings->timeSavePerStep; 
-            std::ostringstream oss; 
-            oss << std::setw(8) << std::setfill('0') << timeIndex; 
-            const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
-            _SaveListeningData(filenameProbe);
-            if (settings->writePressureFieldToDisk)
-            {
-                const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
-                _SavePressureTimestep(filenameField); 
-                // uncomment if want to store velocities
-                //for (int dim=0; dim<3; ++dim) 
-                //{
-                //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-                //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-                //}
-            }
+            const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
+            _SavePressureTimestep(filenameField); 
+            // uncomment if want to store velocities
+            //for (int dim=0; dim<3; ++dim) 
+            //{
+            //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+            //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+            //}
         }
-        // update modal vectors for the next time step
-        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-            _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
+    }
 
-        std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
-        _stepIndex ++;
-        _simulationTime += settings->timeStepSize; 
+    // update modal vectors for the next time step
+    for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
+        _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
 
-        AnimateObjects(); 
+    std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
+    _stepIndex ++;
+    _simulationTime += settings->timeStepSize; 
 
-        count ++; 
+    // move object to new position
+    AnimateObjects(); 
 
 #ifdef DEBUG
-        _acousticSolver->PrintAllFieldExtremum();
+    _acousticSolver->PrintAllFieldExtremum();
 #endif
-    }
 }
 
 //##############################################################################
