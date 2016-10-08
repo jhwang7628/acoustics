@@ -26,7 +26,6 @@ def PadZero(data, N_front_pad, N_end_pad):
 
     return newData
     
-
 if (len(sys.argv) < 4): 
     print '**Usage: %s <listening_position_dat> <listening_data_dat_prefix> <rate(Hz)> [single_plot_cell]' %(sys.argv[0])
     sys.exit()
@@ -38,6 +37,8 @@ N_points = listeningPositions.shape[0]
 stepRate = int(sys.argv[3])
 wavRate = 44100.
 rateRatio = float(stepRate) / wavRate
+plotting = True
+logPlot = False
 
 verifyAnalytical = False
 if verifyAnalytical: 
@@ -89,7 +90,6 @@ one_over_r = np.divide(np.ones(N_points), dataR)
 # listeningPositions = listeningPositions[::20, :]
 # N_points = listeningPositions.shape[0]
 
-plotting = True
 if plotting:
     # plotting
     colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
@@ -98,7 +98,10 @@ if plotting:
     for ii in range(N_points): 
         # if ii == 0 or ii == N_points-1:
         label = '%.4f %.4f %.4f' %(listeningPositions[ii, 0], listeningPositions[ii, 1], listeningPositions[ii, 2])
-        plt.plot(listenedData[:,ii], label=label, color=colors[ii], linewidth=lw) 
+        if not logPlot:
+            plt.plot(listenedData[:,ii], label=label, color=colors[ii], linewidth=lw) 
+        else: 
+            plt.semilogy(np.multiply(listenedData[:,ii], listenedData[:,ii]), label=label, color=colors[ii], linewidth=lw) 
         if verifyAnalytical:
             print 'max at %u is %f' %(ii, max(analyticalListenedData[:, ii]))
             plt.plot(analyticalListenedData[:, ii], 'x', color=colors[ii], )
