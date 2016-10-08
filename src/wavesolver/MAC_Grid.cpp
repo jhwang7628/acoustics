@@ -128,6 +128,34 @@ void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
     _PML_absorptionStrength = strength;
 }
 
+void MAC_Grid::fieldLaplacian(const ScalarField &field, const MATRIX &value, MATRIX &laplacian) const
+{
+    if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
+        laplacian.resizeAndWipe(value.rows(), value.cols()); 
+    const int N_cells = field.numCells(); 
+    const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+    for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
+    {
+        const Tuple3i cellIndices = field.cellIndex(cell_idx); 
+        Tuple3i buf = cellIndices; 
+        // skip if its boundary
+        if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
+            continue; 
+        laplacian(cell_idx, 0) = -6.0*(value(cell_idx, 0)); // v_i
+        for (int dim=0; dim<3; ++dim)
+        {
+            buf[dim] += 1; // v_i+1
+            laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+            buf[dim] -= 2; // v_i-1
+            laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+            buf[dim] += 1;
+        }
+        laplacian(cell_idx, 0) *= scale; 
+    }
+}
+
 void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX &v, int dimension, REAL t, REAL timeStep, REAL density )
 {
     //const IntArray        &bulkCells                    = _velocityBulkCells[ dimension ];
