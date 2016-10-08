@@ -381,6 +381,36 @@ bool PML_WaveSolver::stepSystem()
     return true;
 }
 
+bool PML_WaveSolver::stepSystemHalf(const int &flag)
+{
+    if (flag == 0) // step velocity
+    {
+        _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
+        _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
+        _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
+        _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
+        _grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
+    }
+    else // step pressure
+    {
+        _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+        _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+        _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
+        _grid.UpdatePMLPressure(_p, _pFull); 
+        _currentTime += _timeStep;
+        _timeIndex += 1;
+        if ( _endTime > 0.0 && _currentTime >= _endTime )
+            return false;
+    }
+    return true;
+}
+
 void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) const 
 {
     if ( pressure.size() != _N )
@@ -413,7 +443,7 @@ void PML_WaveSolver::stepLeapfrog()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
-    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
+    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)

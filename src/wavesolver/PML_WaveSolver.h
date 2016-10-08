@@ -189,6 +189,7 @@ class PML_WaveSolver : public Solver
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);
         virtual bool stepSystem();
+        virtual bool stepSystemHalf(const int &flag);
         // Takes a single time step with restarting steps controlled by
         // N_restart. internally, smoothing is done using weighted average
         // method described in the paper: 

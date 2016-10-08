@@ -29,16 +29,16 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
-        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(anSourcePtr);
+        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        //objectPtr->AddVibrationalSource(anSourcePtr);
 
-        //// add debug harmonic source
-        //const REAL omega = 2.0*M_PI*500.0;
-        //const REAL phase = 0.0;
-        ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 100., 0.301997)); 
+        // add debug harmonic source
+        const REAL omega = 2.0*M_PI*500.0;
+        const REAL phase = 0.0;
+        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
-        ////objectPtr->TestObjectBoundaryCondition();
+        objectPtr->AddVibrationalSource(sourcePtr); 
+        //objectPtr->TestObjectBoundaryCondition();
     }
 }
 
@@ -412,6 +412,24 @@ Run()
         continueStepping = _acousticSolver->stepSystem();
         PostStepping(odeTime); 
     }
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_AcousticSimulator::
+RunHalfStep(const int &flag)
+{
+    if (flag == 0) 
+    {
+        _sceneObjects->AdvanceAllModalODESolvers(1); 
+        _acousticSolver->stepSystemHalf(flag);
+    }
+    else
+    {
+        _acousticSolver->stepSystemHalf(flag);
+        PostStepping(-99);
+    }
+    return true; 
 }
 
 //##############################################################################

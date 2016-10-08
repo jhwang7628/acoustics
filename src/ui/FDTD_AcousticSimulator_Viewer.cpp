@@ -32,15 +32,16 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
     setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw debug arrows stored in FDTD_RigidObject class"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_D, "Change slice division (default: 80)"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Run half-step"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_F, "Toggle fixed colormap"); 
+    setKeyDescription(Qt::ControlModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer forward"); 
     setKeyDescription(Qt::ControlModifier + Qt::Key_Y, "Toggle slice data pointer backward"); 
     setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file"); 
@@ -677,7 +678,7 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
             _arrowCin.clear(); 
     }
-    else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ShiftModifier)) {
+    else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ControlModifier)) {
         PRE_CIN_CLEAR; 
         std::string inputFile, outputFile; 
         std::cout << "FBem input file: " << std::flush;
@@ -700,6 +701,10 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
         DrawOneFrameForward(); 
+    }
+    else if ((e->key() == Qt::Key_U) && (modifiers == Qt::NoButton)) {
+        std::cout << "u pressed\n";
+        DrawHalfFrameForward(); 
     }
     else {
         handled = false; 
@@ -975,6 +980,39 @@ DrawOneFrameForward()
     if (_currentFrame % DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL == 0)
         Push_Back_ReflectionArrows("a"); 
 #endif
+    SetAllSliceDataReady(false); 
+    updateGL(); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawHalfFrameForward()
+{
+    std::cout << "\nFDTD_AcousticSimulator_Viewer::DrawHalfFrameForward()\n";
+    if (_halfStepFlag == 0) 
+    {
+        std::cout << "STEPPING VELOCITY\n"; 
+        _currentFrame++;
+        PrintFrameInfo();
+        _simulator->RunHalfStep(_halfStepFlag); 
+        if (_listenedCell.index >= 0)
+        {
+            _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
+            std::cout << _listenedCell << std::endl;
+        }
+    }
+    else
+    {
+        std::cout << "STEPPING PRESSURE\n"; 
+        _simulator->RunHalfStep(_halfStepFlag); 
+        if (_listenedCell.index >= 0)
+        {
+            _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
+            std::cout << _listenedCell << std::endl;
+        }
+    }
+    _halfStepFlag = (_halfStepFlag + 1) % 2; 
     SetAllSliceDataReady(false); 
     updateGL(); 
 }

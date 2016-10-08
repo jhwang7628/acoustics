@@ -24,6 +24,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     private: 
         SimulatorPtr            _simulator; 
+        int                     _halfStepFlag = 0;
 
         bool                    _remoteConnection = false; 
         int                     _currentFrame = 0;
@@ -87,6 +88,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void ConstructSliceSamples(Slice &slice); 
         void ComputeAndCacheSliceData(const int &dataPointer, Slice &slice); 
         void DrawOneFrameForward(); 
+        void DrawHalfFrameForward(); 
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 
