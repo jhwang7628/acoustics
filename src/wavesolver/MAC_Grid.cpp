@@ -358,7 +358,7 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
             if (evaluateExternalSource)
-                pDirectional(cell_idx,0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+                pDirectional(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
                 //for (int i = 0; i<_N; i++) 
                 //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
         }

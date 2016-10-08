@@ -55,6 +55,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawMesh(); 
         void DrawBox(); 
         void DrawListeningPoints(); 
+        void DrawSelection(); 
         void DrawLights(); 
         void DrawSlices(const int &dataPointer);
         void DrawDebugCin();

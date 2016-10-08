@@ -99,6 +99,7 @@ draw()
 {
     DrawMesh(); 
     DrawListeningPoints();
+    DrawSelection(); 
     DrawDebugCin();
     DrawSlices(_sliceDataPointer); 
 
@@ -120,7 +121,6 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
-    std::cout << "FDTD_AcousticSimulator_Viewer::drawWithNames()\n";
     const REAL ballSize = _simulator->GetSolverSettings()->cellSize/2.0; 
     // draw cell centroid near the slices 
     for (auto &slice : _sliceCin)
@@ -172,15 +172,6 @@ DrawMesh()
         glPushMatrix(); 
         glTranslated(translation[0], translation[1], translation[2]); 
         glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
-
-        if (selectedName() != -1)
-        {
-            const int cell_idx = selectedName(); 
-            MAC_Grid::Cell cell; 
-            _simulator->GetSolver()->FetchCell(cell_idx, cell); 
-            glColor3f(1.0f, 1.0f, 1.0f); 
-            GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
-        }
 
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
@@ -294,6 +285,22 @@ DrawListeningPoints()
         glPopMatrix(); 
     }
     glDisable(GL_LIGHTING);
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawSelection()
+{
+    // draw
+    if (selectedName() != -1)
+    {
+        const int cell_idx = selectedName(); 
+        MAC_Grid::Cell cell; 
+        _simulator->GetSolver()->FetchCell(cell_idx, cell); 
+        glColor3f(1.0f, 1.0f, 1.0f); 
+        GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+    }
 }
 
 //##############################################################################
@@ -720,7 +727,10 @@ keyPressEvent(QKeyEvent *e)
     if (!handled)
         QGLViewer::keyPressEvent(e);
     if (optionsChanged) 
+    {
         PrintDrawOptions();
+        PrintFrameInfo(); 
+    }
     updateGL();
 }
 
@@ -865,6 +875,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         if (slice.dataReady)
             continue; 
         Eigen::MatrixXd &data = slice.data; 
+        data.setZero();
         if (dataPointer == 0)
         {
             _simulator->GetSolver()->FetchPressureData(slice.samples, data);
@@ -1012,8 +1023,15 @@ PrintDrawOptions()
 void FDTD_AcousticSimulator_Viewer::
 PrintFrameInfo()
 {
+    const int N_dataType = 10; 
+    static const QString dataString[] = {"p_full", "cell_id", "v_x", "v_y", "v_z", "p_x", "p_y", "p_z", "freq_transfer", "freq_transfer_residual"}; 
+    int p=0;
+    for (; p<N_dataType; ++p)
+        if (p == _sliceDataPointer)
+            break; 
     //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
-    _message += "Current Data: " + QString::number(_sliceDataPointer) + "; ";
+    _message += "Current Time: " + QString::number(_simulator->GetSimulationTime()) + "; "; 
+    _message += "Current Data: " + dataString[p] + "; ";
 }
