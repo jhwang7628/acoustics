@@ -360,7 +360,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 
 #endif // if 0
 
-#ifdef DEBUG
+#if DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL > 0
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
@@ -442,6 +442,15 @@ WriteDebugArrow(const std::string &file)
            << _debugArrowNormal.at(idx).x << " " << _debugArrowNormal.at(idx).y << " " << _debugArrowNormal.at(idx).z << std::endl;
     }
     of.close();
+    _debugArrowStart.clear(); 
+    _debugArrowNormal.clear(); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidObject::
+ClearDebugArrow()
+{
     _debugArrowStart.clear(); 
     _debugArrowNormal.clear(); 
 }

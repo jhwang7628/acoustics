@@ -90,6 +90,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 
+        void Push_Back_ReflectionArrows(const std::string &filename); 
 };
 
 #endif

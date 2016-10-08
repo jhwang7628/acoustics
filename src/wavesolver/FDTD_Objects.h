@@ -51,6 +51,7 @@ class FDTD_Objects
         void TestObjectDistanceField(const size_t &ind); 
         void PrintAllSources(std::ostream &os); 
         void WriteFailedReflections(const std::string &file);
+        void ClearFailedReflections();
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
 };

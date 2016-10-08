@@ -94,6 +94,7 @@ enum VibrationalSourceType { HarmonicSource=0 };
 // Debugging flags, settings
 //##############################################################################
 #define DEBUG_ANALYTICAL_ACC_NOISE 0
+#define DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL 500
   
 //##############################################################################
 #endif 

@@ -557,24 +557,7 @@ keyPressEvent(QKeyEvent *e)
         PRE_CIN_CLEAR;
         std::cin >> filename; 
         POST_CIN_CLEAR;
-        auto &sceneObjects = _simulator->GetSceneObjects(); 
-        const int N = sceneObjects->N();
-        sceneObjects->WriteFailedReflections(filename);
-
-        // push all arrows to debug draw
-        for (int obj_idx=0; obj_idx<N; ++obj_idx)
-        {
-            const std::string objFilename = filename + sceneObjects->GetMeshName(obj_idx); 
-            std::ifstream inFile(objFilename.c_str()); 
-            Vector3f x, n; 
-            while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
-            {
-                Arrow arrow; 
-                arrow.start = x; 
-                arrow.normal = n; 
-                _arrowCin.push_back(arrow); 
-            }
-        }
+        Push_Back_ReflectionArrows(filename); 
     }
     else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ControlModifier)) {
         PRE_CIN_CLEAR; 
@@ -988,6 +971,10 @@ DrawOneFrameForward()
         _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
         std::cout << _listenedCell << std::endl;
     }
+#if DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL > 0
+    if (_currentFrame % DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL == 0)
+        Push_Back_ReflectionArrows("a"); 
+#endif
     SetAllSliceDataReady(false); 
     updateGL(); 
 }
@@ -1035,3 +1022,29 @@ PrintFrameInfo()
     _message += "Current Time: " + QString::number(_simulator->GetSimulationTime()) + "; "; 
     _message += "Current Data: " + dataString[p] + "; ";
 }
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+Push_Back_ReflectionArrows(const std::string &filename)
+{
+    auto &sceneObjects = _simulator->GetSceneObjects(); 
+    const int N = sceneObjects->N();
+    sceneObjects->WriteFailedReflections(filename);
+
+    // push all arrows to debug draw
+    for (int obj_idx=0; obj_idx<N; ++obj_idx)
+    {
+        const std::string objFilename = filename + sceneObjects->GetMeshName(obj_idx); 
+        std::ifstream inFile(objFilename.c_str()); 
+        Vector3f x, n; 
+        while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
+        {
+            Arrow arrow; 
+            arrow.start = x; 
+            arrow.normal = n; 
+            _arrowCin.push_back(arrow); 
+        }
+    }
+}
+
