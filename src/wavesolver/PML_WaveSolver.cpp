@@ -514,7 +514,8 @@ void PML_WaveSolver::stepCollocated()
 
     // Use the new velocity to update pressure // TODO use pointer to swap matrix can avoid copying
     _divergenceTimer.start();
-    _grid.PML_pressureUpdateCollocated(_currentTime, _pLastTimestep, _pThisTimestep, _pFull); 
+    _grid.PML_velocityUpdateCollocated(_currentTime, _p, _pFull, _v); 
+    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, _pLastTimestep, _pThisTimestep, _pFull); 
     _pLastTimestep.parallelCopy(_pThisTimestep); 
     _pThisTimestep.parallelCopy(_pFull);
     

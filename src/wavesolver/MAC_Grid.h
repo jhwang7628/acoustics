@@ -83,14 +83,20 @@ class MAC_Grid
         struct PML_PressureCell
         {
             int index; 
+            int neighbour_v_left[3];
+            int neighbour_v_right[3];
             REAL updateCoefficient[3]; 
             REAL divergenceCoefficient[3]; 
+            REAL absorptionCoefficient; 
         };
 
         struct PML_VelocityCell
         {
             int index; 
             int dimension; 
+            int neighbourInterior; // 0: no; 1: right is interior; -1: left is interior
+            int neighbour_p_left;
+            int neighbour_p_right;
             REAL updateCoefficient; 
             REAL gradientCoefficient; 
         }; 
@@ -193,7 +199,8 @@ class MAC_Grid
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
 
-        void PML_pressureUpdateCollocated(const REAL &simulationTime, MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext);
+        void PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3]); 
+        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
@@ -282,6 +289,8 @@ class MAC_Grid
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
+
+        bool InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
