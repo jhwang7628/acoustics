@@ -1041,6 +1041,7 @@ PrintDrawOptions()
               << " Draw slice wireframe only: " << _sliceWireframe << "\n"
               << " Draw slice data pointer: " << _sliceDataPointer << "\n"
               << "\n"; 
+    std::cout << std::flush;
 }
 
 //##############################################################################
