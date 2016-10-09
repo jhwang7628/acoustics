@@ -512,49 +512,7 @@ void PML_WaveSolver::stepCollocated()
     //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
 
-    //if (_useGhostCellBoundary)
-    //{
-    //    // interpolate fresh cells 
-    //    _freshCellTimer.start(); 
-    //    _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
-    //    _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
-    //    _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
-    //    _freshCellTimer.pause(); 
-    //    
-    //    // update ghost cells 
-    //    _ghostCellTimer.start(); 
-    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
-    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
-    //    //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
-    //    _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-    //    _ghostCellTimer.pause(); 
-    //}
-    //else 
-    //{
-    //    // interpolate fresh cells 
-    //    _freshCellTimer.start(); 
-    //    _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
-    //    _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
-    //    _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
-    //    _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
-    //    _freshCellTimer.pause(); 
-    //}
-
-    // Update velocity in each direction
-    //_gradientTimer.start();
-    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 0 ], 0, _currentTime, _timeStep, _density );
-    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 1 ], 1, _currentTime, _timeStep, _density );
-    //_grid.PML_velocityUpdate( _pFull, _pGhostCellsFull, _v[ 2 ], 2, _currentTime, _timeStep, _density );
-    //_gradientTimer.pause();
-
-    // Use the new velocity to update pressure
+    // Use the new velocity to update pressure // TODO use pointer to swap matrix can avoid copying
     _divergenceTimer.start();
     _grid.PML_pressureUpdateCollocated(_currentTime, _pLastTimestep, _pThisTimestep, _pFull); 
     _pLastTimestep.parallelCopy(_pThisTimestep); 

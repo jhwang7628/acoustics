@@ -80,6 +80,21 @@ class MAC_Grid
             REAL                RHS; 
         };
 
+        struct PML_PressureCell
+        {
+            int index; 
+            REAL updateCoefficient[3]; 
+            REAL divergenceCoefficient[3]; 
+        };
+
+        struct PML_VelocityCell
+        {
+            int index; 
+            int dimension; 
+            REAL updateCoefficient; 
+            REAL gradientCoefficient; 
+        }; 
+
     private: 
         std::vector<const DistanceField *>   _boundaryFields;
         std::vector<const TriMesh *>         _boundaryMeshes;
@@ -93,6 +108,7 @@ class MAC_Grid
         // isBulkCell and isGhostCell refer to cells in the pressure grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
+        BoolArray                _isPMLCell;
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
@@ -100,7 +116,9 @@ class MAC_Grid
         BoolArray                _isVelocityBulkCell[ 3 ];
         BoolArray                _isVelocityInterfacialCell[ 3 ];
 
-        IntArray                 _pmlCells;  // TODO
+
+        std::vector<PML_PressureCell> _pmlPressureCells; 
+        std::vector<PML_VelocityCell> _pmlVelocityCells; 
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
 

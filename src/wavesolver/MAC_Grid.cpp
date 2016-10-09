@@ -100,6 +100,8 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     _isBulkCell.resize(N_pressureCells, false);
     _pressureCellHasValidHistory.resize(N_pressureCells, true); 
     _containingObject.resize(N_pressureCells, -1);
+    _pmlPressureCells.clear(); 
+    _pmlVelocityCells.clear(); 
     if (_useGhostCellBoundary)
         _isGhostCell.resize(N_pressureCells, false);
     for (int ii=0; ii<3; ++ii) 
@@ -1350,6 +1352,10 @@ void MAC_Grid::classifyCells( bool useBoundary )
 {
     int      numPressureCells = _pressureField.numCells();
     int      numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
+    const REAL &dt = _waveSolverSettings->timeStepSize; 
+    const REAL &dx = _waveSolverSettings->cellSize; 
+    const REAL &c = _waveSolverSettings->soundSpeed; 
+    const REAL &rho = _waveSolverSettings->airDensity; 
     Vector3d cellPos;
     IntArray neighbours;
 
@@ -1364,8 +1370,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].clear();
     _isVelocityBulkCell[ 2 ].clear();
 
-    _isBulkCell.resize( numPressureCells, false );
-    _isGhostCell.resize( numPressureCells, false );
+    _isBulkCell.resize(numPressureCells, false);
+    _isGhostCell.resize(numPressureCells, false);
+    _isPMLCell.resize(numPressureCells, false); 
 
     _isVelocityInterfacialCell[ 0 ].resize( numVcells[ 0 ], false );
     _isVelocityInterfacialCell[ 1 ].resize( numVcells[ 1 ], false );
@@ -1374,7 +1381,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].resize( numVcells[ 1 ], false );
     _isVelocityBulkCell[ 2 ].resize( numVcells[ 2 ], false );
 
-    _pmlCells.clear(); 
     _ghostCells.clear();
 
     _velocityInterfacialCells[ 0 ].clear();
@@ -1431,6 +1437,29 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 break;
             }
         }
+
+        // classify and cache pml parameters
+        const REAL absorptionCoefficient[] = {PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, 0),
+                                              PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, 1),
+                                              PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, 2)};
+        const bool inPML = (absorptionCoefficient[0] > SMALL_NUM || 
+                            absorptionCoefficient[1] > SMALL_NUM || 
+                            absorptionCoefficient[2] > SMALL_NUM   ) ? true : false; 
+        if (inPML) 
+        {
+            PML_PressureCell cell; 
+            cell.index = cell_idx; 
+            for (int dim=0; dim<3; ++dim)
+            {
+                const REAL directionalCoefficient = PML_directionalCoefficient(absorptionCoefficient[dim], dt);
+                const REAL updateCoefficient = PML_pressureUpdateCoefficient(absorptionCoefficient[dim], dt, directionalCoefficient);
+                const REAL divergenceCoefficient = PML_divergenceCoefficient(rho, c, directionalCoefficient); 
+                cell.updateCoefficient[dim] = updateCoefficient; 
+                cell.divergenceCoefficient[dim] = divergenceCoefficient; 
+            }
+            _pmlPressureCells.push_back(cell); 
+            _isPMLCell.at(cell_idx) = true; 
+        }
     }
 
     // Ghost cells are cells inside the boundary that have at least
@@ -1471,6 +1500,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
             Tuple3i                cell_coordinates;
             int                    pressure_cell_idx1;
             int                    pressure_cell_idx2;
+            const Vector3d cellPosition = _velocityField[dimension].cellPosition(cell_idx);
 
             cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
 
@@ -1516,8 +1546,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // Determine a scaling coefficient based on the angle between
                 // the boundary normal and the rasterized boundary normal
                 Vector3d normal( 0.0, 0.0, 0.0 );
-                Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient(cellPosition);
 
                 normal[ dimension ] = 1.0;
                 gradient.normalize();
@@ -1549,8 +1578,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // Determine a scaling coefficient based on the angle between
                 // the boundary normal and the rasterized boundary normal
                 Vector3d normal( 0.0, 0.0, 0.0 );
-                Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient(cellPosition);
 
                 normal[ dimension ] = 1.0;
                 gradient.normalize();
@@ -1561,6 +1589,20 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
 
+            }
+
+            const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPosition, _PML_absorptionWidth, dimension); 
+            const bool inPML = (absorptionCoefficient > SMALL_NUM) ? true : false; 
+            if (inPML)
+            {
+                const REAL updateCoefficient = PML_velocityUpdateCoefficient(absorptionCoefficient, dt);
+                const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, dt, dx, rho);
+                PML_VelocityCell cell; 
+                cell.index = cell_idx; 
+                cell.dimension = dimension; 
+                cell.updateCoefficient = updateCoefficient; 
+                cell.gradientCoefficient = gradientCoefficient; 
+                _pmlVelocityCells.push_back(cell);
             }
         }
     }
