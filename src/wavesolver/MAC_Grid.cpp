@@ -375,18 +375,18 @@ void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for (int i=0; i<_N; i++)
-                pFull(cell_idx, i) += n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
+                pDirectional(cell_idx, i) += n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
 
             cell_indices[dimension] -= 1;
             neighbour_idx = _velocityField[dimension].cellIndex(cell_indices);
 
             for (int i=0; i<_N; i++)
-                pFull(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
+                pDirectional(cell_idx, i) -= n_rho_c_square_dt*v(neighbour_idx, i)*v_cellSize_inv;
 
             // evaluate external sources only happens not in PML
             // Liu Eq (16) f6x term
             if (evaluateExternalSource)
-                pFull(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+                pDirectional(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
                 //for (int i = 0; i<_N; i++) 
                 //    p(cell_idx, i) += (*sourceEvaluator)(cell_position, simulationTime+0.5*timeStep)*timeStep; 
         }
@@ -472,7 +472,7 @@ void MAC_Grid::PML_pressureUpdateFull(const MATRIX *vArray, MATRIX &p, const REA
 
 void MAC_Grid::UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull)
 {
-#if 1
+#if 0
     const int N_cells = numPressureCells(); 
     // update the full pressure in pml region
     #ifdef USE_OPENMP
