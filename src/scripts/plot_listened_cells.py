@@ -110,8 +110,9 @@ if plotting:
     plt.legend(loc=4)
     plt.xlabel('frame') 
     plt.ylabel('Pressure (Pascal)')
-    plt.title('Line samples pressure time series (RAS)')
+    plt.title('Collocated formulation with PML')
     # plt.xlim([0, 1600])
+    plt.ylim([-0.01, 0.01])
     plt.grid()
     # plt.title('Monitor points for ball drop using ghost cell')
     

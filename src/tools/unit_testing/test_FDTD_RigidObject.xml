@@ -160,7 +160,7 @@
         substeps="1"
         timestepfrequency="352800"
         output_pattern="work/near-field/data_test2/test_%s"
-        PML_width="3"
+        PML_width="6"
         PML_strength="1000000.0" 
         use_mesh="1"
         use_ghost_cell="0"
@@ -190,6 +190,8 @@
     </pressure_source> 
     <listening_point_list>
         <listening_point x="0.0225" y="-0.0025" z="0.0025"/>
+        <listening_point x="0.1075" y="-0.0025" z="0.0025"/>
+        <listening_point x="0.10" y="0.1" z="0.1"/>
         <!--
         <listening_point x="0.0" y="0.08" z="0.0"/>
         <listening_point x="0.0" y="0.125" z="0.0"/>

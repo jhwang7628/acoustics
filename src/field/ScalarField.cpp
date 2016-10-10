@@ -207,7 +207,6 @@ void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighb
     const int y = min( max( (int) (diff.y/_cellSize), 1), _divisions[1]-2 ); 
     const int z = min( max( (int) (diff.z/_cellSize), 1), _divisions[2]-2 ); 
 
-
     neighbours.push_back( cellIndex(x+0,y+0,z+0) ); 
     neighbours.push_back( cellIndex(x+0,y+0,z+1) ); 
     neighbours.push_back( cellIndex(x+0,y+1,z+0) ); 
