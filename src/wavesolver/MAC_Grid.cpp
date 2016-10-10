@@ -100,8 +100,6 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
     _isBulkCell.resize(N_pressureCells, false);
     _pressureCellHasValidHistory.resize(N_pressureCells, true); 
     _containingObject.resize(N_pressureCells, -1);
-    _pmlPressureCells.clear(); 
-    _pmlVelocityCells.clear(); 
     if (_useGhostCellBoundary)
         _isGhostCell.resize(N_pressureCells, false);
     for (int ii=0; ii<3; ++ii) 
@@ -137,9 +135,9 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
     const auto &field = _pressureField; 
     const int N_cells = field.numCells(); 
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
-    #ifdef USE_OPENMP
-    #pragma omp parallel for schedule(static) default(shared)
-    #endif
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
     for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
     {
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
@@ -324,7 +322,6 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
 
 void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3])
 {
-
     const int N_cells = _pmlVelocityCells.size(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
@@ -333,34 +330,14 @@ void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MA
     {
         const auto &cell = _pmlVelocityCells.at(ii);
         const int &cell_idx = cell.index; 
-        // figure out which pressure should we use
-        MATRIX const *p_r = &pFull; 
-        MATRIX const *p_l = &pFull; 
-        //if (cell.neighbourInterior == 0)
-        //{
-        //    p_l = &pDirectional[cell.dimension]; 
-        //    p_r = &pDirectional[cell.dimension]; 
-        //}
-        //else if (cell.neighbourInterior == 1)
-        //{
-        //    p_l = &pDirectional[cell.dimension]; 
-        //    p_r = &pFull; 
-        //}
-        //else if (cell.neighbourInterior == -1)
-        //{
-        //    p_l = &pFull; 
-        //    p_r = &pDirectional[cell.dimension]; 
-        //}
-        //else
-        //{ }
         // update velocity
         v[cell.dimension](cell_idx, 0) *= cell.updateCoefficient; 
-        v[cell.dimension](cell_idx, 0) += cell.gradientCoefficient * (*p_r)(cell.neighbour_p_right, 0); 
-        v[cell.dimension](cell_idx, 0) -= cell.gradientCoefficient * (*p_l)(cell.neighbour_p_left , 0); 
+        v[cell.dimension](cell_idx, 0) += cell.gradientCoefficient * pFull(cell.neighbour_p_right, 0); 
+        v[cell.dimension](cell_idx, 0) -= cell.gradientCoefficient * pFull(cell.neighbour_p_left , 0); 
     }
 }
 
-void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext)
+void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &laplacian)
 {
     const REAL &timeStep = _waveSolverSettings->timeStepSize; 
     const REAL one_over_dx = 1.0/_waveSolverSettings->cellSize; 
@@ -368,10 +345,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
     const int N_cells = _pressureField.numCells(); 
     const int N_pmlCells = _pmlPressureCells.size(); 
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
-    //pFull = pThisTimestep * 2.0 - pLastTimestep + laplacian * c2_k2; 
-    //pNext.clearingAxpy( 2.0, pCurr); 
-    //pNext.parallelAxpy(-1.0, pLast); 
-    //pNext.parallelAxpy(c2_k2, laplacian); 
       
     // first update PML region
     for (int ii=0; ii<N_pmlCells; ++ii)
@@ -380,11 +353,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         const int &cell_idx = cell.index; 
         for (int dim=0; dim<3; ++dim)
         {
-            //const int &dim = cell.dimension; 
-            //const REAL &sigma = cell.absorptionCoefficient; 
-            //pNext(cell_idx, 0) = 2.0 * pCurr(cell_idx, 0) - (1.0-sigma) * pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
-            //pNext(cell_idx, 0) /= (1.0 + sigma); 
-
             pDirectional[dim](cell_idx, 0) *= cell.updateCoefficient[dim]; 
             pDirectional[dim](cell_idx, 0) += cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_right[dim], 0) * one_over_dx;
             pDirectional[dim](cell_idx, 0) -= cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_left[dim] , 0) * one_over_dx;
@@ -392,8 +360,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         pNext(cell_idx, 0) = pDirectional[0](cell_idx, 0) + pDirectional[1](cell_idx, 0) + pDirectional[2](cell_idx, 0); 
     }
 
-    MATRIX laplacian; 
-    pressureFieldLaplacian(pCurr, laplacian); 
+    // update laplacian
     #ifdef USE_OPENMP
     #pragma omp parallel for schedule(static) default(shared)
     #endif
@@ -1452,6 +1419,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
     _containingObject.clear(); 
     _containingObject.resize(numPressureCells, -1);
+
+    _pmlPressureCells.clear(); 
+    _pmlVelocityCells.clear(); 
 
     if ( !useBoundary )
     {

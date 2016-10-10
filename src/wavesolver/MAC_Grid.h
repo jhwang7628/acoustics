@@ -200,7 +200,7 @@ class MAC_Grid
                                  REAL t, REAL timeStep, REAL density);
 
         void PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3]); 
-        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext);
+        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext, MATRIX &laplacian);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))

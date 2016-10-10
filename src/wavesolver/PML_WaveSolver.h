@@ -10,6 +10,7 @@
 
 #include <field/ScalarField.h>
 
+#include <math/MLSModeInterpolator.hpp>
 #include <geometry/BoundingBox.h>
 #include <geometry/TriangleMesh.hpp>
 
@@ -70,6 +71,10 @@ class PML_WaveSolver : public Solver
         MATRIX                   _pLastTimestep;      // for restarting
         MATRIX                   _pThisTimestep;      // for restarting
         MATRIX                   _vThisTimestep[ 3 ]; // for restarting
+
+        MATRIX                   _pLaplacian; 
+        MATRIX                   _pCollocated[3]; // rotating buffer for pressure: [old, current, new]
+        int                      _pCollocatedInd; // point to new
 
         Timer<false>             _gradientTimer;
         Timer<false>             _divergenceTimer;
@@ -180,6 +185,7 @@ class PML_WaveSolver : public Solver
         void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
 
         // fetch the pressure data using interpolation
+        void FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data); 
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
         void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);

@@ -25,15 +25,16 @@ class PML_WaveSolver_Settings;
 #define RAD_2_DEG(x) (x*180.0/M_PI)
 #define DEG_2_RAD(x) (x/180.0*M_PI)
 
-
 #define FOR_ALL_3D_GRID_VECTOR3(start,range,ii,jj,kk) \
     for (ii=start.x; ii<start.x+range.x; ++ii) \
         for (jj=start.y; jj<start.y+range.y; ++jj) \
             for (kk=start.z; kk<start.z+range.z; ++kk)
 
-
+//##############################################################################
+// Options
+//##############################################################################
 #define USE_ADF // use adaptive distance field
-#define DEBUG_PERFECT_MODAL_HARMONICS 1 // replace q(t) by cos(omega t)
+#define USE_COLLOCATED
            
 //##############################################################################
 // Typedefs 
@@ -93,6 +94,7 @@ enum VibrationalSourceType { HarmonicSource=0 };
 // Debugging flags, settings
 //##############################################################################
 #define DEBUG_ANALYTICAL_ACC_NOISE 0
+#define DEBUG_PERFECT_MODAL_HARMONICS 1 // replace q(t) by cos(omega t)
 #define DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL 500
   
 //##############################################################################
