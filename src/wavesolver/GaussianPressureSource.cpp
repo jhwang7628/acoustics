@@ -23,7 +23,7 @@ Evaluate(const Vector3d &evaluatePosition, const Vector3d &normal, const REAL &t
     value *= _normalizeConstant; // just to scale it up, the wave equation is linear
 #else
     value *= exp(-pow((time-_offsetTime)/_widthTime, 2)/2.0); 
-    value *= _normalizeConstant; // just to scale it up, the wave equation is linear
+    value *= 1./3.6836*_normalizeConstant; // just to match the erf impl
 #endif
 
     return value; 

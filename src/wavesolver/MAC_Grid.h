@@ -290,7 +290,7 @@ class MAC_Grid
         // interfacial cell
         void classifyCells( bool useBoundary );
 
-        bool InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
+        int InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.

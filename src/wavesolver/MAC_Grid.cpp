@@ -378,12 +378,13 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
     {
         const auto &cell = _pmlPressureCells.at(ii);
         const int &cell_idx = cell.index; 
-        //const REAL &sigma = cell.absorptionCoefficient; 
-        //pNext(cell_idx, 0) = 2.0 * pCurr(cell_idx, 0) - (1.0-sigma) * pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
-        //pNext(cell_idx, 0) /= (1.0 + sigma); 
-
         for (int dim=0; dim<3; ++dim)
         {
+            //const int &dim = cell.dimension; 
+            //const REAL &sigma = cell.absorptionCoefficient; 
+            //pNext(cell_idx, 0) = 2.0 * pCurr(cell_idx, 0) - (1.0-sigma) * pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
+            //pNext(cell_idx, 0) /= (1.0 + sigma); 
+
             pDirectional[dim](cell_idx, 0) *= cell.updateCoefficient[dim]; 
             pDirectional[dim](cell_idx, 0) += cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_right[dim], 0) * one_over_dx;
             pDirectional[dim](cell_idx, 0) -= cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_left[dim] , 0) * one_over_dx;
@@ -1491,27 +1492,29 @@ void MAC_Grid::classifyCells( bool useBoundary )
         }
 
         // classify and cache pml parameters
-        if (InsidePML(cellPos, _PML_absorptionWidth))
+        const int pmlDirection = InsidePML(cellPos, _PML_absorptionWidth); 
+        if (pmlDirection >= 0)
         {
             PML_PressureCell cell; 
             cell.index = cell_idx; 
             REAL maxAbsorptionCoefficient = std::numeric_limits<REAL>::min(); 
             for (int dim=0; dim<3; ++dim)
             {
+                //const int &dim = pmlDirection; 
+                //cell.dimension = dim;
                 const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, dim); 
                 maxAbsorptionCoefficient = std::max<REAL>(maxAbsorptionCoefficient, absorptionCoefficient); 
                 const REAL directionalCoefficient = PML_directionalCoefficient(absorptionCoefficient, dt);
-                const REAL updateCoefficient = PML_pressureUpdateCoefficient(absorptionCoefficient, dt, directionalCoefficient);
-                const REAL divergenceCoefficient = PML_divergenceCoefficient(rho, c, directionalCoefficient); 
-                cell.updateCoefficient[dim] = updateCoefficient; 
-                cell.divergenceCoefficient[dim] = divergenceCoefficient; 
+                cell.updateCoefficient[dim] = PML_pressureUpdateCoefficient(absorptionCoefficient, dt, directionalCoefficient);
+                cell.divergenceCoefficient[dim] = PML_divergenceCoefficient(rho, c, directionalCoefficient); 
 
                 // figure out neighbours
                 Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
-                cell.neighbour_v_left[dim]  = _velocityField[dim].cellIndex(cellIndices); 
+                cell.neighbour_v_left[dim] = _velocityField[dim].cellIndex(cellIndices); 
                 cellIndices[dim] += 1;
                 cell.neighbour_v_right[dim] = _velocityField[dim].cellIndex(cellIndices); 
             }
+            
             cell.absorptionCoefficient = maxAbsorptionCoefficient; 
             _pmlPressureCells.push_back(cell); 
             _isPMLCell.at(cell_idx) = true; 
@@ -1645,7 +1648,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
             }
 
-            if (InsidePML(cellPosition, _PML_absorptionWidth))
+            if (InsidePML(cellPosition, _PML_absorptionWidth) >= 0)
             {
                 const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPosition, _PML_absorptionWidth, dimension); 
                 const REAL updateCoefficient = PML_velocityUpdateCoefficient(absorptionCoefficient, dt);
@@ -2510,9 +2513,9 @@ void MAC_Grid::visualizeClassifiedCells()
 }
 
 //##############################################################################
-// Return true if inside any PML layers
+// Return PML dimension
 //##############################################################################
-bool MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
+int MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
 {
     const int &preset = _waveSolverSettings->boundaryConditionPreset; 
     const BoundingBox &bbox = _pressureField.bbox();
@@ -2525,23 +2528,23 @@ bool MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
         {
             case 0: // no wall
                 if (hMin <= absorptionWidth)
-                    return true; 
+                    return dimension; 
                 else if (hMax <= absorptionWidth)
-                    return true; 
+                    return dimension; 
                 break; 
             case 1: // wall on +x, +y, +z
                 if (hMin <= absorptionWidth)
-                    return true; 
+                    return dimension; 
                 break; 
             case 2: 
                 if (dimension == 2 && hMax <= absorptionWidth)
-                    return true; 
+                    return dimension; 
                 break; 
             default: 
                 break; 
         }
     }
-    return false;
+    return -1;
 }
 
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension )
