@@ -140,6 +140,8 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
 #endif
     for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
     {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
         Tuple3i buf = cellIndices; 
         // skip if its boundary
@@ -154,6 +156,52 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
             laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
             buf[dim] -= 2; // v_i-1
             laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+            buf[dim] += 1;
+        }
+        laplacian(cell_idx, 0) *= scale; 
+    }
+}
+
+void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const
+{
+    if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
+        laplacian.resizeAndWipe(value.rows(), value.cols()); 
+    const auto &field = _pressureField; 
+    const int N_cells = field.numCells(); 
+    const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
+    {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
+        const Tuple3i cellIndices = field.cellIndex(cell_idx); 
+        Tuple3i buf = cellIndices; 
+        int buf_i = -1; 
+        // skip if its boundary
+        if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
+            continue; 
+        laplacian(cell_idx, 0) = -6.0*(value(cell_idx, 0)); // v_i
+        for (int dim=0; dim<3; ++dim)
+        {
+            buf[dim] += 1; // v_i+1
+            buf_i = field.cellIndex(buf); 
+            if (_isGhostCell.at(buf_i))
+                laplacian(cell_idx, 0) += ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_i)).at(dim*2)); 
+            else
+                laplacian(cell_idx, 0) += value(buf_i, 0); 
+
+            buf[dim] -= 2; // v_i-1
+            buf_i = field.cellIndex(buf); 
+            if (_isGhostCell.at(buf_i))
+                laplacian(cell_idx, 0) += ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_i)).at(dim*2+1));
+            else
+                laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+
             buf[dim] += 1;
         }
         laplacian(cell_idx, 0) *= scale; 
@@ -261,7 +309,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
                 gcParent = _pressureField.cellIndex(leftPressureCellIndices); 
                 // get child index in ghost cell pressure array. its position
                 // in the tree depends on the boundaryDirection
-                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2 + 1); 
+                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2 + 1);
             }
             else if (boundaryDirection < -0.5)
             {
@@ -895,7 +943,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         }
 
         // accumulate counter
+#ifdef USE_OPENMP
 #pragma omp critical
+#endif
         if (hasGC != -1)
             replacedCell ++; 
 
@@ -2202,7 +2252,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     const int ghostCellIndex = pGCFull.size(); 
                     _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
                     Vector3d ghostCellPosition = position;
-                    ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
+                    //ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
 
                     _ghostCellParents.push_back(pressure_cell_idx2);
                     _ghostCellPositions.push_back(ghostCellPosition); 
@@ -2252,7 +2302,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     const int ghostCellIndex = pGCFull.size(); 
                     _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
                     Vector3d ghostCellPosition = position;
-                    ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
+                    //ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
                     _ghostCellParents.push_back(pressure_cell_idx1);
                     _ghostCellPositions.push_back(ghostCellPosition); 
                     _ghostCellBoundaryIDs.push_back(boundaryObject); 
@@ -2775,7 +2825,9 @@ void MAC_Grid::ToFile_GhostCellCoupledMatrix(const std::string &filename)
     if (!_waveSolverSettings->useGhostCell)
         return; 
 
+#ifdef USE_OPENMP
 #pragma omp critical
+#endif
     {
         std::ofstream of(filename.c_str()); 
         const int N_ghostCells = _ghostCellCoupledData.size(); 

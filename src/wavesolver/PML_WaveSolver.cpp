@@ -590,18 +590,26 @@ void PML_WaveSolver::stepLeapfrog()
 
 void PML_WaveSolver::stepCollocated()
 {
-    // reclassify cells occupied by objects
-    _cellClassifyTimer.start(); 
-    //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-    _cellClassifyTimer.pause(); 
-
-    // Use the new velocity to update pressure
-    _divergenceTimer.start();
     MATRIX &pLast = _pCollocated[(_pCollocatedInd+2)%3]; 
     MATRIX &pCurr = _pCollocated[ _pCollocatedInd     ]; 
     MATRIX &pNext = _pCollocated[(_pCollocatedInd+1)%3]; 
+
+    // reclassify cells occupied by objects
+    _cellClassifyTimer.start(); 
+    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _cellClassifyTimer.pause(); 
+    _freshCellTimer.start(); 
+    _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
+    _freshCellTimer.pause(); 
+    _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
+    _ghostCellTimer.start(); 
+    _grid.PML_pressureUpdateGhostCells_Jacobi(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    _ghostCellTimer.pause(); 
+
+    // Use the new velocity to update pressure
+    _divergenceTimer.start();
     _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
-    _grid.pressureFieldLaplacian(pCurr, _pLaplacian); 
+    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, _pLaplacian); 
     _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, _pLaplacian); 
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
