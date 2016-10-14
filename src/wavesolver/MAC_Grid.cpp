@@ -2497,10 +2497,13 @@ void MAC_Grid::ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResid
     maxResidual = residual.maxCoeff(); 
 }
 
-int MAC_Grid::PressureCellType(const int &idx)
+REAL MAC_Grid::PressureCellType(const int &idx)
 {
+    if (_isPMLCell.at(idx))
+        return -0.5; 
+
     if (_isBulkCell.at(idx)) // bulk
-        return 0;  
+        return 0.5;  
     else if (!_isBulkCell.at(idx) && !_isGhostCell.at(idx)) // solid
         return 1; 
     else  // ghost

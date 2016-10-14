@@ -358,7 +358,7 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
                 index = neighbours.at(nei_idx); 
             }
         }
-        data(ii, 0) = (REAL)grid.PressureCellType(index); 
+        data(ii, 0) = grid.PressureCellType(index); 
     }
 }
 
