@@ -47,6 +47,7 @@ class MAC_Grid
         {
             public: 
                 int         index = -1; 
+                Tuple3i     indices; 
                 Vector3d    centroidPosition; 
                 Vector3d    lowerCorner; 
                 Vector3d    upperCorner; 

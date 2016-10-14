@@ -2690,6 +2690,7 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
 void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const
 {
     cell.index = cellIndex; 
+    cell.indices = _pressureField.cellIndex(cellIndex); 
     cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
     cell.lowerCorner = cell.centroidPosition - _waveSolverSettings->cellSize/2.0; 
     cell.upperCorner = cell.centroidPosition + _waveSolverSettings->cellSize/2.0; 
@@ -2700,11 +2701,12 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
     cell.pDirectional[2] = pDirectional[2](cellIndex, 0); 
 
     // lower velocity cell
-    cell.vx[0] = v[0](cellIndex, 0);
-    cell.vy[0] = v[1](cellIndex, 0);
-    cell.vz[0] = v[2](cellIndex, 0); 
+    Tuple3i &indicesBuffer = cell.indices; 
 
-    Tuple3i indicesBuffer = _pressureField.cellIndex(cellIndex); 
+    // lower velocity cell
+    cell.vx[0] = v[0](_velocityField[0].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
+    cell.vy[0] = v[1](_velocityField[1].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
+    cell.vz[0] = v[2](_velocityField[2].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
 
     const int xUpper = std::min<int>(indicesBuffer.x + 1, _waveSolverSettings->cellDivisions); 
     const int yUpper = std::min<int>(indicesBuffer.y + 1, _waveSolverSettings->cellDivisions); 
@@ -2893,6 +2895,7 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid::Cell &cell)
        << "Class MAC_Grid::Cell\n" 
        << "--------------------------------------------------------------------------------\n"
        << " index            : " << cell.index << "\n"
+       << " indices          : " << cell.indices.x << ", " << cell.indices.y << ", " << cell.indices.z << "\n"
        << " centroid position: " << cell.centroidPosition.x << ", " << cell.centroidPosition.y << ", " << cell.centroidPosition.z << "\n"
        << " ......................" << "\n"
        << " pDirectional     : " << cell.pDirectional[0]<< ", " << cell.pDirectional[1] << ", " << cell.pDirectional[2] << "\n"

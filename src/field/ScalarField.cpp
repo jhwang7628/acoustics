@@ -97,7 +97,6 @@ int ScalarField::cellIndex( const Tuple3i &index ) const
 Tuple3i ScalarField::cellIndex( int flatIndex ) const
 {
     Tuple3i                    index;
-
     index[ 0 ] = flatIndex / ( _divisions[ 1 ] * _divisions[ 2 ] );
 
     flatIndex -= index[ 0 ] * ( _divisions[ 1 ] * _divisions[ 2 ] );
