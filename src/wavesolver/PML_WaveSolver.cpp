@@ -12,6 +12,7 @@
 #include "PML_WaveSolver.h"
 #include "utils/Evaluator.h"
 #include "utils/STL_Wrapper.h"
+#include "utils/Conversions.h"
 
 PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const BoundingBox &bbox,
@@ -114,6 +115,12 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     //_vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), _N );
     //_vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), _N );
 
+    _pLaplacian.resizeAndWipe(_grid.numPressureCells(), _N); 
+    _pCollocated[0].resizeAndWipe(_grid.numPressureCells(), _N); 
+    _pCollocated[1].resizeAndWipe(_grid.numPressureCells(), _N); 
+    _pCollocated[2].resizeAndWipe(_grid.numPressureCells(), _N); 
+    _pCollocatedInd = 1; 
+
     _grid.initFieldRasterized( useBoundary );
     _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
     _grid.ResetCellHistory(true); // set all history to valid
@@ -192,8 +199,52 @@ void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialCo
     printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
 }
 
+void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data) 
+{
+    const int N = listeningPoints.size(); 
+    if (N==0) return; 
+
+    _writeTimer.start(); 
+    data.resize(N, 1); 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int pt_idx=0; pt_idx<N; ++pt_idx) 
+    {
+        IntArray neighbours; 
+        T_MLS mls; 
+        std::vector<MLSPoint, P_ALLOCATOR> points; 
+        std::vector<MLSVal, V_ALLOCATOR> attributes; 
+        const Vector3d &point = listeningPoints.at(pt_idx);
+        const MLSPoint evalPt = Conversions::ToEigen(point); 
+        field.enclosingNeighbours(point, neighbours); 
+        for (IntArray::iterator it=neighbours.begin(); it!=neighbours.end();)
+        {
+            if (std::isnan(scalar(*it, 0)))
+                it = neighbours.erase(it); 
+            else
+            {
+                const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it)); 
+                const MLSVal val = MLSVal(scalar(*it, 0)); 
+                points.push_back(pt); 
+                attributes.push_back(val); 
+                ++it; 
+            }
+        }
+        if (neighbours.size() < 4)
+            throw std::runtime_error("**ERROR** Interpolation error: cannot construct interpolant");
+        else
+        {
+            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+            data(pt_idx, 0) = mlsVal(0, 0);
+        }
+    }
+    _writeTimer.pause(); 
+}
+
 void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim)
 {
+#if 0
     const int N = listeningPoints.size(); 
     if (N==0) return; 
 
@@ -212,7 +263,11 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
         }
 
         if (dim == -1) 
+#ifdef USE_COLLOCATED
+            field.interpolateVectorField(listeningPoints.at(ii), _pCollocated[_pCollocatedInd], output); 
+#else
             field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+#endif
         else if (dim == 0)
             field.interpolateVectorField(listeningPoints.at(ii), _p[0], output); 
         else if (dim == 1)
@@ -221,9 +276,26 @@ void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eige
             field.interpolateVectorField(listeningPoints.at(ii), _p[2], output); 
 
         for (size_t jj=0; jj<N_resultDimension; ++jj) 
-            data(ii, jj) = output(jj);
+            if (std::isnan(output(jj)))
+                throw std::runtime_error("**ERROR** interpolation outputs nan"); 
+            else
+                data(ii, jj) = output(jj);
     }
     _writeTimer.pause(); 
+#else
+    if (dim == -1) 
+#ifdef USE_COLLOCATED
+        FetchScalarData(_pCollocated[_pCollocatedInd], _grid.pressureField(), listeningPoints, data); 
+#else
+        FetchScalarData(_pFull, _grid.pressureField(), listeningPoints, data); 
+#endif
+    else if (dim == 0)
+        FetchScalarData(_p[0], _grid.pressureField(), listeningPoints, data); 
+    else if (dim == 1)
+        FetchScalarData(_p[1], _grid.pressureField(), listeningPoints, data); 
+    else if (dim == 2)
+        FetchScalarData(_p[2], _grid.pressureField(), listeningPoints, data); 
+#endif 
 }
 
 void PML_WaveSolver::FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data)
@@ -286,18 +358,26 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
                 index = neighbours.at(nei_idx); 
             }
         }
-        data(ii, 0) = (REAL)grid.PressureCellType(index); 
+        data(ii, 0) = grid.PressureCellType(index); 
     }
 }
 
 void PML_WaveSolver::FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const 
 {
+#ifdef USE_COLLOCATED 
+    _grid.GetCell(cellIndex, _p, _pCollocated[_pCollocatedInd], _v, cell); 
+#else
     _grid.GetCell(cellIndex, _p, _pFull, _v, cell); 
+#endif
 }
 
 void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const
 {
+#ifdef USE_COLLOCATED 
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pCollocated[_pCollocatedInd], _v, sampledCells); 
+#else
     _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _v, sampledCells); 
+#endif
 }
 
 // TODO this currently produce bad results, maybe need to smooth velocity field as well
@@ -358,7 +438,11 @@ bool PML_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
 bool PML_WaveSolver::stepSystem()
 {
     _stepTimer.start();
+#ifdef USE_COLLOCATED
+    stepCollocated(); 
+#else
     stepLeapfrog();
+#endif
     _timeIndex += 1;
     _stepTimer.pause();
 
@@ -416,7 +500,11 @@ void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) co
     if ( pressure.size() != _N )
         pressure.resizeAndWipe( _N );
 
+#ifdef USE_COLLOCATED
+    MATRIX::copy( pressure.data(), _pCollocated[_pCollocatedInd].data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
+#else
     MATRIX::copy( pressure.data(), _pFull.data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
+#endif
 }
 
 void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const 
@@ -503,6 +591,35 @@ void PML_WaveSolver::stepLeapfrog()
     _currentTime += _timeStep;
 }
 
+void PML_WaveSolver::stepCollocated()
+{
+    MATRIX &pLast = _pCollocated[(_pCollocatedInd+2)%3]; 
+    MATRIX &pCurr = _pCollocated[ _pCollocatedInd     ]; 
+    MATRIX &pNext = _pCollocated[(_pCollocatedInd+1)%3]; 
+
+    // reclassify cells occupied by objects
+    _cellClassifyTimer.start(); 
+    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _cellClassifyTimer.pause(); 
+    _freshCellTimer.start(); 
+    _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
+    _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
+    _freshCellTimer.pause(); 
+    _ghostCellTimer.start(); 
+    _grid.PML_pressureUpdateGhostCells_Jacobi(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    _ghostCellTimer.pause(); 
+
+    // Use the new velocity to update pressure
+    _divergenceTimer.start();
+    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
+    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, _pLaplacian); 
+    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, _pLaplacian); 
+    _pCollocatedInd = (_pCollocatedInd + 1)%3; 
+    _divergenceTimer.pause();
+
+    _currentTime += _timeStep;
+}
+
 
 REAL PML_WaveSolver::GetMaxCFL()
 {
@@ -528,7 +645,11 @@ REAL PML_WaveSolver::GetMaxCFL()
 
 void PML_WaveSolver::PrintAllFieldExtremum()
 {
+#ifdef USE_COLLOCATED
+    _grid.PrintFieldExtremum(_pCollocated[_pCollocatedInd],"_pFull"); 
+#else
     _grid.PrintFieldExtremum(_pFull,"_pFull"); 
+#endif
     _grid.PrintFieldExtremum(_p[0],"_p[0]"); 
     _grid.PrintFieldExtremum(_p[1],"_p[1]"); 
     _grid.PrintFieldExtremum(_p[2],"_p[2]"); 

@@ -95,35 +95,10 @@ if plotting:
     colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
     lw = 2.0
     fig = plt.figure(figsize=[10, 10])
-    for ii in range(N_points): 
-        # if ii == 0 or ii == N_points-1:
-        label = '%.4f %.4f %.4f' %(listeningPositions[ii, 0], listeningPositions[ii, 1], listeningPositions[ii, 2])
-        if not logPlot:
-            plt.plot(listenedData[:,ii], label=label, color=colors[ii], linewidth=lw) 
-        else: 
-            plt.semilogy(np.multiply(listenedData[:,ii], listenedData[:,ii]), label=label, color=colors[ii], linewidth=lw) 
-        if verifyAnalytical:
-            print 'max at %u is %f' %(ii, max(analyticalListenedData[:, ii]))
-            plt.plot(analyticalListenedData[:, ii], 'x', color=colors[ii], )
-        # else:
-            # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
-    plt.legend(loc=4)
-    plt.xlabel('frame') 
-    plt.ylabel('Pressure (Pascal)')
-    plt.title('Line samples pressure time series (RAS)')
-    # plt.xlim([0, 1600])
-    plt.grid()
-    # plt.title('Monitor points for ball drop using ghost cell')
-    
     if len(sys.argv) == 5: 
         plot_index = int(sys.argv[4]) 
         data = listenedData[:, plot_index] 
-        plt.figure() 
         plt.plot(data, label=listeningPositions[plot_index, :]) 
-        plt.xlabel('frame') 
-        plt.ylabel('Pressure (Pascal)')
-        plt.xlim([0, 400])
-        plt.grid()
         if (verifyAnalytical):
             plt.plot(analyticalListenedData[:, plot_index])
               
@@ -133,6 +108,26 @@ if plotting:
         N_extract = N_steps * extractEndPercentage
         dataExtracted = data[-N_extract::]
         print 'End %.2f percent of the listened data was extracted. Its max = %f' %(extractEndPercentage*100.0, np.absolute(dataExtracted).max())
+    else:
+        for ii in range(N_points): 
+            # if ii == 0 or ii == N_points-1:
+            label = '%.4f %.4f %.4f' %(listeningPositions[ii, 0], listeningPositions[ii, 1], listeningPositions[ii, 2])
+            if not logPlot:
+                plt.plot(listenedData[:,ii], label=label, color=colors[ii], linewidth=lw) 
+            else: 
+                plt.semilogy(np.multiply(listenedData[:,ii], listenedData[:,ii]), label=label, color=colors[ii], linewidth=lw) 
+            if verifyAnalytical:
+                print 'max at %u is %f' %(ii, max(analyticalListenedData[:, ii]))
+                plt.plot(analyticalListenedData[:, ii], 'x', color=colors[ii], )
+            # else:
+                # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
+        plt.legend(loc=4)
+    plt.title('Collocated formulation with PML')
+    plt.xlabel('frame') 
+    plt.ylabel('Pressure (Pascal)')
+    plt.grid()
+    # plt.title('Monitor points for ball drop using ghost cell')
+    
 
     # # plot 1/r 
     # fig = plt.figure(figsize=[10, 10])

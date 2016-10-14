@@ -29,15 +29,15 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
-        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(anSourcePtr);
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
-        const REAL omega = 2.0*M_PI*500.0;
-        const REAL phase = 0.0;
-        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        //const REAL omega = 2.0*M_PI*500.0;
+        //const REAL phase = 0.0;
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
+        ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
         //objectPtr->TestObjectBoundaryCondition();
     }
 }

@@ -872,13 +872,6 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         {
             // 0.0: bulk cell; 1: solid cell; -1: ghost cell
             _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
-
-            // change the bulk cell so its color is better..
-            for (int r_idx=0; r_idx<data.rows(); ++r_idx)
-            {
-                if (data(r_idx, 0) < 1E-16 && data(r_idx, 0) > -1E-16)
-                    data(r_idx, 0) = 0.5; 
-            }
         } 
         else if (dataPointer == 2)
         {
@@ -1041,6 +1034,7 @@ PrintDrawOptions()
               << " Draw slice wireframe only: " << _sliceWireframe << "\n"
               << " Draw slice data pointer: " << _sliceDataPointer << "\n"
               << "\n"; 
+    std::cout << std::flush;
 }
 
 //##############################################################################

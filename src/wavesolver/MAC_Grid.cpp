@@ -128,14 +128,20 @@ void MAC_Grid::setPMLBoundaryWidth( REAL width, REAL strength )
     _PML_absorptionStrength = strength;
 }
 
-void MAC_Grid::fieldLaplacian(const ScalarField &field, const MATRIX &value, MATRIX &laplacian) const
+void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const
 {
     if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
         laplacian.resizeAndWipe(value.rows(), value.cols()); 
+    const auto &field = _pressureField; 
     const int N_cells = field.numCells(); 
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
     for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
     {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
         Tuple3i buf = cellIndices; 
         // skip if its boundary
@@ -150,6 +156,52 @@ void MAC_Grid::fieldLaplacian(const ScalarField &field, const MATRIX &value, MAT
             laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
             buf[dim] -= 2; // v_i-1
             laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+            buf[dim] += 1;
+        }
+        laplacian(cell_idx, 0) *= scale; 
+    }
+}
+
+void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const
+{
+    if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
+        laplacian.resizeAndWipe(value.rows(), value.cols()); 
+    const auto &field = _pressureField; 
+    const int N_cells = field.numCells(); 
+    const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int cell_idx=0; cell_idx<N_cells; ++cell_idx)
+    {
+        if (!_isBulkCell.at(cell_idx))
+            continue; 
+        const Tuple3i cellIndices = field.cellIndex(cell_idx); 
+        Tuple3i buf = cellIndices; 
+        int buf_i = -1; 
+        // skip if its boundary
+        if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
+            cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
+            continue; 
+        laplacian(cell_idx, 0) = -6.0*(value(cell_idx, 0)); // v_i
+        for (int dim=0; dim<3; ++dim)
+        {
+            buf[dim] += 1; // v_i+1
+            buf_i = field.cellIndex(buf); 
+            if (_isGhostCell.at(buf_i))
+                laplacian(cell_idx, 0) += ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_i)).at(dim*2)); 
+            else
+                laplacian(cell_idx, 0) += value(buf_i, 0); 
+
+            buf[dim] -= 2; // v_i-1
+            buf_i = field.cellIndex(buf); 
+            if (_isGhostCell.at(buf_i))
+                laplacian(cell_idx, 0) += ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_i)).at(dim*2+1));
+            else
+                laplacian(cell_idx, 0) += value(field.cellIndex(buf), 0); 
+
             buf[dim] += 1;
         }
         laplacian(cell_idx, 0) *= scale; 
@@ -257,7 +309,7 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
                 gcParent = _pressureField.cellIndex(leftPressureCellIndices); 
                 // get child index in ghost cell pressure array. its position
                 // in the tree depends on the boundaryDirection
-                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2 + 1); 
+                h_over_4_cell_index = _ghostCellsChildren.at(_ghostCellsInverse[gcParent]).at(dimension*2 + 1);
             }
             else if (boundaryDirection < -0.5)
             {
@@ -314,6 +366,65 @@ void MAC_Grid::PML_velocityUpdate(const MATRIX &p, const FloatArray &pGC, MATRIX
 
         }
     }
+}
+
+void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3])
+{
+    const int N_cells = _pmlVelocityCells.size(); 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int ii=0; ii<N_cells; ++ii)
+    {
+        const auto &cell = _pmlVelocityCells.at(ii);
+        const int &cell_idx = cell.index; 
+        // update velocity
+        v[cell.dimension](cell_idx, 0) *= cell.updateCoefficient; 
+        v[cell.dimension](cell_idx, 0) += cell.gradientCoefficient * pFull(cell.neighbour_p_right, 0); 
+        v[cell.dimension](cell_idx, 0) -= cell.gradientCoefficient * pFull(cell.neighbour_p_left , 0); 
+    }
+}
+
+void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &laplacian)
+{
+    const REAL &timeStep = _waveSolverSettings->timeStepSize; 
+    const REAL one_over_dx = 1.0/_waveSolverSettings->cellSize; 
+    const REAL c2_k2 = pow(_waveSolverSettings->soundSpeed*timeStep, 2); 
+    const int N_cells = _pressureField.numCells(); 
+    const int N_pmlCells = _pmlPressureCells.size(); 
+    const bool evaluateExternalSource = _objects->HasExternalPressureSources();
+      
+    // first update PML region
+    for (int ii=0; ii<N_pmlCells; ++ii)
+    {
+        const auto &cell = _pmlPressureCells.at(ii);
+        const int &cell_idx = cell.index; 
+        for (int dim=0; dim<3; ++dim)
+        {
+            pDirectional[dim](cell_idx, 0) *= cell.updateCoefficient[dim]; 
+            pDirectional[dim](cell_idx, 0) += cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_right[dim], 0) * one_over_dx;
+            pDirectional[dim](cell_idx, 0) -= cell.divergenceCoefficient[dim] * v[dim](cell.neighbour_v_left[dim] , 0) * one_over_dx;
+        }
+        pNext(cell_idx, 0) = pDirectional[0](cell_idx, 0) + pDirectional[1](cell_idx, 0) + pDirectional[2](cell_idx, 0); 
+    }
+
+    // update laplacian
+    #ifdef USE_OPENMP
+    #pragma omp parallel for schedule(static) default(shared)
+    #endif
+    for (int cell_idx = 0; cell_idx < N_cells; ++cell_idx)
+    {
+        if (!_isBulkCell.at(cell_idx) || _isPMLCell.at(cell_idx))
+            continue; 
+
+        const Vector3d cell_position = _pressureField.cellPosition( cell_idx );
+        pNext(cell_idx, 0) = pCurr(cell_idx, 0) * 2.0 - pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
+        // evaluate external sources only happens not in PML
+        // Liu Eq (16) f6x term
+        if (evaluateExternalSource)
+            pNext(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+    }
+
 }
 
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX &pFull, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )
@@ -832,7 +943,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         }
 
         // accumulate counter
+#ifdef USE_OPENMP
 #pragma omp critical
+#endif
         if (hasGC != -1)
             replacedCell ++; 
 
@@ -1309,6 +1422,10 @@ void MAC_Grid::classifyCells( bool useBoundary )
 {
     int      numPressureCells = _pressureField.numCells();
     int      numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
+    const REAL &dt = _waveSolverSettings->timeStepSize; 
+    const REAL &dx = _waveSolverSettings->cellSize; 
+    const REAL &c = _waveSolverSettings->soundSpeed; 
+    const REAL &rho = _waveSolverSettings->airDensity; 
     Vector3d cellPos;
     IntArray neighbours;
 
@@ -1323,8 +1440,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].clear();
     _isVelocityBulkCell[ 2 ].clear();
 
-    _isBulkCell.resize( numPressureCells, false );
-    _isGhostCell.resize( numPressureCells, false );
+    _isBulkCell.resize(numPressureCells, false);
+    _isGhostCell.resize(numPressureCells, false);
+    _isPMLCell.resize(numPressureCells, false); 
 
     _isVelocityInterfacialCell[ 0 ].resize( numVcells[ 0 ], false );
     _isVelocityInterfacialCell[ 1 ].resize( numVcells[ 1 ], false );
@@ -1333,7 +1451,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isVelocityBulkCell[ 1 ].resize( numVcells[ 1 ], false );
     _isVelocityBulkCell[ 2 ].resize( numVcells[ 2 ], false );
 
-    _pmlCells.clear(); 
     _ghostCells.clear();
 
     _velocityInterfacialCells[ 0 ].clear();
@@ -1352,6 +1469,9 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
     _containingObject.clear(); 
     _containingObject.resize(numPressureCells, -1);
+
+    _pmlPressureCells.clear(); 
+    _pmlVelocityCells.clear(); 
 
     if ( !useBoundary )
     {
@@ -1389,6 +1509,35 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 _containingObject[ cell_idx ] = field_idx;
                 break;
             }
+        }
+
+        // classify and cache pml parameters
+        const int pmlDirection = InsidePML(cellPos, _PML_absorptionWidth); 
+        if (pmlDirection >= 0)
+        {
+            PML_PressureCell cell; 
+            cell.index = cell_idx; 
+            REAL maxAbsorptionCoefficient = std::numeric_limits<REAL>::min(); 
+            for (int dim=0; dim<3; ++dim)
+            {
+                //const int &dim = pmlDirection; 
+                //cell.dimension = dim;
+                const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, dim); 
+                maxAbsorptionCoefficient = std::max<REAL>(maxAbsorptionCoefficient, absorptionCoefficient); 
+                const REAL directionalCoefficient = PML_directionalCoefficient(absorptionCoefficient, dt);
+                cell.updateCoefficient[dim] = PML_pressureUpdateCoefficient(absorptionCoefficient, dt, directionalCoefficient);
+                cell.divergenceCoefficient[dim] = PML_divergenceCoefficient(rho, c, directionalCoefficient); 
+
+                // figure out neighbours
+                Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+                cell.neighbour_v_left[dim] = _velocityField[dim].cellIndex(cellIndices); 
+                cellIndices[dim] += 1;
+                cell.neighbour_v_right[dim] = _velocityField[dim].cellIndex(cellIndices); 
+            }
+            
+            cell.absorptionCoefficient = maxAbsorptionCoefficient; 
+            _pmlPressureCells.push_back(cell); 
+            _isPMLCell.at(cell_idx) = true; 
         }
     }
 
@@ -1430,6 +1579,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
             Tuple3i                cell_coordinates;
             int                    pressure_cell_idx1;
             int                    pressure_cell_idx2;
+            const Vector3d cellPosition = _velocityField[dimension].cellPosition(cell_idx);
 
             cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
 
@@ -1475,8 +1625,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // Determine a scaling coefficient based on the angle between
                 // the boundary normal and the rasterized boundary normal
                 Vector3d normal( 0.0, 0.0, 0.0 );
-                Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient(cellPosition);
 
                 normal[ dimension ] = 1.0;
                 gradient.normalize();
@@ -1486,7 +1635,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-
 
             }
             else if ( !_isBulkCell[ pressure_cell_idx1 ]
@@ -1508,8 +1656,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 // Determine a scaling coefficient based on the angle between
                 // the boundary normal and the rasterized boundary normal
                 Vector3d normal( 0.0, 0.0, 0.0 );
-                Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
-                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient( position );
+                Vector3d gradient = _boundaryFields[ boundaryObject ]->gradient(cellPosition);
 
                 normal[ dimension ] = 1.0;
                 gradient.normalize();
@@ -1519,20 +1666,41 @@ void MAC_Grid::classifyCells( bool useBoundary )
                 //TRACE_ASSERT( coefficient >= 0.0 );
 
                 _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+            }
 
+            if (InsidePML(cellPosition, _PML_absorptionWidth) >= 0)
+            {
+                const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPosition, _PML_absorptionWidth, dimension); 
+                const REAL updateCoefficient = PML_velocityUpdateCoefficient(absorptionCoefficient, dt);
+                const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, dt, dx, rho);
+                PML_VelocityCell cell; 
+                cell.index = cell_idx; 
+                cell.dimension = dimension; 
+                cell.updateCoefficient = updateCoefficient; 
+                cell.gradientCoefficient = gradientCoefficient; 
+
+                // figure out neighbours
+                Tuple3i cellIndices = _velocityField[dimension].cellIndex(cell_idx); 
+                cell.neighbour_p_right = _pressureField.cellIndex(cellIndices); 
+                cellIndices[dimension] -= 1;
+                cell.neighbour_p_left  = _pressureField.cellIndex(cellIndices); 
+                if      ( _isPMLCell.at(cell.neighbour_p_right) &&  _isPMLCell.at(cell.neighbour_p_left)) cell.neighbourInterior =  0; 
+                else if ( _isPMLCell.at(cell.neighbour_p_right) && !_isPMLCell.at(cell.neighbour_p_left)) cell.neighbourInterior = -1; 
+                else if (!_isPMLCell.at(cell.neighbour_p_right) &&  _isPMLCell.at(cell.neighbour_p_left)) cell.neighbourInterior =  1; 
+                else throw std::runtime_error("**ERROR** both pressure neighbours are not pml, this should not happen"); 
+
+                _pmlVelocityCells.push_back(cell);
             }
         }
     }
 
-
     printf( "MAC_Grid: classifyCells:\n" );
     printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
-    printf( "\tFound %d v_x interfacial cells\n",
-            (int)_velocityInterfacialCells[ 0 ].size() );
-    printf( "\tFound %d v_y interfacial cells\n",
-            (int)_velocityInterfacialCells[ 1 ].size() );
-    printf( "\tFound %d v_z interfacial cells\n",
-            (int)_velocityInterfacialCells[ 2 ].size() );
+    printf( "\tFound %d v_x interfacial cells\n", (int)_velocityInterfacialCells[ 0 ].size() );
+    printf( "\tFound %d v_y interfacial cells\n", (int)_velocityInterfacialCells[ 1 ].size() );
+    printf( "\tFound %d v_z interfacial cells\n", (int)_velocityInterfacialCells[ 2 ].size() );
+    printf( "\tFound %d pml pressure cells\n", (int)_pmlPressureCells.size() );
+    printf( "\tFound %d pml velocity cells\n", (int)_pmlVelocityCells.size() );
 
     if (_useGhostCellBoundary)
     {
@@ -2084,7 +2252,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     const int ghostCellIndex = pGCFull.size(); 
                     _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
                     Vector3d ghostCellPosition = position;
-                    ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
+                    //ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
 
                     _ghostCellParents.push_back(pressure_cell_idx2);
                     _ghostCellPositions.push_back(ghostCellPosition); 
@@ -2134,7 +2302,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     const int ghostCellIndex = pGCFull.size(); 
                     _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
                     Vector3d ghostCellPosition = position;
-                    ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
+                    //ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
                     _ghostCellParents.push_back(pressure_cell_idx1);
                     _ghostCellPositions.push_back(ghostCellPosition); 
                     _ghostCellBoundaryIDs.push_back(boundaryObject); 
@@ -2329,10 +2497,13 @@ void MAC_Grid::ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResid
     maxResidual = residual.maxCoeff(); 
 }
 
-int MAC_Grid::PressureCellType(const int &idx)
+REAL MAC_Grid::PressureCellType(const int &idx)
 {
+    if (_isPMLCell.at(idx))
+        return -0.5; 
+
     if (_isBulkCell.at(idx)) // bulk
-        return 0;  
+        return 0.5;  
     else if (!_isBulkCell.at(idx) && !_isGhostCell.at(idx)) // solid
         return 1; 
     else  // ghost
@@ -2364,8 +2535,45 @@ void MAC_Grid::visualizeClassifiedCells()
     of2.close();
 }
 
+//##############################################################################
+// Return PML dimension
+//##############################################################################
+int MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
+{
+    const int &preset = _waveSolverSettings->boundaryConditionPreset; 
+    const BoundingBox &bbox = _pressureField.bbox();
+    const REAL pmlWidth = absorptionWidth + _waveSolverSettings->cellSize * 0.10; // add buffer for detection
+
+    for (int dimension=0; dimension<3; ++dimension)
+    {
+        const REAL hMin = x[ dimension ] - bbox.minBound()[ dimension ];
+        const REAL hMax = bbox.maxBound()[ dimension ] - x[ dimension ];
+        switch (preset)
+        {
+            case 0: // no wall
+                if (hMin <= pmlWidth)
+                    return dimension; 
+                else if (hMax <= pmlWidth)
+                    return dimension; 
+                break; 
+            case 1: // wall on +x, +y, +z
+                if (hMin <= pmlWidth)
+                    return dimension; 
+                break; 
+            case 2: 
+                if (dimension == 2 && hMax <= pmlWidth)
+                    return dimension; 
+                break; 
+            default: 
+                break; 
+        }
+    }
+    return -1;
+}
+
 REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension )
 {
+#if 1
     const int &preset = _waveSolverSettings->boundaryConditionPreset; 
     const BoundingBox &bbox = _pressureField.bbox();
     const REAL hMin = x[ dimension ] - bbox.minBound()[ dimension ];
@@ -2400,6 +2608,41 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
             break; 
     }
     return 0.0;
+#else // linear profile
+    const int &preset = _waveSolverSettings->boundaryConditionPreset; 
+    const BoundingBox &bbox = _pressureField.bbox();
+    const REAL hMin = x[ dimension ] - bbox.minBound()[ dimension ];
+    const REAL hMax = bbox.maxBound()[ dimension ] - x[ dimension ];
+    const REAL distMin = absorptionWidth - hMin; 
+    const REAL distMax = absorptionWidth - hMax; 
+
+    switch (preset)
+    {
+        case 0: // no wall
+            if (hMin <= absorptionWidth)
+                return _PML_absorptionStrength * distMin / absorptionWidth; 
+            else if (hMax <= absorptionWidth)
+                return _PML_absorptionStrength * distMax / absorptionWidth; 
+            else 
+                return 0.0;
+            break; 
+        case 1: // wall on +x, +y, +z
+            if (hMin <= absorptionWidth)
+                return _PML_absorptionStrength * distMin / absorptionWidth; 
+            else 
+                return 0.0;
+            break; 
+        case 2: 
+            if (dimension != 2 || hMin <= absorptionWidth) // wall on all but +z
+                return 0.0; 
+            else if (dimension == 2 && hMax <= absorptionWidth)
+                return _PML_absorptionStrength * distMax / absorptionWidth; 
+            break; 
+        default: 
+            break; 
+    }
+    return 0.0;
+#endif
 }
 
 void MAC_Grid::FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal)
@@ -2447,6 +2690,7 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
 void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const
 {
     cell.index = cellIndex; 
+    cell.indices = _pressureField.cellIndex(cellIndex); 
     cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
     cell.lowerCorner = cell.centroidPosition - _waveSolverSettings->cellSize/2.0; 
     cell.upperCorner = cell.centroidPosition + _waveSolverSettings->cellSize/2.0; 
@@ -2457,11 +2701,12 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
     cell.pDirectional[2] = pDirectional[2](cellIndex, 0); 
 
     // lower velocity cell
-    cell.vx[0] = v[0](cellIndex, 0);
-    cell.vy[0] = v[1](cellIndex, 0);
-    cell.vz[0] = v[2](cellIndex, 0); 
+    Tuple3i &indicesBuffer = cell.indices; 
 
-    Tuple3i indicesBuffer = _pressureField.cellIndex(cellIndex); 
+    // lower velocity cell
+    cell.vx[0] = v[0](_velocityField[0].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
+    cell.vy[0] = v[1](_velocityField[1].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
+    cell.vz[0] = v[2](_velocityField[2].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
 
     const int xUpper = std::min<int>(indicesBuffer.x + 1, _waveSolverSettings->cellDivisions); 
     const int yUpper = std::min<int>(indicesBuffer.y + 1, _waveSolverSettings->cellDivisions); 
@@ -2586,7 +2831,9 @@ void MAC_Grid::ToFile_GhostCellCoupledMatrix(const std::string &filename)
     if (!_waveSolverSettings->useGhostCell)
         return; 
 
+#ifdef USE_OPENMP
 #pragma omp critical
+#endif
     {
         std::ofstream of(filename.c_str()); 
         const int N_ghostCells = _ghostCellCoupledData.size(); 
@@ -2648,6 +2895,7 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid::Cell &cell)
        << "Class MAC_Grid::Cell\n" 
        << "--------------------------------------------------------------------------------\n"
        << " index            : " << cell.index << "\n"
+       << " indices          : " << cell.indices.x << ", " << cell.indices.y << ", " << cell.indices.z << "\n"
        << " centroid position: " << cell.centroidPosition.x << ", " << cell.centroidPosition.y << ", " << cell.centroidPosition.z << "\n"
        << " ......................" << "\n"
        << " pDirectional     : " << cell.pDirectional[0]<< ", " << cell.pDirectional[1] << ", " << cell.pDirectional[2] << "\n"

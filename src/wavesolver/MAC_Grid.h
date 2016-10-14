@@ -47,6 +47,7 @@ class MAC_Grid
         {
             public: 
                 int         index = -1; 
+                Tuple3i     indices; 
                 Vector3d    centroidPosition; 
                 Vector3d    lowerCorner; 
                 Vector3d    upperCorner; 
@@ -80,6 +81,27 @@ class MAC_Grid
             REAL                RHS; 
         };
 
+        struct PML_PressureCell
+        {
+            int index; 
+            int neighbour_v_left[3];
+            int neighbour_v_right[3];
+            REAL updateCoefficient[3]; 
+            REAL divergenceCoefficient[3]; 
+            REAL absorptionCoefficient; 
+        };
+
+        struct PML_VelocityCell
+        {
+            int index; 
+            int dimension; 
+            int neighbourInterior; // 0: no; 1: right is interior; -1: left is interior
+            int neighbour_p_left;
+            int neighbour_p_right;
+            REAL updateCoefficient; 
+            REAL gradientCoefficient; 
+        }; 
+
     private: 
         std::vector<const DistanceField *>   _boundaryFields;
         std::vector<const TriMesh *>         _boundaryMeshes;
@@ -93,6 +115,7 @@ class MAC_Grid
         // isBulkCell and isGhostCell refer to cells in the pressure grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
+        BoolArray                _isPMLCell;
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
@@ -100,7 +123,9 @@ class MAC_Grid
         BoolArray                _isVelocityBulkCell[ 3 ];
         BoolArray                _isVelocityInterfacialCell[ 3 ];
 
-        IntArray                 _pmlCells;  // TODO
+
+        std::vector<PML_PressureCell> _pmlPressureCells; 
+        std::vector<PML_VelocityCell> _pmlVelocityCells; 
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
 
@@ -167,14 +192,17 @@ class MAC_Grid
         // Width is the number of cells we wish to absorb in
         void setPMLBoundaryWidth( REAL width, REAL strength );
 
-
-        void fieldLaplacian(const ScalarField &field, const MATRIX &value, MATRIX &laplacian) const; 
+        void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
+        void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const; 
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
         void PML_velocityUpdate( const MATRIX &p, const FloatArray &pGC, 
                                  MATRIX &v, int dimension,
                                  REAL t, REAL timeStep, REAL density);
+
+        void PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3]); 
+        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext, MATRIX &laplacian);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
@@ -249,7 +277,7 @@ class MAC_Grid
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
-        int PressureCellType(const int &idx);
+        REAL PressureCellType(const int &idx);
         void ResetCellHistory(const bool &valid); 
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const; 
 
@@ -263,6 +291,8 @@ class MAC_Grid
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
+
+        int InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
