@@ -11,9 +11,10 @@
     </integrator>
 
     <bsdf type="diffuse" id="wood">
-        <texture name="reflectance" type="bitmap">
+        <spectrum name="reflectance" value="0.2 0.2 0.2"/>
+        <!--<texture name="reflectance" type="bitmap">
             <string name="filename" value="assets/wood.jpg"/>
-        </texture>
+        </texture>-->
     </bsdf>
     <bsdf type="roughconductor" id="sphere">
         <string name="material" value="Al"/>

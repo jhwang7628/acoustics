@@ -20,8 +20,8 @@ for f in files:
     localData['signal'] = d
     data.append(localData)
 
-N_plot = 7
-plt.figure()
+N_plot = 5
+plt.figure(figsize=[10, 2*N_plot])
 for d in range(N_plot):
     filename = data[d]['name']
     if filename.find('synthesized') != -1: 
