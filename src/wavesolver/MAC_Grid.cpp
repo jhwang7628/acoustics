@@ -2542,6 +2542,7 @@ int MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
 {
     const int &preset = _waveSolverSettings->boundaryConditionPreset; 
     const BoundingBox &bbox = _pressureField.bbox();
+    const REAL pmlWidth = absorptionWidth + _waveSolverSettings->cellSize * 0.10; // add buffer for detection
 
     for (int dimension=0; dimension<3; ++dimension)
     {
@@ -2550,17 +2551,17 @@ int MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
         switch (preset)
         {
             case 0: // no wall
-                if (hMin <= absorptionWidth)
+                if (hMin <= pmlWidth)
                     return dimension; 
-                else if (hMax <= absorptionWidth)
+                else if (hMax <= pmlWidth)
                     return dimension; 
                 break; 
             case 1: // wall on +x, +y, +z
-                if (hMin <= absorptionWidth)
+                if (hMin <= pmlWidth)
                     return dimension; 
                 break; 
             case 2: 
-                if (dimension == 2 && hMax <= absorptionWidth)
+                if (dimension == 2 && hMax <= pmlWidth)
                     return dimension; 
                 break; 
             default: 
