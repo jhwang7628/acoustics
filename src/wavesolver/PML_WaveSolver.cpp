@@ -600,8 +600,8 @@ void PML_WaveSolver::stepCollocated()
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
-    _freshCellTimer.pause(); 
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
+    _freshCellTimer.pause(); 
     _ghostCellTimer.start(); 
     _grid.PML_pressureUpdateGhostCells_Jacobi(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _ghostCellTimer.pause(); 
