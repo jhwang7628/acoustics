@@ -438,8 +438,11 @@ bool PML_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
 bool PML_WaveSolver::stepSystem()
 {
     _stepTimer.start();
-    //stepLeapfrog();
+#ifdef USE_COLLOCATED
     stepCollocated(); 
+#else
+    stepLeapfrog();
+#endif
     _timeIndex += 1;
     _stepTimer.pause();
 
