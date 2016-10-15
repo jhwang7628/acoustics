@@ -33,6 +33,7 @@ Initialize(const bool &buildFromTetMesh)
             //_mesh.reset(new TriangleMesh<REAL>()); 
             tetMesh->extract_surface(_mesh.get()); 
             _mesh->generate_normals(); 
+            _mesh->generate_mean_curvatures(); 
             _mesh->update_vertex_areas(); 
             _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
             _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
@@ -83,7 +84,10 @@ Initialize(const bool &buildFromTetMesh)
         _mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
         //_mesh.reset(new TriangleMesh<REAL>());
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
+        {
             _mesh->generate_normals(); 
+            _mesh->generate_mean_curvatures(); 
+        }
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
 
