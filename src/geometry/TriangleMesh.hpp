@@ -39,6 +39,10 @@
 #   include <unordered_map>
 #endif
 
+#ifdef USE_GTS
+#   include <geometry/GTS_TriMesh.h> 
+#endif
+
 #include "Triangle.hpp"
 #include "Point3.hpp"
 #include "linearalgebra/Vector3.hpp"
@@ -129,6 +133,9 @@ class TriangleMesh
         const std::valarray<T>& vertex_areas() const
         {  return m_vtxAreas; }
 
+        const std::vector<T>& mean_curvatures() const 
+        { return m_vtxMeanCurvatures; } 
+
 #ifdef DIFF_DEFINE
         const Tuple3ui& triangle_ids(int tid) const
         {
@@ -157,9 +164,20 @@ class TriangleMesh
         }
 
 #endif /* DIFF_DEFINE */
+
+        T mean_curvature(const int &vid) const
+        {
+            return m_vtxMeanCurvatures.at(vid); 
+        }
+
         bool has_normals() const 
         {
             return !m_normals.empty() && m_vertices.size() == m_normals.size();
+        }
+
+        bool has_curvatures() const 
+        {
+            return m_vtxMeanCurvatures.size() == m_vertices.size(); 
         }
 
         bool empty() const 
@@ -177,6 +195,7 @@ class TriangleMesh
 
 #endif /* DIFF_DEFINE */
         void generate_normals();
+        void generate_mean_curvatures();
         Vector3<T> triangle_normal(const int &triangle_idx) const; 
 #ifndef DIFF_DEFINE
         //! save the current mesh to a file
@@ -228,6 +247,8 @@ class TriangleMesh
         std::vector< Vector3<T> >   m_normals;
         std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
         std::valarray<T>            m_vtxAreas;     // area of each triangles
+
+        std::vector<T>              m_vtxMeanCurvatures;
 };
 
 template <typename T>
@@ -435,6 +456,21 @@ void TriangleMesh<T>::generate_normals()
         m_normals[i].normalize();
         m_vtxAreas[i] *= alpha;
     }
+}
+
+template <typename T> 
+void TriangleMesh<T>::generate_mean_curvatures()
+{
+#ifdef USE_GTS
+    GTS_TriMesh gtsMesh(*this); 
+    gtsMesh.precomputeMeanCurvatures(); 
+    const int N_vertices = m_vertices.size(); 
+    m_vtxMeanCurvatures.resize(N_vertices); 
+    for (int i=0; i<N_vertices; ++i) 
+        m_vtxMeanCurvatures.at(i) = gtsMesh.sampleMeanCurvature(i); 
+#else
+    throw std::runtime_error("**ERROR** Mesh mean curvature not supported without GTS library"); 
+#endif
 }
 
 template <typename T>

@@ -8,11 +8,11 @@
 
 #include <TYPES.h>
 
-#include "TriangleMesh.hpp"
-
 #include <linearalgebra/Vector3.hpp>
 
 #include <gts.h>
+
+template<typename T> class TriangleMesh;
 
 //////////////////////////////////////////////////////////////////////
 // GTS_TriMesh class
@@ -36,6 +36,10 @@ class GTS_TriMesh {
         // curvatures have been precomputed
         REAL       meanCurvature( int triangle_idx,
                                   const Vector3d &barycentricPosition ) const;
+
+        // Samples mean curvature on a vertex: assumes that mean 
+        // curvatures have been precomputed
+        REAL       sampleMeanCurvature(const int &vertex_id) const;
 
         // Gets all curvature information at once at a vertex
         void       allCurvatures( int vertex_idx,
