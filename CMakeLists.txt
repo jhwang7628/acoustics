@@ -162,6 +162,7 @@ if ( USE_GTS )
 
     # GTS requires GLIB
     find_package(GLIB 2.4 REQUIRED)
+    add_definitions(-DUSE_GTS)
 endif ( USE_GTS )
 
 if ( USE_CGAL )
