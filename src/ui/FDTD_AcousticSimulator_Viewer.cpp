@@ -213,9 +213,7 @@ DrawMesh()
                 maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
                 minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
             }
-            //curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature); 
-            curvatureColorMap->set_interpolation_range(18., 22.);  // FIXME debug
-            std::cout << minCurvature << " " << maxCurvature << std::endl;
+            curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature); 
         }
 
         // draw triangles

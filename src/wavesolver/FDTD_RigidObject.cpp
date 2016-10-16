@@ -33,7 +33,6 @@ Initialize(const bool &buildFromTetMesh)
             //_mesh.reset(new TriangleMesh<REAL>()); 
             tetMesh->extract_surface(_mesh.get()); 
             _mesh->generate_normals(); 
-            _mesh->generate_mean_curvatures(); 
             _mesh->update_vertex_areas(); 
             _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
             _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
@@ -86,7 +85,6 @@ Initialize(const bool &buildFromTetMesh)
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
         {
             _mesh->generate_normals(); 
-            _mesh->generate_mean_curvatures(); 
         }
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
@@ -114,12 +112,24 @@ Initialize(const bool &buildFromTetMesh)
 
     // compute mesh centroid in object space and cache it 
     _meshObjectCentroid = _mesh->ComputeCentroid(); 
+    _mesh->generate_mean_curvatures(); 
+
+    // get curvatures info
+    const int N_vertices = _mesh->vertices().size(); 
+    const std::vector<REAL> *meanCurvatures = _mesh->mean_curvatures();
+    REAL maxCurvature = std::numeric_limits<REAL>::min(); 
+    REAL minCurvature = std::numeric_limits<REAL>::max(); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
+        minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
+    }
 
     std::cout << "Read in TriangleMesh: \n"
-              << " name:       " << GetMeshName() << "\n"
-              << " #vertices:  " << _mesh->num_vertices() << "\n"
-              << " #triangles: " << _mesh->num_triangles() << "\n";
-
+              << " Name           : " << GetMeshName() << "\n"
+              << " Num vertices   : " << _mesh->num_vertices() << "\n"
+              << " Num triangles  : " << _mesh->num_triangles() << "\n"
+              << " Curvature range: [" << minCurvature << ", " << maxCurvature  << "] " << std::endl;
 
     // build kd-tree for query
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(_mesh)->BuildKDTree(); 

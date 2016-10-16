@@ -502,7 +502,6 @@ void TriangleMesh<T>::generate_mean_curvatures()
     // compute mean curvature
     igl::principal_curvature<T_POS, T_IND, T_POS, T_POS, T_POS, T_POS>(V, F, PD1, PD2, PV1, PV2);
     PV1 = (PV1 + PV2)/2.0; // PV1 is now mean curvature
-    std::cout << "Curvature range: [" << PV1.minCoeff() << ", " << PV1.maxCoeff()  << "] " << std::endl;
 
     // copy the data
     m_vtxMeanCurvatures.resize(N_v); 
