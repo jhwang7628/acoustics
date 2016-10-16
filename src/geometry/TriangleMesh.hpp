@@ -31,6 +31,9 @@
 #ifdef DIFF_DEFINE
 #include <limits>
 #include <set>
+#include <igl/cotmatrix.h>
+#include <igl/principal_curvature.h>
+#include <Eigen/Dense> 
 #endif /* DIFF_DEFINE */
 
 #ifdef USE_HASH_MAP
@@ -250,7 +253,6 @@ class TriangleMesh
         std::vector< Vector3<T> >   m_normals;
         std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
         std::valarray<T>            m_vtxAreas;     // area of each triangles
-
         std::vector<T>              m_vtxMeanCurvatures;
 };
 
@@ -464,15 +466,51 @@ void TriangleMesh<T>::generate_normals()
 template <typename T> 
 void TriangleMesh<T>::generate_mean_curvatures()
 {
-#ifdef USE_GTS
+#if 0 // GTS based curvature
     GTS_TriMesh gtsMesh(*this); 
     gtsMesh.precomputeMeanCurvatures(); 
     const int N_vertices = m_vertices.size(); 
     m_vtxMeanCurvatures.resize(N_vertices); 
     for (int i=0; i<N_vertices; ++i) 
         m_vtxMeanCurvatures.at(i) = gtsMesh.sampleMeanCurvature(i); 
+#endif
+
+#ifdef USE_IGL
+    typedef Eigen::MatrixXd T_POS;
+    typedef Eigen::MatrixXi T_IND;
+    T_POS V, PD1, PD2, PV1, PV2;
+    T_IND F;
+
+    // copy the data
+    const int N_v = m_vertices.size(); 
+    const int N_t = m_triangles.size(); 
+    V.resize(N_v, 3); 
+    F.resize(N_t, 3); 
+    for (int v_idx=0; v_idx<N_v; ++v_idx) 
+    {
+        V(v_idx, 0) = m_vertices.at(v_idx)[0];  
+        V(v_idx, 1) = m_vertices.at(v_idx)[1];  
+        V(v_idx, 2) = m_vertices.at(v_idx)[2];  
+    } 
+    for (int t_idx=0; t_idx<N_t; ++t_idx) 
+    {
+        F(t_idx, 0) = m_triangles.at(t_idx)[0];  
+        F(t_idx, 1) = m_triangles.at(t_idx)[1];  
+        F(t_idx, 2) = m_triangles.at(t_idx)[2];  
+    }
+
+    // compute mean curvature
+    igl::principal_curvature<T_POS, T_IND, T_POS, T_POS, T_POS, T_POS>(V, F, PD1, PD2, PV1, PV2);
+    PV1 = (PV1 + PV2)/2.0; // PV1 is now mean curvature
+    std::cout << "Curvature range: [" << PV1.minCoeff() << ", " << PV1.maxCoeff()  << "] " << std::endl;
+
+    // copy the data
+    m_vtxMeanCurvatures.resize(N_v); 
+    for (int v_idx=0; v_idx<N_v; ++v_idx)
+        m_vtxMeanCurvatures.at(v_idx) = PV1(v_idx, 0);
+
 #else
-    throw std::runtime_error("**ERROR** Mesh mean curvature not supported without GTS library"); 
+    throw std::runtime_error("**ERROR** Mesh mean curvature not supported without IGL library"); 
 #endif
 }
 
