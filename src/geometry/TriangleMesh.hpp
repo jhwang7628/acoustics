@@ -136,6 +136,9 @@ class TriangleMesh
         const std::vector<T>& mean_curvatures() const 
         { return m_vtxMeanCurvatures; } 
 
+        std::vector<T> *mean_curvatures()
+        { return &m_vtxMeanCurvatures; } 
+
 #ifdef DIFF_DEFINE
         const Tuple3ui& triangle_ids(int tid) const
         {
