@@ -13,6 +13,7 @@ This project uses a number of open source projects to work properly. The followi
 ### Optional packages: 
 * [Paraview](http://www.paraview.org/) - For postprocessing purpose. 
 * [VLFeat](http://www.vlfeat.org/index.html) - For faster NN lookup in the TriangleMeshKDTree class. This class is only available if the flag `USE_VLFEAT` is on. As a result, this is an optional package. If CMake cannot locate this library and an error is thrown, set environmental variable `VLFEAT_ROOT` to the install directory. For example, on Linux, do `export VLFEAT_ROOT=/home/<name>/opt/src/vlfeat-0.9.20`.
+* [libigl](https://github.com/libigl/libigl) - Libigl is used to replace GTS on computing mesh curvature, since it was found that GTS might fail when computing mean curvatures on tet extracted mesh (used for acceleration noise). This is a header-only package, if cmake cannot locate it then set environmental variable `LIBIGL_ROOT` to the install directory that contains `libigl/include` directory. For example, do `export LIBIGL_ROOT=/home/<name>/opt`. 
 
 ## Build Directions:
 Create build directory within source directory and configure cmake

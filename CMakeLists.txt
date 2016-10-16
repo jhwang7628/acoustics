@@ -26,6 +26,7 @@ option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
 option(USE_CUDA "Use CUDA" OFF)
 option(USE_VLFEAT "Use VLFeat for KNN" ON)
 option(USE_BOOST "Use Boost" ON)
+option(USE_IGL "Use IGL" ON) 
 
 # Options for building individual tools
 option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
@@ -197,6 +198,12 @@ if (USE_VLFEAT)
     add_definitions(-DUSE_VLFeat)
     include_directories(${VLFEAT_INCLUDE_DIR})
 endif (USE_VLFEAT)
+
+if (USE_IGL)
+    find_package(IGL REQUIRED)
+    add_definitions(-DUSE_IGL)
+    include_directories(${IGL_INCLUDE_DIR}) 
+endif (USE_IGL)
 
 # check if we're using Intel's compiler
 if ( CMAKE_CXX_COMPILER MATCHES ".*icpc$" )
