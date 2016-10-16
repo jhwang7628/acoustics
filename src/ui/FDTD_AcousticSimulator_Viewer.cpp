@@ -151,11 +151,6 @@ DrawMesh()
     const int N_objects = rigidSoundObjects.size(); 
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
     {
-        bool isDrawModes = false; 
-        //bool isDrawModes = true;
-        //if (_drawModes < 0 || _vertexValues.size() == 0) 
-        //    isDrawModes = false;
-
         // draw rigid sound object mesh
         auto &object = rigidSoundObjects.at(obj_idx); 
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
@@ -163,6 +158,7 @@ DrawMesh()
         const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
         const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
         const int N_triangles = triangles.size(); 
+        const int N_vertices = vertices.size(); 
         const REAL offsetEpsilon = 1E-5;
 
         // get transformations
@@ -204,6 +200,24 @@ DrawMesh()
             glEnd(); 
         }
 
+        // get curvatures 
+        const std::vector<REAL> *meanCurvatures = (_meshDataPointer==1 ? meshPtr->mean_curvatures() : nullptr);
+        std::shared_ptr<ColorMap> curvatureColorMap; 
+        if (meanCurvatures) 
+        {
+            curvatureColorMap = std::make_shared<JetColorMap>();
+            REAL maxCurvature = std::numeric_limits<REAL>::min(); 
+            REAL minCurvature = std::numeric_limits<REAL>::max(); 
+            for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+            {
+                maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
+                minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
+            }
+            //curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature); 
+            curvatureColorMap->set_interpolation_range(18., 22.);  // FIXME debug
+            std::cout << minCurvature << " " << maxCurvature << std::endl;
+        }
+
         // draw triangles
         glEnable(GL_LIGHTING);
         if (_wireframe == 0 || _wireframe == 2)
@@ -220,25 +234,31 @@ DrawMesh()
                 const Vector3<REAL> &nx = normals.at(triangle.x); 
                 const Vector3<REAL> &ny = normals.at(triangle.y); 
                 const Vector3<REAL> &nz = normals.at(triangle.z); 
-                if (isDrawModes)
-                {
-                    //const REAL xValue = _vertexValues(triangle.x);
-                    //const REAL yValue = _vertexValues(triangle.y);
-                    //const REAL zValue = _vertexValues(triangle.z);
-                    //glColor3f(xValue, 0, -xValue);
-                    //glVertex3f(x.x, x.y, x.z); 
-                    //glColor3f(yValue, 0, -xValue);
-                    //glVertex3f(y.x, y.y, y.z); 
-                    //glColor3f(zValue, 0, -xValue);
-                    //glVertex3f(z.x, z.y, z.z); 
-                }
-                else
+                if (_meshDataPointer == 0)
                 {
                     glNormal3f(nx.x, nx.y, nx.z); 
                     glVertex3f(x.x, x.y, x.z); 
                     glNormal3f(ny.x, ny.y, ny.z); 
                     glVertex3f(y.x, y.y, y.z); 
                     glNormal3f(nz.x, nz.y, nz.z); 
+                    glVertex3f(z.x, z.y, z.z); 
+                }
+                else
+                {
+                    const REAL xCurvature = meanCurvatures->at(triangle.x);
+                    const REAL yCurvature = meanCurvatures->at(triangle.y);
+                    const REAL zCurvature = meanCurvatures->at(triangle.z);
+                    const Tuple3f cx = curvatureColorMap->get_interpolated_color(xCurvature); 
+                    const Tuple3f cy = curvatureColorMap->get_interpolated_color(yCurvature); 
+                    const Tuple3f cz = curvatureColorMap->get_interpolated_color(zCurvature); 
+                    glNormal3f(nx.x, nx.y, nx.z); 
+                    glColor3f(cx.x, cx.y, cx.z);
+                    glVertex3f(x.x, x.y, x.z); 
+                    glNormal3f(ny.x, ny.y, ny.z); 
+                    glColor3f(cy.x, cy.y, cy.z);
+                    glVertex3f(y.x, y.y, y.z); 
+                    glNormal3f(nz.x, nz.y, nz.z); 
+                    glColor3f(cz.x, cz.y, cz.z);
                     glVertex3f(z.x, z.y, z.z); 
                 }
             }

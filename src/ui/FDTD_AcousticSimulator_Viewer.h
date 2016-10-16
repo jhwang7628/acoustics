@@ -48,6 +48,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                         _sliceDivision = 80; 
         bool                        _fixedSliceColorMapRange = false; 
 
+        int                         _meshDataPointer = 1; // 0: nothing; 1: curvature
+
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;
         int             _bemModePointer = 0; 
