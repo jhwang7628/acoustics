@@ -1011,7 +1011,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 #endif
 
     // solve the linear system
-    const int maxIteration = 200;
+    const int maxIteration = GHOST_CELL_JACOBI_MAX_ITERATION;
     const int N_coupled = coupledIndices.size(); 
     FloatArray pGC_old; 
     REAL minResidual, maxResidual, maxOffDiagonal, oldResidual = -1; 
