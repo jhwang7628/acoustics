@@ -13,7 +13,17 @@ This project uses a number of open source projects to work properly. The followi
 ### Optional packages: 
 * [Paraview](http://www.paraview.org/) - For postprocessing purpose. 
 * [VLFeat](http://www.vlfeat.org/index.html) - For faster NN lookup in the TriangleMeshKDTree class. This class is only available if the flag `USE_VLFEAT` is on. As a result, this is an optional package. If CMake cannot locate this library and an error is thrown, set environmental variable `VLFEAT_ROOT` to the install directory. For example, on Linux, do `export VLFEAT_ROOT=/home/<name>/opt/src/vlfeat-0.9.20`.
-* [libigl](https://github.com/libigl/libigl) - Libigl is used to replace GTS on computing mesh curvature, since it was found that GTS might fail when computing mean curvatures on tet extracted mesh (used for acceleration noise). This is a header-only package, if cmake cannot locate it then set environmental variable `LIBIGL_ROOT` to the install directory that contains `libigl/include` directory. For example, do `export LIBIGL_ROOT=/home/<name>/opt`. 
+* [libigl](https://github.com/libigl/libigl) - Libigl is used to replace GTS on computing mesh curvature, since it was found that GTS might fail when computing mean curvatures on tet extracted mesh (used for acceleration noise). A fork from this library is used with some minor changes in namespace prefix to fix name collision with our own Matrix library. This is currently integrated into the repo as submodules. If you are cloning the repo for the first time, you will have the directory `src/libigl` but with no contents in it. To initialize, 
+``` 
+cd src/libigl
+git submodule init
+git submodule update
+```
+Alternatively, if recursive option was on when cloning then no need for the above step
+```
+git clone --recursive git@bitbucket.org:jw969/acoustics.git
+```
+More on git submodules: [link](https://git-scm.com/book/en/v2/Git-Tools-Submodules). 
 
 ## Build Directions:
 Create build directory within source directory and configure cmake

@@ -200,9 +200,8 @@ if (USE_VLFEAT)
 endif (USE_VLFEAT)
 
 if (USE_IGL)
-    find_package(IGL REQUIRED)
     add_definitions(-DUSE_IGL)
-    include_directories(${IGL_INCLUDE_DIR}) 
+    include_directories(src/libigl/include) 
 endif (USE_IGL)
 
 # check if we're using Intel's compiler
