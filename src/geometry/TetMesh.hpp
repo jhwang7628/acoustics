@@ -38,8 +38,10 @@
 #include <string.h>
 #include "Tet.hpp"
 #include "TriangleMesh.hpp"
+#include "utils/math.hpp"
 #include "utils/tuple.hpp"
 #include "linearalgebra/Tuple4.hpp"
+#include "linearalgebra/Matrix3.hpp"
 
 #ifdef USE_NAMESPACE
 namespace carbine
@@ -270,6 +272,9 @@ class TetMesh
         {
             return std::accumulate(m_masses.begin(), m_masses.end(), 0.0); 
         }
+
+         /* Return the inertial tensor of the tet mesh */
+        T inertia_tensor(Matrix3<T> &I, Point3<T> &x0) const; 
 
     private:
         void add_normal(unsigned int a, unsigned int b, unsigned int c,
@@ -1183,6 +1188,47 @@ void TetMesh<T>::get_vtx_neighbor_table(std::vector< std::set<int> >& tbl) const
         tbl[m_tetIdx[i][3]].insert(m_tetIdx[i][2]);
 #endif /* DIFF_DEFINE */
     }
+}
+
+/* 
+ * This function computes the inertial tensor in the object frame. 
+ *
+ * Inertia tensor, I, has the following structure: 
+ *  I_ii        = \int_m (x_j**2 + x_k**2) dm, i \in {0,1,2}, j=(i+1)%3, k=(i+2)%3
+ *  I_ij = I_ji = \int_m (x_i**2 + x_j**2) dm, i \in {0,1,2}, j=(i+1)%3, k=(i+2)%3
+ *  
+ *  x = x_p - x_0 is the position vector of particle p, w.r.t. centroid x_0
+ *
+ * Ref: ocw.mit.edu/courses/aeronautics-and-astronautics/16-07-dynamics-fall-2009/lecture-notes/MIT16_07F09_Lec26.pdf (Eq 5)
+ *
+ * The implementation is adapted from the code 
+ *  tools/init-rigid-tools/write_inertia.cpp::inertia_tensor
+ */
+template <typename T> 
+T TetMesh<T>::inertia_tensor(Matrix3<T> &I, Point3<T> &x0) const
+{
+    const std::vector<T> &ms = masses();
+    const std::vector<Point3<T> > &vtx = rest_positions();
+    T mass = 0;
+    x0.zero();
+
+    const int N_ms = ms.size(); 
+    for(size_t i = 0;i < N_ms;++ i)
+    {
+        mass += ms[i];
+        x0.scaleAdd(ms[i], vtx[i]);
+    }
+    x0 /= mass; // mass center
+
+    I.zero();
+    for(size_t i = 0;i < N_ms;++ i)
+    {
+        Vector3<T> ri = vtx[i] - x0;
+        I += Matrix3<T>( ms[i]*(M_SQR(ri.y)+M_SQR(ri.z)), -ms[i]*ri.x*ri.y                , -ms[i]*ri.x*ri.z,
+                        -ms[i]*ri.y*ri.x                ,  ms[i]*(M_SQR(ri.x)+M_SQR(ri.z)), -ms[i]*ri.y*ri.z,
+                        -ms[i]*ri.z*ri.x                , -ms[i]*ri.z*ri.y                ,  ms[i]*(M_SQR(ri.x)+M_SQR(ri.y)));
+    }
+    return mass;
 }
 
 #ifdef USE_NAMESPACE
