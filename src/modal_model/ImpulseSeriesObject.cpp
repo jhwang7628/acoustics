@@ -120,6 +120,13 @@ GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime)
     lastImpulseTime = _lastImpulseTime; 
 }
 
+void ImpulseSeriesObject::
+PrintAllImpulses()
+{
+    for (const auto &imp : _impulses)
+        std::cout << imp << std::endl;
+}
+
 //##############################################################################
 //##############################################################################
 std::ostream &operator <<(std::ostream &os, const ImpulseSeriesObject::ImpactRecord &record)

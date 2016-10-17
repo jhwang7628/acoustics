@@ -61,6 +61,9 @@ class ImpulseSeriesObject
         void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
 
+        //// debug methods ////
+        void PrintAllImpulses(); 
+
     friend std::ostream &operator <<(std::ostream &os, const ImpactRecord &record);
 };
 
