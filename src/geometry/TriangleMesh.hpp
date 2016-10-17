@@ -171,7 +171,7 @@ class TriangleMesh
 
 #endif /* DIFF_DEFINE */
 
-        T mean_curvature(const int &vid) const
+        T vertex_mean_curvature(const int &vid) const
         {
             return m_vtxMeanCurvatures.at(vid); 
         }
@@ -235,7 +235,6 @@ class TriangleMesh
 
         void BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vector3d &baryCentricCoordinates) const; 
         Vector3d ComputeCentroid() const; 
-        REAL vertex_mean_curvature(const int &vertexId) const;
 
         // abstract nearest triangles lookup that should be specific to data
         // structures of choice. 
@@ -745,17 +744,6 @@ ComputeCentroid() const
         accumulate += vertex(v_idx); 
     accumulate /= (REAL)N_vertices; 
     return accumulate; 
-}
-
-/* 
- * Compute the mean curvature for a given vertex. 
- */ 
-template <typename T> 
-REAL TriangleMesh<T>::
-vertex_mean_curvature(const int &vertexId) const // TODO!!
-{
-    std::cerr << "**WARNING** Not yet implemented. for debugging returning 1.0/0.05 for now\n";
-    return 1.0/0.05;
 }
 
 /* 
