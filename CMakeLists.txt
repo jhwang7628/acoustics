@@ -201,7 +201,7 @@ endif (USE_VLFEAT)
 
 if (USE_IGL)
     add_definitions(-DUSE_IGL)
-    include_directories(src/libigl/include) 
+    include_directories(external/libigl/include) 
 endif (USE_IGL)
 
 # check if we're using Intel's compiler
