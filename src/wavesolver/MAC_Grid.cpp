@@ -828,8 +828,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, co
 
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
-    SimpleTimer timer[7]; 
-
     const int N_ghostCells = _ghostCellPositions.size(); 
     _ghostCellCoupledData.clear(); 
     _ghostCellCoupledData.resize(N_ghostCells); 
@@ -840,7 +838,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 #endif
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
-    timer[0].Start(); 
         const int gcParentIndex = _ghostCellParents.at(ghost_cell_idx); 
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
         const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
@@ -851,19 +848,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 
         // find point BI and IP in the formulation and then query boundary
         // condition
-        timer[4].Start(); 
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         auto object = _objects->GetPtr(boundaryObject); 
-        timer[5].Start(); 
         object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
-        timer[5].Pause(); 
-        timer[6].Start(); 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
-        timer[6].Pause(); 
         const REAL weights = (distance >=0 ? -distance : 2.0*distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
-        timer[4].Pause(); 
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -877,10 +868,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         Tuple3i     indicesBuffer;
         Vector3d    positionBuffer; 
         Eigen::VectorXd pressureNeighbours(8);  // right hand side
- 
-
-    timer[0].Pause(); 
-    timer[1].Start(); 
 
         // some coupling information
         std::vector<int> coupledGhostCells; 
@@ -949,9 +936,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         if (hasGC != -1)
             replacedCell ++; 
 
-    timer[1].Pause(); 
-    timer[2].Start(); 
-
         // want beta = V^-T b, equivalent to solving V^T beta = b
         Eigen::MatrixXd b(1,8); // row vector
 
@@ -980,9 +964,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
 //                      << V << std::endl;
 //        }
 
-    timer[2].Pause(); 
-    timer[3].Start(); 
-
         // forms the sparse matrix
         JacobiIterationData &jacobiIterationData = _ghostCellCoupledData[ghost_cell_idx]; 
         jacobiIterationData.cellId = ghost_cell_idx; 
@@ -1009,8 +990,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         // if GC itself is coupled, need to add this to the RHS
         if (hasGC != -1) 
             RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-
-    timer[3].Pause(); 
     }
 
     // analyze sparsity pattern and deflate the linear system
@@ -1063,20 +1042,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
         oldResidual = absResidual; 
         std::cout << "  iteration " << iteration << ": residual = " << std::setprecision(16) << absResidual << std::endl;
     }
-    std::cout << std::setprecision(6);
-
-    ToFile_GhostCellCoupledMatrix("coupledMatrix.txt"); 
-
-    std::cout << "--------------\n" << std::setprecision(16);
-    std::cout << "reflection, boundary condition evaluation: " << timer[0].Duration() << " sec \n"; 
-    std::cout << " reflection                              :  " << timer[4].Duration() << " sec \n"; 
-    std::cout << "  reflect against boundary               :   " << timer[5].Duration() << " sec \n"; 
-    std::cout << "  bc evaluation                          :   " << timer[6].Duration() << " sec \n"; 
-    std::cout << "gc neighbour information                 : " << timer[1].Duration() << " sec \n"; 
-    std::cout << "transpose, linear solve                  : " << timer[2].Duration() << " sec \n"; 
-    std::cout << "formulate the matrix, rhs                : " << timer[3].Duration() << " sec \n"; 
-    std::cout << "replaced percentage = " << (REAL)replacedCell / (REAL)N_ghostCells << std::endl;
-    std::cout << "--------------\n" << std::setprecision(6);
 }
 
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
