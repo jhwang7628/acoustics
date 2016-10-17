@@ -8,6 +8,7 @@
 #include <distancefield/FieldBuilder.h>
 #include <parser/Parser.h>
 #include <geometry/Point3.hpp>
+#include <linearalgebra/Matrix3.hpp>
 #include <linearalgebra/Vector3.hpp>
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
@@ -34,9 +35,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
         Vector3d                            _meshObjectCentroid;  // in object space
-        REAL                                _volume = -1.0; // mesh volume that can be estimated if built from tet mesh
         std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
-
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 
 
         int                                 _signedDistanceFieldResolution;
@@ -48,6 +47,12 @@ class FDTD_RigidObject : public FDTD_MovableObject
 #endif
 
         bool                                _parsed; 
+
+        // volumetric field 
+        bool                                _hasVolume = false; 
+        REAL                                _volume; // mesh volume that can be estimated if built from tet mesh
+        Matrix3d                            _volumeInertiaTensor; // I = _volumeInertiaTensor * density
+        Vector3d                            _volumeCenter; 
 
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 

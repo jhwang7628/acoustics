@@ -275,9 +275,39 @@ UpdateQPointers()
 REAL FDTD_RigidSoundObject::
 Mass() const
 {
-    if (_volume <= 0) 
-        throw std::runtime_error("**ERROR** target mesh has zero or negative volume. It is possible improper initialization was performed"); 
+    if (!_hasVolume) 
+        throw std::runtime_error("**ERROR** target mesh has no defined volume. It is possible improper initialization was performed"); 
     return _volume * _material->density; 
+}
+
+//##############################################################################
+// This function computes/fetches the inverse inertial tensor
+//##############################################################################
+void FDTD_RigidSoundObject::
+InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute)
+{
+    assert(_hasVolume); 
+    if (compute || !_invInertiaTensorCached)
+    {
+        I_inv = (_volumeInertiaTensor * _material->density).inverse(); 
+        _invInertiaTensor = I_inv; 
+    }
+    else 
+        I_inv = _invInertiaTensor; 
+}
+
+//##############################################################################
+// This function implements the m_i term in Eq 9 in PAN paper [Chadwick 2012]. 
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+EffectiveMass(const Vector3d &x, const Vector3d &n)
+{
+    Matrix3<REAL> I_inv; 
+    InvInertiaTensor(I_inv); 
+    const Vector3d r = x - _volumeCenter;  // mass center = volume center
+    const Vector3d r_cross_n = r.crossProduct(n.normalized()); 
+    const REAL one_over_m_corr = r_cross_n.dotProduct(I_inv * r_cross_n); 
+    return 1.0 / (1.0/Mass() + one_over_m_corr); 
 }
 
 //##############################################################################
@@ -368,13 +398,15 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
 //  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed)
+EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a)
 {
     const auto &object_a = this; 
     const auto &mesh_a = GetMeshPtr(); 
     const auto &material_a = object_a->GetMaterial(); 
+    const Vector3d x_a = _mesh->vertex(vertex_a); 
 
-    const REAL m = object_a->Mass(); 
+    //const REAL m = object_a->Mass(); 
+    const REAL m = object_a->EffectiveMass(x_a, impulse_a); 
     const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E; 
 
@@ -387,15 +419,18 @@ EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed)
 //  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed)
+EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a)
 {
     const auto &object_a = this; 
     const auto &mesh_a = GetMeshPtr(); 
     const auto &mesh_b = object_b->GetMeshPtr(); 
     const auto &material_a = object_a->GetMaterial(); 
     const auto &material_b = object_a->GetMaterial(); 
+    const Vector3d x_a = _mesh->vertex(vertex_a); 
+    const Vector3d x_b = object_b->GetMeshPtr()->vertex(vertex_a); 
 
-    const REAL m = 1./(1./object_a->Mass() + 1./object_b->Mass()); 
+    //const REAL m = 1./(1./object_a->Mass() + 1./object_b->Mass()); 
+    const REAL m = 1./(1./object_a->EffectiveMass(x_a, impulse_a) + 1./object_b->EffectiveMass(x_b, -impulse_a)); 
     const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a) + mesh_b->vertex_mean_curvature(vertex_b); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E + material_b->one_minus_nu2_over_E; 
 

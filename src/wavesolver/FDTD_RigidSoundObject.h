@@ -65,6 +65,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         SimpleTimer _timer_substep_advanceODE[3]; // interpolate force, transform force, step system
         SimpleTimer _timer_substep_q2u[1]; 
 
+        // cached properties
+        bool _invInertiaTensorCached=false; 
+        Matrix3<REAL> _invInertiaTensor; 
+
     public: 
         // build object
         FDTD_RigidSoundObject()
@@ -103,14 +107,16 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         void AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
         REAL Mass() const; 
+        void InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute=false); 
+        REAL EffectiveMass(const Vector3d &x, const Vector3d &n); 
         // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
         // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
 
-        REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed); 
-        REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed); 
+        REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a); 
+        REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a); 
 
         ///// debug methods /////
 

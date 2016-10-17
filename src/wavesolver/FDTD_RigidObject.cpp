@@ -41,6 +41,8 @@ Initialize(const bool &buildFromTetMesh)
             else 
                 std::cout << " Surface mesh and Tet-Surface mapping built.\n";
             _volume = tetMesh->total_volume(); // cache volume
+            tetMesh->inertia_tensor(_volumeInertiaTensor, _volumeCenter); 
+            _hasVolume = true;
         }
         else 
         {
