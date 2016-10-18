@@ -75,9 +75,9 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                     inFile >> buffer.timestamp >> objectID >> buffer.appliedVertex >> buffer.contactSpeed
                            >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
                            >> pairOrder >> impulseType; 
-                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
-                    buffer_old.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed, buffer.impactVector); 
-                    buffer_old.impactPosition = Vector3d(pairObject->GetMeshPtr()->vertex(buffer_old.appliedVertex));
+                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID); 
+                    buffer_old.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer_old.appliedVertex, buffer.appliedVertex, buffer_old.contactSpeed, buffer_old.impactVector); 
+                    buffer_old.impactPosition = Vector3d(soundObject->GetMeshPtr()->vertex(buffer_old.appliedVertex));
                     object->AddImpulse(buffer_old); // add the one that's in buffer_old (one labeled 'S')
                 }
             }
