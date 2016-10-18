@@ -55,6 +55,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                 // estimate contact time scale between this object and
                 // constraint, and added to impulse train
                 buffer.supportLength = soundObject->EstimateContactTimeScale(buffer.appliedVertex, buffer.contactSpeed, buffer.impactVector); 
+                buffer.impactPosition = Vector3d(soundObject->GetMeshPtr()->vertex(buffer.appliedVertex));
                 object->AddImpulse(buffer);  // assumes point impulse
             }
             else if (impulseType == 'P') 
@@ -64,6 +65,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                     assert(count > 0); // make sure buffer exists
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
                     buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed, buffer.impactVector); 
+                    buffer.impactPosition = Vector3d(soundObject->GetMeshPtr()->vertex(buffer.appliedVertex));
                     object->AddImpulse(buffer); // add the one that's in buffer
                 }
                 else if (pairOrder == 'S') // need to read one more line to get pair
@@ -75,6 +77,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                            >> pairOrder >> impulseType; 
                     RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
                     buffer_old.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed, buffer.impactVector); 
+                    buffer_old.impactPosition = Vector3d(pairObject->GetMeshPtr()->vertex(buffer_old.appliedVertex));
                     object->AddImpulse(buffer_old); // add the one that's in buffer_old (one labeled 'S')
                 }
             }

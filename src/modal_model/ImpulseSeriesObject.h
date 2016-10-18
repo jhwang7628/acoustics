@@ -23,6 +23,7 @@ class ImpulseSeriesObject
         struct ImpactRecord
         {
             Vector3d impactVector; 
+            Vector3d impactPosition; // in object space
             REAL timestamp; 
             REAL supportLength = 0.0; 
             REAL contactSpeed = 0.0; 
