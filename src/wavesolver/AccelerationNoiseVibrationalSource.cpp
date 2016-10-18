@@ -64,8 +64,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
         acceleration += impulse.impactVector * (M_PI*S / (2.0*impulse.supportLength*_modalObjectOwner->Mass())); 
     }
 
-    //const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
-    const REAL a_n = acceleration.dotProduct(normal); 
+    const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
     return a_n;
 }
 
