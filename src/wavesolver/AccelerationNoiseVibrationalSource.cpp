@@ -59,11 +59,15 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
         if (impulse.supportLength < SMALL_NUM)
             continue;
 
+        const Vector3d &J = impulse.impactVector; 
+        const Vector3d r = impulse.impactPosition - _modalObjectOwner->CenterOfMass(); 
         const REAL S = ComputeS(impulse, time); 
         // translational acceleration
-        acceleration += impulse.impactVector * (M_PI*S / (2.0*impulse.supportLength*_modalObjectOwner->Mass())); 
+        acceleration += J * (M_PI*S / (2.0*impulse.supportLength*_modalObjectOwner->Mass())); 
+        // rotational acceleration (Eq 13)
+        const Vector3d alpha = _modalObjectOwner->PremultiplyInvInertiaTensor(r.crossProduct(J)) * (M_PI*S) / (2.0*impulse.supportLength); 
+        acceleration += alpha.crossProduct(r); 
     }
-
     const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
     return a_n;
 }
