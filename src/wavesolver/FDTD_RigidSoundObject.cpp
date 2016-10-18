@@ -281,7 +281,10 @@ Mass() const
 }
 
 //##############################################################################
-// This function computes/fetches the inverse inertial tensor
+// This function computes/fetches the inverse inertial tensor. 
+// 
+// For the density scaling, refer to code
+//  geometry/RigidMesh.cpp line 26
 //##############################################################################
 void FDTD_RigidSoundObject::
 InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute)
