@@ -64,6 +64,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
         acceleration += impulse.impactVector * (M_PI*S / (2.0*impulse.supportLength*_modalObjectOwner->Mass())); 
     }
 
+    //const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
     const REAL a_n = acceleration.dotProduct(normal); 
     return a_n;
 }
@@ -90,7 +91,7 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
             velocity += impulse.impactVector / _modalObjectOwner->Mass(); 
     }
 
-    const REAL v_n = velocity.dotProduct(normal); 
+    const REAL v_n = _modalObjectOwner->ObjectToWorldVector(velocity).dotProduct(normal); 
     return v_n;
 #endif 
     return 0.0;
