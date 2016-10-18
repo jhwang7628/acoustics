@@ -1191,11 +1191,11 @@ void TetMesh<T>::get_vtx_neighbor_table(std::vector< std::set<int> >& tbl) const
 }
 
 /* 
- * This function computes the inertial tensor in the object frame. 
+ * This function computes the inertia tensor in the object frame. 
  *
  * Inertia tensor, I, has the following structure: 
  *  I_ii        = \int_m (x_j**2 + x_k**2) dm, i \in {0,1,2}, j=(i+1)%3, k=(i+2)%3
- *  I_ij = I_ji = \int_m (x_i**2 + x_j**2) dm, i \in {0,1,2}, j=(i+1)%3, k=(i+2)%3
+ *  I_ij = I_ji = \int_m (x_i    * x_j   ) dm, i \in {0,1,2}, j=(i+1)%3, k=(i+2)%3
  *  
  *  x = x_p - x_0 is the position vector of particle p, w.r.t. centroid x_0
  *
