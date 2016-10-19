@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt 
 import numpy as np 
 import sys
-from my_io import readMatrixXdBinary
+from binary_io import readMatrixXdBinary
 
 if len(sys.argv) != 4: 
     print '**Usage: %s <filename_GC> <filename_RAS> <listening_position_file>' %(sys.argv[0])

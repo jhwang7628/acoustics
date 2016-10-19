@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-import my_io as IO
+import binary_io as IO
 import numpy as np 
 import matplotlib.pyplot as plt
 from matplotlib import cm 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-import my_io as io
+import binary_io as io
 import scipy
 import matplotlib.pyplot as plt 
 import sys 
