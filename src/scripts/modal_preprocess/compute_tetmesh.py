@@ -25,8 +25,13 @@ objFile = sys.argv[1]
 tetFile = sys.argv[2]
 
 ## Pipeline starts
+print '################################################################################'
+print '## Generate Tet mesh'
+print '################################################################################'
 cmd = '%s/isostuffer -R %d -L %d -M %d -a %f -b %f %s %s' \
        % ( binPath, isoResolution, isoNlevel, isoMargin, isoAlpha, isoBeta, \
            objFile, tetFile );
 print cmd;
+print '........................................'
 os.system( '%s > %s' % ( cmd, redirect ) );
+print '\n\n'
