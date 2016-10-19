@@ -47,6 +47,9 @@ class MAC_Grid
         {
             public: 
                 int         index = -1; 
+                REAL        r_identity;
+                std::string s_identity;
+                FloatArray  gcValue;  // for ghost cell only
                 Tuple3i     indices; 
                 Vector3d    centroidPosition; 
                 Vector3d    lowerCorner; 
@@ -57,6 +60,7 @@ class MAC_Grid
                 REAL        vy[2];
                 REAL        vz[2];
                 REAL        h; // cell size
+                REAL        laplacian; 
 
                 inline REAL Divergence() const
                 {
@@ -227,7 +231,7 @@ class MAC_Grid
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
         void sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData );
-        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], std::vector<Cell> &sampledCells) const; 
+        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], std::vector<Cell> &sampledCells) const; 
 
         // Smooth field given weights
         void SmoothFieldInplace(MATRIX &p1, MATRIX &p2, MATRIX &p3, REAL w1, REAL w2, REAL w3);
@@ -276,10 +280,10 @@ class MAC_Grid
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
-        void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, REAL &maxOffDiagonalEntry); 
-        REAL PressureCellType(const int &idx);
+        void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
+        REAL PressureCellType(const int &idx) const;
         void ResetCellHistory(const bool &valid); 
-        void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const MATRIX (&v)[3], Cell &cell) const; 
+        void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

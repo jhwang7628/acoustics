@@ -365,18 +365,19 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
 void PML_WaveSolver::FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const 
 {
 #ifdef USE_COLLOCATED 
-    _grid.GetCell(cellIndex, _p, _pCollocated[_pCollocatedInd], _v, cell); 
+    _grid.GetCell(cellIndex, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, cell); 
+    cell.laplacian = _pLaplacian(cell.index, 0); 
 #else
-    _grid.GetCell(cellIndex, _p, _pFull, _v, cell); 
+    _grid.GetCell(cellIndex, _p, _pFull, _pGhostCellsFull, _v, cell); 
 #endif
 }
 
 void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const
 {
 #ifdef USE_COLLOCATED 
-    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pCollocated[_pCollocatedInd], _v, sampledCells); 
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, sampledCells); 
 #else
-    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _v, sampledCells); 
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _pGhostCellsFull, _v, sampledCells); 
 #endif
 }
 
@@ -456,7 +457,7 @@ bool PML_WaveSolver::stepSystem()
     printf( " - Pressure update     took %f sec\n", _divergenceTimer.getMsPerCycle() );
 
     if (_useGhostCellBoundary) 
-        printf( " - Ghost-cell update took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
+        printf( " - Ghost-cell update   took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
 #endif
 
     if ( _endTime > 0.0 && _currentTime >= _endTime )
