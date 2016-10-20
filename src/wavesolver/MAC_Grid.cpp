@@ -619,6 +619,117 @@ void MAC_Grid::UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull)
 #endif
 }
 
+void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
+{
+    const int N_ghostCells = _ghostCellPositions.size(); 
+    if (N_ghostCells == 0) return; 
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
+    {
+        const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
+        const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
+
+        // find reflection point, normal etc
+        Vector3d boundaryPoint, imagePoint, erectedNormal; 
+        REAL distance; 
+        auto object = _objects->GetPtr(boundaryObject); 
+        object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
+        if (!success)
+            std::cerr << "**WARNING** Reflection of ghost cell inside some objects. Proceed computation. \n"; 
+
+        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
+        const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
+        const REAL weightedPressure = bcPressure * weights; 
+
+        // get the box enclosing the image point; 
+        IntArray neighbours; 
+        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
+
+        REAL p_r = 0; 
+
+#if 0 // nearest neighbour p_r
+        std::vector<int>::iterator bestIt; 
+        REAL min_d2 = std::numeric_limits<REAL>::max();
+        for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+        {
+            const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+            if (d2 < min_d2 && _isBulkCell.at(*it))
+            {
+                bestIt = it; 
+                min_d2 = d2; 
+            }
+        }
+        p_r = p(*bestIt, 0);
+#else // linear MLS p_r
+        T_MLS mls; 
+        MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
+        std::vector<MLSPoint, P_ALLOCATOR> points; 
+        std::vector<MLSVal, V_ALLOCATOR> attributes; 
+        for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+        {
+            if (!_isBulkCell.at(*it))
+                it = neighbours.erase(it); 
+            else
+            {
+                const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
+                MLSVal val; 
+                val << p(*it, 0);
+                points.push_back(pt); 
+                attributes.push_back(val); 
+                ++it; 
+            }
+        }
+        if (neighbours.size() < 4)
+        {
+            if (neighbours.size() != 0) // use closest neighbours
+            {
+                std::cerr << "**WARNING** neighbours size < 4\n";
+                std::vector<int>::iterator bestIt; 
+                REAL min_d2 = std::numeric_limits<REAL>::max();
+                for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+                {
+                    const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+                    if (d2 < min_d2)
+                    {
+                        bestIt = it; 
+                        min_d2 = d2; 
+                    }
+                }
+                p_r = p(*bestIt, 0);
+            }
+            else // in this case, we don't have enough information, return 0
+            {
+                std::cerr << "**WARNING** not enough neighbours to determine reflection, set p_r=0\n";
+                p_r = 0.0;
+            }
+        }
+        else
+        {
+            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+            p_r = mlsVal(0, 0);
+        }
+#endif
+        pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
+    }
+}
+
+//##############################################################################
+// This function solves for the pressure ghost cells using Jacobi iteration. 
+//
+// NOTE: There are currently two cases this routine cannot properly resolve. Here
+// I document the response of the system if these happen:
+//  1) If reflection of a ghost cell ends up inside some other object, the solver
+//     will simply print WARNING messages and proceed. The interpolant might be 
+//     constructed using one or several solid cells, whose pressure values are 0.
+//  2) If when constructing trilinear interpolant, there is one or more stencils 
+//     are solid cells, 0 will be used to represent their values and WARNING
+//     message will be printed. This treatment is consistent with problem 1).
+//
+// ..............................................................................
 // The ghost-cell pressure update has several steps: 
 //
 //  1. Detect all ghost-cells, whose definition is cells that are solid but
@@ -668,182 +779,6 @@ void MAC_Grid::UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull)
 //
 //  7. Update the pressure at ghost-cell indices. 
 //
-void MAC_Grid::PML_pressureUpdateGhostCells( MATRIX &p, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
-{
-//    // for the ghost-cell coupling
-//    SparseLinearSystemSolver solver(_ghostCells.size()); 
-//
-//#ifdef USE_OPENMP
-//#pragma omp parallel for schedule(static) default(shared)
-//#endif
-//    for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-//    {
-//
-//        const int       cellIndex      = _ghostCells[ghost_cell_idx]; 
-//        const Tuple3i   cellIndices    = _pressureField.cellIndex(cellIndex); 
-//        const Vector3d  cellPosition   = _pressureField.cellPosition(cellIndices); 
-//        const int       boundaryObject = _containingObject[cellIndex]; 
-//
-//        // find point BI and IP in the formulation
-//        Vector3d boundaryPoint, imagePoint, erectedNormal; 
-//        FindImagePoint(cellPosition, boundaryObject, boundaryPoint, imagePoint, erectedNormal); 
-//
-//        // get the box enclosing the image point; 
-//        IntArray neighbours; 
-//        _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-//
-//        assert(neighbours.size()==8);
-//
-//        // hasGC  : has self as interpolation stencil
-//        int hasGC=-1; 
-//
-//        std::vector<int> coupledGhostCells; 
-//        std::vector<int> uncoupledGhostCellsNeighbours; // [0,neighbours.size)
-//        std::vector<int> coupledGhostCellsNeighbours; // [0,neighbours.size)
-//
-//        for (size_t ii=0; ii<neighbours.size(); ii++) 
-//        {
-//            if (neighbours[ii] == cellIndex) 
-//            {
-//                hasGC = ii;
-//            }
-//            else  
-//            {
-//                // if not itself but a ghost cell then add an edge to graph
-//                // adjacency matrix
-//                if (_isGhostCell[neighbours[ii]]) 
-//                {
-//                    coupledGhostCells.push_back(_ghostCellsInverse.at(neighbours[ii])); 
-//                    coupledGhostCellsNeighbours.push_back(ii); 
-//                }
-//                else
-//                    uncoupledGhostCellsNeighbours.push_back(ii);
-//            }
-//        }
-//
-//        // vandermonde matrix, see 2008 Mittals JCP paper Eq.18
-//        Eigen::MatrixXd V(8,8); 
-//        Tuple3i     indicesBuffer;
-//        Vector3d    positionBuffer; 
-//        Eigen::VectorXd pressureNeighbours(8);  // right hand side
-//
-//        // evaluate at boundarPoint, the boundary is prescribing normal acceleration so scaling is needed for pressure Neumann
-//        const double bcEval = _objects->EvaluateVibrationalSources(boundaryPoint, erectedNormal, simulationTime)*(-density);
-//        //const double bcEval = bc(boundaryPoint, erectedNormal, boundaryObject, simulationTime, 0) * (-density);  
-//
-//        for (size_t row=0; row<neighbours.size(); row++) 
-//        {
-//            indicesBuffer = _pressureField.cellIndex(neighbours[row]); 
-//            positionBuffer= _pressureField.cellPosition(indicesBuffer); 
-//            
-//            if ((int)row!=hasGC)
-//            {
-//                FillVandermondeRegular(row,positionBuffer, V);
-//                pressureNeighbours(row) = p(neighbours[row],0); 
-//            }
-//            else 
-//            {
-//                FillVandermondeBoundary(row, boundaryPoint, erectedNormal, V);
-//                pressureNeighbours(row) = bcEval; 
-//            }
-//        }
-//
-//        // want beta = V^-T b, equivalent to solving V^T x = b, and then x^T
-//        Eigen::MatrixXd b(1,8); // row vector
-//
-//        FillVandermondeRegular(0,imagePoint,b); 
-//        b.transposeInPlace();  // column vector
-//        V.transposeInPlace(); 
-//
-//        // TODO svd solve is needed? can I use QR? 
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(V, Eigen::ComputeThinU | Eigen::ComputeThinV);
-//        Eigen::VectorXd beta = svd.solve(b);
-//        //Eigen::VectorXd beta = V.householderQr().solve(b); 
-//        //const double conditionNumber = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-//        //if (conditionNumber > 1E5 && replaced) 
-//        //{
-//        //    std::cout << "**WARNING** condition number for the least square solve is = " << conditionNumber << "\n"
-//        //              << "            the solution can be inaccurate.\n"
-//        //              << "largest  singular value = " << svd.singularValues()(0) << "\n"
-//        //              << "smallest singular value = " << svd.singularValues()(svd.singularValues().size()-1) << "\n"
-//        //              << "problematic matrix: \n"
-//        //              << V << std::endl;
-//        //}
-//        //
-//#pragma omp critical
-//        {
-//
-//            // fill in the sparse matrix
-//            
-//            // start by filling the diagonal entry
-//            solver.StageEntry(ghost_cell_idx, ghost_cell_idx, 1.0);
-//
-//            // next fill the off-diagonal terms by iterating through the coupled
-//            // ghost cells for this row. its coefficient is defined by the i-th
-//            // entry of beta. i=1,...,8 are the index of the neighbour
-//            for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
-//                solver.StageEntry(ghost_cell_idx, coupledGhostCells[cc], -beta(coupledGhostCellsNeighbours[cc])); 
-//
-//
-//            // FIXME debug
-//            //double offdiagonalSum=0.0; 
-//            //for (size_t cc=0; cc<coupledGhostCells.size(); cc++) 
-//            //    offdiagonalSum += fabs(beta(coupledGhostCellsNeighbours[cc])); 
-//
-//            //if (offdiagonalSum>1.0)
-//            //    std::cerr << "**WARNING** not diagonally dominant\n"; 
-//
-//            // next we compute the right-hand-side (RHS) of the equation. looking
-//            // at the equation, it will be the neumann condition + any uncoupled
-//            // betas (see google doc for eqution)
-//            double RHS = - (imagePoint - cellPosition).length() * bcEval; 
-//            for (size_t uc=0; uc<uncoupledGhostCellsNeighbours.size(); uc++) 
-//                RHS += beta(uncoupledGhostCellsNeighbours[uc])*pressureNeighbours(uncoupledGhostCellsNeighbours[uc]); 
-//
-//            // if GC itself is coupled, need to add this to the RHS
-//            if (hasGC != -1) 
-//            {
-//                RHS += beta(hasGC)*pressureNeighbours(hasGC); 
-//            }
-//
-//            // finally we fill the rhs of the sparse linear system
-//            solver.FillInRHS(ghost_cell_idx, RHS); 
-//        }
-//
-//        // actually fill-in all the staged entry of the sparse matrix. after this
-//        // step the matrix is ready for solve. 
-//        {
-//            boost::timer::auto_cpu_timer t(" sparse system fill-in takes %w sec\n"); 
-//            solver.FillIn(); 
-//        }
-//
-//        // the actual solve. unfortunately eigen supports only dense RHS solve. 
-//        Eigen::VectorXd x; 
-//        {
-//            boost::timer::auto_cpu_timer t(" linear system solve takes %w sec\n");
-//            solver.Solve(x); 
-//            //solver.DenseSolve(x); 
-//        }
-//        // put the solution into matrix p
-//        {
-//            boost::timer::auto_cpu_timer t(" recover solution to dense vector takes %w sec\n");
-//            for (size_t ghost_cell_idx=0; ghost_cell_idx<_ghostCells.size(); ghost_cell_idx++) 
-//                p(_ghostCells[ghost_cell_idx],0) = x(ghost_cell_idx);
-//        }
-//    }
-}
-
-//##############################################################################
-// This function solves for the pressure ghost cells using Jacobi iteration. 
-//
-// NOTE: There are currently two cases this routine cannot properly resolve. Here
-// I document the response of the system if these happen:
-//  1) If reflection of a ghost cell ends up inside some other object, the solver
-//     will simply print WARNING messages and proceed. The interpolant might be 
-//     constructed using one or several solid cells, whose pressure values are 0.
-//  2) If when constructing trilinear interpolant, there is one or more stencils 
-//     are solid cells, 0 will be used to represent their values and WARNING
-//     message will be printed. This treatment is consistent with problem 1).
 //##############################################################################
 void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
@@ -1753,7 +1688,6 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
     if (_useGhostCellBoundary)
     {
-        visualizeClassifiedCells(); 
         ComputeGhostCellInverseMap(); 
     }
 }
