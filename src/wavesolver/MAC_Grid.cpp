@@ -1042,6 +1042,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     std::cout << " Decoupled cell percentage : " << (REAL)(N_ghostCells - coupledIndices.size()) / (REAL)N_ghostCells << "\n\n";
 #endif
 
+    ExamineJacobiMatrix();
+
     // solve the linear system
     const int maxIteration = GHOST_CELL_JACOBI_MAX_ITERATION;
     const int N_coupled = coupledIndices.size(); 
@@ -1050,6 +1052,17 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
     int maxResidualEntry = -1; 
     for (int iteration=0; iteration<maxIteration; iteration++) 
     {
+        // compute and print the residual
+        ComputeGhostCellSolveResidual(pGC, minResidual, maxResidual, maxResidualEntry, maxOffDiagonal); 
+        const REAL absResidual = max(fabs(minResidual), fabs(maxResidual)); 
+        // early termination
+        if (EQUAL_FLOATS(oldResidual, absResidual) || absResidual < 1E-8)
+            break; 
+
+        oldResidual = absResidual; 
+        std::cout << "  iteration " << iteration << ": residual = " << std::setprecision(16) << absResidual << std::endl;
+
+        // start iteration
         pGC_old = pGC; 
         #ifdef USE_OPENMP
         #pragma omp parallel for schedule(static) default(shared)
@@ -1065,15 +1078,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, 
                 //p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
                 pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC_old.at(data.nnzIndex[cc]); 
         }
-
-        ComputeGhostCellSolveResidual(pGC, minResidual, maxResidual, maxResidualEntry, maxOffDiagonal); 
-        const REAL absResidual = max(fabs(minResidual), fabs(maxResidual)); 
-        // early termination
-        if (EQUAL_FLOATS(oldResidual, absResidual) || absResidual < 1E-8)
-            break; 
-
-        oldResidual = absResidual; 
-        std::cout << "  iteration " << iteration << ": residual = " << std::setprecision(16) << absResidual << std::endl;
     }
     std::cout << "  max residual = " << maxResidual << "; entry = " << maxResidualEntry << "; cell position = " << _ghostCellPositions.at(maxResidualEntry) << std::endl;
 }
@@ -2855,6 +2859,40 @@ void MAC_Grid::PrintGhostCellTreeInfo()
         STL_Wrapper::PrintVectorContent(std::cout, _ghostCellsChildren.at(g_idx)); 
     }
     std::cout << std::flush;
+}
+
+bool MAC_Grid::ExamineJacobiMatrix()
+{
+    // check diagonally dominance. 
+    const int N_rows = _ghostCellCoupledData.size(); 
+    REAL maxL1 = std::numeric_limits<REAL>::min(); 
+    IntArray problemRows; 
+    for (int r_idx=0; r_idx<N_rows; ++r_idx)
+    {
+        const int N_nz = _ghostCellCoupledData.at(r_idx).nnzValue.size(); 
+        REAL rowL1 = 0;
+        for (int c_idx=0; c_idx<N_nz; ++c_idx)
+            rowL1 += abs(_ghostCellCoupledData.at(r_idx).nnzValue.at(c_idx)); 
+        if (rowL1 > 1.0) 
+            problemRows.push_back(r_idx);
+        maxL1 = std::max<REAL>(maxL1, rowL1); 
+    }
+    std::cout << "--------------------------------------------------------------------------------\n" 
+              << "MAC_Grid::ExamineJacobiMatrix\n" 
+              << "--------------------------------------------------------------------------------\n"
+              << " Max off-diagonal L1 norm: " << maxL1 << "\n"
+              << "...............................\n";
+    for (const int &row : problemRows) 
+    {
+        std::cout << " Problem rows: " << row << "\n"; 
+        const auto &data = _ghostCellCoupledData.at(row); 
+        std::cout << "   ";
+        for (const REAL &val : data.nnzValue)
+            std::cout << val << " "; 
+        std::cout << "\n";
+    }
+    std::cout << "--------------------------------------------------------------------------------" << std::endl;
+    return true;
 }
 
 //############################################################################## 

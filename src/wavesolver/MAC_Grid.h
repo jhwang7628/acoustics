@@ -289,6 +289,7 @@ class MAC_Grid
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
         void PrintGhostCellTreeInfo(); 
         void visualizeClassifiedCells(); 
+        bool ExamineJacobiMatrix(); 
         void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
         void ToFile_GhostCellLinearSystem(const char *filename); 
 

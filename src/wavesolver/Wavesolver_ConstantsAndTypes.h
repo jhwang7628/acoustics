@@ -83,8 +83,9 @@ const double ADF_ERROR_TOLERANCE = 0.00001;
 #endif
 
 const int GHOST_CELL_JACOBI_MAX_ITERATION = 200;
-const REAL KD_NEAREST_TOLERANCE = 5E-5; 
-const REAL TRI_NORMAL_PUSH_DIST = 0.0025;
+//const REAL KD_NEAREST_TOLERANCE = 5E-5; 
+const REAL KD_NEAREST_TOLERANCE = 1E-6; 
+const REAL TRI_NORMAL_PUSH_DIST = 0.000625;
 
 //##############################################################################
 // Enum
