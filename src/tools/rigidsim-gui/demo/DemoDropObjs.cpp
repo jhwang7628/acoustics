@@ -172,7 +172,7 @@ DemoDropObjs::DemoDropObjs(const char* file, QGLViewer* canvas):
             if ( ssO[i].exists("rot") ) 
             {
                 const Setting& rr = ssO[i]["rot"];
-                rbodies[i]->init_origin_rotation(rr[0], rr[1], rr[2], rr[3]);
+                rbodies[i]->init_origin_rotation(rr[0], rr[1], rr[2], rr[3]); // w, x, y, z
             }
 
 #if 0
