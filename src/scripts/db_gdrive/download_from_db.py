@@ -61,25 +61,13 @@ if __name__ == '__main__':
     ## customized fields 
     download_dir = 'downloaded'
     query_models = [
-        'p_A',
-        'p_B',
-        'p_C',
-        'p_D',
-        'p_E',
-        'p_F',
-        'p_G',
-        'p_H',
-        'p_pawn',
-        'p_bishop', 
-        'p_knight'
-        'p_king', 
-        'p_queen', 
-        'p_rook'
+        'p_J',
     ]
     download_files = [
         'proj.obj',
-        'proj.modes',
-        'proj.geo.txt'
+        # 'proj.modes',
+        # 'proj_surf.modes',
+        # 'proj.geo.txt'
     ]
 
     ## 

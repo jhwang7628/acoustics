@@ -12,16 +12,16 @@ def Render(cmd, templateFile, tmpFilename, outName, objectXMLString):
     print cmd
     call(cmd, shell=True)
 
-def CreateObjectXML(x, y, z): 
+def CreateObjectXML(x, y, z, objFile): 
     s  = """<scene version="0.5.0">"""
     s += """
     <shape type="obj">
-        <string name="filename" value="assets/sphere_d10cm.obj"/>
+        <string name="filename" value="%s"/>
         <transform name="toWorld">
             <translate x="%f" y="%f" z="%f"/>
         </transform>
         <ref id="sphere"/>
-    </shape>\n""" %(x, y, z)
+    </shape>\n""" %(objFile, x, y, z)
     s += """</scene>"""
     return s
 
@@ -54,10 +54,11 @@ def ReadDispLine(inFile):
 
 if __name__ == '__main__':
     ##
-    demoFolder = '/home/jui-hsien/code/acoustics/work/demo/acc_noise/ball_plane'
+    demoFolder = '/home/jui-hsien/code/acoustics/work/demo/acc_noise/dice'
+    objFile = '/home/jui-hsien/code/acoustics/work/dice/dice.obj'
     template = 'ball_plane_template.xml'
     tmpFilename = 'tmp.xml'
-    outFile = 'out/output_%05u.png'
+    outFile = 'out_dice/output_%05u.png'
     cmd = 'mitsuba -DpFile=%s -o %s %s' %('%s', '%s', template)
     
     ##
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     while True:
         try:
             pos = ReadDispLine(stream)
-            s = CreateObjectXML(pos[0], pos[1], pos[2])
+            s = CreateObjectXML(pos[0], pos[1], pos[2], objFile)
             if (count % 5 == 0):
                 outName = outFile %(countImg)
                 Render(cmd, template, tmpFilename, outName, s)
