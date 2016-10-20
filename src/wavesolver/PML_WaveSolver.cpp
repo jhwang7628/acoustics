@@ -225,7 +225,8 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
             else
             {
                 const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it)); 
-                const MLSVal val = MLSVal(scalar(*it, 0)); 
+                MLSVal val; 
+                val << scalar(*it, 0);
                 points.push_back(pt); 
                 attributes.push_back(val); 
                 ++it; 

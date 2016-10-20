@@ -290,6 +290,7 @@ class MAC_Grid
         void PrintGhostCellTreeInfo(); 
         void visualizeClassifiedCells(); 
         void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
+        void ToFile_GhostCellLinearSystem(const char *filename); 
 
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
