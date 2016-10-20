@@ -226,7 +226,7 @@ class MAC_Grid
 
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
-        void PML_pressureUpdateGhostCells_Jacobi(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+        void PML_pressureUpdateGhostCells_Coupled(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix

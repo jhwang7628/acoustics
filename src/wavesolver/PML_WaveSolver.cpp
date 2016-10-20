@@ -551,10 +551,10 @@ void PML_WaveSolver::stepLeapfrog()
         
         // update ghost cells 
         _ghostCellTimer.start(); 
-        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells_Jacobi(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Jacobi(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
+        _grid.PML_pressureUpdateGhostCells_Coupled(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
         _ghostCellTimer.pause(); 
     }
     else 
@@ -608,7 +608,7 @@ void PML_WaveSolver::stepCollocated()
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
     _freshCellTimer.pause(); 
     _ghostCellTimer.start(); 
-    //_grid.PML_pressureUpdateGhostCells_Jacobi(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _ghostCellTimer.pause(); 
 

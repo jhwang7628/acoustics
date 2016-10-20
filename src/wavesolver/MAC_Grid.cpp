@@ -780,7 +780,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
 //  7. Update the pressure at ghost-cell indices. 
 //
 //##############################################################################
-void MAC_Grid::PML_pressureUpdateGhostCells_Jacobi( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
+void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
     const int N_ghostCells = _ghostCellPositions.size(); 
     if (N_ghostCells == 0) return; 
