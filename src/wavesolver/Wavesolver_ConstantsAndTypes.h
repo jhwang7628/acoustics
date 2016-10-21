@@ -52,11 +52,6 @@ typedef T_MLS::MLSPoint MLSPoint;
 typedef T_MLS::MLSVal MLSVal; 
 typedef T_MLS::MLSMatrix MLSMatrix; 
 typedef T_MLS::MLSVector MLSVector; 
-//typedef MLSModeInterpolator<double,3,4> MLSInterpolatorType; 
-//typedef MLSInterpolatorType::MLSPoint MLSPoint; 
-//typedef MLSInterpolatorType::MLSVal MLSVal; 
-//typedef MLSInterpolatorType::MLSMatrix MLSMatrix; 
-//typedef MLSInterpolatorType::MLSVector MLSVector;
 typedef Eigen::aligned_allocator<MLSPoint> P_ALLOCATOR; 
 typedef Eigen::aligned_allocator<MLSVal> V_ALLOCATOR; 
 
@@ -83,8 +78,8 @@ const double ADF_ERROR_TOLERANCE = 0.00001;
 #endif
 
 const int GHOST_CELL_JACOBI_MAX_ITERATION = 200;
-//const REAL KD_NEAREST_TOLERANCE = 5E-5; 
-const REAL KD_NEAREST_TOLERANCE = 1E-6; 
+const REAL KD_NEAREST_TOLERANCE = 5E-5; 
+//const REAL KD_NEAREST_TOLERANCE = 1E-6; 
 const REAL TRI_NORMAL_PUSH_DIST = 0.000625;
 
 //##############################################################################
