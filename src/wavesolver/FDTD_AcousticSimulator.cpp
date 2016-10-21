@@ -24,7 +24,7 @@ _SetBoundaryConditions()
     for (int index=0; index<N_objects; ++index)
     {
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
-        // add modal vibrational source // FIXME debug
+        // add modal vibrational source
         //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
@@ -36,8 +36,9 @@ _SetBoundaryConditions()
         //const REAL omega = 2.0*M_PI*500.0;
         //const REAL phase = 0.0;
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
+
         //objectPtr->TestObjectBoundaryCondition();
     }
 }
@@ -469,6 +470,7 @@ PostStepping(const REAL &odeTime)
 
     // move object to new position
     AnimateObjects(); 
+    //TestMoveObjects(); 
 
 #ifdef DEBUG
     _acousticSolver->PrintAllFieldExtremum();
