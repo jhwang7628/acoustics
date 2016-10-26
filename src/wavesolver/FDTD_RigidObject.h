@@ -26,6 +26,9 @@
 //##############################################################################
 class FDTD_RigidObject : public FDTD_MovableObject
 {
+    public: 
+        struct OptionalAttributes{bool isFixed=false; bool useRasterized=false;};
+
     protected: 
         std::string                         _workingDirectory;
         std::string                         _objectPrefix; 
@@ -47,6 +50,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
 #endif
 
         bool                                _parsed; 
+        OptionalAttributes                  _optionalAttributes; 
 
         // volumetric field 
         bool                                _hasVolume = false; 
@@ -90,6 +94,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
 #endif
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
+        inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline void SetMeshID(const int &ID){_meshID = ID;}
         inline int GetMeshID(){return _meshID;}
         void Initialize(const bool &buildFromTetMesh); 

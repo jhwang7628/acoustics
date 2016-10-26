@@ -52,9 +52,13 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_x = queryOptionalReal(rigidSoundObjectNode, "initial_position_x", 0.0); 
         const REAL initialPosition_y = queryOptionalReal(rigidSoundObjectNode, "initial_position_y", 0.0); 
         const REAL initialPosition_z = queryOptionalReal(rigidSoundObjectNode, "initial_position_z", 0.0); 
+        FDTD_RigidObject::OptionalAttributes attr;
+        attr.isFixed = (queryOptionalReal(rigidSoundObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
+        attr.useRasterized = (queryOptionalReal(rigidSoundObjectNode, "use_rasterized_boundary", 0.0) > 1E-10) ? true : false; 
 
         const bool buildFromTetMesh = true;
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        object->SetOptionalAttributes(attr); 
         // load impulse from file
         const std::string impulseFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_file"); 
         const std::string rigidsimConfigFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file");
@@ -121,9 +125,13 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_x = queryOptionalReal(rigidObjectNode, "initial_position_x", 0.0); 
         const REAL initialPosition_y = queryOptionalReal(rigidObjectNode, "initial_position_y", 0.0); 
         const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
+        FDTD_RigidObject::OptionalAttributes attr;
+        attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
+        attr.useRasterized = (queryOptionalReal(rigidObjectNode, "use_rasterized_boundary", 0.0) > 1E-10) ? true : false; 
 
         const bool buildFromTetMesh = false; 
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
