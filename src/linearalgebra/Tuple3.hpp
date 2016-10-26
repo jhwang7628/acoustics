@@ -385,7 +385,7 @@ class Tuple3
         /*! Output to stream operator */
         friend std::ostream& operator<<(std::ostream& lhs, const Tuple3<T>& rhs) 
         {
-            lhs << "[" << rhs.x << "," << rhs.y << "," << rhs.z  << "]";
+            lhs << "[" << rhs.x << " " << rhs.y << " " << rhs.z  << "]";
             return lhs;
         }
        
