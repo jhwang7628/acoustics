@@ -425,17 +425,20 @@ REAL FDTD_RigidSoundObject::
 EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a)
 {
     const auto &object_a = this; 
-    const auto &mesh_a = GetMeshPtr(); 
+    const auto &mesh_a = object_a->GetMeshPtr(); 
     const auto &mesh_b = object_b->GetMeshPtr(); 
     const auto &material_a = object_a->GetMaterial(); 
-    const auto &material_b = object_a->GetMaterial(); 
-    const Vector3d x_a = _mesh->vertex(vertex_a); 
-    const Vector3d x_b = object_b->GetMeshPtr()->vertex(vertex_a); 
+    const auto &material_b = object_b->GetMaterial(); 
+    const Vector3d x_a = object_a->GetMeshPtr()->vertex(vertex_a); 
+    const Vector3d x_b = object_b->GetMeshPtr()->vertex(vertex_b); 
 
     //const REAL m = 1./(1./object_a->Mass() + 1./object_b->Mass()); 
-    const REAL m = 1./(1./object_a->EffectiveMass(x_a, impulse_a) + 1./object_b->EffectiveMass(x_b, -impulse_a)); 
-    const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a) + mesh_b->vertex_mean_curvature(vertex_b); 
-    const REAL one_over_E = material_a->one_minus_nu2_over_E + material_b->one_minus_nu2_over_E; 
+    const REAL m = 1./(1./object_a->EffectiveMass(x_a,  impulse_a) 
+                      +1./object_b->EffectiveMass(x_b, -impulse_a)); 
+    const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a) 
+                          + mesh_b->vertex_mean_curvature(vertex_b); 
+    const REAL one_over_E = material_a->one_minus_nu2_over_E 
+                          + material_b->one_minus_nu2_over_E; 
 
     return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
 }
