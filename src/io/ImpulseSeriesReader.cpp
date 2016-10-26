@@ -8,6 +8,7 @@
 void ImpulseSeriesReader::
 LoadRigidsimConfig(ImpulseSeriesObjectPtr object)
 {
+    assert(IO::ExistFile(_rigidsimConfigFile)); 
     RigidsimParseConfig parser(_rigidsimConfigFile); 
     parser.Parse(); 
     object->SetRigidsimConfigData(parser.GetParsedData()); 
@@ -81,12 +82,12 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                     object->AddImpulse(buffer_old); // add the one that's in buffer_old (one labeled 'S')
                 }
             }
-            LoadRigidsimConfig(object);
         }
         buffer_old = buffer; 
         objectID_old = objectID; 
         count ++; 
     }
+    LoadRigidsimConfig(object);
 }
 
 //##############################################################################
