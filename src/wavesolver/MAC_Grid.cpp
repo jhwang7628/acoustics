@@ -638,8 +638,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         auto object = _objects->GetPtr(boundaryObject); 
         object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
+#pragma omp critical
         if (!success)
-            std::cerr << "**WARNING** Reflection of ghost cell inside some objects. Proceed computation. \n"; 
+            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
@@ -648,89 +649,78 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
-        REAL p_r = 0; 
-#if 0 // nearest neighbour p_r
-        std::vector<int>::iterator bestIt; 
-        REAL min_d2 = std::numeric_limits<REAL>::max();
-        for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+        // figure out which dimension is this subdivied ghost cell TODO cache this
+        const int cell_idx = _ghostCellParents.at(ghost_cell_idx); 
+        int subdivideType = -1; 
+        for (int ii=0; ii<6; ++ii)
         {
-            const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
-            if (d2 < min_d2 && _isBulkCell.at(*it))
+            if (_ghostCellsChildren.at(_ghostCellsInverse.at(cell_idx)).at(ii) == ghost_cell_idx)
             {
-                bestIt = it; 
-                min_d2 = d2; 
+                subdivideType = ii;
+                break;
             }
         }
-        p_r = p(*bestIt, 0);
-#else // linear MLS p_r
-        T_MLS mls; 
-        MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
-        std::vector<MLSPoint, P_ALLOCATOR> points; 
-        std::vector<MLSVal, V_ALLOCATOR> attributes; 
-        for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+        assert(subdivideType != -1); 
+        const int subdivideDim = (int)floor(REAL(subdivideType)/2.0); 
+        const int dir = (subdivideType % 2 == 0 ? -1 : 1); 
+
+        REAL p_r; 
+        if (object->GetOptionalAttributes().useRasterized) // use rasterized 
         {
-            if (!_isBulkCell.at(*it))
-                it = neighbours.erase(it); 
+            Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+            cellIndices[subdivideDim] += dir; 
+            p_r = p(_pressureField.cellIndex(cellIndices), 0); 
+        }
+        else // use MLS
+        {
+            T_MLS mls; 
+            MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
+            std::vector<MLSPoint, P_ALLOCATOR> points; 
+            std::vector<MLSVal, V_ALLOCATOR> attributes; 
+            for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+            {
+                if (!_isBulkCell.at(*it))
+                    it = neighbours.erase(it); 
+                else
+                {
+                    const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
+                    MLSVal val; 
+                    val << p(*it, 0);
+                    points.push_back(pt); 
+                    attributes.push_back(val); 
+                    ++it; 
+                }
+            }
+            if (neighbours.size() >= 4)
+            {
+                const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+                p_r = mlsVal(0, 0);
+            }
             else
             {
-                const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
-                MLSVal val; 
-                val << p(*it, 0);
-                points.push_back(pt); 
-                attributes.push_back(val); 
-                ++it; 
-            }
-        }
-        if (neighbours.size() < 4)
-        {
-            if (neighbours.size() != 0) // use closest neighbours
-            {
-                std::vector<int>::iterator bestIt; 
-                REAL min_d2 = std::numeric_limits<REAL>::max();
-                for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+                if (neighbours.size() != 0) // use closest neighbours
                 {
-                    const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
-                    if (d2 < min_d2)
+                    std::vector<int>::iterator bestIt; 
+                    REAL min_d2 = std::numeric_limits<REAL>::max();
+                    for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
                     {
-                        bestIt = it; 
-                        min_d2 = d2; 
+                        const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+                        if (d2 < min_d2)
+                        {
+                            bestIt = it; 
+                            min_d2 = d2; 
+                        }
                     }
+                    p_r = p(*bestIt, 0);
                 }
-                p_r = p(*bestIt, 0);
-            }
-            else // in this case, we don't have enough information, set this ghost cell to be its any neighbour pressure
-            {
-                Tuple3i indices = _pressureField.cellIndex(cell_idx); 
-                int ind_i = -1, bestInd = -1; 
-                for (int dim=0; dim<3; ++dim)
+                else // in this case, we don't have enough information, set this ghost cell to be its neighbour
                 {
-                    indices[dim] += 1; 
-                    ind_i = _pressureField.cellIndex(indices); 
-                    if (_isBulkCell.at(ind_i))
-                    {
-                        bestInd = ind_i; 
-                        break; 
-                    }
-                    indices[dim] -= 2; 
-                    ind_i = _pressureField.cellIndex(indices); 
-                    if (_isBulkCell.at(ind_i))
-                    {
-                        bestInd = ind_i; 
-                        break;
-                    }
-                    indices[dim] += 1; 
+                    Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+                    cellIndices[subdivideDim] += dir; 
+                    p_r = p(_pressureField.cellIndex(cellIndices), 0); 
                 }
-                p_r = (bestInd != -1 ? p(bestInd, 0) : 0.0); 
-                if (bestInd == -1)
-                    std::cerr << "**WARNING** PML_pressureUpdateGhostCells: not enough neighbours to determine ghost cell value, set p_gc=0\n";
             }
         }
-        else
-        {
-            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
-            p_r = mlsVal(0, 0);
-        }
-#endif
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
     }
 }
@@ -828,7 +818,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC,
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
 
         if (!success)
-            std::cerr << "**WARNING** Reflection of ghost cell inside some objects. Proceed computation. \n"; 
+            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
             //throw std::runtime_error("**ERROR** Ghost cell reflection still inside some objects. This is not handled."); 
 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 

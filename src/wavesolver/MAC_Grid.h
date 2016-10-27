@@ -150,6 +150,7 @@ class MAC_Grid
         std::vector<Vector3d>    _ghostCellPositions; 
         IntArray                 _ghostCellBoundaryIDs; 
 
+
         // Dimensionality of the data we are working with
         int                      _N;
 

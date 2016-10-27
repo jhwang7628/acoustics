@@ -72,15 +72,16 @@ const REAL D_INF = std::numeric_limits<REAL>::infinity();
 const int I_INF = std::numeric_limits<int>::infinity(); 
 
 #ifdef USE_ADF
-const double ADF_SUBDIVIDE_RADIUS = 0.0025*sqrt(3.0);
+//const double ADF_SUBDIVIDE_RADIUS = 0.0025*sqrt(3.0); // should be h/4
+const double ADF_SUBDIVIDE_RADIUS = 0.0005*sqrt(3.0);
 const int ADF_MAX_OCTREE_LEVELS = 9; 
-const double ADF_ERROR_TOLERANCE = 0.00001;
+const double ADF_ERROR_TOLERANCE = 0.000001;
 #endif
 
 const int GHOST_CELL_JACOBI_MAX_ITERATION = 200;
-const REAL KD_NEAREST_TOLERANCE = 5E-5; 
+const REAL KD_NEAREST_TOLERANCE = 5E-5;
 //const REAL KD_NEAREST_TOLERANCE = 1E-6; 
-const REAL TRI_NORMAL_PUSH_DIST = 0.000625;
+const REAL TRI_NORMAL_PUSH_DIST = 0.0005;
 
 //##############################################################################
 // Enum
