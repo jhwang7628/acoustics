@@ -167,8 +167,8 @@ DrawMesh()
         REAL rotationAngle;
         object->GetRotationDegree(rotationAngle, rotationAxis); 
         glPushMatrix(); 
-        glTranslated(translation[0], translation[1], translation[2]); 
         glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
+        glTranslated(translation[0], translation[1], translation[2]); 
 
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
@@ -300,7 +300,7 @@ DrawListeningPoints()
         glPushMatrix();
         glTranslatef(vertex.x, vertex.y, vertex.z); 
         glColor3f(0.9f, 0.1f, 0.1f);
-        GL_Wrapper::DrawSphere(5E-3, 10, 10); 
+        GL_Wrapper::DrawSphere(1.5E-3, 10, 10); 
         glPopMatrix(); 
     }
     glDisable(GL_LIGHTING);
