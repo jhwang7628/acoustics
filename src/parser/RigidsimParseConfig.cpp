@@ -25,4 +25,7 @@ Parse()
                 "ParseException: %s %s at Line %d\n",
                 e.getError(), e.what(), e.getLine());
     }
+
+    if (!_parsedData)
+        throw std::runtime_error("**ERROR** Cannot parse rigidsim config: " + _configFile); 
 }

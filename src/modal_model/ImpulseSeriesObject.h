@@ -51,9 +51,9 @@ class ImpulseSeriesObject
         inline REAL GetFirstImpulseTime(){return _firstImpulseTime;}
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
         inline bool Initialized(){return _objectMesh!=nullptr && N_Impulses()!=0;}
-        inline RigidsimConfigDataPtr GetRigidsimConfigData(){return _rigidsimConfigData;}
+        inline RigidsimConfigDataPtr GetRigidsimConfigData(){assert(_rigidsimConfigData); return _rigidsimConfigData;}
         inline void SetRigidsimConfigData(RigidsimConfigDataPtr configData){_rigidsimConfigData = configData;}
-        inline REAL GetRigidsimTimeStepSize(){return _rigidsimConfigData->simulation_step_size;}
+        inline REAL GetRigidsimTimeStepSize(){assert(_rigidsimConfigData); return _rigidsimConfigData->simulation_step_size;}
         void Initialize(); 
         void AddImpulse(const ImpactRecord &record); 
         void GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse); 
