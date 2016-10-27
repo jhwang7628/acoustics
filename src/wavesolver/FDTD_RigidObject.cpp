@@ -320,7 +320,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
-#if 0 // use sdf for normal query
+#if 1 // use sdf for normal query
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
@@ -334,6 +334,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     {
         boundaryPoint = originalPoint - erectedNormal * (distanceTravelled);
         reflectedPoint= originalPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
+        distanceTravelled = -distanceTravelled; // make it positive
     }
 
 #else // use kd-tree for normal query
@@ -346,6 +347,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 
     if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
+        std::cout << "distance smaller than tolerance\n";
         // get closest triangle normal and push manually
         Vector3d t_normal = _mesh->triangle_normal(closestTriangleIndex); 
         t_normal.normalize(); 
@@ -402,6 +404,25 @@ bool FDTD_RigidObject::
 FindImageFreshCell(const Vector3d &currentPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
 {
     return ReflectAgainstBoundary(currentPoint, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidObject::
+SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion)
+{
+    const Point3d &restCOM = _volumeCenter; 
+    const Eigen::Quaterniond rotation(quaternion.w, quaternion.v.x, quaternion.v.y, quaternion.v.z); 
+    const Eigen::Vector3d translation = Eigen::Vector3d(newCOM.x, newCOM.y, newCOM.z) - rotation * Eigen::Vector3d(restCOM.x, restCOM.y, restCOM.z); 
+    COUT_SDUMP(restCOM);
+    std::cout << "R x0 = " << rotation * Eigen::Vector3d(restCOM.x, restCOM.y, restCOM.z).transpose() << std::endl;
+    std::cout << "translation = " << translation.transpose() << std::endl;
+
+    // reset transformation
+    _modelingTransform = rotation; 
+    _modelingTransform.translate(translation);
+    _modelingTransformInverse = _modelingTransform.inverse(); 
+    UpdateBoundingBox(); 
 }
 
 //##############################################################################

@@ -56,7 +56,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         bool                                _hasVolume = false; 
         REAL                                _volume; // mesh volume that can be estimated if built from tet mesh
         Matrix3d                            _volumeInertiaTensor; // I = _volumeInertiaTensor * density
-        Vector3d                            _volumeCenter; 
+        Point3d                             _volumeCenter; 
 
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
@@ -95,6 +95,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
+        inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
         inline void SetMeshID(const int &ID){_meshID = ID;}
         inline int GetMeshID(){return _meshID;}
         void Initialize(const bool &buildFromTetMesh); 
@@ -112,6 +113,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
+        void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 
 
         //// debug methods //// 

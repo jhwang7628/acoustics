@@ -29,7 +29,7 @@ class FDTD_RigidObject_Animator
 
         void ReadDisplacement(const std::string &filename); 
         void ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVelocity, const std::string &fileAcceleration);
-        void GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacement, Quaternion<REAL> &quaterion);
+        void GetRigidObjectTransform(const int &objectID, const REAL &time, Point3d &displacement, Quaternion<REAL> &quaterion);
 };
 
 #endif

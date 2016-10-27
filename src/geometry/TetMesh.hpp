@@ -274,7 +274,7 @@ class TetMesh
         }
 
          /* Return the inertial tensor of the tet mesh */
-        T inertia_tensor(Matrix3<T> &I, Vector3<T> &x0) const; 
+        T inertia_tensor(Matrix3<T> &I, Point3<T> &x0) const; 
 
     private:
         void add_normal(unsigned int a, unsigned int b, unsigned int c,
@@ -1205,7 +1205,7 @@ void TetMesh<T>::get_vtx_neighbor_table(std::vector< std::set<int> >& tbl) const
  *  tools/init-rigid-tools/write_inertia.cpp::inertia_tensor
  */
 template <typename T> 
-T TetMesh<T>::inertia_tensor(Matrix3<T> &I, Vector3<T> &x0) const
+T TetMesh<T>::inertia_tensor(Matrix3<T> &I, Point3<T> &x0) const
 {
     const std::vector<T> &ms = masses();
     const std::vector<Point3<T> > &vtx = rest_positions();

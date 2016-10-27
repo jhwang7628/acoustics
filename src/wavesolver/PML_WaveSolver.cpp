@@ -533,7 +533,7 @@ void PML_WaveSolver::stepLeapfrog()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
-    _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
 
     if (_useGhostCellBoundary)
@@ -601,7 +601,7 @@ void PML_WaveSolver::stepCollocated()
 
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    //_grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  

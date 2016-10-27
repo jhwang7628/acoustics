@@ -29,14 +29,15 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
-        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(anSourcePtr);
+        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        //objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
         //const REAL omega = 2.0*M_PI*500.0;
         //const REAL phase = 0.0;
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
@@ -508,22 +509,20 @@ AnimateObjects()
 {
     if (_sceneObjectsAnimator) 
     {
-        Vector3d displacement; 
+        Point3d newCOM; 
         Vector3d rotationAxis; 
         REAL rotationAngle;
         Quaternion<REAL> quaternion; 
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
             const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
-            if (_sceneObjects->GetPtr(rigidsimObjectID)->IsModalObject())
+            const auto &object = _sceneObjects->GetPtr(rigidsimObjectID);
+            if (object->IsModalObject())
             {
-                _sceneObjectsAnimator->GetObjectDisplacement(rigidsimObjectID, _simulationTime, displacement, quaternion); 
-                rotationAngle = quaternion.toAxisRotR(rotationAxis); 
-                _sceneObjects->GetPtr(obj_idx)->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
-
-#ifdef DEBUG_PRINT
-                std::cout << "object " << obj_idx << " has translation = " << _sceneObjects->GetPtr(obj_idx)->GetTranslation().transpose() << std::endl;
-#endif
+                _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, _simulationTime, newCOM, quaternion); 
+                object->SetRigidBodyTransform(newCOM, quaternion);
+                //rotationAngle = quaternion.toAxisRotR(rotationAxis);  // FIXME debug
+                //object->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
             }
         }
     }

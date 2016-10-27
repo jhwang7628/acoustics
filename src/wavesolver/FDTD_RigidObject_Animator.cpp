@@ -33,7 +33,7 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
 // scene.
 //##############################################################################
 void FDTD_RigidObject_Animator::
-GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacement, Quaternion<REAL> &quaternion)
+GetRigidObjectTransform(const int &objectID, const REAL &time, Point3d &newCOM, Quaternion<REAL> &quaternion)
 {
     const int N_frames = _rigidsimResults->N_Frames(); 
     const auto &timeStamps = _rigidsimResults->Timesteps(); 
@@ -41,12 +41,12 @@ GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacem
     const std::vector<std::vector<Quaternion<REAL> > > &quaternions  = _rigidsimResults->Rotations();
     if (time <= _timeStart)
     {
-        displacement = positions.at(0).at(objectID); 
+        newCOM = positions.at(0).at(objectID); 
         quaternion = quaternions.at(0).at(objectID); 
     }
     else if (time >= _timeStop)
     {
-        displacement = positions.at(N_frames-1).at(objectID); 
+        newCOM = positions.at(N_frames-1).at(objectID); 
         quaternion = quaternions.at(N_frames-1).at(objectID); 
     }
     else 
@@ -59,9 +59,9 @@ GetObjectDisplacement(const int &objectID, const REAL &time, Vector3d &displacem
         const Point3<REAL> &lPoint = positions.at(lFrame).at(objectID);
         const Point3<REAL> &hPoint = positions.at(hFrame).at(objectID);
         const REAL ratio = (time - timeStamps.at(lFrame)) / _timestep; 
-        displacement.x = lPoint.x*(1.0-ratio) + hPoint.x*ratio; 
-        displacement.y = lPoint.y*(1.0-ratio) + hPoint.y*ratio; 
-        displacement.z = lPoint.z*(1.0-ratio) + hPoint.z*ratio; 
+        newCOM.x = lPoint.x*(1.0-ratio) + hPoint.x*ratio; 
+        newCOM.y = lPoint.y*(1.0-ratio) + hPoint.y*ratio; 
+        newCOM.z = lPoint.z*(1.0-ratio) + hPoint.z*ratio; 
 
         // interpolate quaternions
         const Quaternion<REAL> &lQuat = quaternions.at(lFrame).at(objectID); 
