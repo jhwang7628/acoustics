@@ -161,15 +161,6 @@ DrawMesh()
         const int N_vertices = vertices.size(); 
         const REAL offsetEpsilon = 1E-5;
 
-        // get transformations
-        Eigen::Vector3d translation = object->GetTranslation(); 
-        Eigen::Vector3d rotationAxis;
-        REAL rotationAngle;
-        object->GetRotationDegree(rotationAngle, rotationAxis); 
-        glPushMatrix(); 
-        glRotated(rotationAngle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
-        glTranslated(translation[0], translation[1], translation[2]); 
-
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
         {
@@ -188,6 +179,9 @@ DrawMesh()
                 x = x + normal_x.normalized() * offsetEpsilon; 
                 y = y + normal_y.normalized() * offsetEpsilon; 
                 z = z + normal_z.normalized() * offsetEpsilon; 
+                x = object->ObjectToWorldPoint(x); 
+                y = object->ObjectToWorldPoint(y); 
+                z = object->ObjectToWorldPoint(z); 
                 glVertex3f(x.x, x.y, x.z); 
                 glVertex3f(y.x, y.y, y.z); 
 
@@ -226,12 +220,18 @@ DrawMesh()
             for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
             {
                 const Tuple3ui &triangle = triangles.at(t_idx); 
-                const Point3<REAL> &x = vertices.at(triangle.x); 
-                const Point3<REAL> &y = vertices.at(triangle.y); 
-                const Point3<REAL> &z = vertices.at(triangle.z); 
-                const Vector3<REAL> &nx = normals.at(triangle.x); 
-                const Vector3<REAL> &ny = normals.at(triangle.y); 
-                const Vector3<REAL> &nz = normals.at(triangle.z); 
+                Point3<REAL> x = vertices.at(triangle.x); 
+                Point3<REAL> y = vertices.at(triangle.y); 
+                Point3<REAL> z = vertices.at(triangle.z); 
+                Vector3<REAL> nx = normals.at(triangle.x); 
+                Vector3<REAL> ny = normals.at(triangle.y); 
+                Vector3<REAL> nz = normals.at(triangle.z); 
+                x = object->ObjectToWorldPoint(x); 
+                y = object->ObjectToWorldPoint(y); 
+                z = object->ObjectToWorldPoint(z); 
+                nx = object->ObjectToWorldVector(nx); 
+                ny = object->ObjectToWorldVector(ny); 
+                nz = object->ObjectToWorldVector(nz); 
                 if (_meshDataPointer == 0)
                 {
                     glNormal3f(nx.x, nx.y, nx.z); 
@@ -263,8 +263,6 @@ DrawMesh()
             glEnd(); 
         }
         glDisable(GL_LIGHTING);
-
-        glPopMatrix();
     }
 }
 
