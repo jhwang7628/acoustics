@@ -146,6 +146,15 @@ class RigidBody
             m_x += xx;
         }
 
+        void init_com_rotation(T rw, T rx, T ry, T rz)
+        {
+            m_q = Quaternion<T>(rw, rx, ry, rz);
+            m_q.normalize();
+            m_invq = m_q.conjugate();
+            const Matrix3<T> R = m_q.toMatrix3();
+            m_invI = R * m_invI0 * R.transpose();
+        }
+
         void rotate(const Quaternion<T>& rot)
         {
             m_q = rot * m_q;
