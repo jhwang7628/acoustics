@@ -29,8 +29,8 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
-        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(anSourcePtr);
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
         //const REAL omega = 2.0*M_PI*500.0;
@@ -510,8 +510,6 @@ AnimateObjects()
     if (_sceneObjectsAnimator) 
     {
         Point3d newCOM; 
-        Vector3d rotationAxis; 
-        REAL rotationAngle;
         Quaternion<REAL> quaternion; 
         for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         {
@@ -521,8 +519,6 @@ AnimateObjects()
             {
                 _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, _simulationTime, newCOM, quaternion); 
                 object->SetRigidBodyTransform(newCOM, quaternion);
-                //rotationAngle = quaternion.toAxisRotR(rotationAxis);  // FIXME debug
-                //object->SetTransform(displacement.x, displacement.y, displacement.z, rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z); 
             }
         }
     }
