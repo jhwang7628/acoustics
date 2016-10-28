@@ -47,14 +47,6 @@ RigidBodySimulator::~RigidBodySimulator()
 void RigidBodySimulator::advance(REAL dt)
 {
     const int NRB = m_rigidObjs.size();
-#ifdef USE_RECORDER
-    //// write the displacement of all the rigid objects into file
-    m_dispRec.begin_record(m_ts);
-    for(size_t i = 0;i < NRB;++ i)
-        //m_dispRec.record_displacement(m_rigidObjs[i]);
-        m_dispRec.record_rigid_kinematics(m_rigidObjs[i]);
-    m_dispRec.end_record();
-#endif
     //// update external force
     for(size_t i = 0;i < NRB;++ i)
     {
@@ -81,6 +73,14 @@ void RigidBodySimulator::advance(REAL dt)
         if ( !m_rigidObjs[i]->is_fixed() ) 
             m_rigidObjs[i]->advance_state(dt, m_ts);
 
+#ifdef USE_RECORDER
+    //// write the displacement of all the rigid objects into file
+    m_dispRec.begin_record(m_ts);
+    for(size_t i = 0;i < NRB;++ i)
+        //m_dispRec.record_displacement(m_rigidObjs[i]);
+        m_dispRec.record_rigid_kinematics(m_rigidObjs[i]);
+    m_dispRec.end_record();
+#endif
     m_ts += dt;
 }
 
