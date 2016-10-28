@@ -11,7 +11,6 @@ ReadModeFromFile()
     // first read the modes into ModeData struct
     ModeData modeData; 
     modeData.read(_modeFile.c_str()); 
-    std::cout << modeData << std::endl;
 
     // fit data into Eigen matrix for later fast query
     const int N_modes = modeData.numModes(); 
@@ -175,7 +174,6 @@ CullHighFrequencyModes(const int &modesToKeep)
         _modalODESolvers.clear(); 
         InitializeModalODESolvers(_material);
     }
-    std::cout << "Highest frequency after culling: " << GetModeFrequency(modesToKeep-1) << std::endl;
 }
 
 //##############################################################################
@@ -195,6 +193,7 @@ CullHighFrequencyModes(const REAL &frequenciesToKeep)
     }
     if (cullModeStart > 1)
         CullHighFrequencyModes(cullModeStart);
+    std::cout << *this << std::endl;
 }
 
 //##############################################################################
@@ -204,9 +203,15 @@ std::ostream &operator <<(std::ostream &os, const ModalAnalysisObject &object)
     os << "--------------------------------------------------------------------------------\n" 
        << "Class ModalAnalysisObject\n" 
        << "--------------------------------------------------------------------------------\n"
-       << " number of modes: " << object.N_Modes() << "\n"
-       << " number of DOF  : " << object.N_DOF() << "\n"
-       << "--------------------------------------------------------------------------------" 
+       << " number of modes   : " << object.N_Modes() << "\n"
+       << " number of DOF     : " << object.N_DOF() << "\n"
+       << " ........................\n";
+    if (object.N_Modes() > 0)
+    {
+    os << " highest frequency : " << object.GetModeFrequency(object.N_Modes()-1) << "\n" 
+       << " lowest frequency  : " << object.GetModeFrequency(0) << "\n";
+    }
+    os << "--------------------------------------------------------------------------------" 
        << std::flush; 
     return os; 
 }
