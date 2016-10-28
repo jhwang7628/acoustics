@@ -412,15 +412,18 @@ void FDTD_RigidObject::
 SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion)
 {
     const Point3d &restCOM = _volumeCenter; 
-    const Eigen::Quaterniond rotation(quaternion.w, quaternion.v.x, quaternion.v.y, quaternion.v.z); 
-    const Eigen::Vector3d translation = Eigen::Vector3d(newCOM.x, newCOM.y, newCOM.z) - rotation * Eigen::Vector3d(restCOM.x, restCOM.y, restCOM.z); 
-    COUT_SDUMP(restCOM);
-    std::cout << "R x0 = " << rotation * Eigen::Vector3d(restCOM.x, restCOM.y, restCOM.z).transpose() << std::endl;
-    std::cout << "translation = " << translation.transpose() << std::endl;
+    Vector3d rotationAxis; 
+    const REAL rotationAngle = quaternion.toAxisRotR(rotationAxis);
+    const Eigen::AngleAxisd rotation(rotationAngle, Eigen::Vector3d(rotationAxis.x, rotationAxis.y, rotationAxis.z));
+    //const Eigen::Quaterniond rotation(quaternion.w, quaternion.v.x, quaternion.v.y, quaternion.v.x); 
+    const Eigen::Vector3d restCOM_e = Eigen::Vector3d(restCOM.x, restCOM.y, restCOM.z); 
+    const Eigen::Vector3d newCOM_e = Eigen::Vector3d(newCOM.x, newCOM.y, newCOM.z); 
 
     // reset transformation
-    _modelingTransform = rotation; 
-    _modelingTransform.translate(translation);
+    _modelingTransform.setIdentity();
+    _modelingTransform.pretranslate(-restCOM_e);
+    _modelingTransform.prerotate(rotation);
+    _modelingTransform.pretranslate(newCOM_e); 
     _modelingTransformInverse = _modelingTransform.inverse(); 
     UpdateBoundingBox(); 
 }
@@ -490,4 +493,28 @@ ClearDebugArrow()
 {
     _debugArrowStart.clear(); 
     _debugArrowNormal.clear(); 
+}
+
+//##############################################################################
+//##############################################################################
+int FDTD_RigidObject::
+FindLowestVertex(const int &dimension, Vector3d &position)
+{
+    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    const int N_vertices = vertices.size(); 
+    int minIndex = -1; 
+    REAL minValue = std::numeric_limits<REAL>::max(); 
+    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+    {
+        const REAL value = ObjectToWorldPoint(vertices.at(v_idx))[dimension]; 
+        if (value < minValue)
+        {
+            minIndex = v_idx; 
+            minValue = value; 
+        }
+    }
+    assert(minIndex != -1); 
+    position = ObjectToWorldPoint(vertices.at(minIndex)); 
+    std::cout << "vertex " << minIndex << " has the minimum position at dimension " << dimension << ": " << minValue << std::endl;
+    return minIndex;
 }
