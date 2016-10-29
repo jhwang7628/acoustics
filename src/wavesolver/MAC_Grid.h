@@ -132,7 +132,7 @@ class MAC_Grid
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
-
+        BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
         BoolArray                _pressureCellHasValidHistory; 
         BoolArray                _velocityCellHasValidHistory[3]; 
 
@@ -280,11 +280,12 @@ class MAC_Grid
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
-        void classifyCellsDynamicAABB(const bool &useBoundary, MATRIX &p, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
         REAL PressureCellType(const int &idx) const;
         void ResetCellHistory(const bool &valid); 
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
+        void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
+        void CheckClassified(); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

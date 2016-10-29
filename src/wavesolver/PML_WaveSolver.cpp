@@ -603,6 +603,7 @@ void PML_WaveSolver::stepCollocated()
     _cellClassifyTimer.start(); 
     _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
+
     _freshCellTimer.start(); 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
