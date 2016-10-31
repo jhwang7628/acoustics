@@ -202,9 +202,9 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->timeSavePerStep    = queryRequiredInt (solverNode, "substeps"); 
     const REAL timeStepFrequency= queryRequiredReal(solverNode, "timestepfrequency"); 
     settings->timeStepSize = 1.0/timeStepFrequency; 
-    const REAL domainCenter_x    = queryRequiredReal(solverNode, "domain_center_x"); 
-    const REAL domainCenter_y    = queryRequiredReal(solverNode, "domain_center_y"); 
-    const REAL domainCenter_z    = queryRequiredReal(solverNode, "domain_center_z"); 
+    const REAL domainCenter_x    = queryOptionalReal(solverNode, "domain_center_x", 0.0); 
+    const REAL domainCenter_y    = queryOptionalReal(solverNode, "domain_center_y", 0.0); 
+    const REAL domainCenter_z    = queryOptionalReal(solverNode, "domain_center_z", 0.0); 
     settings->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
 
     // IO settings
