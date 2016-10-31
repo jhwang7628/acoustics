@@ -272,88 +272,37 @@ DrawMesh()
 void FDTD_AcousticSimulator_Viewer::
 DrawImpulses()
 {
-#if 0
-    const REAL impulseScaling = 0.00001;
+    const REAL impulseScaling = 10.;
     const REAL time = _simulator->GetSimulationTime();
-    const auto &sceneObjects = _simulator->_GetSceneObjects(); 
+    const auto &sceneObjects = _simulator->GetSceneObjects(); 
     for (int obj_idx=0; obj_idx<sceneObjects->N(); ++obj_idx)
     {
         const auto &object = sceneObjects->GetPtr(obj_idx); 
+        std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
+        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
         std::vector<ImpulseSeriesObject::ImpactRecord> records; 
         object->GetImpulseWithinSupport(time, records); 
-        for (const auto &imp : impactRecords) 
+        for (const auto &imp : records) 
         {
             if (imp.supportLength < SMALL_NUM)
                 continue;
+            const auto &color = _objectColors.at(obj_idx); 
+            Point3<REAL> vertexEnd   = vertices.at(imp.appliedVertex); 
+            Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * impulseScaling;
+            vertexEnd = object->ObjectToWorldPoint(vertexEnd); 
+            vertexBegin = object->ObjectToWorldPoint(vertexBegin); 
             glLineWidth(3.0f); 
             glBegin(GL_LINES); 
-            const Point3<REAL> &vertexEnd = vertices.at(imp.appliedVertex); 
-            const auto &color = _objectColors.at(obj_idx); 
             glColor3f(color.x, color.y, color.z); 
-            Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * impulseScaling;
             glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
             glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
             glEnd(); 
-
-            // draw impulse applied vertex
-            //glPointSize(10.0); 
-            //glBegin(GL_POINTS); 
-            //glColor3f(1.0f, 0.0f, 0.0f); 
-            //glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-            //glEnd(); 
-
-            //const Vector3d &J = imp.impactVector; 
-            //const Vector3d r = imp.impactPosition - _modalObjectOwner->CenterOfMass(); 
-            //const REAL S = ComputeS(imp, time); 
-            //// translational acceleration
-            //acceleration += J * (M_PI*S / (2.0*imp.supportLength*_modalObjectOwner->Mass())); 
-            //// rotational acceleration (Eq 13)
-            //const Vector3d alpha = _modalObjectOwner->PremultiplyInvInertiaTensor(r.crossProduct(J)) * (M_PI*S) / (2.0*imp.supportLength); 
-            //acceleration += alpha.crossProduct(r); 
+            glPushMatrix();
+            glTranslatef(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+            GL_Wrapper::DrawSphere(0.5E-3, 10, 10); 
+            glPopMatrix(); 
         }
     }
-    //const int N_frames = _rigidSoundObject->N_Impuljes(); 
-    //_currentImpulseFrame = _currentFrame % N_frames; 
-
-    // get impulse from object
-    //const REAL timeStart = CurrentTime(); 
-    //const REAL timeStop  = timeStart + _timeStepSize; 
-    //std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
-    //_rigidSoundObject->GetForces(timeStart, timeStop, impactRecords); 
-    //if (impactRecords.size() > 0) 
-    //{
-    //    const int N_impacts = impactRecords.size(); 
-    //    for (int imp_idx=0; imp_idx<N_impacts; ++imp_idx)
-    //    {
-    //        const auto &record = impactRecords.at(imp_idx); 
-    //        const int &vertexID = record.appliedVertex; 
-    //        const Vector3d &impulse = record.impactVector; 
-
-    //        //_rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
-
-    //        // draw impulse vector
-    //        std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
-    //        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-    //        //const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
-    //        //const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-    //        glLineWidth(3.0f); 
-    //        glBegin(GL_LINES); 
-    //        const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
-    //        glColor3f(1.0f, 1.0f, 0.0f);
-    //        Point3<REAL> vertexBegin = vertexEnd - impulse * impulseScaling;
-    //        glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
-    //        glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-    //        glEnd(); 
-
-    //        // draw impulse applied vertex
-    //        glPointSize(10.0); 
-    //        glBegin(GL_POINTS); 
-    //        glColor3f(1.0f, 0.0f, 0.0f); 
-    //        glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-    //        glEnd(); 
-    //    }
-    //}
-#endif
 }
 
 //##############################################################################
