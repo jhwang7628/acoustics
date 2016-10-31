@@ -632,7 +632,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
-        const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
+        const int boundaryObject = _objects->OccupyByObject(cellPosition); 
+        //const int boundaryObject = _ghostCellBoundaryIDs.at(ghost_cell_idx); 
 
         // find reflection point, normal etc
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
