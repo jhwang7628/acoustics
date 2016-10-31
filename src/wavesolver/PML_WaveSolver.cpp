@@ -78,7 +78,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
 PML_WaveSolver::PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
     : _waveSpeed(settings->soundSpeed), 
       _density(settings->airDensity), 
-      _grid(BoundingBox(settings->cellSize,settings->cellDivisions),settings,objects),
+      _grid(BoundingBox(settings->cellSize,settings->cellDivisions,settings->domainCenter),settings,objects),
       _cellSize(settings->cellSize), 
       _subSteps(settings->timeSavePerStep), 
       _endTime(settings->timeEnd), 
@@ -380,6 +380,16 @@ void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, 
 #else
     _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _pGhostCellsFull, _v, sampledCells); 
 #endif
+}
+
+void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const
+{
+    const BoundingBox bbox = _grid.PressureBoundingBox();
+    for (int d=0; d<3; ++d)
+    {
+        minBound[d] = bbox.axismin(d); 
+        maxBound[d] = bbox.axismax(d); 
+    }
 }
 
 // TODO this currently produce bad results, maybe need to smooth velocity field as well

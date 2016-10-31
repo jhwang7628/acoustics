@@ -85,6 +85,16 @@ class BoundingBox {
     {
     }
 
+    // make a squre bounding box centered at center and have
+    // cellSize*cellDivision length in each dimension
+    BoundingBox(const REAL &cellSize, const int &cellDivisions, const Vector3d &center,
+                bool is3D=true)
+        : _minBound(center.x-cellSize*(REAL)cellDivisions/2.0,center.y-cellSize*(REAL)cellDivisions/2.0,center.z-cellSize*(REAL)cellDivisions/2.0), 
+          _maxBound(center.x+cellSize*(REAL)cellDivisions/2.0,center.y+cellSize*(REAL)cellDivisions/2.0,center.z+cellSize*(REAL)cellDivisions/2.0), 
+          _is3D(is3D)
+    {
+    }
+
     BoundingBox( const Vector3d &minBound, const Vector3d &maxBound,
                  bool is3D = true )
       : _minBound( minBound ),

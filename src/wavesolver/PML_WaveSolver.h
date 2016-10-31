@@ -156,7 +156,6 @@ class PML_WaveSolver : public Solver
         // Destructor
         virtual ~PML_WaveSolver(){};
 
-
         inline bool GetGhostCellBoundary() { return _useGhostCellBoundary; } 
         inline MAC_Grid &GetGrid() {return _grid;}
         inline void setPMLBoundaryWidth( REAL width, REAL strength ){ _grid.setPMLBoundaryWidth( width, strength ); }
@@ -191,6 +190,7 @@ class PML_WaveSolver : public Solver
         void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
         void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
         void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
+        void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;
 
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);

@@ -99,6 +99,7 @@ void FDTD_AcousticSimulator_Viewer::
 draw()
 {
     DrawMesh(); 
+    DrawImpulses();
     DrawListeningPoints();
     DrawSelection(); 
     DrawDebugCin();
@@ -122,7 +123,7 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
-    const REAL ballSize = _simulator->GetSolverSettings()->cellSize/2.0; 
+    const REAL ballSize = _simulator->GetSolverSettings()->cellSize/1.9; 
     // draw cell centroid near the slices 
     for (auto &slice : _sliceCin)
     {
@@ -267,17 +268,108 @@ DrawMesh()
 }
 
 //##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawImpulses()
+{
+#if 0
+    const REAL impulseScaling = 0.00001;
+    const REAL time = _simulator->GetSimulationTime();
+    const auto &sceneObjects = _simulator->_GetSceneObjects(); 
+    for (int obj_idx=0; obj_idx<sceneObjects->N(); ++obj_idx)
+    {
+        const auto &object = sceneObjects->GetPtr(obj_idx); 
+        std::vector<ImpulseSeriesObject::ImpactRecord> records; 
+        object->GetImpulseWithinSupport(time, records); 
+        for (const auto &imp : impactRecords) 
+        {
+            if (imp.supportLength < SMALL_NUM)
+                continue;
+            glLineWidth(3.0f); 
+            glBegin(GL_LINES); 
+            const Point3<REAL> &vertexEnd = vertices.at(imp.appliedVertex); 
+            const auto &color = _objectColors.at(obj_idx); 
+            glColor3f(color.x, color.y, color.z); 
+            Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * impulseScaling;
+            glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
+            glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+            glEnd(); 
+
+            // draw impulse applied vertex
+            //glPointSize(10.0); 
+            //glBegin(GL_POINTS); 
+            //glColor3f(1.0f, 0.0f, 0.0f); 
+            //glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+            //glEnd(); 
+
+            //const Vector3d &J = imp.impactVector; 
+            //const Vector3d r = imp.impactPosition - _modalObjectOwner->CenterOfMass(); 
+            //const REAL S = ComputeS(imp, time); 
+            //// translational acceleration
+            //acceleration += J * (M_PI*S / (2.0*imp.supportLength*_modalObjectOwner->Mass())); 
+            //// rotational acceleration (Eq 13)
+            //const Vector3d alpha = _modalObjectOwner->PremultiplyInvInertiaTensor(r.crossProduct(J)) * (M_PI*S) / (2.0*imp.supportLength); 
+            //acceleration += alpha.crossProduct(r); 
+        }
+    }
+    //const int N_frames = _rigidSoundObject->N_Impuljes(); 
+    //_currentImpulseFrame = _currentFrame % N_frames; 
+
+    // get impulse from object
+    //const REAL timeStart = CurrentTime(); 
+    //const REAL timeStop  = timeStart + _timeStepSize; 
+    //std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
+    //_rigidSoundObject->GetForces(timeStart, timeStop, impactRecords); 
+    //if (impactRecords.size() > 0) 
+    //{
+    //    const int N_impacts = impactRecords.size(); 
+    //    for (int imp_idx=0; imp_idx<N_impacts; ++imp_idx)
+    //    {
+    //        const auto &record = impactRecords.at(imp_idx); 
+    //        const int &vertexID = record.appliedVertex; 
+    //        const Vector3d &impulse = record.impactVector; 
+
+    //        //_rigidSoundObject->GetImpulse(_currentImpulseFrame, timestamp, vertexID, impulse); 
+
+    //        // draw impulse vector
+    //        std::shared_ptr<TriangleMesh<REAL> > meshPtr = _rigidSoundObject->GetMeshPtr();
+    //        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
+    //        //const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+    //        //const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
+    //        glLineWidth(3.0f); 
+    //        glBegin(GL_LINES); 
+    //        const Point3<REAL> &vertexEnd = vertices.at(vertexID); 
+    //        glColor3f(1.0f, 1.0f, 0.0f);
+    //        Point3<REAL> vertexBegin = vertexEnd - impulse * impulseScaling;
+    //        glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
+    //        glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+    //        glEnd(); 
+
+    //        // draw impulse applied vertex
+    //        glPointSize(10.0); 
+    //        glBegin(GL_POINTS); 
+    //        glColor3f(1.0f, 0.0f, 0.0f); 
+    //        glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
+    //        glEnd(); 
+    //    }
+    //}
+#endif
+}
+
+//##############################################################################
 // Draw simulation box
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
 DrawBox()
 {
-    const auto &settings = _simulator->GetSolverSettings(); 
-    const REAL cellSize = settings->cellSize; 
-    const int division = settings->cellDivisions; 
-    const REAL halfLength = (REAL)division*cellSize / 2.0; 
-    const double minBound[3] = {-halfLength, -halfLength, -halfLength}; 
-    const double maxBound[3] = { halfLength,  halfLength,  halfLength}; 
+    Vector3d minBound, maxBound; 
+    _simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
+    //const auto &settings = _simulator->GetSolverSettings(); 
+    //const REAL cellSize = settings->cellSize; 
+    //const int division = settings->cellDivisions; 
+    //const REAL halfLength = (REAL)division*cellSize / 2.0; 
+    //const double minBound[3] = {-halfLength, -halfLength, -halfLength}; 
+    //const double maxBound[3] = { halfLength,  halfLength,  halfLength}; 
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
 }
@@ -806,8 +898,12 @@ ConstructSliceSamples(Slice &slice)
     //const int division = _sliceDivision;
     const REAL cellSize = settings->cellSize*(REAL)settings->cellDivisions / (REAL)division; 
 
-    const REAL halfLength = (REAL)division*cellSize / 2.0; 
-    const REAL minBound = -halfLength + cellSize/2.0; 
+    //const REAL halfLength = (REAL)division*cellSize / 2.0; 
+    //const REAL minBound = -halfLength + cellSize/2.0; 
+    const BoundingBox pBBox = _simulator->GetGrid().PressureBoundingBox(); 
+    slice.minBound = pBBox.minBound() + 0.5*cellSize;
+    slice.maxBound = pBBox.maxBound() - 0.5*cellSize; 
+    slice.N_sample_per_dim = division; 
 
     const int dim_0 = (dim + 1) % 3; 
     const int dim_1 = (dim + 2) % 3; 
@@ -816,17 +912,16 @@ ConstructSliceSamples(Slice &slice)
         {
             Vector3d sample; 
             sample(dim) = origin(dim); 
-            sample(dim_0) = minBound + cellSize*(REAL)dim_0_idx; 
-            sample(dim_1) = minBound + cellSize*(REAL)dim_1_idx; 
+            sample(dim_0) = slice.minBound[dim_0] + cellSize*(REAL)dim_0_idx; 
+            sample(dim_1) = slice.minBound[dim_1] + cellSize*(REAL)dim_1_idx; 
             samples.push_back(sample); 
         }
-    slice.N_sample_per_dim = division; 
-    slice.minBound = minBound; 
-    slice.maxBound = minBound + (REAL)(division-1)*cellSize; 
 
     // horizontal grid lines
-    const REAL xStart = slice.minBound - cellSize/2.0; 
-    const REAL xStop =  slice.maxBound + cellSize/2.0; 
+    const REAL xStart = slice.minBound[dim_0] - 0.5*cellSize; 
+    const REAL xStop =  slice.maxBound[dim_0] + 0.5*cellSize; 
+    const REAL yStart = slice.minBound[dim_1] - 0.5*cellSize; 
+    const REAL yStop =  slice.maxBound[dim_1] + 0.5*cellSize; 
     for (int dim_0_idx=0; dim_0_idx<division+1; ++dim_0_idx)
     {
         Vector3d start; 
@@ -835,23 +930,21 @@ ConstructSliceSamples(Slice &slice)
         stop(dim) = origin(dim); 
         start(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
         stop(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
-        start(dim_1) = xStart; 
-        stop(dim_1) = xStop; 
+        start(dim_1) = yStart; 
+        stop(dim_1) = yStop; 
         gridLines.push_back(start); 
         gridLines.push_back(stop); 
     }
 
     // vertical grid lines
-    const REAL yStart = slice.minBound - cellSize/2.0; 
-    const REAL yStop =  slice.maxBound + cellSize/2.0; 
     for (int dim_1_idx=0; dim_1_idx<division+1; ++dim_1_idx)
     {
         Vector3d start; 
         Vector3d stop; 
         start(dim) = origin(dim); 
         stop(dim) = origin(dim); 
-        start(dim_0) = yStart; 
-        stop(dim_0) = yStop; 
+        start(dim_0) = xStart; 
+        stop(dim_0) = xStop; 
         start(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
         stop(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
         gridLines.push_back(start); 
