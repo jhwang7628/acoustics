@@ -53,7 +53,6 @@ step = 0
 for f in filenames: 
     stepData = IO.readMatrixXdBinary(f, verbose=0)
     listenedData[step, :] = stepData.transpose()
-
     if (verifyAnalytical):
         stepData = IO.readMatrixXdBinary(analyticalFilenames[step], verbose=0)
         analyticalListenedData[step, :] = stepData.transpose()
@@ -63,7 +62,7 @@ for f in filenames:
 maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
-N_frontPad = int(0.281*wavRate)
+N_frontPad = int(0.4243*wavRate)
 # N_frontPad = 0
 for ii in range(N_points): 
     if len(sys.argv) == 5 and ii != int(sys.argv[4]): 
@@ -72,8 +71,8 @@ for ii in range(N_points):
     outputData = listenedData[:, ii]
     normalizationConstant = maxValue
     normalizationConstant = np.absolute(outputData.max())
-    # if normalizationConstant > 1E-14:
-    #     outputData /= normalizationConstant
+    if normalizationConstant > 1E-14:
+        outputData /= normalizationConstant
     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
     outputData = PadZero(outputData.copy(), N_frontPad, wavRate)
     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
@@ -92,6 +91,7 @@ one_over_r = np.divide(np.ones(N_points), dataR)
 # N_points = listeningPositions.shape[0]
 
 if plotting:
+    t = np.linspace(0., float(N_steps)*(1./float(stepRate)), N_steps)
     # plotting
     colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
     lw = 2.0
@@ -99,7 +99,7 @@ if plotting:
     if len(sys.argv) == 5: 
         plot_index = int(sys.argv[4]) 
         data = listenedData[:, plot_index] 
-        plt.plot(data, '-', label=listeningPositions[plot_index, :]) 
+        plt.plot(t, data, '-o', label=listeningPositions[plot_index, :]) 
         if (verifyAnalytical):
             plt.plot(analyticalListenedData[:, plot_index])
               

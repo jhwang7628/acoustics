@@ -26,27 +26,27 @@ def SampleCircle_Z(center, radius, N):
     dt = 2.0*math.pi/float(N)
     for idx in range(N): 
         theta = dt*idx
-        x = radius * math.cos(theta)
-        y = radius * math.sin(theta)
-        z = center
+        x = center[0] + radius * math.cos(theta)
+        y = center[1] + radius * math.sin(theta)
+        z = center[2]
         print GenerateLine(x, y, z)
 
 def SampleCircle_Y(center, radius, N): 
     dt = 2.0*math.pi/float(N)
     for idx in range(N): 
         theta = dt*idx
-        x = radius * math.cos(theta)
-        z = radius * math.sin(theta)
-        y = center
+        x = center[0] + radius * math.cos(theta)
+        z = center[2] + radius * math.sin(theta)
+        y = center[1]
         print GenerateLine(x, y, z)
 
 def SampleCircle_X(center, radius, N): 
     dt = 2.0*math.pi/float(N)
     for idx in range(N): 
         theta = dt*idx
-        z = radius * math.cos(theta)
-        y = radius * math.sin(theta)
-        x = center
+        z = center[2] + radius * math.cos(theta)
+        y = center[1] + radius * math.sin(theta)
+        x = center[0]
         print GenerateLine(x, y, z)
 
 def SampleLine(start, end, N): 
@@ -70,8 +70,11 @@ def Pool15Balls(offset, r):
             count += 1
 
 if __name__ == '__main__': 
-    SampleCircle_X(0.0, 0.15, 50)
-    SampleCircle_Y(0.00, 0.15, 50)
-    SampleCircle_Z(0.0, 0.15, 50)
+    center = [0., 0.07, 0.]
+    radius = 0.075
+    N = 50
+    SampleCircle_X(center, radius, N)
+    SampleCircle_Y(center, radius, N)
+    SampleCircle_Z(center, radius, N)
     # SampleLine(np.array([-0.5, 0.0, 0.0]), np.array([0.5, 0.0, 0.0]), 200)
     # Pool15Balls(np.array([0.1, 0.0, 0.0]), 0.05)
