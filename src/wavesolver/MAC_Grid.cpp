@@ -1401,8 +1401,9 @@ void MAC_Grid::InterpolateFreshVelocityCell(MATRIX &v, const int &dim, const REA
 
 void MAC_Grid::classifyCells( bool useBoundary )
 {
-    int      numPressureCells = _pressureField.numCells();
-    int      numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
+    const int numPressureCells = _pressureField.numCells();
+    const int numVcells[] = { _velocityField[ 0 ].numCells(), _velocityField[ 1 ].numCells(), _velocityField[ 2 ].numCells() };
+    const int maxNumCells = std::max<int>(std::max<int>(std::max<int>(numPressureCells, numVcells[0]), numVcells[1]), numVcells[2]);
     const REAL &dt = _waveSolverSettings->timeStepSize; 
     const REAL &dx = _waveSolverSettings->cellSize; 
     const REAL &c = _waveSolverSettings->soundSpeed; 
@@ -1425,7 +1426,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isBulkCell.resize(numPressureCells, false);
     _isGhostCell.resize(numPressureCells, false);
     _isPMLCell.resize(numPressureCells, false); 
-    _classified.resize(numPressureCells, false); 
+    _classified.resize(maxNumCells, false); 
 
     _isVelocityInterfacialCell[ 0 ].resize( numVcells[ 0 ], false );
     _isVelocityInterfacialCell[ 1 ].resize( numVcells[ 1 ], false );
