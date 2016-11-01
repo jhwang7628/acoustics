@@ -1,6 +1,7 @@
 #ifndef FDTD_ACOUSTIC_SIMULATOR_VIEWER_H 
 #define FDTD_ACOUSTIC_SIMULATOR_VIEWER_H 
 #include <memory>
+#include <QWidget>
 #include <QGLViewer/qglviewer.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
@@ -9,6 +10,11 @@
 #include <linearalgebra/Vector2.hpp>
 #include <colormap/ColorMap.h>
 #include <config.h>
+
+//##############################################################################
+// Forward declaration
+//##############################################################################
+class FDTD_AcousticSimulator_Widget;
 
 //##############################################################################
 // Class that renders Acoustic Simulator results and helps debugging.
@@ -39,6 +45,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         std::vector<Arrow>      _arrowCin; 
         std::vector<Slice>      _sliceCin; 
         REAL                    _drawAbsMax; 
+        REAL                    _drawImpulseScaling = 1.; 
         MAC_Grid::Cell          _listenedCell; 
 
         // slice related fields
@@ -96,6 +103,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 
         void Push_Back_ReflectionArrows(const std::string &filename); 
+
+    friend FDTD_AcousticSimulator_Widget; 
 };
 
 #endif

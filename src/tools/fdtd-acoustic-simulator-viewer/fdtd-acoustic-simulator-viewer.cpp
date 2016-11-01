@@ -2,6 +2,7 @@
 #include <memory>
 #include <qapplication.h>
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
+#include <ui/FDTD_AcousticSimulator_Widget.h>
 
 int main(int argc, char** argv)
 {
@@ -11,9 +12,12 @@ int main(int argc, char** argv)
 
     QApplication application(argc,argv);
 
-    FDTD_AcousticSimulator_Viewer viewer(xmlFile);
-    viewer.setWindowTitle("FDTD Acoustic Simulator Viewer");
-    viewer.show();
+    std::shared_ptr<FDTD_AcousticSimulator_Viewer> viewer = std::make_shared<FDTD_AcousticSimulator_Viewer>(xmlFile);
+    FDTD_AcousticSimulator_Widget widget(viewer); 
+    widget.setWindowTitle("FDTD Acoustic Simulator Widget");
+    widget.show();
+    viewer->setWindowTitle("FDTD Acoustic Simulator Viewer");
+    viewer->show();
 
     return application.exec();
 }

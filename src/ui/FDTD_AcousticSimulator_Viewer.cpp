@@ -272,7 +272,6 @@ DrawMesh()
 void FDTD_AcousticSimulator_Viewer::
 DrawImpulses()
 {
-    const REAL impulseScaling = 10.;
     const REAL time = _simulator->GetSimulationTime();
     const auto &sceneObjects = _simulator->GetSceneObjects(); 
     for (int obj_idx=0; obj_idx<sceneObjects->N(); ++obj_idx)
@@ -288,7 +287,7 @@ DrawImpulses()
                 continue;
             const auto &color = _objectColors.at(obj_idx); 
             Point3<REAL> vertexEnd   = vertices.at(imp.appliedVertex); 
-            Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * impulseScaling;
+            Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * _drawImpulseScaling;
             vertexEnd = object->ObjectToWorldPoint(vertexEnd); 
             vertexBegin = object->ObjectToWorldPoint(vertexBegin); 
             glLineWidth(3.0f); 
