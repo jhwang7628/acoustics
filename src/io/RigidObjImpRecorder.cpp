@@ -131,7 +131,7 @@ void RigidObjImpRecorder::record_inter_obj_impulse(
             <<-relVel.x << ' ' <<-relVel.y << ' ' <<-relVel.z << " S" << endl;
 #endif
     
-    int vtxIdB = bb->kdtree().find_nearest(cRec.pt);
+    int vtxIdB = bb->kdtree().find_nearest(bb->initial_predicted_position(cRec.pt));
     impVec = bb->predicted_inverse_rotation().rotate(imp);
     relVel = bb->predicted_inverse_rotation().rotate(cRec.vrel);
     m_modalImpulseOut
