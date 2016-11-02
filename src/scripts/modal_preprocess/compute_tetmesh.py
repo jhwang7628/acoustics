@@ -14,7 +14,7 @@ installPath = '/home/jui-hsien/code/acoustics';
 binPath = '%s/build_release/bin' %(installPath)
 redirect = '/dev/stdout'
 
-isoNlevel = 3;
+isoNlevel = 4;
 isoMargin = 7;
 isoAlpha = 0.25;
 isoBeta = 0.42978;

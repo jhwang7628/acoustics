@@ -62,7 +62,10 @@ for f in filenames:
 maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
-N_frontPad = int(0.4243*wavRate)
+N_frontPad = int(0.31469*wavRate)
+N_endPad = 0
+N_frontPadStep = int(0.31469*stepRate)
+N_endPadStep = 0
 # N_frontPad = 0
 for ii in range(N_points): 
     if len(sys.argv) == 5 and ii != int(sys.argv[4]): 
@@ -74,7 +77,7 @@ for ii in range(N_points):
     if normalizationConstant > 1E-14:
         outputData /= normalizationConstant
     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
-    outputData = PadZero(outputData.copy(), N_frontPad, wavRate)
+    outputData = PadZero(outputData.copy(), N_frontPad, N_endPad)
     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
 
 # extract minimum and compare with 1/r decay 
@@ -98,8 +101,11 @@ if plotting:
     fig = plt.figure(figsize=[10, 10])
     if len(sys.argv) == 5: 
         plot_index = int(sys.argv[4]) 
-        data = listenedData[:, plot_index] 
-        plt.plot(t, data, '-o', label=listeningPositions[plot_index, :]) 
+        data = listenedData[:, plot_index]
+        data = PadZero(data.copy(), N_frontPadStep, N_endPadStep)
+        tPad = np.linspace(0., float(len(data))*(1./float(stepRate)), len(data))
+        plt.plot(tPad, data, '-', label=listeningPositions[plot_index, :]) 
+        plt.grid()
         if (verifyAnalytical):
             plt.plot(analyticalListenedData[:, plot_index])
               
