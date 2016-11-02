@@ -312,12 +312,6 @@ DrawBox()
 {
     Vector3d minBound, maxBound; 
     _simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
-    //const auto &settings = _simulator->GetSolverSettings(); 
-    //const REAL cellSize = settings->cellSize; 
-    //const int division = settings->cellDivisions; 
-    //const REAL halfLength = (REAL)division*cellSize / 2.0; 
-    //const double minBound[3] = {-halfLength, -halfLength, -halfLength}; 
-    //const double maxBound[3] = { halfLength,  halfLength,  halfLength}; 
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
 }

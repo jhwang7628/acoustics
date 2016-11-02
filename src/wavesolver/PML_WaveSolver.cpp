@@ -612,6 +612,7 @@ void PML_WaveSolver::stepCollocated()
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    //_grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
 
     _freshCellTimer.start(); 

@@ -10,7 +10,7 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _layout                = new QGridLayout(); 
     _slider_impulseScaling = new QSlider(Qt::Horizontal, this); 
      _label_impulseScaling = new QLabel("0"); 
-    _slider_impulseScaling->setRange(-3./IMP_SLIDER_SCALE, 2./IMP_SLIDER_SCALE); 
+    _slider_impulseScaling->setRange(-3./IMP_SLIDER_SCALE, 3./IMP_SLIDER_SCALE); 
     _slider_impulseScaling->setValue(0);
     _layout->addWidget(_viewer.get()         , 0, 0, 1, 2);
     _layout->addWidget(_slider_impulseScaling, 1, 0);
