@@ -1,4 +1,5 @@
 #include <modal_model/ImpulseSeriesObject.h> 
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 //##############################################################################
 //
 //##############################################################################
@@ -120,6 +121,36 @@ GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime)
     lastImpulseTime = _lastImpulseTime; 
 }
 
+//##############################################################################
+// Threshold the impulse magnitude by impact velocity. See 2012 PAN paper.
+//##############################################################################
+void ImpulseSeriesObject::
+Filter()
+{
+    // in-place erase low magnitude impulses
+    for (std::vector<ImpactRecord>::iterator it=_impulses.begin(); it<_impulses.end();)
+    {
+        if (abs(it->contactSpeed) < IMPULSE_VEL_THRESHOLD)
+            it = _impulses.erase(it); 
+        else
+            ++it; 
+    }
+
+    // update cached field
+    if (N_Impulses() > 0) 
+    {
+        _firstImpulseTime = _impulses.at(0).timestamp; 
+        _lastImpulseTime = (N_Impulses() == 1 ? _firstImpulseTime + SMALL_NUM : _impulses.at(N_Impulses()-1).timestamp); 
+    } 
+    else
+    {
+        _firstImpulseTime = 0.0; 
+        _lastImpulseTime = 0.0; 
+    }
+}
+
+//##############################################################################
+//##############################################################################
 void ImpulseSeriesObject::
 PrintAllImpulses()
 {

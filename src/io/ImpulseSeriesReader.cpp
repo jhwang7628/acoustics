@@ -87,6 +87,7 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
         objectID_old = objectID; 
         count ++; 
     }
+    object->Filter(); 
     LoadRigidsimConfig(object);
 }
 
@@ -116,8 +117,9 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object)
                 // note: here I assume impulse has 0 support (default)
                 object->AddImpulse(buffer);
             }
-            LoadRigidsimConfig(object);
         }
     }
+    object->Filter(); 
+    LoadRigidsimConfig(object);
 }
 

@@ -61,6 +61,7 @@ class ImpulseSeriesObject
         void GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &records); 
         void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
+        void Filter(); 
 
         //// debug methods ////
         void PrintAllImpulses(); 

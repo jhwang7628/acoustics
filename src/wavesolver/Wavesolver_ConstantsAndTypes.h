@@ -58,7 +58,6 @@ typedef Eigen::aligned_allocator<MLSVal> V_ALLOCATOR;
 //##############################################################################
 // Constants
 //##############################################################################
-//const double sqrt_pi_over_2 = sqrt(M_PI/2.0); 
 const double SMALL_NUM = 1E-12;
 const double sqrt_2_pi = sqrt(2.0*M_PI); 
 const double sqrt_2 = sqrt(2.0); 
@@ -67,6 +66,7 @@ const double GAUSSIAN_CHECK_BOUND = 3.0; // for pressure sources only check with
 const double AABB_CHECK_TOLERANCE_SCALE = 1.1; // scaling factor applied when checking AABB inside
 const double MODE_SHAPE_CUTOFF_FREQ = 10000.0;
 const double GHOST_CELL_ENTRY_THRESHOLD = 1E-7; 
+const double IMPULSE_VEL_THRESHOLD = 0.05;
 
 const REAL D_INF = std::numeric_limits<REAL>::infinity(); 
 const int I_INF = std::numeric_limits<int>::infinity(); 
