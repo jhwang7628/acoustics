@@ -72,6 +72,20 @@ class MAC_Grid
                 }
         }; 
 
+        // only used for classification with multiple threads
+        struct GhostCellInfo
+        {
+            int dim; 
+            int cellIndex; 
+            int boundaryObject;
+            REAL boundaryDirection; 
+            REAL boundaryCoefficient; 
+            int childArrayPosition; 
+            int ghostCellParent; 
+            Vector3d ghostCellPosition; 
+            int ghostCellBoundaryID; 
+        }; 
+
     private:
         typedef TriangleMesh<REAL>  TriMesh;
 
@@ -286,6 +300,7 @@ class MAC_Grid
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
+        void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

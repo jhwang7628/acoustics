@@ -609,6 +609,7 @@ void PML_WaveSolver::stepCollocated()
     MATRIX &pCurr = _pCollocated[ _pCollocatedInd     ]; 
     MATRIX &pNext = _pCollocated[(_pCollocatedInd+1)%3]; 
 
+    //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
     _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);

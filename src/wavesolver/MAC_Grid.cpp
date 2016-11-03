@@ -2084,16 +2084,23 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     SetClassifiedSubset(_pressureField, N, indices, false); 
     _ghostCells.clear(); 
     _ghostCellsChildren.clear(); 
+    IntArray childrenIndex(6, -1);  // always fully subdivided
+    const int N_max_threads = omp_get_max_threads();
+    std::vector<IntArray> ghostCellsThreads(N_max_threads);  // used to store ghost cell index for each thread
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
         const Vector3i &start = indices[bbox_id].startIndex; 
         const Vector3i &range = indices[bbox_id].dimensionIteration; 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
         for (int ii=start.x; ii<start.x+range.x; ++ii)
         for (int jj=start.y; jj<start.y+range.y; ++jj)
         for (int kk=start.z; kk<start.z+range.z; ++kk)
         {
             const Tuple3i cellIndices(ii,jj,kk);
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            const int thread_idx = omp_get_thread_num(); 
             if (_classified.at(cell_idx)) continue; 
             // if it is bulk, it is not ghost
             if (_isBulkCell.at(cell_idx)) 
@@ -2112,9 +2119,10 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                 {
                     // We have a bulk neighbour so this is a ghost cell
                     newIsGhostCell = true; 
-                    IntArray children(6, -1);  // always fully subdivided
-                    _ghostCells.push_back(cell_idx); 
-                    _ghostCellsChildren.push_back(children); 
+                    //IntArray children(6, -1);  // always fully subdivided
+                    //_ghostCells.push_back(cell_idx); 
+                    //_ghostCellsChildren.push_back(childrenIndex); 
+                    ghostCellsThreads.at(thread_idx).push_back(cell_idx); 
                     break;
                 }
             }
@@ -2122,6 +2130,13 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             _classified.at(cell_idx) = true; // toggle on to prevent reclassification
         }
     }
+    // push back ghost cells
+    for (const IntArray &gcIndThread : ghostCellsThreads)
+        for (const int &gcInd : gcIndThread)
+        {
+            _ghostCells.push_back(gcInd); 
+            _ghostCellsChildren.push_back(childrenIndex); 
+        }
     ComputeGhostCellInverseMap(); 
 
     // Classify velocity cells
@@ -2140,16 +2155,22 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     }
     int numSolidCells[3] = {0, 0, 0}; 
     SetClassifiedSubset(_pressureField, N, indices, false); 
+    std::vector<std::vector<GhostCellInfo> > ghostCellInfoThreads(N_max_threads);
+    //int countGhostCells = 0;
     for (int dimension = 0; dimension < 3; dimension++)
     {
         for (int bbox_id=0; bbox_id<N; ++bbox_id)
         {
             const Vector3i &start = indices[bbox_id].startIndex; 
             const Vector3i &range = indices[bbox_id].dimensionIteration; 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
             for (int ii=start.x; ii<start.x+range.x; ++ii)
             for (int jj=start.y; jj<start.y+range.y; ++jj)
             for (int kk=start.z; kk<start.z+range.z; ++kk)
             {
+                const int thread_idx = omp_get_thread_num(); 
                 const Tuple3i cellIndices(ii,jj,kk);
                 const int cell_idx = _velocityField[dimension].cellIndex(cellIndices); 
                 if (_classified.at(cell_idx)) continue; 
@@ -2174,6 +2195,8 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                 cell_coordinates[ dimension ] += 1;
                 const int pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
 
+                GhostCellInfo ghostCellInfo;
+                bool infoUsed = false; 
                 if (_isBulkCell[ pressure_cell_idx1 ] && _isBulkCell[ pressure_cell_idx2 ])
                 {
                     // Both pressure cell neighbours are bulk cells, so this is
@@ -2202,24 +2225,34 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     gradient.normalize();
                     const REAL coefficient = gradient[dimension];
                     // initialize a ghost cell dedicated to this interfacial cell
-                    const int ghostCellIndex = pGCFull.size(); 
+                    //const int ghostCellIndex = pGCFull.size(); 
+                    //const int ghostCellIndex = countGhostCells; 
                     Vector3d ghostCellPosition = position;
                     ghostCellPosition[dimension] += _waveSolverSettings->cellSize*0.25;
                     const int childArrayPosition = dimension*2; // this is the childArrayPosition-th child in the tree
-                    _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
-
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    _interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-                    _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
-                    _ghostCellParents.push_back(pressure_cell_idx2);
-                    _ghostCellPositions.push_back(ghostCellPosition); 
-                    _ghostCellBoundaryIDs.push_back(boundaryObject); 
-                    pGC[0].push_back(0.0); 
-                    pGC[1].push_back(0.0); 
-                    pGC[2].push_back(0.0); 
-                    pGCFull.push_back(0.0);
+                    //_ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx2]).at(childArrayPosition) = ghostCellIndex; 
+                    ghostCellInfo.dim = dimension; 
+                    ghostCellInfo.cellIndex = cell_idx; 
+                    ghostCellInfo.boundaryObject = boundaryObject; 
+                    ghostCellInfo.boundaryDirection = -1.0; 
+                    ghostCellInfo.boundaryCoefficient = coefficient; 
+                    ghostCellInfo.childArrayPosition = childArrayPosition; 
+                    ghostCellInfo.ghostCellParent = pressure_cell_idx2; 
+                    ghostCellInfo.ghostCellPosition = ghostCellPosition; 
+                    ghostCellInfo.ghostCellBoundaryID = boundaryObject; 
+                    infoUsed = true;
+                    //_velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                    //_interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                    //_interfacialBoundaryDirections[ dimension ].push_back( -1.0 );
+                    //_interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                    //_interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
+                    //_ghostCellParents.push_back(pressure_cell_idx2);
+                    //_ghostCellPositions.push_back(ghostCellPosition); 
+                    //_ghostCellBoundaryIDs.push_back(boundaryObject); 
+                    //pGC[0].push_back(0.0); 
+                    //pGC[1].push_back(0.0); 
+                    //pGC[2].push_back(0.0); 
+                    //pGCFull.push_back(0.0);
                 }
                 else if ( !_isBulkCell[ pressure_cell_idx1 ]
                         && _isBulkCell[ pressure_cell_idx2 ] )
@@ -2242,24 +2275,35 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     gradient.normalize();
                     const REAL coefficient = gradient[dimension];
                     // initialize a ghost cell dedicated to this interfacial cell
-                    const int ghostCellIndex = pGCFull.size(); 
+                    //const int ghostCellIndex = pGCFull.size(); 
+                    //const int ghostCellIndex = countGhostCells; 
                     Vector3d ghostCellPosition = position;
                     ghostCellPosition[dimension] -= _waveSolverSettings->cellSize*0.25;
                     const int childArrayPosition = dimension*2 + 1; // this is the childArrayPosition-th child in the tree
-                    _ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).at(childArrayPosition) = ghostCellIndex; 
+                    //_ghostCellsChildren.at(_ghostCellsInverse[pressure_cell_idx1]).at(childArrayPosition) = ghostCellIndex; 
 
-                    _velocityInterfacialCells[ dimension ].push_back( cell_idx );
-                    _interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
-                    _interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
-                    _interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
-                    _interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
-                    _ghostCellParents.push_back(pressure_cell_idx1);
-                    _ghostCellPositions.push_back(ghostCellPosition); 
-                    _ghostCellBoundaryIDs.push_back(boundaryObject); 
-                    pGC[0].push_back(0.0); 
-                    pGC[1].push_back(0.0); 
-                    pGC[2].push_back(0.0); 
-                    pGCFull.push_back(0.0);
+                    ghostCellInfo.dim = dimension; 
+                    ghostCellInfo.cellIndex = cell_idx; 
+                    ghostCellInfo.boundaryObject = boundaryObject; 
+                    ghostCellInfo.boundaryDirection = 1.0; 
+                    ghostCellInfo.boundaryCoefficient = coefficient; 
+                    ghostCellInfo.childArrayPosition = childArrayPosition; 
+                    ghostCellInfo.ghostCellParent = pressure_cell_idx1; 
+                    ghostCellInfo.ghostCellPosition = ghostCellPosition; 
+                    ghostCellInfo.ghostCellBoundaryID = boundaryObject; 
+                    infoUsed = true;
+                    //_velocityInterfacialCells[ dimension ].push_back( cell_idx );
+                    //_interfacialBoundaryIDs[ dimension ].push_back( boundaryObject );
+                    //_interfacialBoundaryDirections[ dimension ].push_back( 1.0 );
+                    //_interfacialBoundaryCoefficients[ dimension ].push_back( coefficient );
+                    //_interfacialGhostCellID[dimension].push_back(ghostCellIndex); 
+                    //_ghostCellParents.push_back(pressure_cell_idx1);
+                    //_ghostCellPositions.push_back(ghostCellPosition); 
+                    //_ghostCellBoundaryIDs.push_back(boundaryObject); 
+                    //pGC[0].push_back(0.0); 
+                    //pGC[1].push_back(0.0); 
+                    //pGC[2].push_back(0.0); 
+                    //pGCFull.push_back(0.0);
                 }
                 else // both sides aren't bulk, this is a solid cell
                 {
@@ -2268,11 +2312,21 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     v[dimension](cell_idx, 0) = 0.0; // clear solid velocity cell
                     numSolidCells[dimension] ++; 
                 }
+                if (infoUsed) 
+                    ghostCellInfoThreads.at(thread_idx).push_back(ghostCellInfo); 
                 _classified.at(cell_idx) = true; // toggle on to prevent reclassification
             }
         }
         SetClassifiedSubset(_velocityField[dimension], N, indices, false); 
     }
+    // push back all info gathered by each threads
+    int gcCount = 0;
+    for (const auto &gcInfoThread : ghostCellInfoThreads)
+        for (const GhostCellInfo &gcInfo : gcInfoThread)
+        {
+            Push_Back_GhostCellInfo(gcCount, gcInfo, pGCFull, pGC);
+            gcCount++;
+        }
 
     if (verbose) 
     {
@@ -2558,6 +2612,9 @@ void MAC_Grid::SetClassifiedSubset(const ScalarField &field, const int &N, const
     for (int bbox_id=0; bbox_id<N; ++bbox_id){ 
         const Vector3i &start = indices[bbox_id].startIndex;
         const Vector3i &range = indices[bbox_id].dimensionIteration;
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
         for (int ii=start.x; ii<start.x+range.x; ++ii){
         for (int jj=start.y; jj<start.y+range.y; ++jj){
         for (int kk=start.z; kk<start.z+range.z; ++kk){
@@ -2573,6 +2630,24 @@ void MAC_Grid::CheckClassified()
         if (_classified.at(ii)) 
             countTrue ++; } 
     std::cout << "there are " << countTrue << " trues in _classified\n"; 
+}
+
+// not thread-safe!
+void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3])
+{
+    _ghostCellsChildren.at(_ghostCellsInverse[info.ghostCellParent]).at(info.childArrayPosition) = gcIndex; 
+    _velocityInterfacialCells[info.dim].push_back(info.cellIndex);
+    _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject);
+    _interfacialBoundaryDirections[info.dim].push_back(info.boundaryDirection);
+    _interfacialBoundaryCoefficients[info.dim].push_back(info.boundaryCoefficient);
+    _interfacialGhostCellID[info.dim].push_back(gcIndex); 
+    _ghostCellParents.push_back(info.ghostCellParent);
+    _ghostCellPositions.push_back(info.ghostCellPosition); 
+    _ghostCellBoundaryIDs.push_back(info.ghostCellBoundaryID); 
+    pGC[0].push_back(0.0); 
+    pGC[1].push_back(0.0); 
+    pGC[2].push_back(0.0); 
+    pGCFull.push_back(0.0);
 }
 
 void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V)
