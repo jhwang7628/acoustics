@@ -51,7 +51,6 @@ if ( BUILD_RIGIDSIM_GUI )
 			${IO_SRC}                       ${RIGID_SRC}
 			${LOGGING_SRC}                  ${LINEARALGEBRA_SRC}
             ${RIGID_IO_SRC}
-            ${MODAL_MODEL_SRC}
             ${SNDGEN_SRC}
             ${RIGID_PARSER_SRC}
             )
