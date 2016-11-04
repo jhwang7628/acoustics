@@ -62,10 +62,12 @@ for f in filenames:
 maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
-N_frontPad = int(0.31469*wavRate)
-N_endPad = 0
-N_frontPadStep = int(0.31469*stepRate)
-N_endPadStep = 0
+frontPadTime = 0.31469
+endPadTime = 1.0
+N_frontPad = int(frontPadTime*float(wavRate))
+N_endPad = int(endPadTime*float(wavRate))
+N_frontPadStep = int(frontPadTime*float(stepRate))
+N_endPadStep = int(endPadTime*float(stepRate))
 # N_frontPad = 0
 for ii in range(N_points): 
     if len(sys.argv) == 5 and ii != int(sys.argv[4]): 
