@@ -79,7 +79,7 @@ class FDTD_AcousticSimulator
         void Pause(); 
         void SaveSolverConfig(); 
         void LoadSolverResult(const std::string &dataDirectory); 
-        void AnimateObjects(); 
+        void AnimateObjects(const REAL newTime=-1); 
 
         //// debug method //// 
         void TestAllComponents(); 

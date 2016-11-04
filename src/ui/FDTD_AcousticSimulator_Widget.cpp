@@ -17,23 +17,27 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
       _text_impulseScaling->setFixedWidth(100);
     _slider_simulationTimeline = new QSlider(Qt::Horizontal, this); 
     _slider_simulationTimeline->setRange(0, (int)ceil(_solverSettings->timeEnd/_solverSettings->timeStepSize)); 
-    _slider_simulationTimeline->setValue(0);
-     _label_simulationTimeline = new QLabel("0"); 
+    _slider_simulationTimeline->setValue((int)ceil(_viewer->_simulator->GetSimulationTime()/_solverSettings->timeStepSize));
+     _label_simulationTimeline = new QLabel(QString("%1").arg(_viewer->_simulator->GetSimulationTime())); 
      _label_simulationTimeline->setFixedWidth(200);
       _text_simulationTimeline = new QLabel("Simulation Time"); 
       _text_simulationTimeline->setFixedWidth(200);
-    _layout->addWidget(_viewer.get()         , 0, 0, 1, 3);
+    _button_resetSimulation = new QPushButton(this); 
+    _button_resetSimulation->setText("Reset Simulation Time");
+    _layout->addWidget(_viewer.get()         , 0, 0, 1, 4);
     _layout->addWidget(  _text_impulseScaling, 1, 0);
     _layout->addWidget(_slider_impulseScaling, 1, 1);
     _layout->addWidget( _label_impulseScaling, 1, 2);
     _layout->addWidget(  _text_simulationTimeline, 2, 0);
     _layout->addWidget(_slider_simulationTimeline, 2, 1);
     _layout->addWidget( _label_simulationTimeline, 2, 2);
+    _layout->addWidget(_button_resetSimulation   , 2, 3);
     setLayout(_layout);
     resize(800, 600);
     // signal-slot stuff
     connect(_slider_impulseScaling, SIGNAL(valueChanged(int)), this, SLOT(SliderValueChanged()));
     connect(_slider_simulationTimeline, SIGNAL(valueChanged(int)), this, SLOT(SliderValueChanged()));
+    connect(_button_resetSimulation, SIGNAL(clicked()), this, SLOT(ResetSystemTime()));
 }
 
 //##############################################################################
@@ -55,5 +59,18 @@ SliderValueChanged()
     _label_simulationTimeline->setText(QString("%1").arg(newTime));
     // update viewer
     _viewer->_drawImpulseScaling = pow(10., impulseScaling); 
+    _viewer->_simulator->AnimateObjects(newTime); 
+    _viewer->updateGL();
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Widget::
+ResetSystemTime()
+{
+    const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
+    _viewer->_simulator->ResetStartTime(newTime);
+    _viewer->SetAllSliceDataReady(false);
+    _viewer->_currentFrame = 0;
     _viewer->updateGL();
 }

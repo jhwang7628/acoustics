@@ -33,9 +33,11 @@ class FDTD_AcousticSimulator_Widget : public QWidget
         QSlider     *_slider_simulationTimeline;
         QLabel      * _label_simulationTimeline;
         QLabel      *  _text_simulationTimeline;
+        QPushButton *_button_resetSimulation;
 
     private slots: 
         void SliderValueChanged(); 
+        void ResetSystemTime();
 };
 
 #endif

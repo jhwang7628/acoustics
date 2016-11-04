@@ -505,8 +505,9 @@ SaveSolverConfig()
 // rigidsim data found.
 //##############################################################################
 void FDTD_AcousticSimulator::
-AnimateObjects()
+AnimateObjects(const REAL newTime)
 {
+    const REAL newSimulationTime = (newTime<0.0 ? _simulationTime : newTime); 
     if (_sceneObjectsAnimator) 
     {
         Point3d newCOM; 
@@ -517,7 +518,7 @@ AnimateObjects()
             const auto &object = _sceneObjects->GetPtr(rigidsimObjectID);
             if (object->Animated())
             {
-                _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, _simulationTime, newCOM, quaternion); 
+                _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, newSimulationTime, newCOM, quaternion); 
                 object->SetRigidBodyTransform(newCOM, quaternion);
             }
         }

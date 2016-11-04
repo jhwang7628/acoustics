@@ -4,6 +4,7 @@
 #include <QSlider>
 #include <QLabel>
 #include <QtGui>
+#include <QPushButton>
 
 namespace QtHelper
 {
