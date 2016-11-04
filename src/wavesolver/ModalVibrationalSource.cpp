@@ -16,6 +16,8 @@ ModalVibrationalSource(RigidObjectPtr owner)
 REAL ModalVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
+    if (!_modalObjectOwner->IsModalObject())
+        return 0.0;
 #if DEBUG_PERFECT_MODAL_HARMONICS == 0
     return _modalObjectOwner->SampleModalAcceleration(position, normal, time); 
 #else
@@ -30,6 +32,8 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 REAL ModalVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
+    if (!_modalObjectOwner->IsModalObject())
+        return 0.0;
 #if DEBUG_PERFECT_MODAL_HARMONICS == 0
     return _modalObjectOwner->SampleModalVelocity(position, normal, time); 
 #else
@@ -42,5 +46,7 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
 REAL ModalVibrationalSource::
 EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
+    if (!_modalObjectOwner->IsModalObject())
+        return 0.0;
     return _modalObjectOwner->SampleModalDisplacement(position, normal, time); 
 }
