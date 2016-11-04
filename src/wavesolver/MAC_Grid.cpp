@@ -2085,7 +2085,11 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     _ghostCells.clear(); 
     _ghostCellsChildren.clear(); 
     IntArray childrenIndex(6, -1);  // always fully subdivided
+#ifdef USE_OPENMP
     const int N_max_threads = omp_get_max_threads();
+#else
+    const int N_max_threads = 1;
+#endif
     std::vector<IntArray> ghostCellsThreads(N_max_threads);  // used to store ghost cell index for each thread
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
@@ -2100,7 +2104,11 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         {
             const Tuple3i cellIndices(ii,jj,kk);
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
+#ifdef USE_OPENMP
             const int thread_idx = omp_get_thread_num(); 
+#else
+            const int thread_idx = 0; 
+#endif
             if (_classified.at(cell_idx)) continue; 
             // if it is bulk, it is not ghost
             if (_isBulkCell.at(cell_idx)) 
@@ -2170,7 +2178,11 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             for (int jj=start.y; jj<start.y+range.y; ++jj)
             for (int kk=start.z; kk<start.z+range.z; ++kk)
             {
+#ifdef USE_OPENMP
                 const int thread_idx = omp_get_thread_num(); 
+#else
+                const int thread_idx = 0; 
+#endif
                 const Tuple3i cellIndices(ii,jj,kk);
                 const int cell_idx = _velocityField[dimension].cellIndex(cellIndices); 
                 if (_classified.at(cell_idx)) continue; 
