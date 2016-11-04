@@ -9,7 +9,6 @@
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/FDTD_Objects.h>
-#include <wavesolver/PML_WaveSolver_Settings.h>
 #include <modal_model/KirchhoffIntegralSolver.h> 
 #include <utils/GL_Wrapper.h>
 #include <config.h>
@@ -123,7 +122,7 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
-    const REAL ballSize = _simulator->GetSolverSettings()->cellSize/1.9; 
+    const REAL ballSize = _solverSettings->cellSize/1.9; 
     // draw cell centroid near the slices 
     for (auto &slice : _sliceCin)
     {
@@ -322,7 +321,7 @@ DrawBox()
 void FDTD_AcousticSimulator_Viewer::
 DrawListeningPoints()
 {
-    const auto &settings = _simulator->GetSolverSettings(); 
+    const auto &settings = _solverSettings; 
     const auto &points = settings->listeningPoints; 
     const int N_points = points.size(); 
     glEnable(GL_LIGHTING);
@@ -834,7 +833,7 @@ ConstructSliceSamples(Slice &slice)
     Vector3Array &samples = slice.samples; 
     Vector3Array &gridLines = slice.gridLines; 
 
-    const auto &settings = _simulator->GetSolverSettings(); 
+    const auto &settings = _solverSettings; 
     //const REAL cellSize = settings->cellSize; 
     const int division = settings->cellDivisions; 
     //const int division = _sliceDivision;

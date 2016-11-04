@@ -5,6 +5,7 @@
 #include <QGLViewer/qglviewer.h> 
 #include <wavesolver/FDTD_AcousticSimulator.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
+#include <wavesolver/PML_WaveSolver_Settings.h>
 #include <modal_model/KirchhoffIntegralSolver.h>
 #include <linearalgebra/Vector3.hpp>
 #include <linearalgebra/Vector2.hpp>
@@ -29,10 +30,11 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; Vector3d minBound; Vector3d maxBound; std::vector<MAC_Grid::Cell> cells; bool dataReady = false;};
 
     private: 
-        SimulatorPtr            _simulator; 
-        int                     _halfStepFlag = 0;
+        SimulatorPtr                             _simulator; 
+        std::shared_ptr<PML_WaveSolver_Settings> _solverSettings;
 
         bool                    _remoteConnection = false; 
+        int                     _halfStepFlag = 0;
         int                     _currentFrame = 0;
         QString                 _message; 
         QString                 _messageSelection;
@@ -54,7 +56,6 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         Vector2d                    _sliceColorMapRange; 
         int                         _sliceDivision = 80; 
         bool                        _fixedSliceColorMapRange = false; 
-
         int                         _meshDataPointer = 0; // 0: nothing; 1: curvature
 
         // frequency transfer solver
@@ -89,7 +90,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
-            if (_simulator->SceneHasModalObject() && _simulator->GetSolverSettings()->validateUsingFBem)
+            _solverSettings = _simulator->GetSolverSettings(); 
+            if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
                 InitializeBEMSolver();
         }
 
