@@ -109,7 +109,7 @@ GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord>
     GetImpulse(timeStart, timeStop, records); 
     const int N = records.size();
     for (int frame_idx=0; frame_idx<N; ++frame_idx) 
-        records.at(frame_idx).impactVector = ConvertImpulseToForce(records.at(frame_idx).impactVector); 
+        records.at(frame_idx).impactVector /= records.at(frame_idx).supportLength; 
 }
 
 //##############################################################################
