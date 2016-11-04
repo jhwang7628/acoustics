@@ -69,6 +69,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         bool _invInertiaTensorCached=false; 
         Matrix3<REAL> _invInertiaTensor; 
 
+        bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
+
     public: 
         // build object
         FDTD_RigidSoundObject()
@@ -94,7 +96,9 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         {
         }
 
+        inline bool Animated(){return _animated;}
         inline bool IsModalObject(){return N_Modes()>0;}
+        inline void SetAnimated(const bool &is){_animated = is;}
         inline Vector3d PremultiplyInvInertiaTensor(const Vector3d &x){return _invInertiaTensor * x;}
 
         void Initialize(); 

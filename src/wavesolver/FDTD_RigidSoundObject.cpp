@@ -391,7 +391,6 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
         sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
     else
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-
     return sampledValue;
 }
 

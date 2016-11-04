@@ -25,8 +25,8 @@ _SetBoundaryConditions()
     {
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
         // add modal vibrational source
-        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
@@ -357,7 +357,7 @@ ResetStartTime(const REAL &startTime)
         AnimateObjects();
         auto &objects = _sceneObjects->GetRigidSoundObjects(); 
         for (auto &object : objects) 
-            if (object->IsModalObject())
+            if (object->Animated())
                 object->ResetUnionBox();
     }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
@@ -515,7 +515,7 @@ AnimateObjects()
         {
             const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
             const auto &object = _sceneObjects->GetPtr(rigidsimObjectID);
-            if (object->IsModalObject())
+            if (object->Animated())
             {
                 _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, _simulationTime, newCOM, quaternion); 
                 object->SetRigidBodyTransform(newCOM, quaternion);

@@ -59,6 +59,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const bool buildFromTetMesh = true;
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
         object->SetOptionalAttributes(attr); 
+        object->SetAnimated(true);
         // load impulse from file
         const std::string impulseFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_file"); 
         const std::string rigidsimConfigFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file");
