@@ -100,7 +100,6 @@ class MAC_Grid
             public:
             std::map<int, std::vector<TriangleIdentifier> > cellMap; 
             void Clear(){cellMap.clear();}
-
         };
 
     private:

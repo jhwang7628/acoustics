@@ -345,14 +345,39 @@ DrawListeningPoints()
 void FDTD_AcousticSimulator_Viewer::
 DrawSelection()
 {
-    // draw
     if (selectedName() != -1)
     {
+        // draw box
         const int cell_idx = selectedName(); 
         MAC_Grid::Cell cell; 
         _simulator->GetSolver()->FetchCell(cell_idx, cell); 
         glColor3f(1.0f, 1.0f, 1.0f); 
         GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+
+        // draw hashed triangles
+        const auto search = _simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.find(cell_idx); 
+        if (search != _simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.end())
+        {
+            for (std::vector<MAC_Grid::TriangleIdentifier>::const_iterator it=(search->second).begin(); it!=(search->second).end(); ++it)
+            {
+                const auto &color = _objectColors.at(it->objectID); 
+                const auto &object = _simulator->GetSceneObjects()->GetPtr(it->objectID);
+                const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 
+                const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(it->triangleID);
+                Point3<REAL> x = vertices.at(triangle.x); 
+                Point3<REAL> y = vertices.at(triangle.y); 
+                Point3<REAL> z = vertices.at(triangle.z); 
+                x = object->ObjectToWorldPoint(x); 
+                y = object->ObjectToWorldPoint(y); 
+                z = object->ObjectToWorldPoint(z); 
+                glColor3f(0.f, 0.f, 1.f); 
+                glBegin(GL_TRIANGLES); 
+                glVertex3f(x.x, x.y, x.z); 
+                glVertex3f(y.x, y.y, y.z); 
+                glVertex3f(z.x, z.y, z.z); 
+                glEnd(); 
+            }
+        }
     }
 }
 
