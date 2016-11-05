@@ -30,6 +30,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
     setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
@@ -103,6 +104,8 @@ draw()
     DrawSelection(); 
     DrawDebugCin();
     DrawSlices(_sliceDataPointer); 
+    if (_drawHashedCells)
+        DrawHashedCells();
 
     // for some reason drawText causes bug if run remotely
     if (!_remoteConnection)
@@ -501,6 +504,24 @@ DrawDebugCin()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
+DrawHashedCells()
+{
+    typedef std::map<int, std::vector<MAC_Grid::TriangleIdentifier> >::const_iterator Iterator; 
+    const MAC_Grid::FVMetaData &fvMetaData = _simulator->GetSolver()->GetGrid().GetFVMetaData();
+    const auto &cellMap = fvMetaData.cellMap; 
+    for (Iterator it=cellMap.begin(); it!=cellMap.end(); ++it)
+    {
+        MAC_Grid::Cell cell; 
+        _simulator->GetSolver()->FetchCell(it->first, cell); 
+        const Vector3f &color = _objectColors.at(it->second[0].objectID);
+        glColor3f(color.x, color.y, color.z);
+        GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
 animate()
 {
     DrawOneFrameForward();
@@ -523,6 +544,10 @@ keyPressEvent(QKeyEvent *e)
         PRE_CIN_CLEAR;
         std::cin >> _sliceDivision; 
         POST_CIN_CLEAR;
+    }
+    if ((e->key() == Qt::Key_H) && (modifiers == Qt::ShiftModifier)) {
+        _drawHashedCells = !_drawHashedCells;
+        optionsChanged = true;
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
         _sliceWireframe = (_sliceWireframe+1)%4; 
@@ -1068,6 +1093,7 @@ RestoreDefaultDrawOptions()
     _wireframe = 2;
     _sliceWireframe = 2;
     _drawBox = true; 
+    _drawHashedCells = false;
     _sliceDataPointer = 0; 
 }
 
@@ -1081,6 +1107,7 @@ PrintDrawOptions()
               << "------------\n"
               << " Draw simulation box: " << _drawBox << "\n"
               << " Draw wireframe only: " << _wireframe << "\n"
+              << " Draw hashed cells: " << _drawHashedCells << "\n"
               << " Draw slice wireframe only: " << _sliceWireframe << "\n"
               << " Draw slice data pointer: " << _sliceDataPointer << "\n"
               << "\n"; 

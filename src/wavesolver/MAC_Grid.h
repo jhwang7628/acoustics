@@ -86,6 +86,23 @@ class MAC_Grid
             int ghostCellBoundaryID; 
         }; 
 
+        struct TriangleIdentifier
+        {
+            int objectID; 
+            int triangleID; 
+            TriangleIdentifier(const int &o_id, const int &t_id)
+                : objectID(o_id), triangleID(t_id)
+            {}
+        };
+
+        class FVMetaData
+        {
+            public:
+            std::map<int, std::vector<TriangleIdentifier> > cellMap; 
+            void Clear(){cellMap.clear();}
+
+        };
+
     private:
         typedef TriangleMesh<REAL>  TriMesh;
 
@@ -180,6 +197,9 @@ class MAC_Grid
         // handles all the objects in the scene
         std::shared_ptr<FDTD_Objects>       _objects; 
         PML_WaveSolver_Settings_Ptr         _waveSolverSettings;
+
+        // for finite-volume formulation
+        FVMetaData _fvMetaData; 
 
     public:
         MAC_Grid(){}
@@ -291,9 +311,11 @@ class MAC_Grid
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
+        inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
+        void classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
         REAL PressureCellType(const int &idx) const;
         void ResetCellHistory(const bool &valid); 
@@ -301,6 +323,7 @@ class MAC_Grid
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
+        int InPressureCell(const Vector3d &position); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

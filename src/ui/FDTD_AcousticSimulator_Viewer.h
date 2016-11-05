@@ -42,6 +42,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                     _wireframe;
         int                     _sliceWireframe;
         bool                    _drawBox; 
+        bool                    _drawHashedCells;
         std::vector<Vector3f>   _objectColors; 
         std::vector<Sphere>     _sphereCin; 
         std::vector<Arrow>      _arrowCin; 
@@ -71,6 +72,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawLights(); 
         void DrawSlices(const int &dataPointer);
         void DrawDebugCin();
+        void DrawHashedCells();
         inline void ResetSliceColormap(){_sliceColorMap->set_interpolation_range(_sliceColorMapRange.x, _sliceColorMapRange.y);}
 
     protected: 

@@ -2353,6 +2353,31 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     }
 }
 
+//##############################################################################
+// This function handles the cell identity updates for Finite-Volume formulation
+// after objects new position has been established in the timestep. 
+//##############################################################################
+void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose)
+{
+    _fvMetaData.Clear(); 
+    const int N_objects = _objects->N();
+    for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
+    {
+        RigidSoundObjectPtr object = _objects->GetPtr(obj_idx); 
+        std::shared_ptr<TriangleMesh<REAL> > mesh = object->GetMeshPtr(); 
+        std::shared_ptr<TriangleMeshKDTree<REAL> > meshkd = std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh); 
+        const int N_triangles = mesh->num_triangles(); 
+        for (int t_idx=0; t_idx<N_triangles; ++t_idx)
+        {
+            Vector3d centroid = meshkd->TriangleCentroid(t_idx); 
+            centroid = object->ObjectToWorldPoint(centroid);
+            const int cellIndex = InPressureCell(centroid); 
+            const TriangleIdentifier tri_id(obj_idx, t_idx);
+            _fvMetaData.cellMap[cellIndex].push_back(tri_id);
+        }
+    }
+}
+
 void MAC_Grid::ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry)
 {
     const int N_ghostCells = _ghostCellCoupledData.size(); 
@@ -2660,6 +2685,21 @@ void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &
     pGC[1].push_back(0.0); 
     pGC[2].push_back(0.0); 
     pGCFull.push_back(0.0);
+}
+
+//##############################################################################
+// This function returns flat index of the pressure cell that contains the 
+// queried position. 
+//##############################################################################
+int MAC_Grid::InPressureCell(const Vector3d &position)
+{
+    const Vector3d &pBBoxLower = _pressureField.bbox().minBound();
+    const REAL &h = _waveSolverSettings->cellSize; 
+    const int &div = _waveSolverSettings->cellDivisions; 
+    const Tuple3i cellIndices = Tuple3i(std::max<int>(std::min<int>((int)((position.x - pBBoxLower.x)/h), div-1), 0),
+                                        std::max<int>(std::min<int>((int)((position.y - pBBoxLower.y)/h), div-1), 0),
+                                        std::max<int>(std::min<int>((int)((position.z - pBBoxLower.z)/h), div-1), 0)); 
+    return _pressureField.cellIndex(cellIndices); 
 }
 
 void MAC_Grid::FillVandermondeRegular(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V)
