@@ -62,7 +62,7 @@ for f in filenames:
 maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
-frontPadTime = 0.31469
+frontPadTime = 0.0
 endPadTime = 1.0
 N_frontPad = int(frontPadTime*float(wavRate))
 N_endPad = int(endPadTime*float(wavRate))
@@ -75,7 +75,7 @@ for ii in range(N_points):
     print 'Creating wav file for listening position', listeningPositions[ii, :]
     outputData = listenedData[:, ii]
     normalizationConstant = maxValue
-    normalizationConstant = np.absolute(outputData.max())
+    # normalizationConstant = np.absolute(outputData.max())
     if normalizationConstant > 1E-14:
         outputData /= normalizationConstant
     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))

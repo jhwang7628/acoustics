@@ -70,8 +70,8 @@ def Pool15Balls(offset, r):
             count += 1
 
 if __name__ == '__main__': 
-    center = [0., 0.07, 0.]
-    radius = 0.075
+    center = [0., 0.1, 0.]
+    radius = 0.1
     N = 50
     SampleCircle_X(center, radius, N)
     SampleCircle_Y(center, radius, N)

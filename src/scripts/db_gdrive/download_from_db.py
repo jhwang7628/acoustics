@@ -61,12 +61,11 @@ if __name__ == '__main__':
     ## customized fields 
     download_dir = 'downloaded'
     query_models = [
-        'p_cup',
-        'p_mug',
-        'p_suger_bowl',
+        'p_wine',
     ]
     download_files = [
         'proj.obj',
+        'proj.tet',
         'proj.modes',
         'proj.geo.txt'
     ]
