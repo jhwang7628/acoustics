@@ -43,6 +43,7 @@ class TriangleMeshKDTree : public TriangleMesh<T>
 
         virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
         virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex); 
+        inline Vector3d TriangleCentroid(const int &t_idx){return Vector3d(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
         void BuildKDTree();
 
         ///// debugging methods /////
