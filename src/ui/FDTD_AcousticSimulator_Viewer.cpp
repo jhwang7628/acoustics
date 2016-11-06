@@ -358,9 +358,8 @@ DrawSelection()
         const auto search = _simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.find(cell_idx); 
         if (search != _simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.end())
         {
-            for (std::vector<MAC_Grid::TriangleIdentifier>::const_iterator it=(search->second).begin(); it!=(search->second).end(); ++it)
+            for (std::vector<MAC_Grid::TriangleIdentifier>::const_iterator it=(search->second)->begin(); it!=(search->second)->end(); ++it)
             {
-                const auto &color = _objectColors.at(it->objectID); 
                 const auto &object = _simulator->GetSceneObjects()->GetPtr(it->objectID);
                 const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 
                 const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(it->triangleID);
@@ -531,14 +530,14 @@ DrawDebugCin()
 void FDTD_AcousticSimulator_Viewer::
 DrawHashedCells()
 {
-    typedef std::map<int, std::vector<MAC_Grid::TriangleIdentifier> >::const_iterator Iterator; 
+    typedef std::map<int, std::shared_ptr<std::vector<MAC_Grid::TriangleIdentifier> > >::const_iterator Iterator; 
     const MAC_Grid::FVMetaData &fvMetaData = _simulator->GetSolver()->GetGrid().GetFVMetaData();
     const auto &cellMap = fvMetaData.cellMap; 
     for (Iterator it=cellMap.begin(); it!=cellMap.end(); ++it)
     {
         MAC_Grid::Cell cell; 
         _simulator->GetSolver()->FetchCell(it->first, cell); 
-        const Vector3f &color = _objectColors.at(it->second[0].objectID);
+        const Vector3f &color = _objectColors.at(it->second->at(0).objectID);
         glColor3f(color.x, color.y, color.z);
         GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
     }

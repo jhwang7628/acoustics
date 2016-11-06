@@ -72,6 +72,18 @@ class MAC_Grid
                 }
         }; 
 
+        class GhostCell
+        {
+            public:
+                int parent_idx; 
+                int valuePointer;
+                FloatArray positions;
+                std::vector<FloatArray> values; // last, current, future
+                GhostCell(const int &parent)
+                    : parent_idx(parent), valuePointer(0), positions(FloatArray(6)), values(6, FloatArray(6, 0.0))
+                {}
+        };
+
         // only used for classification with multiple threads
         struct GhostCellInfo
         {
@@ -98,7 +110,7 @@ class MAC_Grid
         class FVMetaData
         {
             public:
-            std::map<int, std::vector<TriangleIdentifier> > cellMap; 
+            std::map<int, std::shared_ptr<std::vector<TriangleIdentifier> > > cellMap; 
             void Clear(){cellMap.clear();}
         };
 
@@ -160,6 +172,7 @@ class MAC_Grid
 
         std::vector<PML_PressureCell> _pmlPressureCells; 
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
+        std::vector<GhostCell>   _ghostCellsCollection;
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST

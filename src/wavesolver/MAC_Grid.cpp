@@ -2359,6 +2359,12 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 //##############################################################################
 void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose)
 {
+    // reset all fields
+    std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
+    _ghostCells.clear(); 
+    _ghostCellsChildren.clear(); 
+
+    // hash triangles
     _fvMetaData.Clear(); 
     const int N_objects = _objects->N();
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
@@ -2371,9 +2377,38 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
         {
             Vector3d centroid = meshkd->TriangleCentroid(t_idx); 
             centroid = object->ObjectToWorldPoint(centroid);
-            const int cellIndex = InPressureCell(centroid); 
+            const int cell_idx = InPressureCell(centroid); 
             const TriangleIdentifier tri_id(obj_idx, t_idx);
-            _fvMetaData.cellMap[cellIndex].push_back(tri_id);
+            auto &list = _fvMetaData.cellMap[cell_idx]; 
+            if (!list) 
+                list = std::make_shared<std::vector<TriangleIdentifier> >(1, tri_id); 
+            else
+                list->push_back(tri_id);
+            _isGhostCell.at(cell_idx) = true; 
+        }
+    }
+
+    // classify all non-ghost
+    const int N_pcells = _pressureField.numCells(); 
+    for (int cell_idx=0; cell_idx<N_pcells; ++cell_idx)
+    {
+        _pressureCellHasValidHistory.at(cell_idx) = (IsPressureCellSolid(cell_idx) ? false : true); 
+        if (_isGhostCell.at(cell_idx)) 
+        {
+            GhostCell gc(cell_idx); 
+            _ghostCellsCollection.push_back(gc);
+            _isBulkCell.at(cell_idx) = false; 
+            continue;
+        }
+        const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
+        const REAL sdfQuery = _objects->LowestObjectDistance(cellPosition);
+        _isBulkCell.at(cell_idx) = (sdfQuery < DISTANCE_TOLERANCE ? false : true);
+        if (!_isBulkCell.at(cell_idx))
+        {
+            pFull(cell_idx, 0) = 0;
+            p[0](cell_idx, 0) = 0; 
+            p[1](cell_idx, 0) = 0; 
+            p[2](cell_idx, 0) = 0; 
         }
     }
 }
