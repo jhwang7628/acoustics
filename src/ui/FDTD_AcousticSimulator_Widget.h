@@ -27,6 +27,7 @@ class FDTD_AcousticSimulator_Widget : public QWidget
         std::shared_ptr<PML_WaveSolver_Settings>        _solverSettings;
         RunMode      _runMode;
         QGridLayout *_layout;
+        QGridLayout *_controlPanelLayout;
         QSlider     *_slider_impulseScaling;
         QLabel      * _label_impulseScaling;
         QLabel      *  _text_impulseScaling;
@@ -34,10 +35,14 @@ class FDTD_AcousticSimulator_Widget : public QWidget
         QLabel      * _label_simulationTimeline;
         QLabel      *  _text_simulationTimeline;
         QPushButton *_button_resetSimulation;
+        QPushButton *_button_generateSlice_x;
+        QPushButton *_button_generateSlice_y;
+        QPushButton *_button_generateSlice_z;
 
     private slots: 
         void SliderValueChanged(); 
         void ResetSystemTime();
+        void GenerateSlice(const int &dim, const REAL &offset);
 };
 
 #endif

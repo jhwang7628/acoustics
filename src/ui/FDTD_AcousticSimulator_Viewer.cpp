@@ -749,16 +749,15 @@ keyPressEvent(QKeyEvent *e)
         POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::NoButton)) {
+        int dim; 
+        Vector3d origin; 
         PRE_CIN_CLEAR;
-        Slice slice; 
         std::cout << "Slice dim: " << std::flush; 
-        std::cin >> slice.dim;
+        std::cin >> dim;
         std::cout << "Slice origin: " << std::flush; 
-        std::cin >> slice.origin.x >> slice.origin.y >> slice.origin.z; 
+        std::cin >> origin.x >> origin.y >> origin.z; 
         POST_CIN_CLEAR; 
-        ConstructSliceSamples(slice);
-        slice.dataReady = false;
-        _sliceCin.push_back(slice); 
+        AddSlice(dim, origin[dim]);
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
         _sliceDataPointer = (_sliceDataPointer + 1)%8; 
@@ -870,6 +869,20 @@ InitializeBEMSolver()
     const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
     _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
     _bemModePointer = _bemSolver->N_Modes()-1;  
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+AddSlice(const int &dim, const REAL &offset)
+{
+    Slice slice; 
+    slice.dim = dim; 
+    slice.origin.set(0, 0, 0);
+    slice.origin[dim] += offset; 
+    slice.dataReady = false;
+    ConstructSliceSamples(slice);
+    _sliceCin.push_back(slice); 
 }
 
 //##############################################################################

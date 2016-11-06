@@ -8,6 +8,7 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
 {
     // initialize layout
     _layout                = new QGridLayout(); 
+    _controlPanelLayout    = new QGridLayout(); 
     _slider_impulseScaling = new QSlider(Qt::Horizontal, this); 
     _slider_impulseScaling->setRange(-3./IMP_SLIDER_SCALE, 3./IMP_SLIDER_SCALE); 
     _slider_impulseScaling->setValue(0);
@@ -24,7 +25,13 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
       _text_simulationTimeline->setFixedWidth(200);
     _button_resetSimulation = new QPushButton(this); 
     _button_resetSimulation->setText("Reset Simulation Time");
-    _layout->addWidget(_viewer.get()         , 0, 0, 1, 4);
+    _button_generateSlice_x = new QPushButton(this); 
+    _button_generateSlice_x->setText("Generate x-slice");
+    _button_generateSlice_y = new QPushButton(this); 
+    _button_generateSlice_y->setText("Generate y-slice");
+    _button_generateSlice_z = new QPushButton(this); 
+    _button_generateSlice_z->setText("Generate z-slice");
+    _layout->addWidget(_viewer.get()      , 0, 0, 1, 4);
     _layout->addWidget(  _text_impulseScaling, 1, 0);
     _layout->addWidget(_slider_impulseScaling, 1, 1);
     _layout->addWidget( _label_impulseScaling, 1, 2);
@@ -32,12 +39,19 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _layout->addWidget(_slider_simulationTimeline, 2, 1);
     _layout->addWidget( _label_simulationTimeline, 2, 2);
     _layout->addWidget(_button_resetSimulation   , 2, 3);
+    _layout->addLayout(_controlPanelLayout, 3, 0, 1, 4);
+    _controlPanelLayout->addWidget(_button_generateSlice_x, 0, 0);
+    _controlPanelLayout->addWidget(_button_generateSlice_y, 0, 1);
+    _controlPanelLayout->addWidget(_button_generateSlice_z, 0, 2);
     setLayout(_layout);
     resize(800, 600);
     // signal-slot stuff
     connect(_slider_impulseScaling, SIGNAL(valueChanged(int)), this, SLOT(SliderValueChanged()));
     connect(_slider_simulationTimeline, SIGNAL(valueChanged(int)), this, SLOT(SliderValueChanged()));
     connect(_button_resetSimulation, SIGNAL(clicked()), this, SLOT(ResetSystemTime()));
+    connect(_button_generateSlice_x, &QPushButton::clicked, this, [this]{GenerateSlice(0, 0.0);});
+    connect(_button_generateSlice_y, &QPushButton::clicked, this, [this]{GenerateSlice(1, 0.0);});
+    connect(_button_generateSlice_z, &QPushButton::clicked, this, [this]{GenerateSlice(2, 0.0);});
 }
 
 //##############################################################################
@@ -72,5 +86,14 @@ ResetSystemTime()
     _viewer->_simulator->ResetStartTime(newTime);
     _viewer->SetAllSliceDataReady(false);
     _viewer->_currentFrame = 0;
+    _viewer->updateGL();
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Widget::
+GenerateSlice(const int &dim, const REAL &offset)
+{
+    _viewer->AddSlice(dim, offset);
     _viewer->updateGL();
 }

@@ -99,6 +99,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
         inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
         void InitializeBEMSolver(); 
+        void AddSlice(const int &dim, const REAL &offset);
         void ConstructSliceSamples(Slice &slice); 
         void ComputeAndCacheSliceData(const int &dataPointer, Slice &slice); 
         void DrawOneFrameForward(); 
