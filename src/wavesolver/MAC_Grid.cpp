@@ -1033,14 +1033,18 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC,
 void MAC_Grid::
 UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
 {
-    typedef std::vector<GhostCell>::iterator gcIterator;
+    typedef std::vector<GhostCell>::iterator Iterator_GC;
+    typedef std::vector<GhostCell::BoundarySamples>::iterator Iterator_BS;
+    typedef std::vector<TriangleIdentifier>::iterator         Iterator_TS;
     const int  &N_sub    = _waveSolverSettings->FV_boundarySubdivision; 
     const int   N_sub_2  = pow(N_sub, 2);
     const REAL &h        = _waveSolverSettings->cellSize; 
     const REAL  h_sub    = h/(REAL)N_sub; 
     const REAL  h_over_2 = h/2.0;
+    const REAL  A_sub    = pow(h_sub, 2);
     const size_t N_totalBoundarySamples = 6*N_sub_2; 
-    for (gcIterator gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
+    auto EvalVolElement = [](const Vector3d &position, const Vector3d &normal){return (position/3.0).dotProduct(normal);};
+    for (Iterator_GC gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
     {
         const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
         if (gc->boundarySamples.size() != N_totalBoundarySamples) // need to generate boundary samples
@@ -1062,11 +1066,26 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                             position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
                             position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
                             position[dim_0] = offset_dim_0[pn]; 
-                            normal[dim_0] = (pn==0 ? -1.0 : 1.0); 
+                            normal[dim_0] = (pn==0 ? -1.0 : 1.0) * A_sub; 
                             gc->boundarySamples.at(start_idx[pn] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal); 
                         }
             }
         }
+
+        // compute volume
+        REAL volume = 0.0;
+        for (Iterator_BS sp=gc->boundarySamples.begin(); sp!=gc->boundarySamples.end(); ++sp)
+        {
+            sp->isBulk = (_objects->LowestObjectDistance(sp->position) < DISTANCE_TOLERANCE ? false : true);
+            if (sp->isBulk)
+                volume += EvalVolElement(sp->position, sp->normal); 
+        }
+        for (Iterator_TS sp=gc->hashedTriangles->begin(); sp!=gc->hashedTriangles->end(); ++sp)
+        {
+            const auto &mesh = _objects->GetPtr(sp->objectID)->GetMeshPtr();
+            volume -= sp->centroid.dotProduct(mesh->triangle_normal(sp->triangleID))/3.0; // normal to the volume
+        }
+        COUT_SDUMP(volume);
     }
 }
 
@@ -2403,8 +2422,7 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
 {
     // reset all fields
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false);
-    _ghostCells.clear(); 
-    _ghostCellsChildren.clear(); 
+    _ghostCellsCollection.clear();
 
     // hash triangles
     _fvMetaData.Clear(); 
@@ -2420,7 +2438,7 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
             Vector3d centroid = meshkd->TriangleCentroid(t_idx); 
             centroid = object->ObjectToWorldPoint(centroid);
             const int cell_idx = InPressureCell(centroid); 
-            const TriangleIdentifier tri_id(obj_idx, t_idx);
+            const TriangleIdentifier tri_id(obj_idx, t_idx, centroid);
             auto &list = _fvMetaData.cellMap[cell_idx]; 
             if (!list) 
                 list = std::make_shared<std::vector<TriangleIdentifier> >(1, tri_id); 

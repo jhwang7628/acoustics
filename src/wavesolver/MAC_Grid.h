@@ -90,8 +90,9 @@ class MAC_Grid
         {
             int objectID; 
             int triangleID; 
-            TriangleIdentifier(const int &o_id, const int &t_id)
-                : objectID(o_id), triangleID(t_id)
+            Vector3d centroid; 
+            TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c)
+                : objectID(o_id), triangleID(t_id), centroid(c)
             {}
         };
 
@@ -107,6 +108,7 @@ class MAC_Grid
             public:
                 struct BoundarySamples
                 {
+                    bool isBulk; 
                     Vector3d position; 
                     Vector3d normal;
                     BoundarySamples(){}
