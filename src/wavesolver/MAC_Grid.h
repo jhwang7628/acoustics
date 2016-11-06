@@ -72,18 +72,6 @@ class MAC_Grid
                 }
         }; 
 
-        class GhostCell
-        {
-            public:
-                int parent_idx; 
-                int valuePointer;
-                FloatArray positions;
-                std::vector<FloatArray> values; // last, current, future
-                GhostCell(const int &parent)
-                    : parent_idx(parent), valuePointer(0), positions(FloatArray(6)), values(6, FloatArray(6, 0.0))
-                {}
-        };
-
         // only used for classification with multiple threads
         struct GhostCellInfo
         {
@@ -113,6 +101,29 @@ class MAC_Grid
             std::map<int, std::shared_ptr<std::vector<TriangleIdentifier> > > cellMap; 
             void Clear(){cellMap.clear();}
         };
+
+        class GhostCell
+        {
+            public:
+                struct BoundarySamples
+                {
+                    Vector3d position; 
+                    Vector3d normal;
+                    BoundarySamples(){}
+                    BoundarySamples(const Vector3d &pos, const Vector3d &nor) 
+                        : position(pos), normal(nor){}
+                };
+                int parent_idx; 
+                int valuePointer;
+                FloatArray positions;
+                std::vector<FloatArray> values; // last, current, future
+                std::vector<BoundarySamples> boundarySamples; 
+                std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
+                GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
+                    : parent_idx(parent), valuePointer(0), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
+                {}
+        };
+
 
     private:
         typedef TriangleMesh<REAL>  TriMesh;
@@ -274,6 +285,7 @@ class MAC_Grid
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
         void PML_pressureUpdateGhostCells_Coupled(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+        void UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime); 
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix

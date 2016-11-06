@@ -613,6 +613,10 @@ void PML_WaveSolver::stepCollocated()
     _cellClassifyTimer.start(); 
     _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
+
+    _ghostCellTimer.start(); 
+    _grid.UpdateGhostCells_FV(pCurr, _currentTime);
+    _ghostCellTimer.pause(); 
 #else
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects

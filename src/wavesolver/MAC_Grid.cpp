@@ -1028,6 +1028,48 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC,
     std::cout << "  max residual = " << maxResidual << "; entry = " << maxResidualEntry << "; cell position = " << _ghostCellPositions.at(maxResidualEntry) << std::endl;
 }
 
+//##############################################################################
+//##############################################################################
+void MAC_Grid::
+UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
+{
+    typedef std::vector<GhostCell>::iterator gcIterator;
+    const int  &N_sub    = _waveSolverSettings->FV_boundarySubdivision; 
+    const int   N_sub_2  = pow(N_sub, 2);
+    const REAL &h        = _waveSolverSettings->cellSize; 
+    const REAL  h_sub    = h/(REAL)N_sub; 
+    const REAL  h_over_2 = h/2.0;
+    const size_t N_totalBoundarySamples = 6*N_sub_2; 
+    for (gcIterator gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
+    {
+        const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
+        if (gc->boundarySamples.size() != N_totalBoundarySamples) // need to generate boundary samples
+        {
+            gc->boundarySamples.resize(N_totalBoundarySamples);
+            for (int dim_0=0; dim_0<3; ++dim_0)
+            {
+                const int dim_1 = (dim_0+1)%3; 
+                const int dim_2 = (dim_0+2)%3; 
+                const REAL offset_dim_0[2] = {cellPosition[dim_0] - h_over_2, cellPosition[dim_0] + h_over_2}; 
+                const int start_idx[2] = {(dim_0*2)*N_sub_2, (dim_0*2+1)*N_sub_2}; 
+                const REAL lowCorner_dim_1 = cellPosition[dim_1] - h_over_2; 
+                const REAL lowCorner_dim_2 = cellPosition[dim_2] - h_over_2; 
+                for (int pn=0; pn<2; ++pn)
+                    for (int ii=0; ii<N_sub; ++ii)
+                        for (int jj=0; jj<N_sub; ++jj)
+                        {
+                            Vector3d position, normal; // initialize to zero
+                            position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
+                            position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
+                            position[dim_0] = offset_dim_0[pn]; 
+                            normal[dim_0] = (pn==0 ? -1.0 : 1.0); 
+                            gc->boundarySamples.at(start_idx[pn] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal); 
+                        }
+            }
+        }
+    }
+}
+
 void MAC_Grid::sampleZSlice( int slice, const MATRIX &p, MATRIX &sliceData )
 {
     const Tuple3i             &divs = _pressureField.cellDivisions();
@@ -2395,7 +2437,8 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
         _pressureCellHasValidHistory.at(cell_idx) = (IsPressureCellSolid(cell_idx) ? false : true); 
         if (_isGhostCell.at(cell_idx)) 
         {
-            GhostCell gc(cell_idx); 
+            auto &hashedTriangles = _fvMetaData.cellMap.at(cell_idx); 
+            GhostCell gc(cell_idx, hashedTriangles); 
             _ghostCellsCollection.push_back(gc);
             _isBulkCell.at(cell_idx) = false; 
             continue;

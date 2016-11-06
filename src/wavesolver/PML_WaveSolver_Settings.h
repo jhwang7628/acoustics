@@ -46,6 +46,9 @@ struct PML_WaveSolver_Settings
     bool            fastForwardToEarliestImpact;  
     REAL            fastForwardToEventTime; // in effect only if fastForwardToEarliestImpact = false
 
+    // ghost cell settings
+    int FV_boundarySubdivision;
+
     // additional options
     bool validateUsingFBem; 
 };

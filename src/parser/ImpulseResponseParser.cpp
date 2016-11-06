@@ -207,6 +207,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     const REAL domainCenter_y    = queryOptionalReal(solverNode, "domain_center_y", 0.0); 
     const REAL domainCenter_z    = queryOptionalReal(solverNode, "domain_center_z", 0.0); 
     settings->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
+    settings->FV_boundarySubdivision = queryOptionalInt(solverNode, "fv_boundary_subdivision", "5"); 
 
     // IO settings
     settings->outputPattern = queryRequiredAttr(solverNode, "output_pattern"); 
