@@ -1043,7 +1043,6 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
     const REAL  h_over_2 = h/2.0;
     const REAL  A_sub    = pow(h_sub, 2);
     const size_t N_totalBoundarySamples = 6*N_sub_2; 
-    auto EvalVolElement = [](const Vector3d &position, const Vector3d &normal){return (position/3.0).dotProduct(normal);};
     for (Iterator_GC gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
     {
         const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
@@ -1078,7 +1077,7 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
         {
             sp->isBulk = (_objects->LowestObjectDistance(sp->position) < DISTANCE_TOLERANCE ? false : true);
             if (sp->isBulk)
-                volume += EvalVolElement(sp->position, sp->normal); 
+                volume += (sp->position/3.0).dotProduct(sp->normal);
         }
         for (Iterator_TS sp=gc->hashedTriangles->begin(); sp!=gc->hashedTriangles->end(); ++sp)
         {
