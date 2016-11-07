@@ -31,6 +31,15 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 //##############################################################################
 //##############################################################################
 REAL WaterVibrationalSource::
+Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    throw std::runtime_error("**ERROR** Cannot sample water vibrational source using vertexID");
+    return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
+REAL WaterVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
     if (normal.dotProduct(_wantedNormal)/normal.length() > _validAngleThreshold)

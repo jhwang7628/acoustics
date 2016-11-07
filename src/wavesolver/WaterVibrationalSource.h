@@ -41,6 +41,7 @@ class WaterVibrationalSource : public VibrationalSource
         WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile, const REAL &decayRadius);
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         inline REAL Decay(const Vector3d &samplePoint){

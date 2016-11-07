@@ -31,6 +31,15 @@ Evaluate(const Vector3d &evaluatePosition, const Vector3d &normal, const REAL &t
 
 //##############################################################################
 //##############################################################################
+REAL GaussianPressureSource::
+Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    throw std::runtime_error("**ERROR** Cannot sample GaussianPressureSource using vertexID");
+    return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
 void GaussianPressureSource::
 PrintSourceInfo(std::ostream &os) const
 {

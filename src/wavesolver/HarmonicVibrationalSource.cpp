@@ -12,7 +12,13 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
         return decayFactor(time) * val;
 }
 
-
+//##############################################################################
+//##############################################################################
+REAL HarmonicVibrationalSource::
+Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    return Evaluate(Vector3d(), vertexNormal, time);
+}
 
 //##############################################################################
 //##############################################################################

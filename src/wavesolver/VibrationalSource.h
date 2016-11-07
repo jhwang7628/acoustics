@@ -27,6 +27,7 @@ class VibrationalSource : public Source
 
         // output the acceleration
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 
+        virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)=0; 
 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 

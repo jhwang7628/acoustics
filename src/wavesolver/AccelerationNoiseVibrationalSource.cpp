@@ -73,6 +73,14 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
 }
 
 //##############################################################################
+//##############################################################################
+REAL AccelerationNoiseVibrationalSource::
+Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    return Evaluate(Vector3d(), vertexNormal, time);
+}
+
+//##############################################################################
 // The velocity evaluation of AN source is ill-defined for the fdtd simulator.
 //##############################################################################
 REAL AccelerationNoiseVibrationalSource::

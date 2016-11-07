@@ -259,6 +259,19 @@ EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boun
 }
 
 //##############################################################################
+//##############################################################################
+REAL FDTD_RigidObject::
+EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    REAL bcValue = 0.0; 
+    const SourceIterator sourceEnd = _vibrationalSources.end(); 
+    for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
+        bcValue += (*it)->Evaluate(vertexID, vertexNormal, time);
+
+    return bcValue; 
+}
+
+//##############################################################################
 // This function locates acceleration noise source and evaluate the analytical
 // pressure for spheres.
 //##############################################################################

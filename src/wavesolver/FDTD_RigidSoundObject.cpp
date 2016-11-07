@@ -360,9 +360,11 @@ SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, c
 
 //##############################################################################
 // Brute force looping for now
+// Note: the normal acceleration return by this function will be using the normal
+// of the mesh. need to be careful if used in FV formulation
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // FIXME there might be a missing sign because this is using object normal (eigenvector normal)
+SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
 {
     int closestIndex = -1;
     REAL closestDistance = std::numeric_limits<REAL>::max(); 
@@ -389,6 +391,23 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
         sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
     else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
+    else
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    return sampledValue;
+}
+
+//##############################################################################
+// This function samples modal acceleration given mesh vertex
+//##############################################################################
+REAL FDTD_RigidSoundObject::
+SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &sampleTime)
+{
+    // evaluate sample values
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
+        sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c); 
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+        sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c_plus); 
     else
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
     return sampledValue;
