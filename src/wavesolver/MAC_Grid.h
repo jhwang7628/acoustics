@@ -109,14 +109,16 @@ class MAC_Grid
                 struct BoundarySamples
                 {
                     bool isBulk; 
+                    int neighbour_idx; 
+                    REAL dp_dn; 
                     Vector3d position; 
                     Vector3d normal;
                     BoundarySamples(){}
-                    BoundarySamples(const Vector3d &pos, const Vector3d &nor) 
-                        : position(pos), normal(nor){}
+                    BoundarySamples(const Vector3d &pos, const Vector3d &nor, const int &nei, const REAL &dp_dn_) 
+                        : neighbour_idx(nei), dp_dn(dp_dn_), position(pos), normal(nor){}
                 };
                 int parent_idx; 
-                int valuePointer;
+                int valuePointer; // FIXME remember to update
                 FloatArray positions;
                 std::vector<FloatArray> values; // last, current, future
                 std::vector<BoundarySamples> boundarySamples; 

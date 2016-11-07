@@ -1038,14 +1038,19 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
     typedef std::vector<TriangleIdentifier>::iterator         Iterator_TS;
     const int  &N_sub    = _waveSolverSettings->FV_boundarySubdivision; 
     const int   N_sub_2  = pow(N_sub, 2);
+    const REAL &c        = _waveSolverSettings->soundSpeed; 
+    const REAL &k        = _waveSolverSettings->timeStepSize; 
     const REAL &h        = _waveSolverSettings->cellSize; 
     const REAL  h_sub    = h/(REAL)N_sub; 
     const REAL  h_over_2 = h/2.0;
     const REAL  A_sub    = pow(h_sub, 2);
+    const REAL &rho      = _waveSolverSettings->airDensity;
+    const REAL  kc_2     = pow(k*c, 2); 
     const size_t N_totalBoundarySamples = 6*N_sub_2; 
     for (Iterator_GC gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
     {
         const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
+        Tuple3i indicesBuffer = _pressureField.cellIndex(gc->parent_idx); 
         if (gc->boundarySamples.size() != N_totalBoundarySamples) // need to generate boundary samples
         {
             gc->boundarySamples.resize(N_totalBoundarySamples);
@@ -1058,33 +1063,57 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                 const REAL lowCorner_dim_1 = cellPosition[dim_1] - h_over_2; 
                 const REAL lowCorner_dim_2 = cellPosition[dim_2] - h_over_2; 
                 for (int pn=0; pn<2; ++pn)
-                    for (int ii=0; ii<N_sub; ++ii)
-                        for (int jj=0; jj<N_sub; ++jj)
+                {
+                    Vector3d normal(0,0,0);
+                    normal[dim_0] = (pn==0 ? -1.0 : 1.0) * A_sub; 
+                    indicesBuffer[dim_0] += (pn==0 ? -1 : 1); 
+                    const int neighbour_idx = _pressureField.cellIndex(indicesBuffer); 
+                    const REAL dp_dn_face = (neighbour_idx > gc->parent_idx ? (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2+1))/h
+                                                                            : (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2  ))/h);
+                    indicesBuffer[dim_0] -= (pn==0 ? -1 : 1); // reset buffer
+                    for (int ii=0; ii<N_sub; ++ii) 
+                    {
+                        for (int jj=0; jj<N_sub; ++jj) 
                         {
-                            Vector3d position, normal; // initialize to zero
+                            Vector3d position;
                             position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
                             position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
                             position[dim_0] = offset_dim_0[pn]; 
-                            normal[dim_0] = (pn==0 ? -1.0 : 1.0) * A_sub; 
-                            gc->boundarySamples.at(start_idx[pn] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal); 
+                            gc->boundarySamples.at(start_idx[pn] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, dp_dn_face); 
                         }
+                    }
+                }
             }
         }
 
-        // compute volume
-        REAL volume = 0.0;
+        // compute volume and pressure gradient
+        REAL volume=0.0, dp_dn=0.0;
         for (Iterator_BS sp=gc->boundarySamples.begin(); sp!=gc->boundarySamples.end(); ++sp)
         {
             sp->isBulk = (_objects->LowestObjectDistance(sp->position) < DISTANCE_TOLERANCE ? false : true);
             if (sp->isBulk)
+            {
                 volume += (sp->position/3.0).dotProduct(sp->normal);
+                dp_dn += sp->dp_dn; 
+            }
         }
         for (Iterator_TS sp=gc->hashedTriangles->begin(); sp!=gc->hashedTriangles->end(); ++sp)
         {
-            const auto &mesh = _objects->GetPtr(sp->objectID)->GetMeshPtr();
-            volume -= sp->centroid.dotProduct(mesh->triangle_normal(sp->triangleID))/3.0; // normal to the volume
+            const auto &object = _objects->GetPtr(sp->objectID); 
+            const auto &mesh   = object->GetMeshPtr();
+            const Tuple3ui &triangle_vtx = mesh->triangle_ids(sp->triangleID);
+            const Point3<REAL> vtx_x = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.x)); 
+            const Point3<REAL> vtx_y = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.y)); 
+            const Point3<REAL> vtx_z = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.z)); 
+            volume -= sp->centroid.dotProduct(mesh->triangle_normal(sp->triangleID))/3.0; // normal to the volume is opposite to triangle normal
+            REAL dp_dn_e = 0.0; // sample three vertices 
+            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_x, mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_y, mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_z, mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e *= (-rho);
+            dp_dn += dp_dn_e;
         }
-        COUT_SDUMP(volume);
+        dp_dn *= kc_2; 
     }
 }
 
