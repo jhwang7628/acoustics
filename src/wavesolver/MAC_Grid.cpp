@@ -1021,7 +1021,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC,
             //p(_ghostCells[ghost_cell_idx],0) = data.RHS; 
             pGC.at(ghost_cell_idx) = data.RHS; 
             for (size_t cc=0; cc<data.nnzIndex.size(); cc++)
-                //p(_ghostCells[ghost_cell_idx],0) -= data.nnzValue[cc]*p(_ghostCells[data.nnzIndex[cc]],0); 
                 pGC.at(ghost_cell_idx) -= data.nnzValue[cc]*pGC_old.at(data.nnzIndex[cc]); 
         }
     }
@@ -1041,10 +1040,11 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
     const REAL &c        = _waveSolverSettings->soundSpeed; 
     const REAL &k        = _waveSolverSettings->timeStepSize; 
     const REAL &h        = _waveSolverSettings->cellSize; 
+    const REAL &rho      = _waveSolverSettings->airDensity;
+    const int  &cell_div = _waveSolverSettings->cellDivisions; 
     const REAL  h_sub    = h/(REAL)N_sub; 
     const REAL  h_over_2 = h/2.0;
     const REAL  A_sub    = pow(h_sub, 2);
-    const REAL &rho      = _waveSolverSettings->airDensity;
     const REAL  kc_2     = pow(k*c, 2); 
     const size_t N_totalBoundarySamples = 6*N_sub_2; 
     for (Iterator_GC gc=_ghostCellsCollection.begin(); gc!=_ghostCellsCollection.end(); ++gc)
@@ -1062,15 +1062,16 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                 const int start_idx[2] = {(dim_0*2)*N_sub_2, (dim_0*2+1)*N_sub_2}; 
                 const REAL lowCorner_dim_1 = cellPosition[dim_1] - h_over_2; 
                 const REAL lowCorner_dim_2 = cellPosition[dim_2] - h_over_2; 
-                for (int pn=0; pn<2; ++pn)
+                for (int np=0; np<2; ++np) // negative/positive face
                 {
                     Vector3d normal(0,0,0);
-                    normal[dim_0] = (pn==0 ? -1.0 : 1.0) * A_sub; 
-                    indicesBuffer[dim_0] += (pn==0 ? -1 : 1); 
+                    normal[dim_0] = (np==0 ? -1.0 : 1.0) * A_sub; 
+                    indicesBuffer[dim_0] += (np==0 ? -1 : 1); 
+                    assert(indicesBuffer[dim_0]>=0 && indicesBuffer[dim_0]<cell_div); 
                     const int neighbour_idx = _pressureField.cellIndex(indicesBuffer); 
                     const REAL dp_dn_face = (neighbour_idx > gc->parent_idx ? (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2+1))/h
                                                                             : (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2  ))/h);
-                    indicesBuffer[dim_0] -= (pn==0 ? -1 : 1); // reset buffer
+                    indicesBuffer[dim_0] -= (np==0 ? -1 : 1); // reset buffer
                     for (int ii=0; ii<N_sub; ++ii) 
                     {
                         for (int jj=0; jj<N_sub; ++jj) 
@@ -1078,8 +1079,8 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                             Vector3d position;
                             position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
                             position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
-                            position[dim_0] = offset_dim_0[pn]; 
-                            gc->boundarySamples.at(start_idx[pn] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, dp_dn_face); 
+                            position[dim_0] = offset_dim_0[np]; 
+                            gc->boundarySamples.at(start_idx[np] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, dp_dn_face); 
                         }
                     }
                 }
@@ -1087,33 +1088,40 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
         }
 
         // compute volume and pressure gradient
-        REAL volume=0.0, dp_dn=0.0;
+        REAL volume=0.0, dp_dn_dot_S=0.0;
         for (Iterator_BS sp=gc->boundarySamples.begin(); sp!=gc->boundarySamples.end(); ++sp)
         {
             sp->isBulk = (_objects->LowestObjectDistance(sp->position) < DISTANCE_TOLERANCE ? false : true);
             if (sp->isBulk)
             {
                 volume += (sp->position/3.0).dotProduct(sp->normal);
-                dp_dn += sp->dp_dn; 
+                dp_dn_dot_S += sp->dp_dn; 
             }
         }
+        dp_dn_dot_S *= A_sub; // scale by boundary sample area
         for (Iterator_TS sp=gc->hashedTriangles->begin(); sp!=gc->hashedTriangles->end(); ++sp)
         {
             const auto &object = _objects->GetPtr(sp->objectID); 
             const auto &mesh   = object->GetMeshPtr();
             const Tuple3ui &triangle_vtx = mesh->triangle_ids(sp->triangleID);
-            const Point3<REAL> vtx_x = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.x)); 
-            const Point3<REAL> vtx_y = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.y)); 
-            const Point3<REAL> vtx_z = object->ObjectToWorldPoint(mesh->vertex(triangle_vtx.z)); 
             volume -= sp->centroid.dotProduct(mesh->triangle_normal(sp->triangleID))/3.0; // normal to the volume is opposite to triangle normal
             REAL dp_dn_e = 0.0; // sample three vertices 
-            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_x, mesh->triangle_normal(sp->triangleID), simulationTime);
-            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_y, mesh->triangle_normal(sp->triangleID), simulationTime);
-            dp_dn_e += object->EvaluateBoundaryAcceleration(vtx_z, mesh->triangle_normal(sp->triangleID), simulationTime);
-            dp_dn_e *= (-rho);
-            dp_dn += dp_dn_e;
+            dp_dn_e += object->EvaluateBoundaryAcceleration(mesh->vertex(triangle_vtx.x), mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e += object->EvaluateBoundaryAcceleration(mesh->vertex(triangle_vtx.y), mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e += object->EvaluateBoundaryAcceleration(mesh->vertex(triangle_vtx.z), mesh->triangle_normal(sp->triangleID), simulationTime);
+            dp_dn_e *= (-rho)/3.0; // average and convert acc to dp_dn
+            dp_dn_dot_S -= dp_dn_e * mesh->triangle_normal(sp->triangleID).norm(); // same normal flip as volume computation
         }
-        dp_dn *= kc_2; 
+
+        // update all ghost pressure samples; keep all sample values the same for now
+        for (int sp=0; sp<6; ++sp)
+        {
+            const REAL &gc_p_last = gc->values.at((gc->valuePointer+2)%3).at(sp);
+            const REAL &gc_p_curr = gc->values.at((gc->valuePointer  )%3).at(sp);
+                  REAL &gc_p_next = gc->values.at((gc->valuePointer+1)%3).at(sp);
+            gc_p_next = 2.0 * gc_p_curr - gc_p_last + kc_2*(dp_dn_dot_S/volume); 
+        }
+        gc->valuePointer = (gc->valuePointer+1)%3;
     }
 }
 
