@@ -362,7 +362,7 @@ SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, c
 // Brute force looping for now
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
+SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime) // FIXME there might be a missing sign because this is using object normal (eigenvector normal)
 {
     int closestIndex = -1;
     REAL closestDistance = std::numeric_limits<REAL>::max(); 
