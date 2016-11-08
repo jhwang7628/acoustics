@@ -363,18 +363,24 @@ DrawSelection()
                 const auto &object = _simulator->GetSceneObjects()->GetPtr(it->objectID);
                 const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 
                 const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(it->triangleID);
+                const Vector3f &color = _objectColors.at(it->objectID); 
                 Point3<REAL> x = vertices.at(triangle.x); 
                 Point3<REAL> y = vertices.at(triangle.y); 
                 Point3<REAL> z = vertices.at(triangle.z); 
                 x = object->ObjectToWorldPoint(x); 
                 y = object->ObjectToWorldPoint(y); 
                 z = object->ObjectToWorldPoint(z); 
-                glColor3f(0.f, 0.f, 1.f); 
+                glColor3f(color.x, color.y, color.z); 
                 glBegin(GL_TRIANGLES); 
                 glVertex3f(x.x, x.y, x.z); 
                 glVertex3f(y.x, y.y, y.z); 
                 glVertex3f(z.x, z.y, z.z); 
                 glEnd(); 
+                glPushMatrix(); 
+                glTranslatef(it->centroid.x, it->centroid.y, it->centroid.z); 
+                glColor3f(0.2f, 0.2f, 0.2f); 
+                GL_Wrapper::DrawSphere(3E-4, 6, 6);
+                glPopMatrix(); 
             }
         }
     }
@@ -530,7 +536,7 @@ DrawDebugCin()
 void FDTD_AcousticSimulator_Viewer::
 DrawHashedCells()
 {
-    typedef std::map<int, std::shared_ptr<std::vector<MAC_Grid::TriangleIdentifier> > >::const_iterator Iterator; 
+    typedef std::unordered_map<int, std::shared_ptr<std::vector<MAC_Grid::TriangleIdentifier> > >::const_iterator Iterator; 
     const MAC_Grid::FVMetaData &fvMetaData = _simulator->GetSolver()->GetGrid().GetFVMetaData();
     const auto &cellMap = fvMetaData.cellMap; 
     for (Iterator it=cellMap.begin(); it!=cellMap.end(); ++it)
