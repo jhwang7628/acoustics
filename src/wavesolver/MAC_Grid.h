@@ -6,6 +6,7 @@
 #ifndef MAC_GRID_H
 #define MAC_GRID_H
 
+#include <unordered_map>
 #include <distancefield/distanceField.h>
 #include <distancefield/closestPointField.h>
 
@@ -42,35 +43,6 @@
 class MAC_Grid 
 {
     public: 
-        // use for debugging 
-        class Cell
-        {
-            public: 
-                int         index = -1; 
-                REAL        r_identity;
-                std::string s_identity;
-                FloatArray  gcValue;  // for ghost cell only
-                Tuple3i     indices; 
-                Vector3d    centroidPosition; 
-                Vector3d    lowerCorner; 
-                Vector3d    upperCorner; 
-                REAL        pDirectional[3]; 
-                REAL        pFull; 
-                REAL        vx[2];
-                REAL        vy[2];
-                REAL        vz[2];
-                REAL        h; // cell size
-                REAL        laplacian; 
-
-                inline REAL Divergence() const
-                {
-                    REAL div = 0.0; 
-                    div += (vx[1] - vx[0]) / h; 
-                    div += (vy[1] - vy[0]) / h; 
-                    div += (vz[1] - vz[0]) / h; 
-                    return div; 
-                }
-        }; 
 
         // only used for classification with multiple threads
         struct GhostCellInfo
@@ -91,15 +63,16 @@ class MAC_Grid
             int objectID; 
             int triangleID; 
             Vector3d centroid; 
-            TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c)
-                : objectID(o_id), triangleID(t_id), centroid(c)
+            Vector3d normal;
+            TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c, const Vector3d &n)
+                : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
             {}
         };
 
         class FVMetaData
         {
             public:
-            std::map<int, std::shared_ptr<std::vector<TriangleIdentifier> > > cellMap; 
+            std::unordered_map<int, std::shared_ptr<std::vector<TriangleIdentifier> > > cellMap; 
             void Clear(){cellMap.clear();}
         };
 
@@ -118,7 +91,9 @@ class MAC_Grid
                         : neighbour_idx(nei), dp_dn(dp_dn_), position(pos), normal(nor){}
                 };
                 int parent_idx; 
-                int valuePointer; // FIXME remember to update
+                int valuePointer; // points to current value
+                REAL volume; 
+                REAL dp_dn_dot_S; 
                 FloatArray positions;
                 std::vector<FloatArray> values; // last, current, future
                 std::vector<BoundarySamples> boundarySamples; 
@@ -128,6 +103,35 @@ class MAC_Grid
                 {}
         };
 
+        class Cell
+        {
+            public: 
+                int         index = -1; 
+                REAL        r_identity;
+                std::string s_identity;
+                FloatArray  gcValue;  // for ghost cell only
+                Tuple3i     indices; 
+                Vector3d    centroidPosition; 
+                Vector3d    lowerCorner; 
+                Vector3d    upperCorner; 
+                REAL        pDirectional[3]; 
+                REAL        pFull; 
+                REAL        vx[2];
+                REAL        vy[2];
+                REAL        vz[2];
+                REAL        h; // cell size
+                REAL        laplacian; 
+                std::shared_ptr<GhostCell> ghostCell; 
+
+                inline REAL Divergence() const
+                {
+                    REAL div = 0.0; 
+                    div += (vx[1] - vx[0]) / h; 
+                    div += (vy[1] - vy[0]) / h; 
+                    div += (vz[1] - vz[0]) / h; 
+                    return div; 
+                }
+        }; 
 
     private:
         typedef TriangleMesh<REAL>  TriMesh;
@@ -187,7 +191,7 @@ class MAC_Grid
 
         std::vector<PML_PressureCell> _pmlPressureCells; 
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
-        std::vector<GhostCell>   _ghostCellsCollection;
+        std::unordered_map<int, std::shared_ptr<GhostCell> > _ghostCellsCollection; 
         IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
