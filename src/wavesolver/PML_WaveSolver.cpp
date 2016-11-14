@@ -123,6 +123,7 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
 
     _grid.initFieldRasterized( useBoundary );
     _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
+    _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false); // FIXME debug
     _grid.ResetCellHistory(true); // set all history to valid
 
     //if ( _listeningPositions )
@@ -611,7 +612,7 @@ void PML_WaveSolver::stepCollocated()
 
 #ifdef USE_FV
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    //_grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false); // FIXME debug
     _cellClassifyTimer.pause(); 
 
     _ghostCellTimer.start(); 
@@ -628,7 +629,7 @@ void PML_WaveSolver::stepCollocated()
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    //_grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     //_grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
