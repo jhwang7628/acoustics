@@ -83,12 +83,12 @@ class MAC_Grid
                 {
                     bool isBulk; 
                     int neighbour_idx; 
-                    REAL dp_dn; 
+                    int gc_value_idx; 
                     Vector3d position; 
                     Vector3d normal;
                     BoundarySamples(){}
-                    BoundarySamples(const Vector3d &pos, const Vector3d &nor, const int &nei, const REAL &dp_dn_) 
-                        : neighbour_idx(nei), dp_dn(dp_dn_), position(pos), normal(nor){}
+                    BoundarySamples(const Vector3d &pos, const Vector3d &nor, const int &nei, const int &gcind) 
+                        : neighbour_idx(nei), gc_value_idx(gcind), position(pos), normal(nor){}
                 };
                 int parent_idx; 
                 int valuePointer; // points to current value

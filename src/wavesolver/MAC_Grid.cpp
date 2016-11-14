@@ -1089,8 +1089,9 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                     indicesBuffer[dim_0] += (np==0 ? -1 : 1); 
                     assert(indicesBuffer[dim_0]>=0 && indicesBuffer[dim_0]<cell_div); 
                     const int neighbour_idx = _pressureField.cellIndex(indicesBuffer); 
-                    const REAL dp_dn_face = (neighbour_idx > gc->parent_idx ? (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2+1))/h
-                                                                            : (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2  ))/h);
+                    const int gc_value_idx = (neighbour_idx > gc->parent_idx ? dim_0*2+1 : dim_0*2); 
+                    //const REAL dp_dn_face = (neighbour_idx > gc->parent_idx ? (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2+1))/h
+                    //                                                        : (p(neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(dim_0*2  ))/h);
                     indicesBuffer[dim_0] -= (np==0 ? -1 : 1); // reset buffer
                     for (int ii=0; ii<N_sub; ++ii) 
                     {
@@ -1100,7 +1101,7 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                             position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
                             position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
                             position[dim_0] = offset_dim_0[np]; 
-                            gc->boundarySamples.at(start_idx[np] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, dp_dn_face); 
+                            gc->boundarySamples.at(start_idx[np] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, gc_value_idx); 
                         }
                     }
                 }
@@ -1117,8 +1118,11 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
             sp->isBulk = (_objects->LowestObjectDistance(sp->position) < DISTANCE_TOLERANCE ? false : true);
             if (sp->isBulk)
             {
+                const REAL dp_dn_face = (sp->neighbour_idx > gc->parent_idx ? (p(sp->neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h
+                                                                            : (p(sp->neighbour_idx, 0) - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h);
                 volume += ((sp->position-cellPosition)/3.0).dotProduct(sp->normal);
-                dp_dn_dot_S += sp->dp_dn; 
+                if (!IsPressureCellSolid(sp->neighbour_idx))
+                    dp_dn_dot_S += dp_dn_face; 
             }
         }
         dp_dn_dot_S *= A_sub; // scale by boundary sample area
@@ -1140,10 +1144,15 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                     dp_dn_e += object->EvaluateBoundaryAcceleration(triangle_vtx[tri_corner], normal, simulationTime);
                 }
             }
-            volume = std::max<REAL>(volume, 0.0); // clamp
             dp_dn_e *= (-rho)/3.0; // average and convert acc to dp_dn
             dp_dn_dot_S -= dp_dn_e * triangle_area; // same normal flip as volume computation
         }
+        if (volume < 1E-9)
+        {
+            volume = 1E-9; // clamp
+            dp_dn_dot_S = 0;
+        }
+        dp_dn_dot_S *= -1.0; // FIXME debug
 
         // update all ghost pressure samples; keep all sample values the same for now
         for (int sp=0; sp<6; ++sp)
@@ -2787,9 +2796,13 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
             cell.gcValue.resize(6, 0.0);
         }
 #else
+        cell.gcValue.resize(6, -1); 
+        for (int a_idx=0; a_idx<6; ++a_idx)
+        {
             const int &gc_idx = _ghostCellsChildren.at(_ghostCellsInverse.at(cellIndex)).at(a_idx); 
             if (gc_idx != -1)
                 cell.gcValue.at(a_idx) = pGC.at(gc_idx);
+        }
 #endif
     }
 
@@ -3117,11 +3130,13 @@ std::ostream &operator <<(std::ostream &os, const MAC_Grid::Cell &cell)
         for (int ii=0; ii<5; ++ii) 
             os << cell.gcValue.at(ii) << ", "; 
         os << cell.gcValue.at(5) << "]\n"; 
+#ifdef USE_FV
         if (cell.ghostCell)
         {
             os << " volume           : " << cell.ghostCell->volume      << "\n"; 
             os << " dp_dn_dot_S      : " << cell.ghostCell->dp_dn_dot_S << "\n"; 
         }
+#endif
     }
     os << "--------------------------------------------------------------------------------" 
        << std::flush; 
