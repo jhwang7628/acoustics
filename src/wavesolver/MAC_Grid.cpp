@@ -3010,6 +3010,62 @@ bool MAC_Grid::ExamineJacobiMatrix()
     return true;
 }
 
+//##############################################################################
+// Estimate the energy by using
+//  E(t) = 0.5 \int_V (p_t^2 + |grad(p)|^2) dV
+// One can show analytically that E'(t) = 0 and thus energy is conserving for 
+// the wave equation. We will ignore all the scaling 0.5, dV etc.
+//##############################################################################
+REAL MAC_Grid::EstimateEnergy(const MATRIX &pCurr, const MATRIX &pLast)
+{
+    const int N_pcells = numPressureCells(); 
+    const REAL &h = _waveSolverSettings->cellSize;
+    const REAL &k = _waveSolverSettings->timeStepSize;
+    const int &N_div = _waveSolverSettings->cellDivisions;
+    REAL E = 0.0;
+#ifdef USE_OPENMP
+    const int N_max_threads = omp_get_max_threads();
+#else
+    const int N_max_threads = 1;
+#endif
+    std::vector<REAL> E_threads(N_max_threads, 0.0);
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int cell_idx=0; cell_idx<N_pcells; ++cell_idx)
+    {
+        Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+        int cell_p, cell_n;
+        bool compute_energy = true; 
+        for (int dim=0; dim<3; ++dim)
+        {
+            const int indBuf = cellIndices[dim]; 
+            cellIndices[dim] += 1; // p_i+1
+            cellIndices[dim] = std::min<int>(N_div-1, cellIndices[dim]);
+            cell_p = _pressureField.cellIndex(cellIndices); 
+            cellIndices[dim] -= 2; // p_i-1
+            cellIndices[dim] = std::max<int>(0, cellIndices[dim]);
+            cell_n = _pressureField.cellIndex(cellIndices); 
+            cellIndices[dim] = indBuf; 
+            if (!_isBulkCell.at(cell_p) || !_isBulkCell.at(cell_n))
+                compute_energy = false;
+        }
+#ifdef USE_OPENMP
+            const int thread_idx = omp_get_thread_num(); 
+#else
+            const int thread_idx = 0; 
+#endif
+        if (compute_energy)
+        {
+            for (int dim=0; dim<3; ++dim)
+                E_threads.at(thread_idx) += pow((pCurr(cell_p, 0) - pCurr(cell_n, 0))/h, 2); 
+            E_threads.at(thread_idx) += (pCurr(cell_idx, 0) - pLast(cell_idx, 0))/k; 
+        }
+    }
+    E = std::accumulate(E_threads.begin(), E_threads.end(), 0.0);
+    return E;
+}
+
 //############################################################################## 
 // This function stores the ghost cell coupled matrix used in jacobi iteration
 // to a file. 

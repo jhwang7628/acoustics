@@ -649,6 +649,8 @@ void PML_WaveSolver::stepCollocated()
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
 #endif
+    std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
+    std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
 
     _currentTime += _timeStep;
 }
@@ -689,6 +691,15 @@ void PML_WaveSolver::PrintAllFieldExtremum()
     _grid.PrintFieldExtremum(_v[0],"_v[0]"); 
     _grid.PrintFieldExtremum(_v[1],"_v[1]"); 
     _grid.PrintFieldExtremum(_v[2],"_v[2]"); 
+}
+
+REAL PML_WaveSolver::ComputeFrobeniusPressure()
+{
+#ifdef USE_COLLOCATED
+    return _pCollocated[_pCollocatedInd].frobeniusNorm(); 
+#else
+    return _pFull.frobeniusNorm(); 
+#endif
 }
 
 std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)

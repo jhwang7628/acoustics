@@ -218,6 +218,7 @@ class PML_WaveSolver : public Solver
         //// debugging/testing methods ////
         REAL GetMaxCFL();
         void PrintAllFieldExtremum();
+        REAL ComputeFrobeniusPressure(); 
 
     private:
         void stepLeapfrog();

@@ -362,6 +362,7 @@ class MAC_Grid
         void PrintGhostCellTreeInfo(); 
         void visualizeClassifiedCells(); 
         bool ExamineJacobiMatrix(); 
+        REAL EstimateEnergy(const MATRIX &pCurr, const MATRIX &pLast);
         void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
         void ToFile_GhostCellLinearSystem(const char *filename); 
 
