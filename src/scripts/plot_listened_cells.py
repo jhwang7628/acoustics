@@ -63,7 +63,7 @@ maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
 frontPadTime = 0.0
-endPadTime = 1.0
+endPadTime = 0.0
 N_frontPad = int(frontPadTime*float(wavRate))
 N_endPad = int(endPadTime*float(wavRate))
 N_frontPadStep = int(frontPadTime*float(stepRate))
@@ -106,7 +106,8 @@ if plotting:
         data = listenedData[:, plot_index]
         data = PadZero(data.copy(), N_frontPadStep, N_endPadStep)
         tPad = np.linspace(0., float(len(data))*(1./float(stepRate)), len(data))
-        plt.plot(tPad, data, '-', label=listeningPositions[plot_index, :]) 
+        #plt.plot(tPad, data, '-', label=listeningPositions[plot_index, :]) 
+        plt.plot(data, '-', label=listeningPositions[plot_index, :]) 
         plt.grid()
         if (verifyAnalytical):
             plt.plot(analyticalListenedData[:, plot_index])
