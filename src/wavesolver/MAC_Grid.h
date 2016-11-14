@@ -83,23 +83,32 @@ class MAC_Grid
                 {
                     bool isBulk; 
                     int neighbour_idx; 
-                    int gc_value_idx; 
+                    int gc_value_idx; // which subdivision child is this sample
                     Vector3d position; 
                     Vector3d normal;
                     BoundarySamples(){}
                     BoundarySamples(const Vector3d &pos, const Vector3d &nor, const int &nei, const int &gcind) 
                         : neighbour_idx(nei), gc_value_idx(gcind), position(pos), normal(nor){}
                 };
+                struct VolumeSamples
+                {
+                    bool isBulk; 
+                    Vector3d position; 
+                    VolumeSamples(){}
+                    VolumeSamples(const Vector3d &pos)
+                        : position(pos){}
+                }; 
+                static int valuePointer; // points to current value
                 int parent_idx; 
-                int valuePointer; // points to current value
                 REAL volume; 
                 REAL dp_dn_dot_S; 
                 FloatArray positions;
                 std::vector<FloatArray> values; // last, current, future
                 std::vector<BoundarySamples> boundarySamples; 
+                std::vector<VolumeSamples> volumeSamples; 
                 std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
                 GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
-                    : parent_idx(parent), valuePointer(0), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
+                    : parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
                 {}
         };
 

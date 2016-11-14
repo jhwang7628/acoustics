@@ -35,7 +35,7 @@ class PML_WaveSolver_Settings;
 //##############################################################################
 #define USE_ADF // use adaptive distance field
 #define USE_COLLOCATED
-//#define USE_FV
+#define USE_FV
            
 //##############################################################################
 // Typedefs 
