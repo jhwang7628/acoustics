@@ -383,6 +383,27 @@ DrawSelection()
                 glPopMatrix(); 
             }
         }
+
+        // draw ghost cell related stuff
+        const auto gc = _simulator->GetSolver()->GetGrid().GetGhostCell(cell_idx);
+        typedef std::vector<MAC_Grid::GhostCell::VolumeSamples>::iterator Iterator_VS;
+        typedef std::vector<MAC_Grid::GhostCell::BoundarySamples>::iterator Iterator_BS;
+        if (gc)
+        {
+            //for (Iterator_BS sp=gc->boundarySamples.begin(); sp!=gc->boundarySamples.end(); ++sp)
+            for (Iterator_VS sp=gc->volumeSamples.begin(); sp!=gc->volumeSamples.end(); ++sp)
+            {
+                const Vector3d &pos = sp->position; 
+                glPushMatrix(); 
+                glTranslatef(pos.x, pos.y, pos.z); 
+                if (sp->isBulk)
+                    glColor3f(0.0f, 1.0f, 0.0f); 
+                else
+                    glColor3f(0.2f, 0.2f, 0.2f); 
+                GL_Wrapper::DrawSphere(1E-4, 5, 5);
+                glPopMatrix(); 
+            }
+        }
     }
 }
 
