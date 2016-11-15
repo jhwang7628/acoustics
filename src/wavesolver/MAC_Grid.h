@@ -99,6 +99,7 @@ class MAC_Grid
                         : position(pos){}
                 }; 
                 static int valuePointer; // points to current value
+                bool validSample; 
                 int parent_idx; 
                 REAL volume; 
                 REAL dp_dn_dot_S; 
@@ -108,7 +109,7 @@ class MAC_Grid
                 std::vector<VolumeSamples> volumeSamples; 
                 std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
                 GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
-                    : parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
+                    : validSample(true), parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
                 {}
         };
 
@@ -353,6 +354,7 @@ class MAC_Grid
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
+        inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);

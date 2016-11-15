@@ -202,17 +202,20 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
 #ifdef USE_FV
             const std::shared_ptr<GhostCell> &gc_pos = (_isGhostCell.at(buf_iPos) ? _ghostCellsCollection.at(buf_iPos) : nullptr); 
             const std::shared_ptr<GhostCell> &gc_neg = (_isGhostCell.at(buf_iNeg) ? _ghostCellsCollection.at(buf_iNeg) : nullptr); 
+            REAL gc_pos_val=0.0, gc_neg_val=0.0; 
+            if (gc_pos) gc_pos_val = (gc_pos->validSample ? gc_pos->values.at(gc_pos->valuePointer).at(dim*2  ) : value(cell_idx,0)); 
+            if (gc_neg) gc_neg_val = (gc_neg->validSample ? gc_neg->values.at(gc_neg->valuePointer).at(dim*2+1) : value(cell_idx,0)); 
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
-                laplacian(cell_idx, 0) += (  gc_pos->values.at(gc_pos->valuePointer).at(dim*2  )
-                                           + gc_neg->values.at(gc_neg->valuePointer).at(dim*2+1)
+                laplacian(cell_idx, 0) += (  gc_pos_val
+                                           + gc_neg_val
                                            - 2.0*value(cell_idx, 0)) / (9.0/16.0); 
             else if (_isGhostCell.at(buf_iPos) && !_isGhostCell.at(buf_iNeg)) // only right side is ghost cell
-                laplacian(cell_idx, 0) += (  gc_pos->values.at(gc_pos->valuePointer).at(dim*2  )
+                laplacian(cell_idx, 0) += (  gc_pos_val
                                            + 0.75*value(buf_iNeg, 0)
                                            - (7.0/4.0)*value(cell_idx, 0)) / (21.0/32.0); 
             else if (!_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // only left side is ghost cell
                 laplacian(cell_idx, 0) += (  0.75*value(buf_iPos, 0)
-                                           + gc_neg->values.at(gc_neg->valuePointer).at(dim*2+1)
+                                           + gc_neg_val
                                            - (7.0/4.0)*value(cell_idx, 0)) / (21.0/32.0); 
             else // both side is bulk
                 laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
@@ -1070,13 +1073,21 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
     const int  &cell_div = _waveSolverSettings->cellDivisions; 
     const REAL  h_sub    = h/(REAL)N_sub; 
     const REAL  h_over_2 = h/2.0;
+    const REAL  h_sub_over_2 = h_sub/2.0; 
     const REAL  A_sub    = pow(h_sub, 2);
     const REAL  V_sub    = pow(h_sub, 3);
     const REAL  kc_2     = pow(k*c, 2); 
     const size_t N_totalBoundarySamples = 6*N_sub_2; 
     const size_t N_totalVolumeSamples = N_sub_3; 
-    for (Iterator_GC gcm=_ghostCellsCollection.begin(); gcm!=_ghostCellsCollection.end(); ++gcm)
+    const int N_gc = _ghostCellsCollection.size();
+
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int gc_i=0; gc_i<N_gc; ++gc_i)
     {
+        auto gcm=_ghostCellsCollection.begin(); 
+        std::advance(gcm, gc_i);
         auto &gc = gcm->second; 
         const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
         Tuple3i indicesBuffer = _pressureField.cellIndex(gc->parent_idx); 
@@ -1105,8 +1116,8 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                         for (int jj=0; jj<N_sub; ++jj) 
                         {
                             Vector3d position;
-                            position[dim_1] = lowCorner_dim_1 + h_over_2 + (REAL)ii*h_sub; 
-                            position[dim_2] = lowCorner_dim_2 + h_over_2 + (REAL)jj*h_sub; 
+                            position[dim_1] = lowCorner_dim_1 + h_sub_over_2 + (REAL)ii*h_sub; 
+                            position[dim_2] = lowCorner_dim_2 + h_sub_over_2 + (REAL)jj*h_sub; 
                             position[dim_0] = offset_dim_0[np]; 
                             gc->boundarySamples.at(start_idx[np] + ii*N_sub + jj) = GhostCell::BoundarySamples(position, normal, neighbour_idx, gc_value_idx); 
                         }
@@ -1127,9 +1138,9 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                     for (int kk=0; kk<N_sub; ++kk)
                     {
                         Vector3d position; 
-                        position[0] = lowCorner_x + h_over_2 + (REAL)ii*h_sub; 
-                        position[1] = lowCorner_y + h_over_2 + (REAL)jj*h_sub; 
-                        position[2] = lowCorner_z + h_over_2 + (REAL)kk*h_sub; 
+                        position[0] = lowCorner_x + h_sub_over_2 + (REAL)ii*h_sub; 
+                        position[1] = lowCorner_y + h_sub_over_2 + (REAL)jj*h_sub; 
+                        position[2] = lowCorner_z + h_sub_over_2 + (REAL)kk*h_sub; 
                         gc->volumeSamples.at(ii*N_sub_2 + jj*N_sub + kk) = GhostCell::VolumeSamples(position);
                     }
                 }
@@ -1160,7 +1171,10 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                 {
                     const std::shared_ptr<GhostCell> &neighbour_gc = _ghostCellsCollection.at(sp->neighbour_idx); 
                     const int neighbour_gc_value_idx = (sp->gc_value_idx%2==0 ? sp->gc_value_idx+1 : sp->gc_value_idx-1); 
-                    p_neighbour = neighbour_gc->values.at(neighbour_gc->valuePointer).at(neighbour_gc_value_idx); 
+                    if (neighbour_gc->validSample)
+                        p_neighbour = neighbour_gc->values.at(neighbour_gc->valuePointer).at(neighbour_gc_value_idx); 
+                    else
+                        p_neighbour = gc->values.at(gc->valuePointer).at(sp->gc_value_idx); 
                 }
                 
                 const REAL dp_dn_face = (sp->neighbour_idx > gc->parent_idx ? (p_neighbour - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h
@@ -1191,6 +1205,16 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
             }
             dp_dn_e *= (-rho)/3.0; // average and convert acc to dp_dn
             dp_dn_dot_S -= dp_dn_e * triangle_area; // same normal flip as volume computation
+        }
+        if (volume < SMALL_NUM)
+        {
+            volume = SMALL_NUM; // clamp
+            gc->validSample = false; 
+            dp_dn_dot_S = 0;
+        }
+        else 
+        {
+            gc->validSample = true;
         }
 
         // update all ghost pressure samples; keep all sample values the same for now
