@@ -1078,20 +1078,28 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
 void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
-    _currentFrame++;
-    PrintFrameInfo();
-    //_simulator->TestAnimateObjects(150); 
-    _simulator->RunForSteps(1); 
-    if (_listenedCell.index >= 0)
+    if (_previewSpeed == 0)
     {
-        _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
-        std::cout << _listenedCell << std::endl;
-    }
+        _currentFrame++;
+        //_simulator->TestAnimateObjects(150); 
+        _simulator->RunForSteps(1); 
+        if (_listenedCell.index >= 0)
+        {
+            _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
+            std::cout << _listenedCell << std::endl;
+        }
 #if DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL > 0
-    if (_currentFrame % DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL == 0)
-        Push_Back_ReflectionArrows("a"); 
+        if (_currentFrame % DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL == 0)
+            Push_Back_ReflectionArrows("a"); 
 #endif
-    SetAllSliceDataReady(false); 
+        SetAllSliceDataReady(false); 
+    }
+    else
+    {
+        _currentFrame += _previewSpeed;
+        _simulator->PreviewStepping(_previewSpeed);
+    }
+    PrintFrameInfo();
     updateGL(); 
 }
 

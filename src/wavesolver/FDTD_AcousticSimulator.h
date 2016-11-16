@@ -76,6 +76,7 @@ class FDTD_AcousticSimulator
         void Run(); 
         bool RunHalfStep(const int &flag); 
         void PostStepping(const REAL &odeTime); 
+        void PreviewStepping(const uint &speed); 
         void Pause(); 
         void SaveSolverConfig(); 
         void LoadSolverResult(const std::string &dataDirectory); 

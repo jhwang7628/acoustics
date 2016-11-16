@@ -481,6 +481,19 @@ PostStepping(const REAL &odeTime)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
+PreviewStepping(const uint &speed)
+{
+    auto &settings = _acousticSolverSettings; 
+    std::cout << "Acoustic simulator time = " << _simulationTime << std::endl;
+    _stepIndex += speed;
+    _simulationTime += settings->timeStepSize*(REAL)speed; 
+    AnimateObjects(); 
+}
+
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
 SaveSolverConfig()
 {
     const std::string solverSettings_s = _CompositeFilename("solver_settings.txt"); 

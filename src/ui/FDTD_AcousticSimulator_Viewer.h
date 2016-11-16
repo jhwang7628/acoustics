@@ -33,6 +33,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         SimulatorPtr                             _simulator; 
         std::shared_ptr<PML_WaveSolver_Settings> _solverSettings;
 
+        uint                    _previewSpeed = 0; 
         bool                    _remoteConnection = false; 
         int                     _halfStepFlag = 0;
         int                     _currentFrame = 0;
@@ -87,8 +88,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     public: 
 
-        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile)
-            : _simulator(new FDTD_AcousticSimulator(simulationXMLFile))
+        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile, const uint &preview_speed)
+            : _simulator(new FDTD_AcousticSimulator(simulationXMLFile)), _previewSpeed(preview_speed)
         {
             RestoreDefaultDrawOptions();
             _simulator->InitializeSolver(); 
