@@ -1086,7 +1086,8 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
 #endif
     for (int gc_i=0; gc_i<N_gc; ++gc_i)
     {
-        auto gcm=_ghostCellsCollection.begin(); 
+        //auto gcm = loop_array[gc_i];
+        auto gcm = _ghostCellsCollection.begin(); 
         std::advance(gcm, gc_i);
         auto &gc = gcm->second; 
         const Vector3d cellPosition = _pressureField.cellPosition(gc->parent_idx); 
@@ -1177,11 +1178,9 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                         p_neighbour = gc->values.at(gc->valuePointer).at(sp->gc_value_idx); 
                 }
                 
-                const REAL dp_dn_face = (sp->neighbour_idx > gc->parent_idx ? (p_neighbour - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h
-                                                                            : (p_neighbour - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h);
+                const REAL dp_dn_face = (p_neighbour - gc->values.at(gc->valuePointer).at(sp->gc_value_idx))/h;
                 //volume += ((sp->position-cellPosition)/3.0).dotProduct(sp->normal);
-                if (!IsPressureCellSolid(sp->neighbour_idx))
-                    dp_dn_dot_S += dp_dn_face; 
+                dp_dn_dot_S += dp_dn_face; 
             }
         }
         dp_dn_dot_S *= A_sub; // scale by boundary sample area
