@@ -100,10 +100,10 @@ draw()
 {
     DrawMesh(); 
     DrawImpulses();
-    DrawListeningPoints();
     DrawSelection(); 
     DrawDebugCin();
     DrawSlices(_sliceDataPointer); 
+    DrawGround();
     if (_drawHashedCells)
         DrawHashedCells();
 
@@ -116,8 +116,11 @@ draw()
     }
 
     glLineWidth(3.0f);
-    if (_drawBox)
+    if (_drawBoxLis)
+    {
+        DrawListeningPoints();
         DrawBox(); 
+    }
 }
 
 //##############################################################################
@@ -316,6 +319,27 @@ DrawBox()
     _simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
+}
+
+//##############################################################################
+// Draw simulation listening point
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+DrawGround()
+{
+    const float GD_SIZE = 0.01;
+    const float step = GD_SIZE * 10;
+    float d = step;
+    glColor3f(0.7, 0.7, 0.7);
+    for(int i=0; i<20; ++i, d+=step)
+    {
+        glBegin(GL_LINE_LOOP);
+        glVertex3f(-d, 0, -d);
+        glVertex3f( d, 0, -d);
+        glVertex3f( d, 0,  d);
+        glVertex3f(-d, 0,  d);
+        glEnd();
+    }
 }
 
 //##############################################################################
@@ -584,7 +608,7 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
-        _drawBox = !_drawBox; 
+        _drawBoxLis = !_drawBoxLis; 
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
@@ -608,6 +632,14 @@ keyPressEvent(QKeyEvent *e)
         camera()->setType(Camera::ORTHOGRAPHIC);
         std::cout << "camera: orthographic\n"; 
       }
+    }
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
+    {
+        setSnapshotFormat("PNG");
+        setSnapshotQuality(100);
+        setSnapshotFileName("frames/test");
+        _takeSnapshots = !_takeSnapshots;
+        std::cout << "takeSnapshots: " << std::boolalpha << _takeSnapshots << std::endl;
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ShiftModifier)) {
         std::string filename; 
@@ -1098,6 +1130,8 @@ DrawOneFrameForward()
     {
         _currentFrame += _previewSpeed;
         _simulator->PreviewStepping(_previewSpeed);
+        if (_takeSnapshots)
+            saveSnapshot(true, false);
     }
     PrintFrameInfo();
     updateGL(); 
@@ -1143,7 +1177,7 @@ RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
     _sliceWireframe = 2;
-    _drawBox = true; 
+    _drawBoxLis = true; 
     _drawHashedCells = false;
     _sliceDataPointer = 0; 
 }
@@ -1156,7 +1190,7 @@ PrintDrawOptions()
     std::cout << "\n"
               << "Draw Options \n"
               << "------------\n"
-              << " Draw simulation box: " << _drawBox << "\n"
+              << " Draw simulation box: " << _drawBoxLis << "\n"
               << " Draw wireframe only: " << _wireframe << "\n"
               << " Draw hashed cells: " << _drawHashedCells << "\n"
               << " Draw slice wireframe only: " << _sliceWireframe << "\n"

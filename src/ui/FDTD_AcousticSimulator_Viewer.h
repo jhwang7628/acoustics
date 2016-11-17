@@ -42,8 +42,9 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         QString                 _messageColormap; 
         int                     _wireframe;
         int                     _sliceWireframe;
-        bool                    _drawBox; 
+        bool                    _drawBoxLis; 
         bool                    _drawHashedCells;
+        bool                    _takeSnapshots = false;
         std::vector<Vector3f>   _objectColors; 
         std::vector<Sphere>     _sphereCin; 
         std::vector<Arrow>      _arrowCin; 
@@ -68,6 +69,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawMesh(); 
         void DrawImpulses(); 
         void DrawBox(); 
+        void DrawGround();
         void DrawListeningPoints(); 
         void DrawSelection(); 
         void DrawLights(); 
