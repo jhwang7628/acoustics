@@ -408,6 +408,7 @@ DrawSelection()
             }
         }
 
+#ifdef USE_FV
         // draw ghost cell related stuff
         const auto gc = _simulator->GetSolver()->GetGrid().GetGhostCell(cell_idx);
         typedef std::vector<MAC_Grid::GhostCell::VolumeSamples>::iterator Iterator_VS;
@@ -428,6 +429,7 @@ DrawSelection()
                 glPopMatrix(); 
             }
         }
+#endif
     }
 }
 
