@@ -637,8 +637,8 @@ void PML_WaveSolver::stepCollocated()
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
     _freshCellTimer.pause(); 
     _ghostCellTimer.start(); 
-    _grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-    //_grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+    _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _ghostCellTimer.pause(); 
 
     // Use the new velocity to update pressure
@@ -649,8 +649,8 @@ void PML_WaveSolver::stepCollocated()
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
 #endif
-    std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
-    std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
+    //std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
+    //std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
 
     _currentTime += _timeStep;
 }
