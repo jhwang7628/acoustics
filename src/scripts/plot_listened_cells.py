@@ -62,25 +62,29 @@ for f in filenames:
 maxValue = np.absolute(listenedData).max()
 print 'Normalize all data by max value = %f' %(maxValue)
 # writing the wav files
-frontPadTime = 0.0
-endPadTime = 0.0
+frontPadTime = 0.1416
+endPadTime = 1.0
 N_frontPad = int(frontPadTime*float(wavRate))
 N_endPad = int(endPadTime*float(wavRate))
 N_frontPadStep = int(frontPadTime*float(stepRate))
 N_endPadStep = int(endPadTime*float(stepRate))
+allSound=np.array([0.0])
 # N_frontPad = 0
 for ii in range(N_points): 
     if len(sys.argv) == 5 and ii != int(sys.argv[4]): 
         continue
     print 'Creating wav file for listening position', listeningPositions[ii, :]
     outputData = listenedData[:, ii]
-    normalizationConstant = maxValue
-    # normalizationConstant = np.absolute(outputData.max())
+    # normalizationConstant = maxValue
+    normalizationConstant = np.absolute(outputData.max())
     if normalizationConstant > 1E-14:
         outputData /= normalizationConstant
     outputData = signal.resample(outputData, int(float(N_steps)/rateRatio))
     outputData = PadZero(outputData.copy(), N_frontPad, N_endPad)
+    #if (ii < 25):
+    #    allSound = np.concatenate([allSound, outputData])
     scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
+#scipy.io.wavfile.write('allpoints_%u.wav' %(ii), wavRate, allSound)
 
 # extract minimum and compare with 1/r decay 
 dataMin = np.zeros(N_points)
