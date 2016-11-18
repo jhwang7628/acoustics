@@ -27,7 +27,16 @@
 class FDTD_RigidObject : public FDTD_MovableObject
 {
     public: 
-        struct OptionalAttributes{bool isFixed=false; bool useRasterized=false;};
+        struct OptionalAttributes
+        {
+            bool isFixed=false; 
+            enum BoundaryHandling
+            {
+                RASTERIZE = 0,
+                PIECEWISE_CONSTANT = 1, 
+                LINEAR_MLS = 2, 
+            } boundaryHandlingType;
+        };
 
     protected: 
         std::string                         _workingDirectory;

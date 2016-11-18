@@ -660,9 +660,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         auto object = _objects->GetPtr(boundaryObject); 
         object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
-#pragma omp critical
-        if (!success)
-            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
+//#pragma omp critical
+//        if (!success)
+//            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
@@ -671,7 +671,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
-        // figure out which dimension is this subdivied ghost cell TODO cache this
+        // figure out which dimension is this subdivied ghost cell
         const int cell_idx = _ghostCellParents.at(ghost_cell_idx); 
         int subdivideType = -1; 
         for (int ii=0; ii<6; ++ii)
@@ -686,14 +686,46 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         const int subdivideDim = (int)floor(REAL(subdivideType)/2.0); 
         const int dir = (subdivideType % 2 == 0 ? -1 : 1); 
 
-        REAL p_r; 
-        if (object->GetOptionalAttributes().useRasterized) // use rasterized 
+        REAL p_r = std::numeric_limits<REAL>::max(); 
+        const auto &boundaryType = object->GetOptionalAttributes().boundaryHandlingType; 
+        if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE)
         {
             Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
             cellIndices[subdivideDim] += dir; 
             p_r = p(_pressureField.cellIndex(cellIndices), 0); 
         }
-        else // use MLS
+        else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT)
+        {
+            for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+            {
+                if (!_isBulkCell.at(*it))
+                    it = neighbours.erase(it); 
+                else
+                    ++it; 
+            }
+            if (neighbours.size() != 0) // use closest neighbours for piecewise constant approx
+            {
+                std::vector<int>::iterator bestIt; 
+                REAL min_d2 = std::numeric_limits<REAL>::max();
+                for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+                {
+                    const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+                    if (d2 < min_d2)
+                    {
+                        bestIt = it; 
+                        min_d2 = d2; 
+                    }
+                }
+                p_r = p(*bestIt, 0);
+            }
+            else // in this case, we don't have enough information, set this ghost cell to be its neighbour
+            {
+                Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+                cellIndices[subdivideDim] += dir; 
+                p_r = p(_pressureField.cellIndex(cellIndices), 0); 
+            }
+        }
+        else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS)
         {
             T_MLS mls; 
             MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
@@ -718,29 +750,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
                 p_r = mlsVal(0, 0);
             }
-            else
+            else // fall back to rasterize
             {
-                if (neighbours.size() != 0) // use closest neighbours
-                {
-                    std::vector<int>::iterator bestIt; 
-                    REAL min_d2 = std::numeric_limits<REAL>::max();
-                    for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
-                    {
-                        const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
-                        if (d2 < min_d2)
-                        {
-                            bestIt = it; 
-                            min_d2 = d2; 
-                        }
-                    }
-                    p_r = p(*bestIt, 0);
-                }
-                else // in this case, we don't have enough information, set this ghost cell to be its neighbour
-                {
-                    Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
-                    cellIndices[subdivideDim] += dir; 
-                    p_r = p(_pressureField.cellIndex(cellIndices), 0); 
-                }
+                Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+                cellIndices[subdivideDim] += dir; 
+                p_r = p(_pressureField.cellIndex(cellIndices), 0); 
             }
         }
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 

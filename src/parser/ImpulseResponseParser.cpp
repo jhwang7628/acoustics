@@ -54,7 +54,15 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_z = queryOptionalReal(rigidSoundObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidSoundObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        attr.useRasterized = (queryOptionalReal(rigidSoundObjectNode, "use_rasterized_boundary", 0.0) > 1E-10) ? true : false; 
+        const std::string boundaryHandling = queryOptionalAttr(rigidSoundObjectNode, "boundary_handling", "piecewise_constant");
+        if (boundaryHandling.compare("piecewise_constant")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
+        else if (boundaryHandling.compare("rasterize")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
+        else if (boundaryHandling.compare("linear_mls")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
+        else
+            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = true;
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
@@ -128,7 +136,15 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        attr.useRasterized = (queryOptionalReal(rigidObjectNode, "use_rasterized_boundary", 0.0) > 1E-10) ? true : false; 
+        const std::string boundaryHandling = queryOptionalAttr(rigidObjectNode, "boundary_handling", "piecewise_constant");
+        if (boundaryHandling.compare("piecewise_constant")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
+        else if (boundaryHandling.compare("rasterize")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
+        else if (boundaryHandling.compare("linear_mls")==0)
+            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
+        else
+            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = false; 
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
