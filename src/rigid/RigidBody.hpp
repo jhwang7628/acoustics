@@ -173,6 +173,15 @@ class RigidBody
         inline void init_velocity(T vx, T vy, T vz)
         {   m_v.set(vx, vy, vz); }
 
+        /*!
+         * Initialize angular velocity
+         *
+         * This method simply sets the current angular velocity. It is often used for 
+         * setting the initial velocity at the beginning of the simulation.
+         */
+        inline void init_angular_velocity(T wx, T wy, T wz)
+        {   m_omega.set(wx, wy, wz); }
+
         /*
          * given a vector in the object's initial space, transform it
          * into the current space

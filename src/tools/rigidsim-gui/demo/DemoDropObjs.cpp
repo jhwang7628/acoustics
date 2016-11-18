@@ -304,6 +304,10 @@ DemoDropObjs::DemoDropObjs(const char* file, QGLViewer* canvas):
             if ( !ssO[i].lookupValue("vy", dy) ) dy = 0;
             if ( !ssO[i].lookupValue("vz", dz) ) dz = 0;
             rbodies[i]->init_velocity(dx, dy, dz);
+            if ( !ssO[i].lookupValue("wx", dx) ) dx = 0;
+            if ( !ssO[i].lookupValue("wy", dy) ) dy = 0;
+            if ( !ssO[i].lookupValue("wz", dz) ) dz = 0;
+            rbodies[i]->init_angular_velocity(dx, dy, dz);
             /* add to rigid simulator */
             rsim_.add_rigid_body(rbodies[i]);
         }
