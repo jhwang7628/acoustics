@@ -83,23 +83,33 @@ class MAC_Grid
                 {
                     bool isBulk; 
                     int neighbour_idx; 
-                    int gc_value_idx; 
+                    int gc_value_idx; // which subdivision child is this sample
                     Vector3d position; 
                     Vector3d normal;
                     BoundarySamples(){}
                     BoundarySamples(const Vector3d &pos, const Vector3d &nor, const int &nei, const int &gcind) 
                         : neighbour_idx(nei), gc_value_idx(gcind), position(pos), normal(nor){}
                 };
+                struct VolumeSamples
+                {
+                    bool isBulk; 
+                    Vector3d position; 
+                    VolumeSamples(){}
+                    VolumeSamples(const Vector3d &pos)
+                        : position(pos){}
+                }; 
+                static int valuePointer; // points to current value
+                bool validSample; 
                 int parent_idx; 
-                int valuePointer; // points to current value
                 REAL volume; 
                 REAL dp_dn_dot_S; 
                 FloatArray positions;
                 std::vector<FloatArray> values; // last, current, future
                 std::vector<BoundarySamples> boundarySamples; 
+                std::vector<VolumeSamples> volumeSamples; 
                 std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
                 GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
-                    : parent_idx(parent), valuePointer(0), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
+                    : validSample(true), parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
                 {}
         };
 
@@ -344,6 +354,7 @@ class MAC_Grid
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
+        inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
