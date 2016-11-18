@@ -1131,7 +1131,7 @@ DrawOneFrameForward()
         _currentFrame += _previewSpeed;
         _simulator->PreviewStepping(_previewSpeed);
         if (_takeSnapshots)
-            saveSnapshot(true, false);
+            saveSnapshot(true, true);
     }
     PrintFrameInfo();
     updateGL(); 
