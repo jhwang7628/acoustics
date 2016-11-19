@@ -68,6 +68,7 @@ const double AABB_CHECK_TOLERANCE_SCALE = 1.1; // scaling factor applied when ch
 const double MODE_SHAPE_CUTOFF_FREQ = 10000.0;
 const double GHOST_CELL_ENTRY_THRESHOLD = 1E-7; 
 const double IMPULSE_VEL_THRESHOLD = 0.05;
+const double INTERPOLATION_DIFF_TOL = 20.0;
 
 const REAL D_INF = std::numeric_limits<REAL>::infinity(); 
 const int I_INF = std::numeric_limits<int>::infinity(); 

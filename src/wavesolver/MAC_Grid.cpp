@@ -694,13 +694,14 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         const int subdivideDim = (int)floor(REAL(subdivideType)/2.0); 
         const int dir = (subdivideType % 2 == 0 ? -1 : 1); 
 
+        Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
+        cellIndices[subdivideDim] += dir; 
+        const REAL p_rasterize = p(_pressureField.cellIndex(cellIndices), 0); 
         REAL p_r = std::numeric_limits<REAL>::max(); 
         const auto &boundaryType = object->GetOptionalAttributes().boundaryHandlingType; 
         if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE)
         {
-            Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
-            cellIndices[subdivideDim] += dir; 
-            p_r = p(_pressureField.cellIndex(cellIndices), 0); 
+            p_r = p_rasterize; 
         }
         else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT)
         {
@@ -728,9 +729,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             }
             else // in this case, we don't have enough information, set this ghost cell to be its neighbour
             {
-                Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
-                cellIndices[subdivideDim] += dir; 
-                p_r = p(_pressureField.cellIndex(cellIndices), 0); 
+                p_r = p_rasterize;
             }
         }
         else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS)
@@ -760,11 +759,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             }
             else // fall back to rasterize
             {
-                Tuple3i cellIndices = _pressureField.cellIndex(cell_idx); 
-                cellIndices[subdivideDim] += dir; 
-                p_r = p(_pressureField.cellIndex(cellIndices), 0); 
+                p_r = p_rasterize; 
             }
         }
+        
+        // after processing, if difference between interpolation and rasterize is over certain threshold, clamp it
+        if (abs(p_rasterize) > SMALL_NUM && (abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL || p_r*p_rasterize < 0))
+            p_r = p_rasterize; 
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
     }
 }
