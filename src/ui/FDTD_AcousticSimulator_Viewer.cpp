@@ -30,6 +30,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
     setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
+    setKeyDescription(Qt::Key_G, "Draw ground"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
@@ -103,7 +104,8 @@ draw()
     DrawSelection(); 
     DrawDebugCin();
     DrawSlices(_sliceDataPointer); 
-    DrawGround();
+    if (_drawGround)
+        DrawGround();
     if (_drawHashedCells)
         DrawHashedCells();
 
@@ -656,6 +658,10 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "camera: orthographic\n"; 
       }
     }
+    else if ((e->key() == Qt::Key_G) && (modifiers == Qt::NoButton)) {
+        _drawGround = !_drawGround; 
+        optionsChanged = true;
+    }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
     {
         setSnapshotFormat("PNG");
@@ -1201,6 +1207,7 @@ RestoreDefaultDrawOptions()
     _wireframe = 2;
     _sliceWireframe = 2;
     _drawBoxLis = true; 
+    _drawGround = true; 
     _drawHashedCells = false;
     _sliceDataPointer = 0; 
 }
@@ -1210,14 +1217,15 @@ RestoreDefaultDrawOptions()
 void FDTD_AcousticSimulator_Viewer::
 PrintDrawOptions()
 {
-    std::cout << "\n"
+    std::cout << "\n" << std::boolalpha
               << "Draw Options \n"
               << "------------\n"
-              << " Draw simulation box: " << _drawBoxLis << "\n"
-              << " Draw wireframe only: " << _wireframe << "\n"
-              << " Draw hashed cells: " << _drawHashedCells << "\n"
+              << " Draw simulation box      : " << _drawBoxLis << "\n"
+              << " Draw ground              : " << _drawGround << "\n"
+              << " Draw wireframe only      : " << _wireframe << "\n"
+              << " Draw hashed cells        : " << _drawHashedCells << "\n"
               << " Draw slice wireframe only: " << _sliceWireframe << "\n"
-              << " Draw slice data pointer: " << _sliceDataPointer << "\n"
+              << " Draw slice data pointer  : " << _sliceDataPointer << "\n"
               << "\n"; 
     std::cout << std::flush;
 }

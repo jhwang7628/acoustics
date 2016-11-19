@@ -43,6 +43,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                     _wireframe;
         int                     _sliceWireframe;
         bool                    _drawBoxLis; 
+        bool                    _drawGround;
         bool                    _drawHashedCells;
         bool                    _takeSnapshots = false;
         std::vector<Vector3f>   _objectColors; 
