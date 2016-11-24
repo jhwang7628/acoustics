@@ -98,6 +98,8 @@ void TetViewerCanvas::keyPressEvent(QKeyEvent* e)
         printf(" # of free vertices:     %d\n", (int)parent_->mesh_->num_free_vertices());
         printf(" # of fixed vertices:    %d\n", (int)parent_->mesh_->num_fixed_vertices());
         printf("=======================================\n");
+    } else if ( e->key() == Qt::Key_F && modifiers == Qt::NoButton ) {
+        parent_->modeData().printAllFrequency(parent_->density()); 
     } else {
         QGLViewer::keyPressEvent(e);
     }

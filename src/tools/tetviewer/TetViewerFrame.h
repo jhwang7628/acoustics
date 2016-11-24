@@ -76,6 +76,8 @@ class TetViewerFrame : public QMainWindow, private Ui_TetViewerFrame
         }
         ~TetViewerFrame()
         {   delete mesh_; }
+        inline const ModeData &modeData() const {return modeData_;}
+        inline REAL density() const {return objectDensity->value();}
 
     protected:
 
