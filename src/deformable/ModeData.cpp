@@ -6,6 +6,7 @@
 
 #include "ModeData.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 
@@ -76,6 +77,15 @@ void ModeData::write( const char *filename ) const
     }
 
     fout.close();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void ModeData::printAllFrequency(const REAL &density) const
+{
+    typedef std::vector<REAL>::const_iterator Iterator; 
+    int count=0;
+    for (Iterator it=_omegaSquared.begin(); it!=_omegaSquared.end(); ++it, count++)
+        printf("Mode %u: %f Hz\n", count, sqrt((*it)/density)); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////

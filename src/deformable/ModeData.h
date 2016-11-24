@@ -48,6 +48,7 @@ struct ModeData {
 
         void                     read( const char *filename );
         void                     write( const char *filename ) const;
+        void                     printAllFrequency(const REAL &density) const;
 
     friend std::ostream &operator <<(std::ostream &os, const ModeData &data); 
 };
