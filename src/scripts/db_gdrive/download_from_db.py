@@ -61,11 +61,11 @@ if __name__ == '__main__':
     ## customized fields 
     download_dir = 'downloaded'
     query_models = [
-        'p_lego2',
+        'p_bowl'
     ]
     download_files = [
-        #'proj.obj',
-        #'proj.tet',
+        'proj.obj',
+        'proj.tet',
         'proj.modes',
         'proj.geo.txt'
     ]
