@@ -393,6 +393,21 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
     }
 }
 
+#ifdef USE_COLLOCATED
+void PML_WaveSolver::GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind)
+{
+    for (int dim=0; dim<3; ++dim)
+    {
+        p_pml[dim] = _p[dim]; 
+        v_pml[dim] = _v[dim]; 
+        p_collocated[dim] = _pCollocated[dim];
+    }
+    p_pml_full = _pFull; 
+    p_gc = _pGhostCellsFull;
+    p_collocated_ind = _pCollocatedInd; 
+}
+#endif
+
 // TODO this currently produce bad results, maybe need to smooth velocity field as well
 bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 {

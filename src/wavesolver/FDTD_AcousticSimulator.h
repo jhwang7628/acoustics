@@ -35,6 +35,7 @@ class FDTD_AcousticSimulator
 
         // necessary fields 
         int                     _stepIndex;
+        int                     _snapshotIndex;
         double                  _simulationTime; 
         std::string             _configFile; 
 
@@ -52,13 +53,14 @@ class FDTD_AcousticSimulator
         void _SaveVelocityTimestep(const std::string &filename, const int &dim); 
         void _SaveListeningData(const std::string &filename);
         void _SaveModalFrequencies(const std::string &filename); 
+        void _SaveSimulationSnapshot(const std::string &numbering);
 
     public: 
         FDTD_AcousticSimulator()
-            : _canInitializeSolver(false), _stepIndex(0), _simulationTime(0.0)
+            : _canInitializeSolver(false), _stepIndex(0), _snapshotIndex(0), _simulationTime(0.0)
         {}
         FDTD_AcousticSimulator(const std::string &configFile)
-            : _canInitializeSolver(false), _stepIndex(0), _simulationTime(0.0), _configFile(configFile)
+            : _canInitializeSolver(false), _stepIndex(0), _snapshotIndex(0),  _simulationTime(0.0), _configFile(configFile)
         {} 
 
         inline bool SceneHasModalObject() const {return _sceneObjects->HasModalObject();}
@@ -76,6 +78,7 @@ class FDTD_AcousticSimulator
         void Run(); 
         bool RunHalfStep(const int &flag); 
         void PostStepping(const REAL &odeTime); 
+        void EndStepping(); 
         void PreviewStepping(const uint &speed); 
         void Pause(); 
         void SaveSolverConfig(); 

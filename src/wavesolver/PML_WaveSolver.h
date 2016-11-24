@@ -191,6 +191,9 @@ class PML_WaveSolver : public Solver
         void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
         void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
         void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;
+#ifdef USE_COLLOCATED
+        void GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind);
+#endif
 
         // Takes a single time step
         virtual bool stepSystem(const BoundaryEvaluator &bcEvaluator);

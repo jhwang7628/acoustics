@@ -307,6 +307,44 @@ _SaveModalFrequencies(const std::string &filename)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
+_SaveSimulationSnapshot(const std::string &numbering)
+{
+    const auto &solver = GetSolver(); 
+#ifdef USE_COLLOCATED
+    MATRIX p_pml[3]; 
+    MATRIX p_pml_full; 
+    MATRIX v_pml[3]; 
+    FloatArray p_gc; 
+    MATRIX p_collocated[3]; 
+    int p_collocated_ind = -1;
+    solver->GetAllSimulationData(p_pml, p_pml_full, v_pml, p_gc, p_collocated, p_collocated_ind); 
+    std::string f_p_pml, f_p_pml_full, f_v_pml, f_p_gc, f_p_collocated, f_p_collocated_ind; 
+    for (int dim=0; dim<3; ++dim)
+    {
+        std::ostringstream oss; 
+        oss << std::setw(1) << dim; 
+        f_p_pml             = _CompositeFilename("snapshot_"+numbering+"_p_pml_"+oss.str()+".dat"); 
+        f_v_pml             = _CompositeFilename("snapshot_"+numbering+"_v_pml_"+oss.str()+".dat"); 
+        f_p_collocated      = _CompositeFilename("snapshot_"+numbering+"_p_collocated_"+oss.str()+".dat"); 
+        p_pml[dim].write(f_p_pml.c_str()); 
+        v_pml[dim].write(f_v_pml.c_str()); 
+        p_collocated[dim].write(f_p_collocated.c_str()); 
+    }
+    f_p_pml_full        = _CompositeFilename("snapshot_"+numbering+"_p_pml_full.dat"); 
+    f_p_collocated_ind  = _CompositeFilename("snapshot_"+numbering+"_p_collocated_ind.dat"); 
+    p_pml_full.write(f_p_pml_full.c_str()); 
+    {
+        std::ofstream of(f_p_collocated_ind.c_str());
+        of << p_collocated_ind; 
+        of.close(); 
+    }
+#endif
+    ++_snapshotIndex; 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
 InitializeSolver()
 {
     if (!_canInitializeSolver)
@@ -414,6 +452,7 @@ Run()
         continueStepping = _acousticSolver->stepSystem();
         PostStepping(odeTime); 
     }
+    EndStepping(); 
 }
 
 //##############################################################################
@@ -476,6 +515,14 @@ PostStepping(const REAL &odeTime)
 #ifdef DEBUG
     _acousticSolver->PrintAllFieldExtremum();
 #endif
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+EndStepping()
+{
+    _SaveSimulationSnapshot(std::to_string(_snapshotIndex)); 
 }
 
 //##############################################################################
