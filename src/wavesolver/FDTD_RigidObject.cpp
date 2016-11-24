@@ -333,7 +333,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
-#if 1 // use sdf for normal query
+#if 0 // use sdf for normal query
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
@@ -360,7 +360,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 
     if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
-        std::cout << "distance smaller than tolerance\n";
+        std::cerr << "**WARNING** distance smaller than tolerance\n";
         // get closest triangle normal and push manually
         Vector3d t_normal = _mesh->triangle_normal(closestTriangleIndex); 
         t_normal.normalize(); 
