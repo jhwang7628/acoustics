@@ -189,14 +189,22 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
         Tuple3i bufPos = cellIndices, bufNeg = cellIndices; 
         int buf_iPos = -1, buf_iNeg = -1; 
         // skip if its boundary
-        if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
-            cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
-            cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
-            continue; 
+        //if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
+        //    cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
+        //    cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
+        //    continue; 
         for (int dim=0; dim<3; ++dim)
         {
-            bufPos[dim] += 1; // v_i+1
-            bufNeg[dim] -= 1; // v_i-1
+            int isBoundaryFace = 0; // detect boundary face
+            if (cellIndices[dim]==0) 
+                isBoundaryFace = -1;
+            else if (cellIndices[dim]==_waveSolverSettings->cellDivisions-1)
+                isBoundaryFace =  1;
+
+            if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
+                bufPos[dim] += 1; 
+            if (isBoundaryFace!=-1) // v_i-1 if exists, otherwise v_i
+                bufNeg[dim] -= 1; 
             buf_iPos = field.cellIndex(bufPos); 
             buf_iNeg = field.cellIndex(bufNeg); 
 #ifdef USE_FV
@@ -2714,8 +2722,8 @@ int MAC_Grid::InsidePML(const Vector3d &x, const REAL &absorptionWidth)
                 else if (hMax <= pmlWidth)
                     return dimension; 
                 break; 
-            case 1: // wall on +x, +y, +z
-                if (hMin <= pmlWidth)
+            case 1: // wall on +x, +z
+                if (hMin <= pmlWidth || (dimension == 1 && hMax <= pmlWidth))
                     return dimension; 
                 break; 
             case 2: 
@@ -2750,9 +2758,11 @@ REAL MAC_Grid::PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidt
             else 
                 return 0.0;
             break; 
-        case 1: // wall on +x, +y, +z
+        case 1: // wall on +x, +z
             if (hMin <= absorptionWidth)
                 return _PML_absorptionStrength * pow(distMin,2) / a2; 
+            else if (dimension == 1 && hMax <= absorptionWidth)
+                return _PML_absorptionStrength * pow(distMax,2) / a2; 
             else 
                 return 0.0;
             break; 
