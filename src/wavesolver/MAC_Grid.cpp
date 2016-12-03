@@ -247,8 +247,10 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
 #endif
-            bufPos[dim] -= 1; 
-            bufNeg[dim] += 1; 
+            if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
+                bufPos[dim] -= 1; 
+            if (isBoundaryFace!=-1) // v_i-1 if exists, otherwise v_i
+                bufNeg[dim] += 1; 
         }
         laplacian(cell_idx, 0) *= scale; 
     }
