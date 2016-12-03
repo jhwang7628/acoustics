@@ -14,7 +14,7 @@ for l in lines:
     tokens = l.split()
     time.append(float(tokens[0]))
     impactSpeed.append(abs(float(tokens[3])))
-
+print 'Read completed'
 x = [time[0], time[-1]]
 plt.figure(figsize=[10,10]) 
 plt.plot(time, impactSpeed) 
