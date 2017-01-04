@@ -14,16 +14,16 @@ installPath = '/home/jui-hsien/code/acoustics';
 binPath = '%s/build_release/bin' %(installPath)
 redirect = '/dev/stdout'
 
-isoNlevel = 4;
-isoMargin = 7;
-isoAlpha = 0.25;
-isoBeta = 0.42978;
+isoNlevel = 4; # number of levels
+isoMargin = 7; # margin of the bounding box
+isoAlpha = 0.25; # alpha long value in isostuff algorithm
+isoBeta = 0.42978; # alpha short value in isostuff algorithm
 
 ## Automatic
 objFile = sys.argv[1]
 tetFile = sys.argv[2]
 if len(sys.argv) == 4:
-    isoResolution = int(sys.argv[3])
+    isoResolution = int(sys.argv[3]) # bounding box resolution
 else:
     isoResolution = 6;
 
