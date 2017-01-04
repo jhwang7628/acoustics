@@ -197,6 +197,7 @@ void TetViewerFrame::update_active_mode()
     frequency /= 2.0 * M_PI;
     canvas->update_mode_info( modeIndex->value(), frequency );
 
+    std::cout << "mode " << idx << " has frequency: " << frequency << "Hz" << std::endl;
     update_mode_displacement();
 }
 
