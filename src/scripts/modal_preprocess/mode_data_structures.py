@@ -66,7 +66,7 @@ class Modes:
                         modes.eigenvectors[count_inner,d] = struct.unpack('d', ifs.read(8))[0]
                     count_inner += 1
             ifs.close()
-        print 'Read %d modes in %d stride from file: %s' %(modes.num_modes, modes.stride, mode_file)
+        # print 'Read %d modes in %d stride from file: %s' %(modes.num_modes, modes.stride, mode_file)
         return modes
 
     @staticmethod
