@@ -25,14 +25,17 @@ Eigensolver::Eigensolver( const SPARSE_MATRIX &K, const SPARSE_MATRIX &M, double
 
     set_n( K.rows() );
 
+    std::cout << " - construct sparse column copy\n";
     M.constructSparseColumnCopy( _M );
 
     // This might be kind of slow, due to the logarithmic access time for
     // each matrix element
+    std::cout << " - compute _inverseMatrix\n";
     _inverseMatrix = M;
     _inverseMatrix *= -1.0 * shift;
     _inverseMatrix += K;
 
+    std::cout << " - initializing SuperLU solver\n";
     _linearSolver = new SuperLU_Solver( _inverseMatrix );
 }
 
