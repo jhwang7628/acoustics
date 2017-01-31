@@ -2,6 +2,7 @@
 #include <parser/ImpulseResponseParser.h> 
 #include <io/ImpulseSeriesReader.h>
 #include <wavesolver/WaterVibrationalSource.h> 
+#include <modal_model/SparseModalEncoder.h>
 
 //##############################################################################
 // parse meshes from xml into objects 
@@ -203,7 +204,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     }
     
     // get the element nodes required
-    TiXmlElement *root, *solverNode;
+    TiXmlElement *root, *solverNode, *encoderNode;
     TiXmlDocument *document = &_document;
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
     GET_FIRST_CHILD_ELEMENT_GUARD(solverNode, root, "solver"); 
@@ -262,6 +263,16 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->fileDisplacement = queryRequiredAttr(rigidsimDataNode, "file_displacement"); 
         settings->fileVelocity = queryRequiredAttr(rigidsimDataNode, "file_velocity"); 
         settings->fileAcceleration = queryRequiredAttr(rigidsimDataNode, "file_acceleration"); 
+    }
+
+    // parse and construct modal encoder
+    bool hasEncoderDefined; 
+    GET_FIRST_CHILD_ELEMENT_FLAG(encoderNode, root, "modal_encoder", hasEncoderDefined); 
+    if (hasEncoderDefined)
+    {
+        SparseModalEncoder::useEncoder = true; 
+        SparseModalEncoder::rank    = queryRequiredInt(encoderNode, "rank"); 
+        SparseModalEncoder::epsilon = queryRequiredReal(encoderNode, "epsilon"); 
     }
 }
 

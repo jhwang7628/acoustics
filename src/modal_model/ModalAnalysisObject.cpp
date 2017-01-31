@@ -113,6 +113,15 @@ InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr)
 }
 
 //##############################################################################
+//##############################################################################
+void ModalAnalysisObject:: 
+InitializeSparseModalEncoder()
+{
+    // NOTE always uses projected modal matrix
+    _modalAccEncoder = std::make_shared<SparseModalEncoder>(N_Modes(), _eigenVectorsNormal);
+}
+
+//##############################################################################
 // This function performs two main operations: 
 //  1) remove nonsurface entries and reindex the eigen vectors. 
 //  2) premultiply each vertex with the normal such that the number of rows
@@ -131,8 +140,9 @@ CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, st
 
     const int N_surfaceVertices = idMapPtr->N_surfaceVertices(); 
     const int N_volumeVertices  = N_vertices(); 
-    Eigen::MatrixXd culledEigenVectors(N_surfaceVertices*3, N_Modes()); 
-    _eigenVectorsNormal.resize(N_surfaceVertices, N_Modes()); 
+    const int N_modes = _eigenVectors.cols(); 
+    Eigen::MatrixXd culledEigenVectors(N_surfaceVertices*3, N_modes); 
+    _eigenVectorsNormal.resize(N_surfaceVertices, N_modes); 
     for (int vol_idx=0; vol_idx<N_volumeVertices; ++vol_idx)
     {
         if (!idMapPtr->KeyExists(vol_idx)) // skip vol indices that are interior

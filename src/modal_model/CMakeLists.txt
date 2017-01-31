@@ -5,6 +5,8 @@ set(MODAL_MODEL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ImpulseSeriesObject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalODESolver.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalODESolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SparseModalEncoder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SparseModalEncoder.cpp
     CACHE FILE "Modal model sources")
 
 set(MODAL_MATERIAL_SRC

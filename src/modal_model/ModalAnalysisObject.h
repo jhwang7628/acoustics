@@ -5,6 +5,7 @@
 #include <deformable/ModeData.h> 
 #include <modal_model/ModalODESolver.h> 
 #include <modal_model/ModalMaterial.h>
+#include <modal_model/SparseModalEncoder.h>
 #include <geometry/TetMeshIndexToSurfaceMesh.h>
 #include <geometry/TriangleMesh.hpp>
 #include <Eigen/Dense>
@@ -42,6 +43,8 @@ class ModalAnalysisObject
         REAL _ODEStepSize; 
         REAL _time;  // corresponds to qNew
 
+        SparseModalEncoderPtr _modalAccEncoder; 
+
     public: 
         ModalAnalysisObject()
             : _modeFileSet(false), _idType(VOL_UNCULL), _time(0.0)
@@ -67,6 +70,7 @@ class ModalAnalysisObject
         void SetODESolverTime(const REAL &time);
         void Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr);
         void InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr);
+        void InitializeSparseModalEncoder(); 
         // remove all non-surface mode shapes and permute the rows of modal
         // matrix
         void CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, std::shared_ptr<TriangleMesh<REAL> > meshPtr); 

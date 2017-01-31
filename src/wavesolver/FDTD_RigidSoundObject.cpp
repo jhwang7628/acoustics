@@ -26,6 +26,9 @@ Initialize() // TODO! should manage all parent class initialization
         _coeff_Q(mode_idx) = odeSolverPtr->GetCoefficient_Q(); 
     }
     InitializeModeVectors(); 
+
+    // Initialize modal encoder if exists
+    InitializeSparseModalEncoder(); 
 }
 
 //##############################################################################
@@ -180,6 +183,10 @@ AdvanceModalODESolvers(const int &N_steps)
         _qDDot_c = (_q_n + _q_p - 2.0*_q_c) / h2;
         _qDDot_c_plus = 0.5 * ((_q_nn + _q_c - 2.0*_q_n)/h2 + _qDDot_c);
         _timer_substep_advanceODE[2].Pause();
+
+        // update encoder
+        if (_modalAccEncoder)
+            _modalAccEncoder->Encode(_qDDot_c); 
     }
 }
 
@@ -384,16 +391,7 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
             closestDistance = distance; 
         }
     }
-
-    // evaluate sample values
-    REAL sampledValue; 
-    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
-        sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c); 
-    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
-        sampledValue = _eigenVectorsNormal.row(closestIndex).dot(_qDDot_c_plus); 
-    else
-        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-    return sampledValue;
+    return SampleModalAcceleration(closestIndex, sampleNormal, sampleTime);
 }
 
 //##############################################################################
@@ -405,11 +403,20 @@ SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const
     // evaluate sample values
     REAL sampledValue; 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
-        sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c); 
+    {
+        if (!_modalAccEncoder)
+            sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c); 
+        else
+            sampledValue = _modalAccEncoder->Decode(vertexID); 
+    }
     else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+    {
         sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c_plus); 
+    }
     else
+    {
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    }
     return sampledValue;
 }
 
