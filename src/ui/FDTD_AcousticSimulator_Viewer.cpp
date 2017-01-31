@@ -1207,7 +1207,7 @@ RestoreDefaultDrawOptions()
     _wireframe = 2;
     _sliceWireframe = 2;
     _drawBoxLis = true; 
-    _drawGround = true; 
+    _drawGround = false; 
     _drawHashedCells = false;
     _sliceDataPointer = 0; 
 }
