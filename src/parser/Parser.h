@@ -40,6 +40,14 @@
     if (!nodePtr) \
         throw std::runtime_error("**ERROR** No node "+std::string(nodeName)+" found");
 
+#define GET_FIRST_CHILD_ELEMENT_FLAG(nodePtr, parentPtr, nodeName, flagName) \
+    assert(parentPtr!=nullptr); \
+    nodePtr = parentPtr->FirstChildElement(nodeName); \
+    if (!nodePtr) \
+        flagName = false; \
+    else \
+        flagName = true; 
+
 //////////////////////////////////////////////////////////////////////
 // Parser class
 //
