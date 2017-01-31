@@ -66,7 +66,7 @@ if __name__ == '__main__':
     print 'Normalize all data by max value = %f' %(maxValue)
     # writing the wav files
     frontPadTime = 0.1416
-    endPadTime = 0.0
+    endPadTime = 1.0
     N_frontPad = int(frontPadTime*float(wavRate))
     N_endPad = int(endPadTime*float(wavRate))
     N_frontPadStep = int(frontPadTime*float(stepRate))
