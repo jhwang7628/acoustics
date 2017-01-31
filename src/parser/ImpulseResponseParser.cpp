@@ -271,8 +271,8 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     if (hasEncoderDefined)
     {
         SparseModalEncoder::useEncoder = true; 
-        SparseModalEncoder::rank    = queryRequiredInt(encoderNode, "rank"); 
-        SparseModalEncoder::epsilon = queryRequiredReal(encoderNode, "epsilon"); 
+        SparseModalEncoder::rank       = queryRequiredInt(encoderNode, "rank"); 
+        SparseModalEncoder::epsilon    = queryRequiredReal(encoderNode, "epsilon"); 
     }
 }
 

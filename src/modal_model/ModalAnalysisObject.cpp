@@ -118,7 +118,7 @@ void ModalAnalysisObject::
 InitializeSparseModalEncoder()
 {
     // NOTE always uses projected modal matrix
-    _modalAccEncoder = std::make_shared<SparseModalEncoder>(N_Modes(), _eigenVectorsNormal);
+    _modalAccEncoder = std::make_shared<SparseModalEncoder>(_eigenVectorsNormal);
 }
 
 //##############################################################################

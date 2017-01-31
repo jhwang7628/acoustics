@@ -28,7 +28,8 @@ Initialize() // TODO! should manage all parent class initialization
     InitializeModeVectors(); 
 
     // Initialize modal encoder if exists
-    InitializeSparseModalEncoder(); 
+    if (SparseModalEncoder::useEncoder)
+        InitializeSparseModalEncoder(); 
 }
 
 //##############################################################################
