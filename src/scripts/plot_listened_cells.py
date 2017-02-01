@@ -80,13 +80,13 @@ if __name__ == '__main__':
         outputData = listenedData[:, ii]
         # normalizationConstant = maxValue
         normalizationConstant = np.absolute(outputData.max())
-        if normalizationConstant > 1E-14:
-            outputData /= normalizationConstant
+        # if normalizationConstant > 1E-14:
+        #     outputData /= normalizationConstant
         outputData = signal.resample(outputData, int(float(len(outputData))/rateRatio))
         outputData = PadZero(outputData.copy(), N_frontPad, N_endPad)
         #if (ii < 25):
         #    allSound = np.concatenate([allSound, outputData])
-        scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData)
+        scipy.io.wavfile.write('point_%u.wav' %(ii), wavRate, outputData/normalizationConstant)
     #scipy.io.wavfile.write('allpoints_%u.wav' %(ii), wavRate, allSound)
     
     # extract minimum and compare with 1/r decay 
@@ -96,7 +96,8 @@ if __name__ == '__main__':
         dataMin[pt_idx] = abs(min(listenedData[:, pt_idx]))
         dataR[pt_idx] = np.linalg.norm(listeningPositions[pt_idx, :])
     one_over_r = np.divide(np.ones(N_points), dataR)
-    
+   
+    IO.writeMatrixXdBinary('listened_data.dat', listenedData)
     # trim data 
     # listenedData = listenedData[:, ::20]
     # listeningPositions = listeningPositions[::20, :]
