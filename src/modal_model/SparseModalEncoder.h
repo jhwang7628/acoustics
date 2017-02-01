@@ -38,9 +38,9 @@ class SparseModalEncoder
         BasisBuffer     _Q_tilde; 
         BasisBuffer     _A_tilde; 
         Eigen::VectorXd _c; 
-        Eigen::VectorXd _delta_q; 
-        Eigen::VectorXd _error_lsq; 
-        Eigen::VectorXd _error_lsq_abs; 
+        Eigen::VectorXd _delta_q;  // sparse update
+        Eigen::VectorXd _Delta_q;  // lsq error q-Qc
+        Eigen::VectorXd _error_lsq; // cached helper
         const Eigen::MatrixXd &_U; // modal matrix
         REAL _error_sqr_target;  // depends on modal matrix
 
@@ -54,8 +54,8 @@ class SparseModalEncoder
             _A_tilde.Initialize(U.rows(), SparseModalEncoder::rank); 
             _c.resize(SparseModalEncoder::rank); 
             _delta_q.resize(N_Modes()); 
+            _Delta_q.resize(N_Modes()); 
             _error_lsq.resize(N_Modes()); 
-            _error_lsq_abs.resize(N_Modes()); 
             SetError(SparseModalEncoder::epsilon); 
         }
 

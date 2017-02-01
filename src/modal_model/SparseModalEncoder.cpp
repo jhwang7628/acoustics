@@ -74,8 +74,8 @@ LeastSquareSolve(const Eigen::VectorXd &q)
     //const bool lsq_solution_valid = (_Q_tilde.A*_c).isApprox(q, _error_sqr_target);
     if (!lsq_solution_valid)
         _c.setZero();
-    _error_lsq     = (q-_Q_tilde.A*_c); 
-    _error_lsq_abs = _error_lsq.array().abs(); 
+    _Delta_q   = (q-_Q_tilde.A*_c); 
+    _error_lsq = _Delta_q.array().square(); 
     std::cout << "success = " << lsq_solution_valid << "\n"; 
     std::cout << "c       = " << _c         << "\n"; 
     std::cout << "error   = " << _error_lsq << "\n"; 
@@ -89,7 +89,7 @@ MinimizeSparseUpdate()
 {
     PRINT_FUNC_HEADER;
     _delta_q.setZero(); 
-    double E = (_error_lsq).array().square().sum(); 
+    double E = _error_lsq.sum(); 
     int ii; 
     int count_sparsity=0;
     std::cout << "===== l1 Minimization START =====\n"; 
@@ -97,11 +97,10 @@ MinimizeSparseUpdate()
     std::cout << " target  error  = " << _error_sqr_target << std::endl; 
     while (E >= _error_sqr_target && count_sparsity<N_Modes())
     {
-        _error_lsq_abs.maxCoeff(&ii); 
-        _delta_q[ii] = _error_lsq[ii]; 
-        E -= pow(_error_lsq[ii],2); 
+        _error_lsq.maxCoeff(&ii); 
+        _delta_q[ii] = _Delta_q[ii]; 
+        E -= _error_lsq[ii]; 
         _error_lsq[ii] = 0.0;
-        _error_lsq_abs[ii] = 0.0;
         std::cout << "Iteration " << count_sparsity << ": error = " << E << "\n"; 
         //std::cout << " current q= ";
         //for (int jj=0; jj<_error_lsq.size(); ++jj)
