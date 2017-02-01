@@ -74,7 +74,7 @@ LeastSquareSolve(const Eigen::VectorXd &q)
     //const bool lsq_solution_valid = (_Q_tilde.A*_c).isApprox(q, _error_sqr_target);
     if (!lsq_solution_valid)
         _c.setZero();
-    _error_lsq     = (_Q_tilde.A*_c-q); 
+    _error_lsq     = (q-_Q_tilde.A*_c); 
     _error_lsq_abs = _error_lsq.array().abs(); 
     std::cout << "success = " << lsq_solution_valid << "\n"; 
     std::cout << "c       = " << _c         << "\n"; 
