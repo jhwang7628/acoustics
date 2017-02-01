@@ -40,6 +40,7 @@ class SparseModalEncoder
         Eigen::VectorXd _c; 
         Eigen::VectorXd _delta_q; 
         Eigen::VectorXd _error_lsq; 
+        Eigen::VectorXd _error_lsq_abs; 
         const Eigen::MatrixXd &_U; // modal matrix
         REAL _error_sqr_target;  // depends on modal matrix
 
@@ -54,6 +55,7 @@ class SparseModalEncoder
             _c.resize(SparseModalEncoder::rank); 
             _delta_q.resize(N_Modes()); 
             _error_lsq.resize(N_Modes()); 
+            _error_lsq_abs.resize(N_Modes()); 
             SetError(SparseModalEncoder::epsilon); 
         }
 
@@ -63,7 +65,7 @@ class SparseModalEncoder
         void LeastSquareSolve(const Eigen::VectorXd &q); 
         int  MinimizeSparseUpdate(); 
         void Encode(const Eigen::VectorXd &q); 
-        REAL Decode(const int &vertexID);
+        REAL Decode(const int &row);
 
         void Test_PerformanceTest(); 
 };

@@ -67,9 +67,18 @@ LeastSquareSolve(const Eigen::VectorXd &q)
     PRINT_FUNC_HEADER;
     std::cout << "===== Least-Square Minimization START =====\n"; 
     _c = _Q_tilde.A.colPivHouseholderQr().solve(q); 
-    _error_lsq = (_Q_tilde.A*_c-q).array().abs(); 
-    std::cout << "c     = " << _c         << "\n"; 
-    std::cout << "error = " << _error_lsq << "\n"; 
+
+    bool lsq_solution_valid = true; 
+    for (int ii=0; ii<_c.size(); ++ii)
+        lsq_solution_valid = (lsq_solution_valid && !std::isnan(_c[ii]));
+    //const bool lsq_solution_valid = (_Q_tilde.A*_c).isApprox(q, _error_sqr_target);
+    if (!lsq_solution_valid)
+        _c.setZero();
+    _error_lsq     = (_Q_tilde.A*_c-q); 
+    _error_lsq_abs = _error_lsq.array().abs(); 
+    std::cout << "success = " << lsq_solution_valid << "\n"; 
+    std::cout << "c       = " << _c         << "\n"; 
+    std::cout << "error   = " << _error_lsq << "\n"; 
     std::cout << "===== Least-Square Minimization END =====\n"; 
 }
 
@@ -88,16 +97,16 @@ MinimizeSparseUpdate()
     std::cout << " target  error  = " << _error_sqr_target << std::endl; 
     while (E >= _error_sqr_target && count_sparsity<N_Modes())
     {
-        _error_lsq.maxCoeff(&ii); 
+        _error_lsq_abs.maxCoeff(&ii); 
         _delta_q[ii] = _error_lsq[ii]; 
         E -= pow(_error_lsq[ii],2); 
         _error_lsq[ii] = 0.0;
+        _error_lsq_abs[ii] = 0.0;
         std::cout << "Iteration " << count_sparsity << ": error = " << E << "\n"; 
-        std::cout << " ii = " << ii << "\n";
-        std::cout << " current q= ";
-        for (int jj=0; jj<_error_lsq.size(); ++jj)
-            std::cout << _error_lsq[jj] << ", "; 
-        std::cout << "\n";
+        //std::cout << " current q= ";
+        //for (int jj=0; jj<_error_lsq.size(); ++jj)
+        //    std::cout << _error_lsq[jj] << ", "; 
+        //std::cout << "\n";
         ++count_sparsity;
     }
     std::cout << " N_modes = " << N_Modes() << "\n";
@@ -121,10 +130,10 @@ Encode(const Eigen::VectorXd &q)
 //##############################################################################
 //##############################################################################
 REAL SparseModalEncoder:: 
-Decode(const int &vertexID) 
+Decode(const int &row) 
 {
-    (void)vertexID;
-    return 0.;
+    const REAL value = _A_tilde.A(row, _A_tilde.newestColIndex); 
+    return (std::isnan(value) ? 0. : value); 
 }
 
 //##############################################################################
