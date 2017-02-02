@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <Eigen/Dense> 
+#include <Eigen/SparseCore>
 
 //##############################################################################
 // Class Basis_Queue
@@ -33,16 +34,17 @@ class SparseModalEncoder
         static bool useEncoder; 
         static int  rank; 
         static REAL epsilon;
+        typedef Eigen::SparseVector<REAL> SparseVectord;
 
     private: 
         BasisBuffer     _Q_tilde; 
         BasisBuffer     _A_tilde; 
         Eigen::VectorXd _c; 
-        Eigen::VectorXd _delta_q;  // sparse update
+        SparseVectord   _delta_q;  // sparse update
         Eigen::VectorXd _Delta_q;  // lsq error q-Qc
         Eigen::VectorXd _error_lsq; // cached helper
+        REAL            _error_sqr_target;  // depends on modal matrix
         const Eigen::MatrixXd &_U; // modal matrix
-        REAL _error_sqr_target;  // depends on modal matrix
 
     public: 
         SparseModalEncoder(const Eigen::MatrixXd &U)

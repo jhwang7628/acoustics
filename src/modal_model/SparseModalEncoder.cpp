@@ -47,16 +47,16 @@ SetError(const double &epsilon)
     //    std::cout << "error sqr target = " << _error_sqr_target << "\n"; 
     //    std::cout << std::flush; 
     //}
-    //// square of epsilon
-    //{
-    //    _error_sqr_target = pow(SparseModalEncoder::epsilon,2);
-    //    std::cout << "Set error for sparse encoder using ||a - tilde{a}||/||U|| metric:\n";
-    //}
-    // square of epsilon and average across modes
+    // square of epsilon
     {
-        _error_sqr_target = pow(SparseModalEncoder::epsilon*(REAL)N_Modes(),2);
-        std::cout << "Set error for sparse encoder using ||a - tilde{a}||/N||U|| metric:\n";
+        _error_sqr_target = pow(SparseModalEncoder::epsilon,2);
+        std::cout << "Set error for sparse encoder using ||a - tilde{a}||/||U|| metric:\n";
     }
+    //// square of epsilon and average across modes
+    //{
+    //    _error_sqr_target = pow(SparseModalEncoder::epsilon*(REAL)N_Modes(),2);
+    //    std::cout << "Set error for sparse encoder using ||a - tilde{a}||/N||U|| metric:\n";
+    //}
 }
 
 //##############################################################################
@@ -88,24 +88,22 @@ int SparseModalEncoder::
 MinimizeSparseUpdate()
 {
     PRINT_FUNC_HEADER;
-    _delta_q.setZero(); 
+    _delta_q.resize(N_Modes());  // clear all entries
     double E = _error_lsq.sum(); 
+    const REAL error_sqr_target_relative = _error_sqr_target*E; 
     int ii; 
     int count_sparsity=0;
     std::cout << "===== l1 Minimization START =====\n"; 
-    std::cout << " current error  = " <<  E                << std::endl; 
-    std::cout << " target  error  = " << _error_sqr_target << std::endl; 
-    while (E >= _error_sqr_target && count_sparsity<N_Modes())
+    std::cout << " current error  = " << E                         << std::endl; 
+    std::cout << " target  error  = " << error_sqr_target_relative << std::endl; 
+    //while (E >= _error_sqr_target && count_sparsity<N_Modes())
+    while (E >= error_sqr_target_relative && count_sparsity<N_Modes())
     {
         _error_lsq.maxCoeff(&ii); 
-        _delta_q[ii] = _Delta_q[ii]; 
+        _delta_q.insert(ii) = _Delta_q[ii]; 
         E -= _error_lsq[ii]; 
         _error_lsq[ii] = 0.0;
         std::cout << "Iteration " << count_sparsity << ": error = " << E << "\n"; 
-        //std::cout << " current q= ";
-        //for (int jj=0; jj<_error_lsq.size(); ++jj)
-        //    std::cout << _error_lsq[jj] << ", "; 
-        //std::cout << "\n";
         ++count_sparsity;
     }
     std::cout << " N_modes = " << N_Modes() << "\n";
@@ -123,7 +121,13 @@ Encode(const Eigen::VectorXd &q)
     LeastSquareSolve(q); 
     MinimizeSparseUpdate(); 
     _Q_tilde.UpdateBasis(q);
-    _A_tilde.UpdateBasis(_A_tilde.A*_c+_U*_delta_q);  // TODO need to use a sparsity mask on delta_q
+    _A_tilde.UpdateBasis(_A_tilde.A*_c+_U*_delta_q);
+    //Eigen::VectorXd a = _A_tilde.A*_c; 
+    //const int N_modes = N_Modes(); 
+    //for (int ii=0; ii<N_modes; ++ii)
+    //    if (_sparse_mask.at(ii)) 
+    //        a += _U.col(ii)*_delta_q(ii); 
+    //_A_tilde.UpdateBasis(a);
 }
 
 //##############################################################################
