@@ -29,6 +29,7 @@
 // Static variable initialize
 //##############################################################################
 int MAC_Grid::GhostCell::valuePointer = 0;
+std::vector<Timer<false> > MAC_Grid::GhostCell::ghostCellTimers(15);
 
 //##############################################################################
 //##############################################################################
@@ -668,23 +669,30 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
 #endif
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
+        GhostCell::ghostCellTimers[0].start();
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
         int boundaryObject;
         REAL distance; 
         _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
+        GhostCell::ghostCellTimers[0].pause();
 
         // find reflection point, normal etc
+        GhostCell::ghostCellTimers[1].start(); 
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         auto object = _objects->GetPtr(boundaryObject); 
         object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
+        GhostCell::ghostCellTimers[1].pause(); 
 //#pragma omp critical
 //        if (!success)
 //            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
+        GhostCell::ghostCellTimers[2].start(); 
         const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
+        GhostCell::ghostCellTimers[2].pause(); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
 
+        GhostCell::ghostCellTimers[3].start(); 
         // get the box enclosing the image point; 
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
@@ -777,6 +785,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         if (abs(p_rasterize) > SMALL_NUM && abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL)
             p_r = p_rasterize; 
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
+        GhostCell::ghostCellTimers[3].pause(); 
     }
 }
 

@@ -1,4 +1,5 @@
 #include "modal_model/SparseModalEncoder.h" 
+#include "wavesolver/MAC_Grid.h"
 #include "macros.h"
 #include <iostream>
 
@@ -20,7 +21,9 @@ void BasisBuffer::
 UpdateBasis(const Eigen::VectorXd &a)
 {
     const int oldestColIndex = (newestColIndex+1) % A.cols(); 
+    MAC_Grid::GhostCell::ghostCellTimers[11].start(); 
     A.col(oldestColIndex) = a; 
+    MAC_Grid::GhostCell::ghostCellTimers[11].pause(); 
     newestColIndex = oldestColIndex; 
 }
 
@@ -118,16 +121,21 @@ void SparseModalEncoder::
 Encode(const Eigen::VectorXd &q) 
 {
     PRINT_FUNC_HEADER;
+    MAC_Grid::GhostCell::ghostCellTimers[7].start(); 
     LeastSquareSolve(q); 
+    MAC_Grid::GhostCell::ghostCellTimers[7].pause(); 
+    MAC_Grid::GhostCell::ghostCellTimers[8].start(); 
     MinimizeSparseUpdate(); 
+    MAC_Grid::GhostCell::ghostCellTimers[8].pause(); 
+    MAC_Grid::GhostCell::ghostCellTimers[9].start(); 
     _Q_tilde.UpdateBasis(q);
-    _A_tilde.UpdateBasis(_A_tilde.A*_c+_U*_delta_q);
-    //Eigen::VectorXd a = _A_tilde.A*_c; 
-    //const int N_modes = N_Modes(); 
-    //for (int ii=0; ii<N_modes; ++ii)
-    //    if (_sparse_mask.at(ii)) 
-    //        a += _U.col(ii)*_delta_q(ii); 
-    //_A_tilde.UpdateBasis(a);
+    MAC_Grid::GhostCell::ghostCellTimers[9].pause(); 
+    MAC_Grid::GhostCell::ghostCellTimers[10].start(); 
+    _a_buf = _A_tilde.A*_c+_U*_delta_q; 
+    MAC_Grid::GhostCell::ghostCellTimers[10].pause(); 
+    MAC_Grid::GhostCell::ghostCellTimers[11].start(); 
+    _A_tilde.UpdateBasis(_a_buf);
+    MAC_Grid::GhostCell::ghostCellTimers[11].pause(); 
 }
 
 //##############################################################################

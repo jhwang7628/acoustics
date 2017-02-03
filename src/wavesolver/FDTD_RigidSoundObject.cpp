@@ -1,3 +1,4 @@
+#include <wavesolver/MAC_Grid.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <utils/SimpleTimer.h>
@@ -186,8 +187,10 @@ AdvanceModalODESolvers(const int &N_steps)
         _timer_substep_advanceODE[2].Pause();
 
         // update encoder
+        MAC_Grid::GhostCell::ghostCellTimers[5].start(); 
         if (_modalAccEncoder)
             _modalAccEncoder->Encode(_qDDot_c); 
+        MAC_Grid::GhostCell::ghostCellTimers[5].pause(); 
     }
 }
 
@@ -381,6 +384,7 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
 
     // nearest neighbour lookup
+    MAC_Grid::GhostCell::ghostCellTimers[4].start(); 
     const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
     const int N_vertices = vertices.size(); 
     for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
@@ -392,6 +396,7 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
             closestDistance = distance; 
         }
     }
+    MAC_Grid::GhostCell::ghostCellTimers[4].pause(); 
     return SampleModalAcceleration(closestIndex, sampleNormal, sampleTime);
 }
 
@@ -403,6 +408,7 @@ SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const
 {
     // evaluate sample values
     REAL sampledValue; 
+    MAC_Grid::GhostCell::ghostCellTimers[6].start(); 
     if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
     {
         if (!_modalAccEncoder)
@@ -418,6 +424,7 @@ SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const
     {
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
     }
+    MAC_Grid::GhostCell::ghostCellTimers[6].pause(); 
     return sampledValue;
 }
 

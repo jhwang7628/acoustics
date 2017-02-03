@@ -79,6 +79,7 @@ class MAC_Grid
         class GhostCell
         {
             public:
+                static std::vector<Timer<false> > ghostCellTimers; // NOTE not thread safe
                 struct BoundarySamples
                 {
                     bool isBulk; 

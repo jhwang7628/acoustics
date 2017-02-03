@@ -484,7 +484,23 @@ bool PML_WaveSolver::stepSystem()
     printf( " - Pressure update     took %f sec\n", _divergenceTimer.getMsPerCycle() );
 
     if (_useGhostCellBoundary) 
+    {
         printf( " - Ghost-cell update   took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
+        printf( "   - Find correct neighbouring object took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[0].elapsed());
+        printf( "   - Find reflection point            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[1].elapsed());
+        printf( "   - Evaluate boundary acceleration   took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[2].elapsed());
+        printf( "     - NN search for each vertex      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[4].elapsed());
+        printf( "     - Encode                         took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[5].elapsed());
+        printf( "       - L2 solve                     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[7].elapsed());
+        printf( "       - L1 solve                     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[8].elapsed());
+        printf( "       - Update q basis               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[9].elapsed());
+        printf( "       - Update a basis               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[10].elapsed());
+        printf( "         - Copy matrix col            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[11].elapsed());
+        printf( "     - Decode                         took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[6].elapsed());
+        printf( "   - Compute interpolation            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[3].elapsed());
+        for (int ii=0; ii<MAC_Grid::GhostCell::ghostCellTimers.size(); ++ii)
+            MAC_Grid::GhostCell::ghostCellTimers.at(ii).reset(); 
+    }
 #endif
 
     if ( _endTime > 0.0 && _currentTime >= _endTime )
