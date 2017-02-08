@@ -90,7 +90,8 @@ LeastSquareSolve(const Eigen::VectorXd &q)
     if (!lsq_solution_valid)
         _c.setZero();
     _Delta_q   = (q-_Q_tilde.A*_c); 
-    _error_lsq = _Delta_q.array().square(); 
+    _error_lsq = (_wi.array()*_Delta_q.array()).array().square(); 
+    _weighted_two_norm_sqr_q = (_wi.array()*q.array()).matrix().squaredNorm(); 
     std::cout << "success = " << lsq_solution_valid << "\n"; 
     std::cout << "c       = " << _c         << "\n"; 
     std::cout << "error   = " << _error_lsq << "\n"; 
@@ -104,8 +105,9 @@ MinimizeSparseUpdate()
 {
     PRINT_FUNC_HEADER;
     _delta_q.resize(N_Modes());  // clear all entries
+
     double E = _error_lsq.sum(); 
-    const REAL error_sqr_target_relative = _error_sqr_target*E; 
+    const REAL error_sqr_target_relative = _error_sqr_target*_weighted_two_norm_sqr_q; 
     int ii; 
     int count_sparsity=0;
     std::cout << "===== l1 Minimization START =====\n"; 

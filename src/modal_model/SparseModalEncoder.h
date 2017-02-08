@@ -44,9 +44,10 @@ class SparseModalEncoder
         Eigen::VectorXd _a_buf; 
         SparseVectord   _delta_q;  // sparse update
         Eigen::VectorXd _Delta_q;  // lsq error q-Qc
-        Eigen::VectorXd _error_lsq; // cached helper
+        Eigen::VectorXd _error_lsq; // W(q-Qc) squared
         Eigen::VectorXd _wi; // modal weighting
         REAL            _error_sqr_target;  // depends on modal matrix
+        REAL            _weighted_two_norm_sqr_q; 
         const Eigen::MatrixXd &_U; // modal matrix
         const Eigen::VectorXd &_evalues; 
 
@@ -63,7 +64,7 @@ class SparseModalEncoder
             _Delta_q.resize(N_Modes()); 
             _a_buf.resize(N_DOFs()); 
             _error_lsq.resize(N_Modes()); 
-            _wi.resize(N_Modes()); 
+            _wi.setOnes(N_Modes()); 
             SetError(SparseModalEncoder::epsilon); 
             ComputeWeights(); 
         }
