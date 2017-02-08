@@ -65,6 +65,18 @@ SetError(const double &epsilon)
 //##############################################################################
 //##############################################################################
 void SparseModalEncoder::
+ComputeWeights()
+{
+    const auto *interp = FreqWeighting::ISO226_Interpolator::Instance(); 
+    const int N_modes = N_Modes(); 
+    for (int ii=0; ii<N_modes; ++ii)
+        _wi[ii] = interp->Weight(_evalues[ii]); 
+    interp->Test(); 
+}
+
+//##############################################################################
+//##############################################################################
+void SparseModalEncoder::
 LeastSquareSolve(const Eigen::VectorXd &q)
 {
     PRINT_FUNC_HEADER;

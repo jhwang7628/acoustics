@@ -1,6 +1,7 @@
 #ifndef SPRASE_MODAL_ENCODER_H 
 #define SPRASE_MODAL_ENCODER_H 
 #include "config.h"
+#include "utils/FreqWeighting.hpp"
 #include <iostream>
 #include <memory>
 #include <Eigen/Dense> 
@@ -44,12 +45,14 @@ class SparseModalEncoder
         SparseVectord   _delta_q;  // sparse update
         Eigen::VectorXd _Delta_q;  // lsq error q-Qc
         Eigen::VectorXd _error_lsq; // cached helper
+        Eigen::VectorXd _wi; // modal weighting
         REAL            _error_sqr_target;  // depends on modal matrix
         const Eigen::MatrixXd &_U; // modal matrix
+        const Eigen::VectorXd &_evalues; 
 
     public: 
-        SparseModalEncoder(const Eigen::MatrixXd &U)
-            : _U(U)
+        SparseModalEncoder(const Eigen::MatrixXd &U, const Eigen::VectorXd &evalues)
+            : _U(U), _evalues(evalues)
         {
             std::cout << "_U.size() = " << _U.rows() << " " << _U.cols() << std::endl;
             std::cout << SparseModalEncoder::rank << std::endl;
@@ -60,12 +63,15 @@ class SparseModalEncoder
             _Delta_q.resize(N_Modes()); 
             _a_buf.resize(N_DOFs()); 
             _error_lsq.resize(N_Modes()); 
+            _wi.resize(N_Modes()); 
             SetError(SparseModalEncoder::epsilon); 
+            ComputeWeights(); 
         }
 
         inline int N_Modes()const{return _U.cols();}
         inline int N_DOFs() const{return _U.rows();}
         void SetError(const double &epsilon); 
+        void ComputeWeights(); 
         void LeastSquareSolve(const Eigen::VectorXd &q); 
         int  MinimizeSparseUpdate(); 
         void Encode(const Eigen::VectorXd &q); 
