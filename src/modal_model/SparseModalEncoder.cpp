@@ -107,9 +107,11 @@ MinimizeSparseUpdate()
 {
     PRINT_FUNC_HEADER;
     _delta_q.resize(N_Modes());  // clear all entries
-
     double E = _error_lsq.sum(); 
-    const REAL error_sqr_target_relative = _error_sqr_target*_weighted_two_norm_sqr_q; 
+    // using ||Wq|| to normalize
+    //const REAL error_sqr_target_relative = _error_sqr_target*_weighted_two_norm_sqr_q;
+    // using ||W \Delta q|| to normalize
+    const REAL error_sqr_target_relative = _error_sqr_target*E; 
     int ii; 
     int count_sparsity=0;
     std::cout << "===== l1 Minimization START =====\n"; 
