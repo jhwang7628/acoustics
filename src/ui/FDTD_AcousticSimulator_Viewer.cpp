@@ -103,7 +103,8 @@ draw()
     DrawImpulses();
     DrawSelection(); 
     DrawDebugCin();
-    DrawSlices(_sliceDataPointer); 
+    if (_sliceWireframe.count() != 0)
+        DrawSlices(_sliceDataPointer); 
     if (_drawGround)
         DrawGround();
     if (_drawHashedCells)
@@ -483,7 +484,7 @@ DrawSlices(const int &dataPointer)
         auto &slice = _sliceCin.at(s_idx); 
         ComputeAndCacheSliceData(dataPointer, slice); // do-nothing if cached
         const Eigen::MatrixXd &data = slice.data; 
-        if (_sliceWireframe == 0 || _sliceWireframe == 1)
+        if (_sliceWireframe[0])
         {
             glLineWidth(1.0f);
             glColor3f(0.4f, 0.4f, 0.4f); 
@@ -499,7 +500,7 @@ DrawSlices(const int &dataPointer)
             }
         }
 
-        if (_sliceWireframe == 0 || _sliceWireframe == 2)
+        if (_sliceWireframe[1])
         {
             glBegin(GL_QUADS);
             const int divisions = slice.N_sample_per_dim; 
@@ -629,7 +630,10 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
-        _sliceWireframe = (_sliceWireframe+1)%4; 
+        if (_sliceWireframe.count() == _sliceWireframe.size())
+            _sliceWireframe.reset(); 
+        else
+            _sliceWireframe = std::bitset<2>(_sliceWireframe.to_ulong()+1);
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
@@ -1139,11 +1143,18 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
 void FDTD_AcousticSimulator_Viewer::
 DrawOneFrameForward()
 {
+    if (!_simulator->ShouldContinue())
+    {
+        if (animationIsStarted())
+            stopAnimation(); 
+        return; 
+    }
+
     if (_previewSpeed == 0)
     {
         _currentFrame++;
         //_simulator->TestAnimateObjects(150); 
-        _simulator->RunForSteps(1); 
+        const bool continueStepping = _simulator->RunForSteps(1); 
         if (_listenedCell.index >= 0)
         {
             _simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
@@ -1205,8 +1216,8 @@ void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
-    _sliceWireframe = 2;
     _sliceWireframe.reset(); 
+    _sliceWireframe.set(1); // draw face only
     _drawBoxLis = true; 
     _drawGround = false; 
     _drawHashedCells = false;
@@ -1225,7 +1236,7 @@ PrintDrawOptions()
               << " Draw ground              : " << _drawGround << "\n"
               << " Draw wireframe only      : " << _wireframe << "\n"
               << " Draw hashed cells        : " << _drawHashedCells << "\n"
-              << " Draw slice wireframe only: " << _sliceWireframe << "\n"
+              << " Draw slice wireframe only: " << _sliceWireframe.to_ulong() << "\n"
               << " Draw slice data pointer  : " << _sliceDataPointer << "\n"
               << "\n"; 
     std::cout << std::flush;

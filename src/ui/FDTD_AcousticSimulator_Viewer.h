@@ -41,7 +41,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         QString                 _messageSelection;
         QString                 _messageColormap; 
         int                     _wireframe;
-        int                     _sliceWireframe;
+        std::bitset<2>          _sliceWireframe;
         bool                    _drawBoxLis; 
         bool                    _drawGround;
         bool                    _drawHashedCells;
