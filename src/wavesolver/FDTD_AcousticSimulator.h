@@ -64,6 +64,7 @@ class FDTD_AcousticSimulator
         {} 
 
         inline bool SceneHasModalObject() const {return _sceneObjects->HasModalObject();}
+        inline bool ShouldContinue() const {return _simulationTime < _acousticSolverSettings->timeEnd;}
         inline const std::shared_ptr<PML_WaveSolver> &GetSolver() const {return _acousticSolver;}
         inline const std::shared_ptr<PML_WaveSolver_Settings> &GetSolverSettings() const {return _acousticSolverSettings;}
         inline const std::shared_ptr<FDTD_Objects> &GetSceneObjects() const {return _sceneObjects;} 

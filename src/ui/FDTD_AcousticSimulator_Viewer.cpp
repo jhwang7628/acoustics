@@ -1206,6 +1206,7 @@ RestoreDefaultDrawOptions()
 {
     _wireframe = 2;
     _sliceWireframe = 2;
+    _sliceWireframe.reset(); 
     _drawBoxLis = true; 
     _drawGround = false; 
     _drawHashedCells = false;
