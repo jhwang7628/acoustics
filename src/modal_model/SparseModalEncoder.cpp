@@ -75,6 +75,7 @@ ComputeWeights()
 }
 
 //##############################################################################
+// Function LeastSquareSolve
 //##############################################################################
 void SparseModalEncoder::
 LeastSquareSolve(const Eigen::VectorXd &q)
@@ -99,6 +100,7 @@ LeastSquareSolve(const Eigen::VectorXd &q)
 }
 
 //##############################################################################
+// Function MinimizeSparseUpdate
 //##############################################################################
 int SparseModalEncoder:: 
 MinimizeSparseUpdate()
@@ -113,7 +115,6 @@ MinimizeSparseUpdate()
     std::cout << "===== l1 Minimization START =====\n"; 
     std::cout << " current error  = " << E                         << std::endl; 
     std::cout << " target  error  = " << error_sqr_target_relative << std::endl; 
-    //while (E >= _error_sqr_target && count_sparsity<N_Modes())
     while (E >= error_sqr_target_relative && count_sparsity<N_Modes())
     {
         _error_lsq.maxCoeff(&ii); 
