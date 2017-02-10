@@ -1,3 +1,4 @@
+#include <wavesolver/MAC_Grid.h>
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <io/TglMeshReader.hpp>
@@ -355,9 +356,12 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
     int closestTriangleIndex; 
     Vector3d projectedPoint; // object space
+    MAC_Grid::GhostCell::ghostCellTimers[12].start(); 
     distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+    MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 
+    MAC_Grid::GhostCell::ghostCellTimers[13].start(); 
     if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
         std::cerr << "**WARNING** distance smaller than tolerance\n";
@@ -407,6 +411,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 
     const REAL newDistance = DistanceToMesh(reflectedPoint);
     const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
+    MAC_Grid::GhostCell::ghostCellTimers[13].pause(); 
     return reflectSuccess;
 }
 

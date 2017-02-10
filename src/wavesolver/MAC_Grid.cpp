@@ -29,7 +29,7 @@
 // Static variable initialize
 //##############################################################################
 int MAC_Grid::GhostCell::valuePointer = 0;
-std::vector<Timer<false> > MAC_Grid::GhostCell::ghostCellTimers(15);
+std::vector<Timer<false> > MAC_Grid::GhostCell::ghostCellTimers(20);
 
 //##############################################################################
 //##############################################################################

@@ -19,7 +19,7 @@
 #define  UTILS_TIMER_INC
 
 #include "nano_timer.h"
-
+#include <vector>
 #include <string>
 
 template <bool NanoAccu>
@@ -54,7 +54,6 @@ class Timer
         {   return elapsed_; }
 
         double getMsPerCycle() const;
-
     private:
         double       tStart_;
         double       elapsed_;

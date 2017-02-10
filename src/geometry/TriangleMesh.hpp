@@ -775,7 +775,6 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
 #endif
     FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
     assert(triangleIndices.size() > 0);
-
     REAL minDistance = std::numeric_limits<REAL>::max(); 
     Vector3d closestPointBuffer, projectedPointBuffer;
     for (const int t_idx : triangleIndices)
@@ -879,7 +878,6 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
             projectedPoint = projectedPointBuffer; 
         }
     }
-
     return sqrt(minDistance); 
 }
 
