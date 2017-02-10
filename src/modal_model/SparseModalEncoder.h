@@ -49,11 +49,11 @@ class SparseModalEncoder
         REAL            _error_sqr_target;  // depends on modal matrix
         REAL            _weighted_two_norm_sqr_q; 
         const Eigen::MatrixXd &_U; // modal matrix
-        const Eigen::VectorXd &_evalues; 
+        const Eigen::VectorXd _eigenFreqs; 
 
     public: 
-        SparseModalEncoder(const Eigen::MatrixXd &U, const Eigen::VectorXd &evalues)
-            : _U(U), _evalues(evalues)
+        SparseModalEncoder(const Eigen::MatrixXd &U, const Eigen::VectorXd &eigenFreqs)
+            : _U(U), _eigenFreqs(eigenFreqs)
         {
             std::cout << "_U.size() = " << _U.rows() << " " << _U.cols() << std::endl;
             std::cout << SparseModalEncoder::rank << std::endl;

@@ -70,7 +70,8 @@ ComputeWeights()
     const auto *interp = FreqWeighting::ISO226_Interpolator::Instance(); 
     const int N_modes = N_Modes(); 
     for (int ii=0; ii<N_modes; ++ii)
-        _wi[ii] = interp->Weight(_evalues[ii]); 
+        _wi[ii] = interp->Weight(_eigenFreqs[ii]); 
+    std::cout << "Wi = " << _wi << std::endl;
     interp->Test(); 
 }
 
