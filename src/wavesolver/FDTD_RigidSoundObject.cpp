@@ -377,27 +377,41 @@ SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, c
 REAL FDTD_RigidSoundObject::
 SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
 {
-    int closestIndex = -1;
-    REAL closestDistance = std::numeric_limits<REAL>::max(); 
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
     const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
 
     // nearest neighbour lookup
     MAC_Grid::GhostCell::ghostCellTimers[4].start(); 
-    const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
-    const int N_vertices = vertices.size(); 
-    for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+    // brute force
+    //int closestIndex = -1;
+    //REAL closestDistance = std::numeric_limits<REAL>::max(); 
+    //const std::vector<Point3<REAL> > &vertices = _mesh->vertices(); 
+    //const int N_vertices = vertices.size(); 
+    //for (int vert_idx=0; vert_idx<N_vertices; ++vert_idx)
+    //{
+    //    const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
+    //    if (distance < closestDistance)
+    //    {
+    //        closestIndex = vert_idx; 
+    //        closestDistance = distance; 
+    //    }
+    //}
+    //return SampleModalAcceleration(closestIndex, sampleNormal, sampleTime);
+      
+    // use spatial partitioning
+    int closestTriangle; 
+    _mesh->FindNearestTriangle(samplePointObject, closestTriangle); 
+    const Tuple3ui &vertexIndices = _mesh->triangle_ids(closestTriangle); 
+    REAL totalModalAcc = 0.0; 
+    for (int ii=0; ii<3; ++ii)
     {
-        const REAL distance = (vertices.at(vert_idx) - samplePointObject).normSqr();
-        if (distance < closestDistance)
-        {
-            closestIndex = vert_idx; 
-            closestDistance = distance; 
-        }
+        const int v_id = vertexIndices[ii]; 
+        totalModalAcc += SampleModalAcceleration(v_id, _mesh->normal(v_id), sampleTime); 
     }
+    totalModalAcc *= (1./3.); 
     MAC_Grid::GhostCell::ghostCellTimers[4].pause(); 
-    return SampleModalAcceleration(closestIndex, sampleNormal, sampleTime);
+    return totalModalAcc; 
 }
 
 //##############################################################################
