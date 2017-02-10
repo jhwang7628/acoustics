@@ -401,6 +401,9 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
       
     // use spatial partitioning
     int closestTriangle; 
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
     _mesh->FindNearestTriangle(samplePointObject, closestTriangle); 
     const Tuple3ui &vertexIndices = _mesh->triangle_ids(closestTriangle); 
     REAL totalModalAcc = 0.0; 
