@@ -268,7 +268,7 @@ Test() const
     {
         file = "test_weights.txt"; 
         stream.open(file.c_str(), std::ios_base::out|std::ios_base::trunc); 
-        PrintAllWeights(0., 44100., 2000., stream); 
+        PrintAllWeights(0., 44100., 20., stream); 
         stream.close(); 
     }
 }
