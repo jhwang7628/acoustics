@@ -6,6 +6,7 @@
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 #include <wavesolver/WaterVibrationalSource.h>
 #include <geometry/TriangleMeshKDTree.hpp>
+#include <geometry/TriangleMeshGraph.hpp>
 #include <parser/ImpulseResponseParser.h> 
 #include <linearalgebra/Vector3.hpp>
 #include <geometry/BoundingBox.h> 
@@ -140,6 +141,23 @@ void Test_TriangleMeshKDTree()
     of.close(); 
 }
 
+//##############################################################################
+void Test_TriangleMeshGraph()
+{
+    std::cout << __FILE__ << ": " << __LINE__ << std::endl;
+    const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate/plate.tet.obj"); 
+    std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
+    MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
+    mesh->generate_normals(); 
+    std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
+
+    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
+    std::vector<int> neighbours; 
+    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, neighbours); 
+    std::copy(neighbours.begin(), neighbours.end(), std::ostream_iterator<int>(std::cout, " ")); 
+}
+
+//##############################################################################
 void TestWaterVibrationalSource()
 {
     const std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml"); 
@@ -199,15 +217,16 @@ int main(int argc, char ** argv)
     //Test_TriangleMeshKDTree();
     //TestWaterVibrationalSource();
     //TestWavRead(); 
+    Test_TriangleMeshGraph();
         
-    std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
-    if (argc>1) 
-        xmlName = std::string(argv[1]);
+    //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    //if (argc>1) 
+    //    xmlName = std::string(argv[1]);
 
-    {
-        boost::timer::auto_cpu_timer timer;
-        TestAcousticSimulatorRun(xmlName); 
-    }
+    //{
+    //    boost::timer::auto_cpu_timer timer;
+    //    TestAcousticSimulatorRun(xmlName); 
+    //}
 
     return 0;
 }

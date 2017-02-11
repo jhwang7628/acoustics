@@ -14,6 +14,8 @@ set(CGAL_GEOMETRY_SRC
 set(MESH_UTILS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/TetMeshIndexToSurfaceMesh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/TetMeshIndexToSurfaceMesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/TriangleMeshGraph.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/TriangleMeshGraph.cpp
     CACHE FILE "Mesh Utils sources")
 
 if (USE_VLFEAT)
