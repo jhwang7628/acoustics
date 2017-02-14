@@ -169,6 +169,18 @@ class TriangleMesh
             return &(m_normals[vid]);
         }
 
+        Point3<T> triangle_centroid(const int &tid) const
+        {
+            assert(tid < m_triangles.size());
+            Point3<T> centroid((T)0,(T)0,(T)0);
+            for (int ii=0; ii<3; ++ii)
+            {
+                centroid += vertex(m_triangles.at(tid)[ii]); 
+            }
+            centroid /= 3.0; 
+            return centroid; 
+        }
+
 #endif /* DIFF_DEFINE */
 
         T vertex_mean_curvature(const int &vid) const
@@ -238,13 +250,14 @@ class TriangleMesh
 
         // abstract nearest triangles lookup that should be specific to data
         // structures of choice. 
-        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices)
+        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
-        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex)
+        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex) const
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 
         // need FindKNearestTriangles()
-        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint); 
+        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours=10) const; 
+        REAL ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<int> &triangleIndices, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint) const; 
 
     protected:
         double                      m_totArea;
@@ -762,18 +775,8 @@ ComputeCentroid() const
  */
 template <typename T> 
 REAL TriangleMesh<T>::
-ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint)
+ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<int> &triangleIndices, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint) const
 {
-    const int N_neighbours = 10; 
-    std::vector<int> triangleIndices; 
-
-    // the reason why we need critical directive is because the search in
-    // vlfeat is only conditionally thread safe:
-    //  http://www.vlfeat.org/api/threads.html
-#ifdef USE_OPENMP
-#pragma omp critical
-#endif
-    FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
     assert(triangleIndices.size() > 0);
     REAL minDistance = std::numeric_limits<REAL>::max(); 
     Vector3d closestPointBuffer, projectedPointBuffer;
@@ -879,6 +882,24 @@ ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, in
         }
     }
     return sqrt(minDistance); 
+}
+
+/* 
+ * Wrapper function using KD-tree search
+ */
+template <typename T> 
+REAL TriangleMesh<T>::
+ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours) const
+{
+    std::vector<int> triangleIndices; 
+    // the reason why we need critical directive is because the search in
+    // vlfeat is only conditionally thread safe:
+    //  http://www.vlfeat.org/api/threads.html
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+    FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
+    return ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint); 
 }
 
 #ifdef USE_NAMESPACE

@@ -41,9 +41,9 @@ class TriangleMeshKDTree : public TriangleMesh<T>
             //vl_kdforest_delete(_nnForest.get());
         }
 
-        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices); 
-        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex); 
-        inline Vector3d TriangleCentroid(const int &t_idx){return Vector3d(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
+        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const; 
+        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex) const; 
+        inline Vector3d TriangleCentroid(const int &t_idx) const {return Vector3d(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
         void BuildKDTree();
 
         ///// debugging methods /////
@@ -90,7 +90,7 @@ BuildKDTree()
 //##############################################################################
 template <typename T> 
 REAL TriangleMeshKDTree<T>::
-FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices)
+FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const
 {
 #if defined(USE_BOOST) && defined(DEBUG_KDTREE)
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
@@ -114,7 +114,7 @@ FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &tri
 //##############################################################################
 template <typename T> 
 REAL TriangleMeshKDTree<T>::
-FindNearestTriangle(const Vector3d &point, int &triangleIndex)
+FindNearestTriangle(const Vector3d &point, int &triangleIndex) const
 {
 #if defined(USE_BOOST) && defined(DEBUG_KDTREE)
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
