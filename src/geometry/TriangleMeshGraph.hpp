@@ -1,7 +1,7 @@
 #ifndef TRIANGLE_MESH_GRAPH_HPP
 #define TRIANGLE_MESH_GRAPH_HPP 
 #include <vector>
-#include "geometry/TriangleMesh.hpp"
+#include "geometry/TriangleMeshKDTree.hpp"
 
 //##############################################################################
 // Class TriangleMeshGraph
@@ -10,7 +10,7 @@
 //   Reference: http://www.geeksforgeeks.org/graph-and-its-representations
 //##############################################################################
 template <typename T> 
-class TriangleMeshGraph : public TriangleMesh<T> 
+class TriangleMeshGraph : public TriangleMeshKDTree<T> 
 {
     protected: 
         struct AdjListNode
@@ -45,7 +45,7 @@ class TriangleMeshGraph : public TriangleMesh<T>
 
     public: 
         void BuildGraph(); 
-        void NeighboursOfTriangle(const int &t_id, std::vector<int> &neighbours) const;
+        void NeighboursOfTriangle(const int &t_id, const size_t &maxStride, std::set<int> &neighbours) const;
 };
 
 #endif

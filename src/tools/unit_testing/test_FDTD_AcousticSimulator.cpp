@@ -145,16 +145,16 @@ void Test_TriangleMeshKDTree()
 void Test_TriangleMeshGraph()
 {
     std::cout << __FILE__ << ": " << __LINE__ << std::endl;
-    const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate/plate.tet.obj"); 
+    const std::string meshFile("/home/jui-hsien/data/models/tests/box.obj"); 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
     MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
     mesh->generate_normals(); 
     std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
-
-    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
-    std::vector<int> neighbours; 
-    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, neighbours); 
+std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
+    std::set<int> neighbours; 
+    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, 2, neighbours); 
     std::copy(neighbours.begin(), neighbours.end(), std::ostream_iterator<int>(std::cout, " ")); 
+    std::cout << std::endl; 
 }
 
 //##############################################################################

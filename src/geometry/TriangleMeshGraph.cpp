@@ -34,9 +34,15 @@ template <typename T>
 void TriangleMeshGraph<T>::Graph::
 AddEdge(const int &src, const int &dest)
 {
+    // forward edge
     AdjListNode *newNode = new AdjListNode(dest); 
     newNode->next = array.at(src).head; 
     array.at(src).head = newNode; 
+
+    // backward edge
+    newNode = new AdjListNode(src); 
+    newNode->next = array.at(dest).head; 
+    array.at(dest).head = newNode; 
 }
 
 //##############################################################################
@@ -76,16 +82,20 @@ BuildGraph()
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-NeighboursOfTriangle(const int &t_id, std::vector<int> &neighbours) const
+NeighboursOfTriangle(const int &t_id, const size_t &maxStride, std::set<int> &neighbours) const
 {
     assert(_graph_built); 
-    neighbours.clear(); 
+    if (maxStride==0) 
+        return; 
     AdjListNode *node = _graph.array.at(t_id).head; 
     while (node != nullptr)
     {
-        neighbours.push_back(node->dest); 
+        neighbours.insert(node->dest); 
         node = node->next; 
     }
+    // recursively call all neighbours
+    for (const int &n : neighbours) 
+        NeighboursOfTriangle(n, maxStride-1, neighbours); 
 }
 
 //##############################################################################
