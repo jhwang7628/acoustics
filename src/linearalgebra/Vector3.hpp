@@ -159,11 +159,6 @@ class Vector3 : public Tuple3<T>
             return x * rhs.x + y * rhs.y + z * rhs.z;
         }
 
-        T dotProduct(const Tuple3<T>& rhs) const 
-        {
-            return x * rhs.x + y * rhs.y + z * rhs.z;
-        }
-       
         /*! Cross product opertor */    
         Vector3<T> crossProduct(const Vector3<T>& rhs) const // $$TESTED
         {
