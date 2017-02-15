@@ -13,6 +13,7 @@
 #include <boost/timer/timer.hpp>
 #include <io/TglMeshReader.hpp>
 #include <sndgen/WavReader.hpp>
+#include <utils/timer.hpp>
 
 //##############################################################################
 // Submodules 
@@ -145,16 +146,72 @@ void Test_TriangleMeshKDTree()
 void Test_TriangleMeshGraph()
 {
     std::cout << __FILE__ << ": " << __LINE__ << std::endl;
-    const std::string meshFile("/home/jui-hsien/data/models/tests/box.obj"); 
+    const std::string meshFile("/home/jui-hsien/data/models/tests/ball_high_vtx_count.obj"); 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
     MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
     mesh->generate_normals(); 
     std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
-std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
+    std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->BuildKDTree();
+    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
     std::set<int> neighbours; 
-    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, 2, neighbours); 
+    const int level = 1; 
+    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, level, neighbours); 
+    std::cout << "has " << neighbours.size() << " neighbours within " << level << " levels \n"; 
     std::copy(neighbours.begin(), neighbours.end(), std::ostream_iterator<int>(std::cout, " ")); 
     std::cout << std::endl; 
+
+    const Vector3d line = Vector3d((double)rand() / (double)(RAND_MAX),
+                                   (double)rand() / (double)(RAND_MAX), 
+                                   (double)rand() / (double)(RAND_MAX)).normalized(); 
+    const Vector3d start(1.0 + (double)rand()/(double)(RAND_MAX), 0., 0.); 
+    const double dx = 0.005; 
+    Vector3d current = start; 
+    Vector3d closestPt[2], projectedPt[2]; 
+    int closestTri[2]; 
+    int startTri = 0;
+    const double errorTol = 1.;
+    int pass=0, fail=0; 
+    Timer<false> timers[2];
+    while ((current-start).length()<2.0)
+    {
+        std::cout << "====== TEST ======\n"; 
+        std::cout << " current     = " << current << "\n"; 
+        {
+            boost::timer::auto_cpu_timer t; 
+            timers[0].start(); 
+            mesh->ComputeClosestPointOnMesh(current, closestPt[0], closestTri[0], projectedPt[0]); 
+            timers[0].pause();
+            std::cout << "*** KD-tree ***\n"; 
+            std::cout << " closestPt   = " << closestPt[0] << "\n"; 
+            std::cout << " closestTri  = " << closestTri[0] << "\n"; 
+            std::cout << " projectedPt = " << projectedPt[0] << "\n"; 
+        }
+        {
+            boost::timer::auto_cpu_timer t; 
+            timers[1].start(); 
+            std::dynamic_pointer_cast<TriangleMeshGraph<REAL>>(mesh)->ComputeClosestPointOnMesh(startTri, current, closestPt[1], closestTri[1], projectedPt[1], errorTol); 
+            timers[1].pause(); 
+            std::cout << "*** Graph ***\n"; 
+            std::cout << " closestPt   = " << closestPt[1] << "\n"; 
+            std::cout << " closestTri  = " << closestTri[1] << "\n"; 
+            std::cout << " projectedPt = " << projectedPt[1] << "\n"; 
+            if ((closestPt[0]-closestPt[1]).length() < errorTol)
+            {
+                std::cout << "[PASS]\n";
+                ++pass; 
+            }
+            else
+            {
+                std::cout << "[FAIL]\n";
+                ++fail;
+            }
+            startTri = closestTri[1]; 
+            current += line*dx; 
+        }
+    }
+    std::cout << "-----LINE TEST-----\n";
+    std::cout << "PASS:FAIL = " << pass << ":" << fail << std::endl; 
+    std::cout << "KDTr:GRAP = " << timers[0].getMsPerCycle() << ":" << timers[1].getMsPerCycle() << std::endl;
 }
 
 //##############################################################################

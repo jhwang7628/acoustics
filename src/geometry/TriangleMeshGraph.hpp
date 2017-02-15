@@ -43,12 +43,13 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         bool  _graph_built = false;
 
     public: 
-        REAL ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours) const; 
+        REAL ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol, const int &N_neighbours=10) const; 
         void BuildGraph(); 
         void NeighboursOfTriangle(const int &t_id, const size_t &maxStride, std::set<int> &neighbours) const;
 };
 
 //##############################################################################
+// Class TriangleDistanceComp
 //##############################################################################
 template <typename T>
 class TriangleDistanceComp
