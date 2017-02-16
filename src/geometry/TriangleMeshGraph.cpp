@@ -78,19 +78,20 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPo
     distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
     }
 
-//    // fall back to KNN
-//    const Vector3d triNormal = this->triangle_normal(closestTriangle); 
-//    if ((closestPoint-queryPoint).length() > errorTol)
-//    {
-//        std::cout << ">>>> fall back\n";
-//        triangleIndices.clear(); 
-//#ifdef USE_OPENMP
-//#pragma omp critical
-//#endif
-//        this->FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
-//        distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
-//    }
-
+    // fall back to KNN
+    const Vector3d triNormal = this->triangle_normal(closestTriangle).normalized(); 
+    const Vector3d computedNormal = (closestPoint-queryPoint).normalized(); 
+    const REAL error = abs(triNormal.dotProduct(computedNormal)); 
+    if (error < errorTol)
+    {
+        std::cout << ">>>> fall back\n";
+        triangleIndices.clear(); 
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+        this->FindKNearestTriangles(N_neighbours, queryPoint, triangleIndices); 
+        distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
+    }
     return distance; 
 }
 

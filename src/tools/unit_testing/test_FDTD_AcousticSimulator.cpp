@@ -146,6 +146,7 @@ void Test_TriangleMeshKDTree()
 void Test_TriangleMeshGraph()
 {
     std::cout << __FILE__ << ": " << __LINE__ << std::endl;
+    srand(time(NULL));
     const std::string meshFile("/home/jui-hsien/data/models/tests/ball_high_vtx_count.obj"); 
     std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
     MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
@@ -169,7 +170,7 @@ void Test_TriangleMeshGraph()
     Vector3d closestPt[2], projectedPt[2]; 
     int closestTri[2]; 
     int startTri = 0;
-    const double errorTol = 1.;
+    const double errorTol = 0.9;
     int pass=0, fail=0; 
     Timer<false> timers[2];
     while ((current-start).length()<2.0)
