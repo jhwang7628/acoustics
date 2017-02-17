@@ -74,5 +74,4 @@ class TriangleDistanceComp
         }
 };
 
-
 #endif
