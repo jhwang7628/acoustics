@@ -51,24 +51,12 @@ AddEdge(const int &src, const int &dest)
 //##############################################################################
 template <typename T> 
 REAL TriangleMeshGraph<T>::
-ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol, const int &N_neighbours) const
+ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol, const int &N_neighbours, const int &maxLevel) const
 {
-    const int maxLevel = 1; 
-    int level = 1;
     std::set<int> neighbours; 
-    std::vector<int> triangleIndices;
     REAL distance; 
-    {
-        boost::timer::auto_cpu_timer t("search for neighbours takes %w secs\n"); 
-    while (neighbours.size() < N_neighbours && level<=maxLevel) 
-    {
-        NeighboursOfTriangle(startTriangleIndex, level, neighbours); 
-        ++level; 
-    }
-    }
-    {
-        boost::timer::auto_cpu_timer t("sort/trim vector and helper takes %w secs\n"); 
-    triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
+    NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
+    std::vector<int>triangleIndices(neighbours.begin(), neighbours.end()); 
     TriangleDistanceComp<T> sorter(this, queryPoint); 
     std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
     const int len = std::min((int)triangleIndices.size(), N_neighbours); 
@@ -76,7 +64,6 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPo
         throw std::runtime_error("**ERROR** no neighbours found"); 
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+len); 
     distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
-    }
 
     // fall back to KNN
     const Vector3d triNormal = this->triangle_normal(closestTriangle).normalized(); 
@@ -84,7 +71,6 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPo
     const REAL error = abs(triNormal.dotProduct(computedNormal)); 
     if (error < errorTol)
     {
-        std::cout << ">>>> fall back\n";
         triangleIndices.clear(); 
 #ifdef USE_OPENMP
 #pragma omp critical
@@ -102,6 +88,9 @@ template <typename T>
 void TriangleMeshGraph<T>::
 BuildGraph()
 {
+#ifdef USE_BOOST
+    boost::timer::auto_cpu_timer timer("Boost timer: Building Graph for mesh takes %w seconds\n" );
+#endif
     typedef std::set<int>::const_iterator SetIterator;
     assert(m_vertices.size()>0 && m_triangles.size()>0); 
     _graph.Initialize(m_triangles.size()); 
@@ -128,14 +117,14 @@ BuildGraph()
 }
 
 //##############################################################################
-// Function NeighboursOfTriangle
+// Function NeighboursOfTriangleRec
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-NeighboursOfTriangle(const int &t_id, const size_t &maxStride, std::set<int> &neighbours) const
+NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const
 {
-    assert(_graph_built); 
-    if (maxStride==0) 
+    // base case if run out of reach, or memoized
+    if (maxReach==0 || (memo.find(t_id)!=memo.end())) 
         return; 
     AdjListNode *node = _graph.array.at(t_id).head; 
     while (node != nullptr)
@@ -143,9 +132,25 @@ NeighboursOfTriangle(const int &t_id, const size_t &maxStride, std::set<int> &ne
         neighbours.insert(node->dest); 
         node = node->next; 
     }
+    memo.insert(t_id);  // FIXME debug
     // recursively call all neighbours
+    std::set<int> newNeighbours; 
     for (const int &n : neighbours) 
-        NeighboursOfTriangle(n, maxStride-1, neighbours); 
+        NeighboursOfTriangleRec(n, maxReach-1, newNeighbours, memo); 
+    neighbours.insert(newNeighbours.begin(), newNeighbours.end());
+}
+
+//##############################################################################
+// Function NeighboursOfTriangle
+//##############################################################################
+template <typename T> 
+void TriangleMeshGraph<T>::
+NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const
+{
+    assert(_graph_built); 
+    neighbours.clear(); 
+    std::set<int> memo; 
+    NeighboursOfTriangleRec(t_id, maxReach, neighbours, memo); 
 }
 
 //##############################################################################

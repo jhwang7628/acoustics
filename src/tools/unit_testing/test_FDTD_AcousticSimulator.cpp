@@ -155,8 +155,12 @@ void Test_TriangleMeshGraph()
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh)->BuildKDTree();
     std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->BuildGraph();
     std::set<int> neighbours; 
-    const int level = 1; 
-    std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, level, neighbours); 
+    const int level = 3; 
+    {
+
+        boost::timer::auto_cpu_timer t; 
+        std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(mesh)->NeighboursOfTriangle(0, level, neighbours); 
+    }
     std::cout << "has " << neighbours.size() << " neighbours within " << level << " levels \n"; 
     std::copy(neighbours.begin(), neighbours.end(), std::ostream_iterator<int>(std::cout, " ")); 
     std::cout << std::endl; 
@@ -171,6 +175,7 @@ void Test_TriangleMeshGraph()
     int closestTri[2]; 
     int startTri = 0;
     const double errorTol = 0.9;
+    const int maxLevel = 1;
     int pass=0, fail=0; 
     Timer<false> timers[2];
     while ((current-start).length()<2.0)
@@ -190,7 +195,7 @@ void Test_TriangleMeshGraph()
         {
             boost::timer::auto_cpu_timer t; 
             timers[1].start(); 
-            std::dynamic_pointer_cast<TriangleMeshGraph<REAL>>(mesh)->ComputeClosestPointOnMesh(startTri, current, closestPt[1], closestTri[1], projectedPt[1], errorTol); 
+            std::dynamic_pointer_cast<TriangleMeshGraph<REAL>>(mesh)->ComputeClosestPointOnMesh(startTri, current, closestPt[1], closestTri[1], projectedPt[1], errorTol, maxLevel); 
             timers[1].pause(); 
             std::cout << "*** Graph ***\n"; 
             std::cout << " closestPt   = " << closestPt[1] << "\n"; 
