@@ -14,6 +14,7 @@
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_MovableObject.h> 
 #include <geometry/TriangleMeshKDTree.hpp>
+#include <geometry/TriangleMeshGraph.hpp>
 #include <geometry/TetMeshIndexToSurfaceMesh.h> 
 #include <Eigen/Geometry> 
 #include <Eigen/Dense> 
@@ -46,6 +47,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
+        std::shared_ptr<TriangleMeshGraph<REAL>> _meshGraph; 
         Vector3d                            _meshObjectCentroid;  // in object space
         std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 
@@ -121,7 +123,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         REAL EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
-        bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
+        bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 

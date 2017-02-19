@@ -30,7 +30,7 @@ Initialize(const bool &buildFromTetMesh)
         std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
         if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
         {
-            _mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+            _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
             //_mesh.reset(new TriangleMesh<REAL>()); 
             tetMesh->extract_surface(_mesh.get()); 
             _mesh->generate_normals(); 
@@ -83,7 +83,7 @@ Initialize(const bool &buildFromTetMesh)
         if (!IO::ExistFile(meshFile))
             throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
         
-        _mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+        _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
         //_mesh.reset(new TriangleMesh<REAL>());
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
         {
@@ -136,6 +136,8 @@ Initialize(const bool &buildFromTetMesh)
 
     // build kd-tree for query
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(_mesh)->BuildKDTree(); 
+    _meshGraph = std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(_mesh); 
+    _meshGraph->BuildGraph(); 
     UpdateBoundingBox();
 }
 
@@ -330,7 +332,7 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 //          |
 //##############################################################################
 bool FDTD_RigidObject::
-ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled)
+ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle)
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
@@ -357,7 +359,10 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     int closestTriangleIndex; 
     Vector3d projectedPoint; // object space
     MAC_Grid::GhostCell::ghostCellTimers[12].start(); 
-    distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+    if (startFromTriangle<0) 
+        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+    else 
+        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
     MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 
