@@ -119,7 +119,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
         REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
-        REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime, const int &hintTriangle); 
         REAL SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &sampleTime); 
 
         REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a); 

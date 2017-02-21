@@ -14,12 +14,12 @@ ModalVibrationalSource(RigidObjectPtr owner)
 //##############################################################################
 //##############################################################################
 REAL ModalVibrationalSource::
-Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
     if (!_modalObjectOwner->IsModalObject())
         return 0.0;
 #if DEBUG_PERFECT_MODAL_HARMONICS == 0
-    return _modalObjectOwner->SampleModalAcceleration(position, normal, time); 
+    return _modalObjectOwner->SampleModalAcceleration(position, normal, time, hintTriangle); 
 #else
     return _modalObjectOwner->PerfectHarmonics_SampleModalAcceleration(DEBUG_PERFECT_MODAL_HARMONICS, position, normal, time); 
 #endif

@@ -3,7 +3,7 @@
 //##############################################################################
 //##############################################################################
 REAL HarmonicVibrationalSource::
-Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
     const REAL val = cos(_omega*time + _phase); 
     if (_decayRate < 0)

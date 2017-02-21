@@ -48,7 +48,7 @@ ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
 //##############################################################################
 //##############################################################################
 REAL AccelerationNoiseVibrationalSource::
-Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
     _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 

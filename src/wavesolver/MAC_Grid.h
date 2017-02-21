@@ -7,6 +7,7 @@
 #define MAC_GRID_H
 
 #include <unordered_map>
+#include <map>
 #include <distancefield/distanceField.h>
 #include <distancefield/closestPointField.h>
 
@@ -43,6 +44,7 @@
 class MAC_Grid 
 {
     public: 
+        typedef int GhostCellId; 
 
         // only used for classification with multiple threads
         struct GhostCellInfo
@@ -64,6 +66,11 @@ class MAC_Grid
             int triangleID; 
             Vector3d centroid; 
             Vector3d normal;
+            TriangleIdentifier()
+            {}
+            TriangleIdentifier(const int &o_id, const int &t_id) 
+                : objectID(o_id), triangleID(t_id)
+            {}
             TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c, const Vector3d &n)
                 : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
             {}
@@ -223,6 +230,8 @@ class MAC_Grid
         std::vector<Vector3d>    _ghostCellPositions; 
         IntArray                 _ghostCellBoundaryIDs; 
 
+        IntArray                 _ghostCellChildArrayPositions; 
+        std::unordered_map<GhostCellId,std::map<int,TriangleIdentifier>> _ghostCellPreviousTriangles; 
 
         // Dimensionality of the data we are working with
         int                      _N;

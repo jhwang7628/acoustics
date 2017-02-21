@@ -375,7 +375,7 @@ SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &sampleNormal, c
 // of the mesh. need to be careful if used in FV formulation
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime)
+SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNormal, const REAL &sampleTime, const int &hintTriangle)
 {
     // transform the sample point to object frame
     const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(samplePoint.x, samplePoint.y, samplePoint.z); 
@@ -401,10 +401,19 @@ SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &sampleNorma
       
     // use spatial partitioning
     int closestTriangle; 
+    if (hintTriangle < 0)
+    {
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
-    _mesh->FindNearestTriangle(samplePointObject, closestTriangle); 
+        _mesh->FindNearestTriangle(samplePointObject, closestTriangle); 
+    }
+    else 
+    {
+        std::vector<int> neighbours; 
+        _meshGraph->FindKNearestTrianglesGraph(1, samplePointObject, 1, hintTriangle, neighbours); 
+        closestTriangle = neighbours.at(0);
+    }
     const Tuple3ui &vertexIndices = _mesh->triangle_ids(closestTriangle); 
     REAL totalModalAcc = 0.0; 
     for (int ii=0; ii<3; ++ii)

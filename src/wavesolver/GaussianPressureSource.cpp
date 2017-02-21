@@ -4,7 +4,7 @@
 // Use bounding box to check if evaulation is needed
 //##############################################################################
 REAL GaussianPressureSource::
-Evaluate(const Vector3d &evaluatePosition, const Vector3d &normal, const REAL &time)
+Evaluate(const Vector3d &evaluatePosition, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
     if (!_bboxWorld.Inside(evaluatePosition.x, evaluatePosition.y, evaluatePosition.z))
         return 0.0; 

@@ -120,10 +120,10 @@ class FDTD_RigidObject : public FDTD_MovableObject
         // then normal is not defined
         bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
         bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
-        REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
+        REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle=-1); 
         REAL EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
-        bool ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
+        int ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 

@@ -489,8 +489,10 @@ bool PML_WaveSolver::stepSystem()
         printf( "   - Find correct neighbouring object took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[0].elapsed());
         printf( "   - Find reflection point            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[1].elapsed());
         printf( "     - compute closest point mesh     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[12].elapsed());
-        printf( "       - KD-tree search               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[14].elapsed());
-        printf( "       - find projection point        took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[15].elapsed());
+        printf( "       USING KD-TREE                  took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[16].elapsed());
+        //printf( "       - KD-tree search               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[14].elapsed());
+        //printf( "       - find projection point        took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[15].elapsed());
+        printf( "       USING GRAPH                    took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[17].elapsed());
         printf( "     - find distance, normal etc      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[13].elapsed());
         printf( "   - Evaluate boundary acceleration   took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[2].elapsed());
         printf( "     - NN search for each vertex      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[4].elapsed());

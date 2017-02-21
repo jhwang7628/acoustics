@@ -670,6 +670,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     for (int ghost_cell_idx=0; ghost_cell_idx<N_ghostCells; ++ghost_cell_idx)
     {
         GhostCell::ghostCellTimers[0].start();
+        const int cell_idx = _ghostCellParents.at(ghost_cell_idx); 
+        const int child_pos = _ghostCellChildArrayPositions.at(ghost_cell_idx); 
         const Vector3d &cellPosition = _ghostCellPositions.at(ghost_cell_idx); 
         int boundaryObject;
         REAL distance; 
@@ -680,14 +682,34 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         GhostCell::ghostCellTimers[1].start(); 
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         auto object = _objects->GetPtr(boundaryObject); 
-        object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        const auto it = _ghostCellPreviousTriangles.find(cell_idx); 
+        int closestTriangle;
+        bool nn_cached = false;
+        //if (it != _ghostCellPreviousTriangles.end())
+        //{
+        //    const auto it_child = it->second.find(child_pos); 
+        //    if (it_child != it->second.end())
+        //    {
+        //        closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance, it_child->second.triangleID); 
+        //        it_child->second.triangleID = closestTriangle; 
+        //        nn_cached = true;
+        //    }
+        //}
+        //if (!nn_cached) 
+        //{
+            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        //    const TriangleIdentifier tid(boundaryObject, closestTriangle); 
+        //    _ghostCellPreviousTriangles[cell_idx][child_pos] = tid; 
+        //    //_ghostCellPreviousTriangles.insert(std::make_pair(cell_idx,tid));
+        //}
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
         GhostCell::ghostCellTimers[1].pause(); 
 //#pragma omp critical
 //        if (!success)
 //            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
         GhostCell::ghostCellTimers[2].start(); 
-        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); 
+        //const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime, closestTriangle) * (-density);
+        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); // FIXME debug
         GhostCell::ghostCellTimers[2].pause(); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
@@ -698,7 +720,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
         // figure out which dimension is this subdivied ghost cell
-        const int cell_idx = _ghostCellParents.at(ghost_cell_idx); 
         int subdivideType = -1; 
         for (int ii=0; ii<6; ++ii)
         {
@@ -878,7 +899,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells_Coupled( MATRIX &p, FloatArray &pGC,
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         auto object = _objects->GetPtr(boundaryObject); 
-        object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+        const int closestTriangleIndex = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
 
         if (!success)
@@ -2305,6 +2326,14 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             _containingObject.at(cell_idx) = containObjectId; 
 
             const bool newIsBulkCell = (containObjectId>=0 ? false : true); 
+            // clear cached triangle if fresh cell
+            if (newIsBulkCell && _isBulkCell.at(cell_idx)) 
+            {
+                const auto it = _ghostCellPreviousTriangles.find(cell_idx); 
+                if (it!=_ghostCellPreviousTriangles.end())
+                    _ghostCellPreviousTriangles.erase(it); 
+            }
+
             _isBulkCell.at(cell_idx) = newIsBulkCell; 
             if (!newIsBulkCell) 
             {
@@ -2387,6 +2416,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     // Classify velocity cells
     pGCFull.clear(); 
     _ghostCellParents.clear(); 
+    _ghostCellChildArrayPositions.clear(); 
     _ghostCellPositions.clear(); 
     _ghostCellBoundaryIDs.clear(); 
     for (int dim=0; dim<3; ++dim)
@@ -2963,6 +2993,7 @@ void MAC_Grid::CheckClassified()
 void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3])
 {
     _ghostCellsChildren.at(_ghostCellsInverse[info.ghostCellParent]).at(info.childArrayPosition) = gcIndex; 
+    _ghostCellChildArrayPositions.push_back(info.childArrayPosition); 
     _velocityInterfacialCells[info.dim].push_back(info.cellIndex);
     _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject);
     _interfacialBoundaryDirections[info.dim].push_back(info.boundaryDirection);

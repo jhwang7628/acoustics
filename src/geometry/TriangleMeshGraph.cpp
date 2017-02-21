@@ -46,6 +46,22 @@ AddEdge(const int &src, const int &dest)
 }
 
 //##############################################################################
+//##############################################################################
+template <typename T> 
+void TriangleMeshGraph<T>::
+FindKNearestTrianglesGraph(const int &k, const Vector3d &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
+{
+    std::set<int> neighbours; 
+    NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
+    triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
+    TriangleDistanceComp<T> sorter(this, point); 
+    std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
+    if (triangleIndices.size()<k)
+        throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
+    triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
+}
+
+//##############################################################################
 // Function ComputeClosestPointOnMesh
 //   Wrapper function using graph local search (and KD-tree as fall-back)
 //##############################################################################
@@ -53,23 +69,18 @@ template <typename T>
 REAL TriangleMeshGraph<T>::
 ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol, const int &N_neighbours, const int &maxLevel) const
 {
-    std::set<int> neighbours; 
-    REAL distance; 
-    NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
-    std::vector<int>triangleIndices(neighbours.begin(), neighbours.end()); 
-    TriangleDistanceComp<T> sorter(this, queryPoint); 
-    std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
-    const int len = std::min((int)triangleIndices.size(), N_neighbours); 
-    if (len<1) 
-        throw std::runtime_error("**ERROR** no neighbours found"); 
-    triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+len); 
+    // find NN using graph and compute point
+    std::vector<int> triangleIndices; 
+    REAL distance;
+    FindKNearestTrianglesGraph(N_neighbours, queryPoint, maxLevel, startTriangleIndex, triangleIndices); 
     distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
 
-    // fall back to KNN
+    // fall back to KNN using KD-tree
     const Vector3d triNormal = this->triangle_normal(closestTriangle).normalized(); 
     const Vector3d computedNormal = (closestPoint-queryPoint).normalized(); 
     const REAL error = abs(triNormal.dotProduct(computedNormal)); 
-    if (error < errorTol)
+    if (error < errorTol) // FIXME debug
+    //int graph = closestTriangle; 
     {
         triangleIndices.clear(); 
 #ifdef USE_OPENMP

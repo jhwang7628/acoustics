@@ -256,7 +256,7 @@ class TriangleMesh
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 
         // need FindKNearestTriangles()
-        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours=10) const; 
+        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours=5) const; 
         REAL ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<int> &triangleIndices, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint) const; 
 
     protected:

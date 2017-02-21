@@ -251,12 +251,12 @@ NormalToMesh(const Vector3d &position, Vector3d &queriedNormal)
 //##############################################################################
 //##############################################################################
 REAL FDTD_RigidObject::
-EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
+EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle)
 {
     REAL bcValue = 0.0; 
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
-        bcValue += (*it)->Evaluate(boundaryPoint, boundaryNormal, time);
+        bcValue += (*it)->Evaluate(boundaryPoint, boundaryNormal, time, hintTriangle);
 
     return bcValue; 
 }
@@ -331,7 +331,7 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 //          |  
 //          |
 //##############################################################################
-bool FDTD_RigidObject::
+int FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle)
 {
     assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
@@ -352,6 +352,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         reflectedPoint= originalPoint - erectedNormal * (2.0*distanceTravelled); // want it to be outside the boundary
         distanceTravelled = -distanceTravelled; // make it positive
     }
+    return -1; 
 
 #else // use kd-tree for normal query
 
@@ -360,9 +361,17 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     Vector3d projectedPoint; // object space
     MAC_Grid::GhostCell::ghostCellTimers[12].start(); 
     if (startFromTriangle<0) 
+    {
+        MAC_Grid::GhostCell::ghostCellTimers[16].start(); 
         distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        MAC_Grid::GhostCell::ghostCellTimers[16].pause(); 
+    }
     else 
+    {
+        MAC_Grid::GhostCell::ghostCellTimers[17].start(); 
         distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
+    }
     MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 
@@ -414,10 +423,8 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     }
 #endif
 
-    const REAL newDistance = DistanceToMesh(reflectedPoint);
-    const bool reflectSuccess = (newDistance >= DISTANCE_TOLERANCE); 
     MAC_Grid::GhostCell::ghostCellTimers[13].pause(); 
-    return reflectSuccess;
+    return closestTriangleIndex;
 }
 
 //##############################################################################

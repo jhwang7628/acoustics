@@ -17,7 +17,7 @@ WaterVibrationalSource(RigidObjectPtr owner, const std::string &wavFile, const R
 //##############################################################################
 //##############################################################################
 REAL WaterVibrationalSource::
-Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time)
+Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
     if (normal.dotProduct(_wantedNormal)/normal.length() > _validAngleThreshold)
     {

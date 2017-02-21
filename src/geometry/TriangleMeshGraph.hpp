@@ -43,7 +43,8 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         bool  _graph_built = false;
 
     public: 
-        REAL ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol=0.99, const int &N_neighbours=10, const int &maxLevel=1) const; 
+        void FindKNearestTrianglesGraph(const int &k, const Vector3d &point, const int &maxLevel, const int &startTriangleIndex,  std::vector<int> &triangleIndices) const;
+        REAL ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol=0.99, const int &N_neighbours=5, const int &maxLevel=1) const; 
         void BuildGraph(); 
         void NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const;
         void NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const;
