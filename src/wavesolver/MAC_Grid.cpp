@@ -685,31 +685,31 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         const auto it = _ghostCellPreviousTriangles.find(cell_idx); 
         int closestTriangle;
         bool nn_cached = false;
-        //if (it != _ghostCellPreviousTriangles.end())
-        //{
-        //    const auto it_child = it->second.find(child_pos); 
-        //    if (it_child != it->second.end())
-        //    {
-        //        closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance, it_child->second.triangleID); 
-        //        it_child->second.triangleID = closestTriangle; 
-        //        nn_cached = true;
-        //    }
-        //}
-        //if (!nn_cached) 
-        //{
-            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
-        //    const TriangleIdentifier tid(boundaryObject, closestTriangle); 
-        //    _ghostCellPreviousTriangles[cell_idx][child_pos] = tid; 
-        //    //_ghostCellPreviousTriangles.insert(std::make_pair(cell_idx,tid));
-        //}
+        if (it != _ghostCellPreviousTriangles.end())
+        {
+            const auto it_child = it->second.find(child_pos); 
+            if (it_child != it->second.end())
+            {
+                closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance, it_child->second.triangleID); 
+                it_child->second.triangleID = closestTriangle; 
+                nn_cached = true;
+            }
+        }
+        if (!nn_cached) 
+        {
+          closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+            const TriangleIdentifier tid(boundaryObject, closestTriangle); 
+            _ghostCellPreviousTriangles[cell_idx][child_pos] = tid; 
+            //_ghostCellPreviousTriangles.insert(std::make_pair(cell_idx,tid));
+        }
         const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
         GhostCell::ghostCellTimers[1].pause(); 
 //#pragma omp critical
 //        if (!success)
 //            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
         GhostCell::ghostCellTimers[2].start(); 
-        //const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime, closestTriangle) * (-density);
-        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); // FIXME debug
+        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime, closestTriangle) * (-density);
+        //const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); // FIXME debug
         GhostCell::ghostCellTimers[2].pause(); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
         const REAL weightedPressure = bcPressure * weights; 
