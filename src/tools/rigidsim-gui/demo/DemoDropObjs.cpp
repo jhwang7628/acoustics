@@ -20,6 +20,19 @@
 
 using namespace std;
 
+#define CONFIG_LOOKUP_HELPER(c,tag,variable) \
+    c.lookupValue(tag,variable);
+
+#define CONFIG_LOOKUP_HELPER_DEFAULT(c,tag,variable,defaultValue) \
+    if(!c.lookupValue(tag,variable)) variable=defaultValue;
+
+#define CONFIG_LOOKUP_HELPER_ASSERT(c,tag,variable) \
+    assert(c.lookupValue(tag,variable))
+
+#define CONFIG_LOOKUP_HELPER_FLAG(c,tag,variable,flag) \
+    flag=c.lookupValue(tag,variable);
+
+
 // ----------------------------------------------------------------------------
 struct MatRec
 {
@@ -161,17 +174,30 @@ DemoDropObjs::DemoDropObjs(const char* file, QGLViewer* canvas):
 
             /*
              * Initialize object state
-             *
-             * NOTE: assuming the translation and rotation are all related to the origin
              */
             if ( !ssO[i].lookupValue("dx", dx) ) dx = 0;
             if ( !ssO[i].lookupValue("dy", dy) ) dy = 0;
             if ( !ssO[i].lookupValue("dz", dz) ) dz = 0;
-            if ( ssO[i].exists("rot") ) 
+            std::vector<Quat4d> rotations;
+            if (ssO[i].exists("rotations"))
             {
-                const Setting& rr = ssO[i]["rot"];
-                //rbodies[i]->init_origin_rotation(rr[0], rr[1], rr[2], rr[3]); // w, x, y, z
-                rbodies[i]->init_com_rotation(rr[0], rr[1], rr[2], rr[3]); // w, x, y, z
+                const libconfig::Setting &r = ssO[i]["rotations"];
+                double angle, rx, ry, rz;
+                for(int j=0; j<r.getLength(); j++)
+                {
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"angle",angle);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"rx"   ,rx);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"ry"   ,ry);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"rz"   ,rz);
+                    rotations.push_back(Quat4d::fromAxisRotD(Vector3d(rx,ry,rz), angle));
+                }
+            }
+            if (rotations.size()>0)
+            {
+                Quat4d quat = rotations[0];
+                for(int j=1;j<rotations.size();j++) 
+                    quat *= rotations[j];
+                rbodies[i]->init_com_rotation(quat.w,quat.v.x,quat.v.y,quat.v.z);
             }
             rbodies[i]->translate(dx, dy, dz);
 
