@@ -29,7 +29,7 @@ template <typename T>
 class TriangleMeshKDTree : public TriangleMesh<T>
 {
     public: 
-        typedef Eigen::Matrix<REAL, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMajorMatrixXd; 
+        typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMajorMatrixXd; 
 
     protected:
         std::shared_ptr<VlKDForest>         _nnForest; 
@@ -41,9 +41,10 @@ class TriangleMeshKDTree : public TriangleMesh<T>
             //vl_kdforest_delete(_nnForest.get());
         }
 
-        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const; 
-        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex) const; 
-        inline Vector3d TriangleCentroid(const int &t_idx) const {return Vector3d(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
+        virtual T FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &triangleIndices) const; 
+        virtual T FindNearestTriangle(const Vector3<T> &point, int &triangleIndex) const; 
+        virtual int FindTrianglesWithinBall(const Vector3<T> &point, const T &radius, std::set<int> &triangleIndices) const; 
+        inline Vector3<T> TriangleCentroid(const int &t_idx) const {return Vector3<T>(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
         void BuildKDTree();
 
         ///// debugging methods /////
@@ -89,8 +90,8 @@ BuildKDTree()
 // @return smallest distance
 //##############################################################################
 template <typename T> 
-REAL TriangleMeshKDTree<T>::
-FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const
+T TriangleMeshKDTree<T>::
+FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &triangleIndices) const
 {
 #if defined(USE_BOOST) && defined(DEBUG_KDTREE)
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
@@ -106,15 +107,14 @@ FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &tri
 //##############################################################################
 // This function is a special case of finding k nearest neighbours. However for
 // performace I copied some of the codes.
-//
 // @param k Number of nearest neighbours
 // @param point Sample point position
 // @param triangleIndices Output triangles indices
 // @return smallest distance
 //##############################################################################
 template <typename T> 
-REAL TriangleMeshKDTree<T>::
-FindNearestTriangle(const Vector3d &point, int &triangleIndex) const
+T TriangleMeshKDTree<T>::
+FindNearestTriangle(const Vector3<T> &point, int &triangleIndex) const
 {
 #if defined(USE_BOOST) && defined(DEBUG_KDTREE)
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
@@ -123,6 +123,55 @@ FindNearestTriangle(const Vector3d &point, int &triangleIndex) const
     vl_kdforest_query(_nnForest.get(), &neighbours, 1, &point); 
     triangleIndex = neighbours.index; 
     return neighbours.distance; 
+}
+
+//##############################################################################
+// Function FindTrianglesWithinBallNaive
+//   @param point Sample point position
+//   @param radius ball radius 
+//   @param triangleIndices output field that stores all triangles within the ball
+//   @return number of triangles
+//##############################################################################
+template <typename T> 
+int TriangleMeshKDTree<T>::
+FindTrianglesWithinBall(const Vector3<T> &point, const T &radius, std::set<int> &triangleIndices) const
+{
+    triangleIndices.clear(); 
+    if (radius<=0)
+        return 0; 
+#if 0 // naive
+    const int N = this->num_triangles(); 
+    for (int ii=0; ii<N; ++ii)
+        if ((this->TriangleCentroid(ii)-point).length() <= radius)
+            triangleIndices.insert(ii); 
+#else
+    const int increment = 200; 
+    int knn = increment; 
+    std::vector<int> indices; 
+    typedef std::vector<int>::iterator It; 
+    while (true) 
+    {
+        indices.clear(); 
+        FindKNearestTriangles(knn, point, indices);
+        const int farest = std::min<int>(indices.size(), this->num_triangles()); 
+        if (indices.size()>=this->num_triangles() || 
+            (this->TriangleCentroid(indices.at(farest-1)) - point).length() > radius)
+        {
+            It it = indices.begin();
+            for (; it!=indices.end(); ++it)
+                if ((this->TriangleCentroid(*it)-point).length() > radius)
+                    break; 
+            if (indices.size()>=this->num_triangles())
+                indices.erase(indices.begin()+this->num_triangles(), indices.end()); 
+            else
+                indices.erase(it, indices.end()); 
+            triangleIndices = std::set<int>(indices.begin(), indices.end()); 
+            break; 
+        }
+        knn += increment;
+    }
+#endif
+    return triangleIndices.size();
 }
 
 //##############################################################################
@@ -135,28 +184,28 @@ TestKDTree(const int &k)
     boost::timer::auto_cpu_timer timer("Boost timer: Testing KDTree takes %w seconds\n" );
 #endif
     const int N_samples = 200; // test on 200 queries
-    const REAL boundingRadius = this->boundingSphereRadius(Point3<T>(0, 0, 0)); 
+    const T boundingRadius = this->boundingSphereRadius(Point3<T>(0, 0, 0)); 
     const int N_triangles = this->triangles().size(); 
     srand(time(NULL)); 
     std::vector<int> triangleIndices;
 
     int misClassifyIndices = 0; 
-    REAL misClassifyError = 0.0;
+    T misClassifyError = 0.0;
     for (int s_idx=0; s_idx<N_samples; ++s_idx)
     {
-        const REAL x = static_cast<REAL>(rand())/static_cast<REAL>(RAND_MAX) * boundingRadius;
-        const REAL y = static_cast<REAL>(rand())/static_cast<REAL>(RAND_MAX) * boundingRadius;
-        const REAL z = static_cast<REAL>(rand())/static_cast<REAL>(RAND_MAX) * boundingRadius;
-        const Vector3d sample(x, y, z); 
+        const T x = static_cast<T>(rand())/static_cast<T>(RAND_MAX) * boundingRadius;
+        const T y = static_cast<T>(rand())/static_cast<T>(RAND_MAX) * boundingRadius;
+        const T z = static_cast<T>(rand())/static_cast<T>(RAND_MAX) * boundingRadius;
+        const Vector3<T> sample(x, y, z); 
         RowMajorMatrixXd sample_e(1, 3); 
         sample_e << x, y, z; 
 
         // do a brute force search to find reference;
-        REAL minDistance = std::numeric_limits<REAL>::max(); 
+        T minDistance = std::numeric_limits<T>::max(); 
         int index = -1; 
         for (int t_idx=0; t_idx<N_triangles; ++t_idx)
         {
-            const REAL distance = (_triangleCentroids.row(t_idx) - sample_e).squaredNorm(); 
+            const T distance = (_triangleCentroids.row(t_idx) - sample_e).squaredNorm(); 
             if (distance < minDistance) 
             {
                 minDistance = distance; 
@@ -165,7 +214,7 @@ TestKDTree(const int &k)
         }
 
         // knn query
-        const REAL closestDistance = FindKNearestTriangles(k, sample, triangleIndices);
+        const T closestDistance = FindKNearestTriangles(k, sample, triangleIndices);
 
         // compute and store testing information
         if (index != triangleIndices[0] || !EQUAL_FLOATS(minDistance, closestDistance))
