@@ -244,20 +244,21 @@ class TriangleMesh
         //! Get the adjacent triangles of each vertex
         void get_vtx_tgls(std::vector< std::set<int> >&) const;
 #endif /* DIFF_DEFINE */
+        T largest_triangle_area(int &tid) const; 
 
-        void BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vector3d &baryCentricCoordinates) const; 
-        Vector3d ComputeCentroid() const; 
+        void BaryCentricCoordinates(const Vector3<T> queryPoint, const int &triangleIndex, Vector3<T> &baryCentricCoordinates) const; 
+        Vector3<T> ComputeCentroid() const; 
 
         // abstract nearest triangles lookup that should be specific to data
         // structures of choice. 
-        virtual REAL FindKNearestTriangles(const int &k, const Vector3d &point, std::vector<int> &triangleIndices) const
+        virtual T FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &triangleIndices) const
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
-        virtual REAL FindNearestTriangle(const Vector3d &point, int &triangleIndex) const
+        virtual T FindNearestTriangle(const Vector3<T> &point, int &triangleIndex) const
         { throw std::runtime_error("**ERROR** Nearest neighbour search for class TriangleMesh not implemented."); }
 
         // need FindKNearestTriangles()
-        REAL ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours=5) const; 
-        REAL ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<int> &triangleIndices, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint) const; 
+        T ComputeClosestPointOnMesh(const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const int &N_neighbours=5) const; 
+        T ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const; 
 
     protected:
         double                      m_totArea;
@@ -708,6 +709,28 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
 #endif /* DIFF_DEFINE */
 }
 
+template <typename T> 
+T TriangleMesh<T>::largest_triangle_area(int &tid) const
+{
+    T maxArea = std::numeric_limits<T>::min(); 
+    tid = -1; 
+    for(int i = 0;i < (int)m_triangles.size();++ i)
+    {
+        const Point3<T>& p0 = m_vertices[m_triangles[i][0]];
+        const Point3<T>& p1 = m_vertices[m_triangles[i][1]];
+        const Point3<T>& p2 = m_vertices[m_triangles[i][2]];
+        const Vector3<T> nml = (p1 - p0).crossProduct(p2 - p0) * (T)0.5;  // weight = area
+        const T area = nml.length();
+        if (area > maxArea)
+        {
+            maxArea = area; 
+            tid = i;
+        }
+    }
+    assert(tid!=-1 && maxArea>0); 
+    return maxArea; 
+}
+
 /* 
  * This function computes barycentric coordinates given a query point and
  * triangle index.
@@ -723,7 +746,7 @@ void TriangleMesh<T>::get_vtx_tgls(std::vector< std::set<int> >& vtx_ts) const
  */ 
 template <typename T> 
 void TriangleMesh<T>::
-BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vector3d &baryCentricCoordinates) const
+BaryCentricCoordinates(const Vector3<T> queryPoint, const int &triangleIndex, Vector3<T> &baryCentricCoordinates) const
 {
     const Tuple3ui &triangle = this->triangle_ids(triangleIndex); 
     const Point3<T> &p0 = this->vertex(triangle.x); 
@@ -732,14 +755,14 @@ BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vect
     const Vector3<T> e0 = p2 - p0; 
     const Vector3<T> e1 = p1 - p0; 
     const Vector3<T> e2 = queryPoint - p0; 
-    const REAL dot00 = e0.dotProduct(e0); 
-    const REAL dot01 = e0.dotProduct(e1); 
-    const REAL dot11 = e1.dotProduct(e1); 
-    const REAL dot02 = e0.dotProduct(e2); 
-    const REAL dot12 = e1.dotProduct(e2); 
-    const REAL invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
-    const REAL u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
-    const REAL v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
+    const T dot00 = e0.dotProduct(e0); 
+    const T dot01 = e0.dotProduct(e1); 
+    const T dot11 = e1.dotProduct(e1); 
+    const T dot02 = e0.dotProduct(e2); 
+    const T dot12 = e1.dotProduct(e2); 
+    const T invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
+    const T u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
+    const T v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
     baryCentricCoordinates.set(1.0-u-v, v, u);
 }
 
@@ -748,14 +771,14 @@ BaryCentricCoordinates(const Vector3d queryPoint, const int &triangleIndex, Vect
  * vertex position. 
  */
 template <typename T> 
-Vector3d TriangleMesh<T>::
+Vector3<T> TriangleMesh<T>::
 ComputeCentroid() const
 {
-    Vector3d accumulate(0, 0, 0); 
+    Vector3<T> accumulate(0, 0, 0); 
     const int N_vertices = num_vertices(); 
     for (int v_idx=0; v_idx<N_vertices; ++v_idx)
         accumulate += vertex(v_idx); 
-    accumulate /= (REAL)N_vertices; 
+    accumulate /= (T)N_vertices; 
     return accumulate; 
 }
 
@@ -774,12 +797,12 @@ ComputeCentroid() const
  * 
  */
 template <typename T> 
-REAL TriangleMesh<T>::
-ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<int> &triangleIndices, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint) const
+T TriangleMesh<T>::
+ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const
 {
     assert(triangleIndices.size() > 0);
-    REAL minDistance = std::numeric_limits<REAL>::max(); 
-    Vector3d closestPointBuffer, projectedPointBuffer;
+    T minDistance = std::numeric_limits<T>::max(); 
+    Vector3<T> closestPointBuffer, projectedPointBuffer;
     for (const int t_idx : triangleIndices)
     {
         // points CCW ordering
@@ -793,29 +816,29 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
         const Vector3<T> e1 = p1 - p0; 
 
         // dot products
-        const REAL dot00 = e0.dotProduct(e0); 
-        const REAL dot01 = e0.dotProduct(e1); 
-        const REAL dot11 = e1.dotProduct(e1); 
+        const T dot00 = e0.dotProduct(e0); 
+        const T dot01 = e0.dotProduct(e1); 
+        const T dot11 = e1.dotProduct(e1); 
 
         // normal n corresponds to CCW point ordering and plane spanned by three
         // points n_x x + n_y y + n_z z = d, for all (x, y, z) in this plane.
         const Vector3<T> triangleNormal = e1.crossProduct(e0); 
-        const REAL d = triangleNormal.x * p0.x + triangleNormal.y * p0.y + triangleNormal.z * p0.z; 
+        const T d = triangleNormal.x * p0.x + triangleNormal.y * p0.y + triangleNormal.z * p0.z; 
 
         // to find projection of query point on this plane, first find the time
         // travelled t for the ray emitted from the query point to this plane.
-        const REAL t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
+        const T t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
         projectedPointBuffer = queryPoint + triangleNormal * t;
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
         //                = (1-u-v)*p0 + u*p2 + v*p1
         const Vector3<T> e2 = projectedPointBuffer - p0; 
-        const REAL dot02 = e0.dotProduct(e2); 
-        const REAL dot12 = e1.dotProduct(e2); 
-        const REAL invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
-        const REAL u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
-        const REAL v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
+        const T dot02 = e0.dotProduct(e2); 
+        const T dot12 = e1.dotProduct(e2); 
+        const T invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
+        const T u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
+        const T v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
 
         // distinguish cases and compute distance, closestPoint
         // There are six cases other than lie inside triangle
@@ -827,8 +850,8 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
         }
         else if (u<0 && v>=0 && (u+v)<1) // closest to edge e = e1(p0, p1)
         {
-            const REAL l = std::max<REAL>(dot12, 0.0);
-            const REAL e1Sqr = e1.lengthSqr(); 
+            const T l = std::max<T>(dot12, 0.0);
+            const T e1Sqr = e1.lengthSqr(); 
             if (l > e1Sqr)
                 closestPointBuffer = projectedPointBuffer + (e1 - e2);
             else
@@ -836,8 +859,8 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
         }
         else if (u>=0 && v<0 && (u+v)<1) // closest to edge e = e0(p0, p2)
         {
-            const REAL l = std::max<REAL>(dot02, 0.0);
-            const REAL e0Sqr = e0.lengthSqr(); 
+            const T l = std::max<T>(dot02, 0.0);
+            const T e0Sqr = e0.lengthSqr(); 
             if (l > e0Sqr)
                 closestPointBuffer = projectedPointBuffer + (e0 - e2);
             else
@@ -847,8 +870,8 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
         {
             const Vector3<T> e12 = p2 - p1; 
             const Vector3<T> o12 = projectedPointBuffer - p1; 
-            const REAL l = std::max<REAL>(o12.dotProduct(e12), 0.0);
-            const REAL e12Sqr = e12.lengthSqr(); 
+            const T l = std::max<T>(o12.dotProduct(e12), 0.0);
+            const T e12Sqr = e12.lengthSqr(); 
             if (l > e12Sqr)
                 closestPointBuffer = projectedPointBuffer + (e12 - o12);
             else
@@ -870,7 +893,7 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
         {
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
-        const REAL distance = (queryPoint - closestPointBuffer).lengthSqr();
+        const T distance = (queryPoint - closestPointBuffer).lengthSqr();
 
         // keep closest
         if (distance < minDistance) 
@@ -888,8 +911,8 @@ ComputeClosestPointOnMeshHelper(const Vector3d &queryPoint, const std::vector<in
  * Wrapper function using KD-tree search
  */
 template <typename T> 
-REAL TriangleMesh<T>::
-ComputeClosestPointOnMesh(const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const int &N_neighbours) const
+T TriangleMesh<T>::
+ComputeClosestPointOnMesh(const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const int &N_neighbours) const
 {
     std::vector<int> triangleIndices; 
     // the reason why we need critical directive is because the search in
