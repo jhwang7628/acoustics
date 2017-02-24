@@ -43,9 +43,9 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         bool  _graph_built = false;
 
     public: 
-        void FindKNearestTrianglesGraph(const int &k, const Vector3d &point, const int &maxLevel, const int &startTriangleIndex,  std::vector<int> &triangleIndices) const;
-        REAL ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol=0.99, const int &N_neighbours=5, const int &maxLevel=1) const; 
-        void BuildGraph(); 
+        void FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex,  std::vector<int> &triangleIndices) const;
+        T ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const T &errorTol=0.999, const int &N_neighbours=5, const int &maxLevel=1) const; 
+        void BuildGraph(const T &nnRadius=0.0); 
         void NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const;
         void NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const;
 };
@@ -58,19 +58,19 @@ class TriangleDistanceComp
 {
     private: 
         const TriangleMeshGraph<T> *mesh; 
-        const Vector3d &referencePoint; 
+        const Vector3<T> &referencePoint; 
     public:
-        TriangleDistanceComp(const TriangleMeshGraph<T> *m, const Vector3d &ref)
+        TriangleDistanceComp(const TriangleMeshGraph<T> *m, const Vector3<T> &ref)
             : mesh(m), referencePoint(ref)
         {
             assert(mesh); 
         }
         bool operator()(const int &tid_ii, const int &tid_jj) const
         {
-            const Vector3d v_ii = (mesh->TriangleCentroid(tid_ii) - referencePoint); 
-            const Vector3d v_jj = (mesh->TriangleCentroid(tid_jj) - referencePoint); 
-            const REAL d_ii = v_ii.lengthSqr(); 
-            const REAL d_jj = v_jj.lengthSqr(); 
+            const Vector3<T> v_ii = (mesh->TriangleCentroid(tid_ii) - referencePoint); 
+            const Vector3<T> v_jj = (mesh->TriangleCentroid(tid_jj) - referencePoint); 
+            const T d_ii = v_ii.lengthSqr(); 
+            const T d_jj = v_jj.lengthSqr(); 
             return (d_ii < d_jj); 
         }
 };

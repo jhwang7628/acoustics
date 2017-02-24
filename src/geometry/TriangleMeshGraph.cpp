@@ -49,7 +49,7 @@ AddEdge(const int &src, const int &dest)
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-FindKNearestTrianglesGraph(const int &k, const Vector3d &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
+FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
     std::set<int> neighbours; 
     NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
@@ -66,21 +66,20 @@ FindKNearestTrianglesGraph(const int &k, const Vector3d &point, const int &maxLe
 //   Wrapper function using graph local search (and KD-tree as fall-back)
 //##############################################################################
 template <typename T> 
-REAL TriangleMeshGraph<T>::
-ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPoint, Vector3d &closestPoint, int &closestTriangle, Vector3d &projectedPoint, const REAL &errorTol, const int &N_neighbours, const int &maxLevel) const
+T TriangleMeshGraph<T>::
+ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const T &errorTol, const int &N_neighbours, const int &maxLevel) const
 {
     // find NN using graph and compute point
     std::vector<int> triangleIndices; 
-    REAL distance;
+    T distance;
     FindKNearestTrianglesGraph(N_neighbours, queryPoint, maxLevel, startTriangleIndex, triangleIndices); 
     distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
 
     // fall back to KNN using KD-tree
-    const Vector3d triNormal = this->triangle_normal(closestTriangle).normalized(); 
-    const Vector3d computedNormal = (closestPoint-queryPoint).normalized(); 
-    const REAL error = abs(triNormal.dotProduct(computedNormal)); 
-    if (error < errorTol) // FIXME debug
-    //int graph = closestTriangle; 
+    const Vector3<T> triNormal = this->triangle_normal(closestTriangle).normalized(); 
+    const Vector3<T> computedNormal = (closestPoint-queryPoint).normalized(); 
+    const T error = abs(triNormal.dotProduct(computedNormal)); 
+    if (error < errorTol)
     {
         triangleIndices.clear(); 
 #ifdef USE_OPENMP
@@ -97,16 +96,16 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3d &queryPo
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-BuildGraph()
+BuildGraph(const T &nnRadius)
 {
 #ifdef USE_BOOST
     boost::timer::auto_cpu_timer timer("Boost timer: Building Graph for mesh takes %w seconds\n" );
 #endif
-    typedef std::set<int>::const_iterator SetIterator;
+    typedef std::set<int>::iterator SetIterator;
     assert(m_vertices.size()>0 && m_triangles.size()>0); 
     _graph.Initialize(m_triangles.size()); 
 
-    // get vertex neighbours and assign them to triangles
+    // grab vertex neighbours
     std::vector<std::set<int> > vertexNeighbors; 
     this->get_vtx_tgls(vertexNeighbors); 
     const int N_faces = m_triangles.size(); 
@@ -114,11 +113,20 @@ BuildGraph()
     {
         const Tuple3ui &t_id = this->triangle_ids(ii); 
         std::set<int> triangleNeighbours; 
+        // add all vertex neighbours
         for (int jj=0; jj<3; ++jj)
         {
             const std::set<int> &neighbours = vertexNeighbors.at(t_id[jj]); 
             triangleNeighbours.insert(neighbours.begin(), neighbours.end()); 
         }
+        // add geometric neighbours (who might not be topologic neighbours)
+        if (nnRadius>0 && this->_nnForest)
+        {
+            std::set<int> geometricNeighbours; 
+            this->FindTrianglesWithinBall(this->TriangleCentroid(ii), nnRadius, geometricNeighbours); 
+            triangleNeighbours.insert(geometricNeighbours.begin(), geometricNeighbours.end()); 
+        }
+        // add edge to graph using the set
         for (SetIterator it=triangleNeighbours.begin(); it!=triangleNeighbours.end(); ++it)
         {
             _graph.AddEdge(ii, *it); 
