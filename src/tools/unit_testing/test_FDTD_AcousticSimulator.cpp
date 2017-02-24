@@ -143,6 +143,23 @@ void Test_TriangleMeshKDTree()
 }
 
 //##############################################################################
+void Test_TriangleMeshKDTree_FindWithinBall()
+{
+    const std::string meshFile("/home/jui-hsien/code/acoustics/work/plate/plate.tet.obj"); 
+    std::shared_ptr<TriangleMesh<REAL> > mesh = std::make_shared<TriangleMeshKDTree<REAL> >(); 
+    MeshObjReader::read(meshFile.c_str(), *mesh, false, false, 1.0); 
+    mesh->generate_normals(); 
+    std::cout << "N_vertices = " << mesh->num_vertices() << std::endl;
+
+    std::shared_ptr<TriangleMeshKDTree<REAL> > meshkd = std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh);
+    meshkd->BuildKDTree(); 
+    const double radius = 5.; 
+    std::set<int> indices; 
+    const int N_1 = meshkd->FindTrianglesWithinBall(Vector3d(), radius, indices); 
+    std::cout << "find " << N_1 << " triangles using radius " << radius << " over " << mesh->num_triangles() << " triangles\n";
+}
+
+//##############################################################################
 void Test_TriangleMeshGraph()
 {
     std::cout << __FILE__ << ": " << __LINE__ << std::endl;
@@ -280,7 +297,8 @@ int main(int argc, char ** argv)
     //Test_TriangleMeshKDTree();
     //TestWaterVibrationalSource();
     //TestWavRead(); 
-    Test_TriangleMeshGraph();
+    Test_TriangleMeshKDTree_FindWithinBall();
+    //Test_TriangleMeshGraph();
         
     //std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
     //if (argc>1) 
