@@ -134,10 +134,16 @@ Initialize(const bool &buildFromTetMesh)
               << " Num triangles  : " << _mesh->num_triangles() << "\n"
               << " Curvature range: [" << minCurvature << ", " << maxCurvature  << "] " << std::endl;
 
-    // build kd-tree for query
+    // build kd-tree and graph for query
     std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(_mesh)->BuildKDTree(); 
     _meshGraph = std::dynamic_pointer_cast<TriangleMeshGraph<REAL> >(_mesh); 
-    _meshGraph->BuildGraph(); 
+    assert(_solverSettings);
+    int largestTriangle; 
+    const REAL d_max = _solverSettings->cellSize; 
+    const REAL t_max = sqrt(_mesh->largest_triangle_area(largestTriangle)); 
+    //const REAL d_max=0.0;
+    //const REAL t_max=0.0;
+    _meshGraph->BuildGraph(d_max+t_max); 
     UpdateBoundingBox();
 }
 
@@ -362,16 +368,29 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     MAC_Grid::GhostCell::ghostCellTimers[12].start(); 
     if (startFromTriangle<0) 
     {
-        MAC_Grid::GhostCell::ghostCellTimers[16].start(); 
-        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-        MAC_Grid::GhostCell::ghostCellTimers[16].pause(); 
+      MAC_Grid::GhostCell::ghostCellTimers[16].start(); 
+      distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+      MAC_Grid::GhostCell::ghostCellTimers[16].pause(); 
     }
-    else 
+    else
     {
-        MAC_Grid::GhostCell::ghostCellTimers[17].start(); 
-        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-        MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
+      MAC_Grid::GhostCell::ghostCellTimers[17].start(); 
+      distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+      MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
+
+      // FIXME debug
+      int graph = closestTriangleIndex; 
+      const Vector3d bpGraph = boundaryPoint; 
+      distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+      if (graph != closestTriangleIndex) 
+      {
+          std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
+          std::cerr << " point       = " << originalPoint << std::endl; 
+          std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
+          std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
+      }
     }
+    
     MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
 

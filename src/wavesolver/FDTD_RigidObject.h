@@ -12,6 +12,7 @@
 #include <linearalgebra/Vector3.hpp>
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
+#include <wavesolver/PML_WaveSolver_Settings.h>
 #include <wavesolver/FDTD_MovableObject.h> 
 #include <geometry/TriangleMeshKDTree.hpp>
 #include <geometry/TriangleMeshGraph.hpp>
@@ -51,6 +52,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         Vector3d                            _meshObjectCentroid;  // in object space
         std::shared_ptr<TetMeshIndexToSurfaceMesh> _tetMeshIndexToSurfaceMesh; 
         std::vector<VibrationalSourcePtr>   _vibrationalSources; 
+        std::shared_ptr<PML_WaveSolver_Settings> _solverSettings; 
 
         int                                 _signedDistanceFieldResolution;
         std::string                         _signedDistanceFieldFilePrefix; 
@@ -79,16 +81,18 @@ class FDTD_RigidObject : public FDTD_MovableObject
               _meshID(-1), 
               _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
+              _solverSettings(nullptr),
               _parsed(false) 
         {
         }
 
-        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
             : _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
               _meshID(-1), 
               _meshScale(scale), 
               _meshName(meshName),
+              _solverSettings(solverSettings),
               _signedDistanceFieldResolution(resolution)
         {
             _parsed = true; 

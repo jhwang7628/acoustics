@@ -8,7 +8,7 @@
 // parse meshes from xml into objects 
 //##############################################################################
 void ImpulseResponseParser::
-GetObjects(std::shared_ptr<FDTD_Objects> &objects) 
+GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::shared_ptr<FDTD_Objects> &objects) 
 {
     if (!objects) 
     {
@@ -66,7 +66,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
             throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = true;
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->SetAnimated(true);
         // load impulse from file
@@ -148,7 +148,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
             throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         objects->AddObject(meshName,object); 
@@ -182,7 +182,7 @@ GetObjects(std::shared_ptr<FDTD_Objects> &objects)
         const REAL decayRadius = queryOptionalReal(waterSurfaceObjectNode, "decay_radius", 5.0); 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, meshName, scale);
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSource>(object, inputRecordingFile, decayRadius); 
         object->AddVibrationalSource(sourcePtr); 

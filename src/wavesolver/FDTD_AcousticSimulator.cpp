@@ -11,7 +11,7 @@ _ParseSolverSettings()
     _acousticSolverSettings = std::make_shared<PML_WaveSolver_Settings>(); 
     _sceneObjects = std::make_shared<FDTD_Objects>();
     _parser->GetSolverSettings(_acousticSolverSettings); 
-    _parser->GetObjects(_sceneObjects); 
+    _parser->GetObjects(_acousticSolverSettings, _sceneObjects); 
     _canInitializeSolver = true;
 }
 
