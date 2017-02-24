@@ -64,6 +64,7 @@ class MAC_Grid
         {
             int objectID; 
             int triangleID; 
+            bool active; 
             Vector3d centroid; 
             Vector3d normal;
             TriangleIdentifier()
@@ -231,7 +232,7 @@ class MAC_Grid
         IntArray                 _ghostCellBoundaryIDs; 
 
         IntArray                 _ghostCellChildArrayPositions; 
-        std::unordered_map<GhostCellId,std::map<int,TriangleIdentifier>> _ghostCellPreviousTriangles; 
+        std::unordered_map<GhostCellId,std::unordered_map<int,TriangleIdentifier>> _ghostCellPreviousTriangles; 
 
         // Dimensionality of the data we are working with
         int                      _N;
@@ -459,6 +460,7 @@ class MAC_Grid
         inline void FillVandermondeRegular (const Vector3d &cellPosition, Eigen::VectorXd &V);
         inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
+        void ClearUnusedCache(); 
 
     friend std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid); 
     friend std::ostream &operator <<(std::ostream &os, const Cell &cell); 

@@ -664,6 +664,14 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     const int N_ghostCells = _ghostCellPositions.size(); 
     if (N_ghostCells == 0) return; 
 
+    // reset cache
+    typedef std::unordered_map<GhostCellId, std::unordered_map<int, TriangleIdentifier>>::iterator It_Outer; 
+    typedef std::unordered_map<int, TriangleIdentifier>::iterator It_Inner; 
+    for (It_Outer it_o=_ghostCellPreviousTriangles.begin(); it_o!=_ghostCellPreviousTriangles.end(); ++it_o)
+        for (It_Inner it_i=it_o->second.begin(); it_i!=it_o->second.end(); ++it_i)
+            it_i->second.active = false; 
+
+
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -692,13 +700,16 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             {
                 closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance, it_child->second.triangleID); 
                 it_child->second.triangleID = closestTriangle; 
+                it_child->second.active = true; 
                 nn_cached = true;
             }
         }
         if (!nn_cached) 
         {
-          closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
-            const TriangleIdentifier tid(boundaryObject, closestTriangle); 
+            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distance); 
+            TriangleIdentifier tid(boundaryObject, closestTriangle); 
+            tid.active = true; 
+#pragma omp critical
             _ghostCellPreviousTriangles[cell_idx][child_pos] = tid; 
             //_ghostCellPreviousTriangles.insert(std::make_pair(cell_idx,tid));
         }
@@ -708,7 +719,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
 //        if (!success)
 //            std::cerr << "**WARNING** Reflection of ghost cell inside some objects: " << cellPosition << ". Proceed computation. \n"; 
         GhostCell::ghostCellTimers[2].start(); 
-        const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime, closestTriangle) * (-density);
+        const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
+        REAL bcPressure = 0; 
+        for (int ii=0; ii<3; ++ii)
+            bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
+        bcPressure /= 3.0; 
+        //const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime, closestTriangle) * (-density);
         //const REAL bcPressure = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime) * (-density); // FIXME debug
         GhostCell::ghostCellTimers[2].pause(); 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
@@ -2618,6 +2634,8 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         printf( "\tFound %d v_y solid cells\n", numSolidCells[1] );
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
     }
+
+    ClearUnusedCache();
 }
 
 //##############################################################################
@@ -3071,6 +3089,37 @@ void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryP
     V(row,7) = 0; 
 }
 
+void MAC_Grid::ClearUnusedCache()
+{
+    typedef std::unordered_map<GhostCellId, std::unordered_map<int, TriangleIdentifier>>::iterator It_Outer; 
+    typedef std::unordered_map<int, TriangleIdentifier>::iterator It_Inner; 
+    It_Outer it_o = _ghostCellPreviousTriangles.begin(); 
+    while (it_o != _ghostCellPreviousTriangles.end())
+    {
+        It_Inner it_i = it_o->second.begin(); 
+        int used = 0;
+        while (it_i != it_o->second.end())
+        {
+            if (!it_i->second.active) // unused cell, clear
+            {
+                it_i = it_o->second.erase(it_i); 
+            }
+            else 
+            {
+                ++used;
+                ++it_i; 
+            }
+        }
+        if (used == 0) 
+        {
+            it_o = _ghostCellPreviousTriangles.erase(it_o); 
+        } 
+        else 
+        {
+            ++it_o; 
+        }
+    }
+}
 
 //// debug methods //// 
 void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldName) 
