@@ -6,21 +6,21 @@
 template <typename T> 
 std::vector<Timer<false> > TriangleMeshGraph<T>::timers(20);
 
-//##############################################################################a
-// Destructor
-//##############################################################################a
-template <typename T> 
-TriangleMeshGraph<T>::AdjList::
-~AdjList()
-{
-    AdjListNode *toDelete = head; 
-    while (toDelete != nullptr)
-    {
-        AdjListNode *next = toDelete->next; 
-        delete toDelete; 
-        toDelete = next; 
-    }
-}
+////##############################################################################a
+//// Destructor
+////##############################################################################a
+//template <typename T> 
+//TriangleMeshGraph<T>::AdjList::
+//~AdjList()
+//{
+//    //AdjListNode *toDelete = head; 
+//    //while (toDelete != nullptr)
+//    //{
+//    //    AdjListNode *next = toDelete->next; 
+//    //    delete toDelete; 
+//    //    toDelete = next; 
+//    //}
+//}
 
 //##############################################################################a
 // Function Initialize
@@ -40,15 +40,25 @@ template <typename T>
 void TriangleMeshGraph<T>::Graph::
 AddEdge(const int &src, const int &dest)
 {
-    // forward edge
-    AdjListNode *newNode = new AdjListNode(dest); 
-    newNode->next = array.at(src).head; 
-    array.at(src).head = newNode; 
+    //// forward edge
+    {
+        //AdjListNode *newNode = new AdjListNode(dest); 
+        //newNode->next = array.at(src).head; 
+        //array.at(src).head = newNode; 
+        std::vector<int> &list = array.at(src); 
+        if (std::find(list.begin(),list.end(),dest) == list.end())
+            list.push_back(dest); 
+    }
 
-    // backward edge
-    newNode = new AdjListNode(src); 
-    newNode->next = array.at(dest).head; 
-    array.at(dest).head = newNode; 
+    //// backward edge
+    {
+        //AdjListNode *newNode = new AdjListNode(src); 
+        //newNode->next = array.at(dest).head; 
+        //array.at(dest).head = newNode;
+        std::vector<int> &list = array.at(dest); 
+        if (std::find(list.begin(),list.end(),src) == list.end())
+            list.push_back(src);
+    }
 }
 
 //##############################################################################
@@ -157,13 +167,14 @@ NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &
     // base case if run out of reach, or memoized
     if (maxReach==0 || (memo.find(t_id)!=memo.end())) 
         return; 
-    AdjListNode *node = _graph.array.at(t_id).head; 
     TriangleMeshGraph<T>::timers[3].start();
-    while (node != nullptr)
-    {
-        neighbours.insert(node->dest); 
-        node = node->next; 
-    }
+    //AdjListNode *node = _graph.array.at(t_id).head; 
+    //while (node != nullptr)
+    //{
+    //    neighbours.insert(node->dest); 
+    //    node = node->next; 
+    //}
+    neighbours.insert(_graph.array.at(t_id).begin(), _graph.array.at(t_id).end()); 
     TriangleMeshGraph<T>::timers[3].pause();
     TriangleMeshGraph<T>::timers[4].start();
     memo.insert(t_id);
