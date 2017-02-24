@@ -1,4 +1,10 @@
 #include "geometry/TriangleMeshGraph.hpp" 
+#include "boost/timer/timer.hpp"
+//##############################################################################
+// Static variable initialize
+//##############################################################################
+template <typename T> 
+std::vector<Timer<false> > TriangleMeshGraph<T>::timers(20);
 
 //##############################################################################a
 // Destructor
@@ -51,14 +57,20 @@ template <typename T>
 void TriangleMeshGraph<T>::
 FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
+    TriangleMeshGraph<T>::timers[0].start();
     std::set<int> neighbours; 
     NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
+    TriangleMeshGraph<T>::timers[0].pause();
+    TriangleMeshGraph<T>::timers[1].start();
     triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
     TriangleDistanceComp<T> sorter(this, point); 
     std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
+    TriangleMeshGraph<T>::timers[1].pause();
     if (triangleIndices.size()<k)
         throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
+    TriangleMeshGraph<T>::timers[2].start();
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
+    TriangleMeshGraph<T>::timers[2].pause();
 }
 
 //##############################################################################
@@ -72,7 +84,7 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &query
     // find NN using graph and compute point
     std::vector<int> triangleIndices; 
     T distance;
-    FindKNearestTrianglesGraph(N_neighbours, queryPoint, maxLevel, startTriangleIndex, triangleIndices); 
+    FindKNearestTrianglesGraph(N_neighbours, queryPoint, maxLevel, startTriangleIndex, triangleIndices);
     distance = this->ComputeClosestPointOnMeshHelper(queryPoint, triangleIndices, closestPoint, closestTriangle, projectedPoint);
 
     // fall back to KNN using KD-tree
@@ -146,17 +158,23 @@ NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &
     if (maxReach==0 || (memo.find(t_id)!=memo.end())) 
         return; 
     AdjListNode *node = _graph.array.at(t_id).head; 
+    TriangleMeshGraph<T>::timers[3].start();
     while (node != nullptr)
     {
         neighbours.insert(node->dest); 
         node = node->next; 
     }
-    memo.insert(t_id);  // FIXME debug
+    TriangleMeshGraph<T>::timers[3].pause();
+    TriangleMeshGraph<T>::timers[4].start();
+    memo.insert(t_id);
+    TriangleMeshGraph<T>::timers[4].pause();
     // recursively call all neighbours
     std::set<int> newNeighbours; 
     for (const int &n : neighbours) 
         NeighboursOfTriangleRec(n, maxReach-1, newNeighbours, memo); 
+    TriangleMeshGraph<T>::timers[5].start();
     neighbours.insert(newNeighbours.begin(), newNeighbours.end());
+    TriangleMeshGraph<T>::timers[5].pause();
 }
 
 //##############################################################################

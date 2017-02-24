@@ -2,6 +2,7 @@
 #define TRIANGLE_MESH_GRAPH_HPP 
 #include <vector>
 #include "geometry/TriangleMeshKDTree.hpp"
+#include "utils/timer.hpp"
 
 //##############################################################################
 // Class TriangleMeshGraph
@@ -43,6 +44,7 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         bool  _graph_built = false;
 
     public: 
+        static std::vector<Timer<false> > timers;
         void FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex,  std::vector<int> &triangleIndices) const;
         T ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const T &errorTol=0.999, const int &N_neighbours=5, const int &maxLevel=1) const; 
         void BuildGraph(const T &nnRadius=0.0); 

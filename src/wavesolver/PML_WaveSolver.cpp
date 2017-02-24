@@ -493,6 +493,12 @@ bool PML_WaveSolver::stepSystem()
         //printf( "       - KD-tree search               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[14].elapsed());
         //printf( "       - find projection point        took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[15].elapsed());
         printf( "       USING GRAPH                    took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[17].elapsed());
+        printf( "       - linked list access           took %f sec\n", TriangleMeshGraph<REAL>::timers[0].elapsed()); TriangleMeshGraph<REAL>::timers[0].reset();
+        printf( "         - traverse                   took %f sec\n", TriangleMeshGraph<REAL>::timers[3].elapsed()); TriangleMeshGraph<REAL>::timers[3].reset();
+        printf( "         - insert memo                took %f sec\n", TriangleMeshGraph<REAL>::timers[4].elapsed()); TriangleMeshGraph<REAL>::timers[4].reset();
+        printf( "         - insert into container      took %f sec\n", TriangleMeshGraph<REAL>::timers[5].elapsed()); TriangleMeshGraph<REAL>::timers[5].reset();
+        printf( "       - sort distances               took %f sec\n", TriangleMeshGraph<REAL>::timers[1].elapsed()); TriangleMeshGraph<REAL>::timers[1].reset();
+        printf( "       - copy container               took %f sec\n", TriangleMeshGraph<REAL>::timers[2].elapsed()); TriangleMeshGraph<REAL>::timers[2].reset();
         printf( "     - find distance, normal etc      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[13].elapsed());
         printf( "   - Evaluate boundary acceleration   took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[2].elapsed());
         printf( "     - NN search for each vertex      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[4].elapsed());

@@ -379,16 +379,16 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
       MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
 
       // FIXME debug
-      int graph = closestTriangleIndex; 
-      const Vector3d bpGraph = boundaryPoint; 
-      distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      if (graph != closestTriangleIndex) 
-      {
-          std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
-          std::cerr << " point       = " << originalPoint << std::endl; 
-          std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
-          std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
-      }
+      //int graph = closestTriangleIndex; 
+      //const Vector3d bpGraph = boundaryPoint; 
+      //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+      //if (graph != closestTriangleIndex) 
+      //{
+      //    std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
+      //    std::cerr << " point       = " << originalPoint << std::endl; 
+      //    std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
+      //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
+      //}
     }
     
     MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
