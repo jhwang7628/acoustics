@@ -16,27 +16,10 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
     protected: 
         using TriangleMesh<T>::m_vertices;
         using TriangleMesh<T>::m_triangles; 
-        //struct AdjListNode
-        //{
-        //    int dest; 
-        //    AdjListNode *next; 
-        //    AdjListNode(const int &d) 
-        //        : dest(d), next(nullptr)
-        //    {}
-        //};
-        //struct AdjList
-        //{
-        //    AdjListNode *head; 
-        //    AdjList()
-        //        : head(nullptr)
-        //    {}
-        //    ~AdjList();
-        //};
         struct Graph
         {
             int numNodes; 
             std::vector<std::vector<int> > array; 
-            //std::vector<AdjList> array; 
             void Initialize(const int &V); 
             void AddEdge(const int &src, const int &dest); 
         };
