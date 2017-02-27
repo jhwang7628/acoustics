@@ -49,13 +49,13 @@ FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &max
     const TriangleDistanceComp<T> sorter(this, point); 
     std::set<int> neighbours; 
     NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
+    if (neighbours.size()<k)
+        throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
     TriangleMeshGraph<T>::timers[0].pause();
     TriangleMeshGraph<T>::timers[1].start();
     triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
-    std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
+    std::partial_sort(triangleIndices.begin(), triangleIndices.begin()+k, triangleIndices.end(), sorter); 
     TriangleMeshGraph<T>::timers[1].pause();
-    if (triangleIndices.size()<k)
-        throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
     TriangleMeshGraph<T>::timers[2].start();
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
     TriangleMeshGraph<T>::timers[2].pause();
