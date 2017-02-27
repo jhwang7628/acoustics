@@ -33,7 +33,7 @@ class TriangleMeshKDTree : public TriangleMesh<T>
 
     protected:
         std::shared_ptr<VlKDForest>         _nnForest; 
-        RowMajorMatrixXd                    _triangleCentroids; 
+        std::vector<Vector3<T>>             _triangleCentroids; 
 
     public: 
         ~TriangleMeshKDTree()
@@ -44,7 +44,7 @@ class TriangleMeshKDTree : public TriangleMesh<T>
         virtual T FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &triangleIndices) const; 
         virtual T FindNearestTriangle(const Vector3<T> &point, int &triangleIndex) const; 
         virtual int FindTrianglesWithinBall(const Vector3<T> &point, const T &radius, std::set<int> &triangleIndices) const; 
-        inline Vector3<T> TriangleCentroid(const int &t_idx) const {return Vector3<T>(_triangleCentroids.row(t_idx)[0], _triangleCentroids.row(t_idx)[1], _triangleCentroids.row(t_idx)[2]);}
+        inline const Vector3<T> &TriangleCentroid(const int &t_idx) const {return _triangleCentroids.at(t_idx);}
         void BuildKDTree();
 
         ///// debugging methods /////
@@ -65,7 +65,8 @@ BuildKDTree()
 
     // first compute centroids for each triangles and stored them
     const int N_triangles = this->m_triangles.size(); 
-    _triangleCentroids.resize(N_triangles, 3); 
+    //_triangleCentroids.resize(N_triangles, 3); 
+    _triangleCentroids.resize(N_triangles); 
     for (int t_idx=0; t_idx<N_triangles; ++t_idx)
     {
         const Tuple3ui &indices  = this->m_triangles.at(t_idx); 
@@ -73,14 +74,12 @@ BuildKDTree()
         const Point3<T> &vertex1 = this->m_vertices.at(indices.y); 
         const Point3<T> &vertex2 = this->m_vertices.at(indices.z); 
         const Point3<T> centroid = (vertex0 + vertex1 + vertex2)/3.0;
-        _triangleCentroids(t_idx, 0) = centroid.x;
-        _triangleCentroids(t_idx, 1) = centroid.y;
-        _triangleCentroids(t_idx, 2) = centroid.z;
+        _triangleCentroids.at(t_idx) = centroid;
     }
 
     // build forest
     _nnForest.reset(vl_kdforest_new(VL_TYPE_DOUBLE, 3, 1, VlDistanceL2)); 
-    vl_kdforest_build(_nnForest.get(), N_triangles, _triangleCentroids.data()); 
+    vl_kdforest_build(_nnForest.get(), N_triangles, &(_triangleCentroids[0])); 
 }
 
 //##############################################################################
@@ -197,15 +196,13 @@ TestKDTree(const int &k)
         const T y = static_cast<T>(rand())/static_cast<T>(RAND_MAX) * boundingRadius;
         const T z = static_cast<T>(rand())/static_cast<T>(RAND_MAX) * boundingRadius;
         const Vector3<T> sample(x, y, z); 
-        RowMajorMatrixXd sample_e(1, 3); 
-        sample_e << x, y, z; 
 
         // do a brute force search to find reference;
         T minDistance = std::numeric_limits<T>::max(); 
         int index = -1; 
         for (int t_idx=0; t_idx<N_triangles; ++t_idx)
         {
-            const T distance = (_triangleCentroids.row(t_idx) - sample_e).squaredNorm(); 
+            const T distance = (TriangleCentroid(t_idx) - sample).lengthSqr(); 
             if (distance < minDistance) 
             {
                 minDistance = distance; 
