@@ -60,6 +60,7 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         void BuildGraph(const T &nnRadius=0.0); 
         void NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const;
         void NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const;
+        void NeighboursOfTriangle(const int &t_id, std::vector<int> &neighbours) const;
 };
 
 #endif
