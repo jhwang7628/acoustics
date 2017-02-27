@@ -5,6 +5,32 @@
 #include "utils/timer.hpp"
 
 //##############################################################################
+// Class TriangleDistanceComp
+//##############################################################################
+template <typename T>
+class TriangleDistanceComp
+{
+    private: 
+        const TriangleMeshKDTree<T> *mesh; 
+        const Vector3<T> &referencePoint; 
+    public:
+        TriangleDistanceComp(const TriangleMeshKDTree<T> *m, const Vector3<T> &ref)
+            : mesh(m), referencePoint(ref)
+        {
+            assert(mesh); 
+        }
+        bool operator()(const int &tid_ii, const int &tid_jj) const
+        {
+            assert(mesh);
+            const Vector3<T> v_ii = (mesh->TriangleCentroid(tid_ii) - referencePoint); 
+            const Vector3<T> v_jj = (mesh->TriangleCentroid(tid_jj) - referencePoint); 
+            const T d_ii = v_ii.lengthSqr(); 
+            const T d_jj = v_jj.lengthSqr(); 
+            return (d_ii < d_jj); 
+        }
+};
+
+//##############################################################################
 // Class TriangleMeshGraph
 //   This class uses an adjacency-list based graph to represent adjacency 
 //   structure of the mesh.
@@ -34,31 +60,6 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         void BuildGraph(const T &nnRadius=0.0); 
         void NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const;
         void NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const;
-};
-
-//##############################################################################
-// Class TriangleDistanceComp
-//##############################################################################
-template <typename T>
-class TriangleDistanceComp
-{
-    private: 
-        const TriangleMeshGraph<T> *mesh; 
-        const Vector3<T> &referencePoint; 
-    public:
-        TriangleDistanceComp(const TriangleMeshGraph<T> *m, const Vector3<T> &ref)
-            : mesh(m), referencePoint(ref)
-        {
-            assert(mesh); 
-        }
-        bool operator()(const int &tid_ii, const int &tid_jj) const
-        {
-            const Vector3<T> v_ii = (mesh->TriangleCentroid(tid_ii) - referencePoint); 
-            const Vector3<T> v_jj = (mesh->TriangleCentroid(tid_jj) - referencePoint); 
-            const T d_ii = v_ii.lengthSqr(); 
-            const T d_jj = v_jj.lengthSqr(); 
-            return (d_ii < d_jj); 
-        }
 };
 
 #endif

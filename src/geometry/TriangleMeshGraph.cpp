@@ -46,12 +46,12 @@ void TriangleMeshGraph<T>::
 FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
     TriangleMeshGraph<T>::timers[0].start();
+    const TriangleDistanceComp<T> sorter(this, point); 
     std::set<int> neighbours; 
     NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
     TriangleMeshGraph<T>::timers[0].pause();
     TriangleMeshGraph<T>::timers[1].start();
     triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
-    TriangleDistanceComp<T> sorter(this, point); 
     std::sort(triangleIndices.begin(), triangleIndices.end(), sorter); 
     TriangleMeshGraph<T>::timers[1].pause();
     if (triangleIndices.size()<k)
@@ -153,8 +153,9 @@ NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &
     TriangleMeshGraph<T>::timers[4].pause();
     // recursively call all neighbours
     std::set<int> newNeighbours; 
-    for (const int &n : neighbours) 
-        NeighboursOfTriangleRec(n, maxReach-1, newNeighbours, memo); 
+    if (maxReach-1==0)
+        for (const int &n : neighbours) 
+            NeighboursOfTriangleRec(n, maxReach-1, newNeighbours, memo); 
     TriangleMeshGraph<T>::timers[5].start();
     neighbours.insert(newNeighbours.begin(), newNeighbours.end());
     TriangleMeshGraph<T>::timers[5].pause();
