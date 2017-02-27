@@ -100,6 +100,18 @@ public:
         m_lastVals.setZero();
         m_state.setZero();
     }
+
+    bool
+    isActive(REAL time)
+	{
+		if (m_startTime > time) return false;
+
+        double endTime = m_endTime > 1000 ? m_startTime + .001 : m_endTime;
+
+        if (m_currentTime > 0 && m_currentTime > endTime && m_state.norm() <= 1e-15) return false;
+
+        return true;
+	}
 };
 
 static int
@@ -1259,7 +1271,42 @@ outputOscillatorInfo(const std::vector<Oscillator>& oscillators)
     of.close();
 }
 
-typedef vtkSmartPointer<vtkUnstructuredGrid> BubbleSurfaceData;
+// Class to hold a triangle mesh
+class Mesh
+{
+public:
+	std::vector<Eigen::Vector3d> m_vertices;
+	std::vector<Eigen::Vector3i> m_triangles;
+	std::vector<double> m_triangleData;
+
+	loadGmsh(const std::string &fileName)
+	{
+		std::string line;
+
+		// Skip first four lines
+		for (int i = 0; i < 4; ++i)
+		{
+			std::getline();
+		}
+
+		// Next line is # of vertices
+		int numVerts;
+
+		// Read the vertices
+		for ()
+		{
+		}
+
+		// Skip two lines
+
+		// Read # of triangles
+
+		// Read triangles
+	}
+};
+
+// TODO: need to update this for other examples to read the original saved solution data
+typedef Mesh BubbleSurfaceData;
 typedef std::map<double, std::map<int, BubbleSurfaceData>> BubbleSurfaceDataIndex;
 
 void
@@ -1270,7 +1317,7 @@ loadSurfaceData(const std::vector<std::string>> &files, BubbleSurfaceDataIndex &
     // Loop through files
     for (int i = 0; i < files.size(); ++i)
     {
-        // Parse time and bubble number from files
+        // TODO: Parse time and bubble number from files
         double t;
         int bubNum;
 
@@ -1285,7 +1332,7 @@ loadSurfaceData(const std::vector<std::string>> &files, BubbleSurfaceDataIndex &
 }
 
 void
-updateOscillators(READ time)
+updateOscillators(REAL time)
 {
     RK4<Vector2d> integrator;
     typedef BubbleOscillator<Vector2d> DS;
@@ -1297,14 +1344,10 @@ updateOscillators(READ time)
         // Skip if there are not enough frequency solves
         if (osc.m_frequencies.getData().rows() < 1) continue;
 
-        // If this oscillator is active, advance it
-        if (osc.m_startTime < time) continue;
+        // If this oscillator is not active yet, skip it
+        if (!osc.isActive(time)) continue;
 
         DS bubOsc(osc, 0);
-
-        double endTime = osc.m_endTime > 1000 ? osc.m_startTime + .001 : osc.m_endTime;
-
-        if (osc.m_currentTime > 0 && osc.m_currentTime > endTime && osc.m_state.norm() <= 1e-15) continue;
 
         // Can step now
         if (osc.m_currentTime < 0)
@@ -1334,6 +1377,45 @@ updateOscillators(READ time)
             osc.m_currentTime += dt;
         }
     }
+}
+
+BubbleSurfaceData tPrev, tNext;
+
+void
+computeVelocities(REAL time)
+{
+	tPrev->ShallowCopy(tNext);
+
+	BubbleSurfaceDataIndex::iterator nextData = index.lower_bound(time);
+	if (nextData == index.end())
+	{
+		throw std::runtime_error("handle this");
+	}
+
+	tNext->deepCopy( *nextData->second.begin()->second );
+
+	// Set all velocities to 0
+	zeroVelocities(tNext);
+
+	// Loop through the oscillators
+    for (int i = 0; i < m_oscillators.size(); ++i)
+    {
+        Oscillator &osc = m_oscillators[i];
+
+        if (!osc.isActive(time)) continue;
+
+        // Add this oscillators velocities to the current time velocities
+	}
+}
+
+void
+projectToPlane()
+{
+}
+
+void
+createMLSInterpolators()
+{
 }
 
 // Run this once per timestep
