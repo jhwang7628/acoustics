@@ -28,7 +28,7 @@ build*
 gcc-build
 work
 
-src/scripts/rendering
+src/scripts/rendering/old
 src/scripts/db_gdrive/index.html
 src/scripts/db_gdrive/client_secret.json
 src/scripts/db_gdrive/downloaded
