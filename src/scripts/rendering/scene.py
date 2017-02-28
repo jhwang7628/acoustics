@@ -1,5 +1,6 @@
 #!/usr/bin/env python 
-import math
+import math,struct
+import numpy as np
 ################################################################################
 ################################################################################
 class Rotation:
@@ -25,6 +26,19 @@ class Rotation:
         else: 
             assert(False)
         return s
+    ############################################################################
+    ## @param quat quaternion that is vector-4 [w, x, y, z], w is the real part
+    ############################################################################
+    @staticmethod
+    def Quaternion_To_Axis_Rotation_Degree(quat): 
+        rRad = 2.0 * np.arccos(quat[0])
+        if (rRad < 1E-12): 
+            rAxis = np.array([0., 1., 0.])
+        else: 
+            rAxis = np.array(quat[1:])
+            rAxis = rAxis / np.linalg.norm(rAxis)
+        rDeg = 180./np.pi * rRad
+        return rAxis, rDeg
 
 ################################################################################
 ################################################################################
@@ -64,7 +78,12 @@ class Rigid_Frame:
 ################################################################################
 class Object: 
     def __init__(self): 
+        self.restCOM = None
         self.ID = -1
+    def Read_Rest_COM(self, filename): 
+        ifs = open(filename, 'rb') 
+        all_bytes = ifs.read()
+        self.restCOM = struct.unpack('ddd', all_bytes)
 
 ################################################################################
 ################################################################################

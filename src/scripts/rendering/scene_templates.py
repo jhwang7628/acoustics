@@ -17,7 +17,7 @@ def Simple_3PointLight_Diffuse_Mts_Scene(frame_string, definition='test', resolu
 
     if integrator_string is None:
         integrator_string = """
-    <integrator type="bdpt">
+    <integrator type="path">
         <integer name="maxDepth" value="120"/>
     </integrator> """
 
