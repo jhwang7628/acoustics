@@ -377,8 +377,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
       MAC_Grid::GhostCell::ghostCellTimers[17].start(); 
       distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
       MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
-
-      // FIXME debug
+      // uncomment if want to test between graph-search and kdtree-search results
       //int graph = closestTriangleIndex; 
       //const Vector3d bpGraph = boundaryPoint; 
       //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
