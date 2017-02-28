@@ -1275,59 +1275,195 @@ outputOscillatorInfo(const std::vector<Oscillator>& oscillators)
 class Mesh
 {
 public:
+    enum
+    {
+        FLUID_AIR = 1,
+        SOLID = 2
+    }
+
 	std::vector<Eigen::Vector3d> m_vertices;
 	std::vector<Eigen::Vector3i> m_triangles;
-	std::vector<double> m_triangleData;
+    std::vector<int> m_triType;
 
 	loadGmsh(const std::string &fileName)
 	{
+        std::ifstream in(fileName.c_str());
+
 		std::string line;
 
 		// Skip first four lines
 		for (int i = 0; i < 4; ++i)
 		{
-			std::getline();
+			std::getline(in, line);
 		}
 
 		// Next line is # of vertices
 		int numVerts;
+		in >> numVerts;
+
+		m_vertices.resize(numVerts);
 
 		// Read the vertices
-		for ()
+		for (int i = 0; i < numVerts; ++i)
 		{
+		    int index;
+		    double x, y, z;
+
+		    in >> index >> x >> y >> z;
+
+            m_vertices[i] << x, y, z;
 		}
 
 		// Skip two lines
+		in >> line >> line;
 
 		// Read # of triangles
+		int numFaces;
+		in >> numFaces;
+
+		m_triangles.resize(numFaces);
+		m_triType.resize(numFaces);
 
 		// Read triangles
+		for (int i = 0; i < numFaces; ++i)
+        {
+            int ignore, type, index, v1, v2, v3;
+            in >> ignore >> ignore >> ignore;
+            in >> type >> index >> v1 >> v2 >> v3;
+
+            m_triangles[i] << v1 - 1, v2 - 1, v3 - 1;
+            m_triType[i] = type;
+        }
 	}
 };
 
-// TODO: need to update this for other examples to read the original saved solution data
-typedef Mesh BubbleSurfaceData;
-typedef std::map<double, std::map<int, BubbleSurfaceData>> BubbleSurfaceDataIndex;
+typedef struct
+{
+    int bubNum;
+    double freq; // Negative for bad/dead bubbles
+    std::complex<double> xfrIn; // TODO: unnecessary here
+} BubbleInputInfo;
+
+static void
+parseFreqFile(const std::string &fName,
+              std::vector<BubbleInputInfo> &bubInfo)
+{
+    using namespace std;
+
+    ifstream in(fName.c_str());
+
+    string line;
+
+    bubInfo.clear();
+
+    // First line is time
+    getline(in, line);
+
+    // Read first real line
+    getline(in, line);
+
+    vector<string> data;
+    while (!line.empty())
+    {
+        boost::split(data, line, boost::is_any_of(" \n"), boost::token_compress_on);
+
+        if (data.size() < 2)
+        {
+            break;
+        }
+
+        BubbleInputInfo curInfo;
+        curInfo.bubNum = atoi(data[0].c_str());
+
+        if (data.size() == 2)
+        {
+            // Bad bubble
+            curInfo.freq = -1;
+        }
+        else
+        {
+            // Good bubble
+
+            curInfo.freq = atof(data[1].c_str());
+
+            vector<string> xfrData;
+            boost::split(xfrData, data[2], boost::is_any_of("(),"), boost::token_compress_on);
+
+            curInfo.xfrIn = complex<double>(atof(xfrData[1].c_str()), atof(xfrData[2].c_str()));
+        }
+
+        bubInfo.push_back(curInfo);
+
+        getline(in, line);
+    }
+}
+
+typedef std::map<int, std::vector<double>> SurfaceVelocityData;
+
+Mesh m1, m2;
+SurfaceVelocityData v1, v2;
+std::vector<BubbleInputInfo> b1, b2;
+std::vector<double> totalV1, totalV2;
+double t1, t2; // surrounding times for surface data
+
+struct FileNames
+{
+    std::string meshFile;
+    std::string datFile; // helmholtz solution file
+    std::string freqFile; // frequency info file
+};
+
+std::map<double, FileNames> fileInfo; // indexed by time
 
 void
-loadSurfaceData(const std::vector<std::string>> &files, BubbleSurfaceDataIndex &index)
+loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
+                   const std::string &fileName,
+                   const Mesh &mesh,
+                   SurfaceVelocityData &output)
 {
-    vtkSmartPointer<vtkXMLUnstructuredGridReader> reader = vtkSmartPointer<vtkXMLUnstructuredGridReader>::New();
+    std::ifstream in(fileName.c_str());
 
-    // Loop through files
-    for (int i = 0; i < files.size(); ++i)
+    // Count number of fluid surface triangles
+    int airTris = 0;
+
+    for (int type : mesh.m_triType)
     {
-        // TODO: Parse time and bubble number from files
-        double t;
-        int bubNum;
+        if (type == Mesh::FLUID_AIR)
+            ++airTris;
+    }
 
-        reader->SetFileName(files[i]);
-        reader->Update();
+    double rho = 1.184; // Density of air
 
-        BubbleSurfaceData data = BubbleSurfaceData::New();
-        data->ShallowCopy(reader->GetOutput());
+    for (int i = 0; i < bubInfo.size(); ++i)
+    {
+        // skip bad bubbles
+        if (bubInfo[i].freq < 0) continue;
 
-        index[t][bubNum] = data;
+        double omega = 2 * M_PI * bubInfo[i].freq;
+
+        std::complex<double> factor(0, -omega * rho);
+        std::complex<double> val;
+
+        // Read the dirichlet data and discard it
+        for (int j = 0; j < mesh.m_vertices.size(); ++j)
+        {
+            in.read((char*)&val.real(), sizeof(val.real()));
+            in.read((char*)&val.imag(), sizeof(val.imag()));
+        }
+
+        output[bubInfo[i].bubNum].resize(airTris);
+
+        std::vector<double> &curOutput = output[bubInfo[i].bubNum];
+
+        // Read the velocity data and store it
+        for (int j = 0; j < airTris; ++j)
+        {
+            in.read((char*)&val.real(), sizeof(val.real()));
+            in.read((char*)&val.imag(), sizeof(val.imag()));
+
+            // Convert from pressure gradient to velocity here
+            curOutput.at(j) = (val / factor).real();
+        }
     }
 }
 
@@ -1379,21 +1515,9 @@ updateOscillators(REAL time)
     }
 }
 
-BubbleSurfaceData tPrev, tNext;
-
 void
 computeVelocities(REAL time)
 {
-	tPrev->ShallowCopy(tNext);
-
-	BubbleSurfaceDataIndex::iterator nextData = index.lower_bound(time);
-	if (nextData == index.end())
-	{
-		throw std::runtime_error("handle this");
-	}
-
-	tNext->deepCopy( *nextData->second.begin()->second );
-
 	// Set all velocities to 0
 	zeroVelocities(tNext);
 
@@ -1406,6 +1530,19 @@ computeVelocities(REAL time)
 
         // Add this oscillators velocities to the current time velocities
 	}
+}
+
+void
+updateSurfaceVelocityData(REAL time)
+{
+    if (time <= t2) return;
+
+    auto iter = fileInfo.lower_bound(time);
+    t1 = t2;
+    t2 = iter->first;
+
+
+
 }
 
 void
@@ -1424,6 +1561,9 @@ updateTime(REAL time)
 {
     // Update all oscillators to the correct time (one timestep after this time)
     updateOscillators(time);
+
+    // Load new surface velocity data if necessary
+    updateSurfaceVelocityData(time);
 
     // Compute velocity before and after current time step
     computeVelocities(time);
