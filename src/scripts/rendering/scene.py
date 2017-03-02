@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-import math,struct
+import math,struct,os
 import numpy as np
 ################################################################################
 ################################################################################
@@ -80,18 +80,31 @@ class Object:
     def __init__(self): 
         self.restCOM = None
         self.ID = -1
+        self.material_format_string = None
     def Read_Rest_COM(self, filename): 
+        assert(os.path.isfile(filename))
         ifs = open(filename, 'rb') 
         all_bytes = ifs.read()
         self.restCOM = struct.unpack('ddd', all_bytes)
+    def Set_Material_String(self, s_mat): 
+        self.material_format_string = s_mat
 
 ################################################################################
 ################################################################################
 class Rigid_Wavefront_Obj(Object): 
     def __init__(self, filename): 
+        self.objname = None
         self.filename = filename
+        base = os.path.basename(filename)
+        self.objname = base.split('.')[0] 
+        prefix = os.path.dirname(filename)
+        print prefix, self.objname
+        rest_com_file = '%s/%s_centerOfMass.3vector' %(prefix, self.objname)
+        self.Read_Rest_COM(rest_com_file)
         self.frames = []
     def Format_String(self, frame, material_string=''):
+        if (self.material_format_string is not None):
+            material_string = self.material_format_string
         s = """
     <shape type="obj">
         <string name="filename" value="%s"/> %s %s
@@ -105,6 +118,8 @@ class Ply(Object):
         self.filename = filename
         self.frames = []
     def Format_String(self, frame, material_string=''):
+        if (self.material_format_string is not None):
+            material_string = self.material_format_string
         s = """
     <shape type="ply">
         <string name="filename" value="%s"/> %s %s
