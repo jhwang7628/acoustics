@@ -89,7 +89,7 @@ def Simple_3PointLight_Diffuse_Mts_Scene(frame_string, definition='test', resolu
             <string name="pixelFormat" value="rgba"/>
             <boolean name="banner" value="false"/>
         </film>
-        <sampler type="halton">
+        <sampler type="ldsampler">
             <integer name="sampleCount" value="%d"/>
         </sampler>
 
