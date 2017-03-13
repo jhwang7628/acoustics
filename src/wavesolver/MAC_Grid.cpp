@@ -665,15 +665,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     if (N_ghostCells == 0) return; 
 
     // reset cache
-    std::cout << "START reset cache" << std::endl;;
     typedef std::unordered_map<GhostCellId, std::unordered_map<int, TriangleIdentifier>>::iterator It_Outer; 
     typedef std::unordered_map<int, TriangleIdentifier>::iterator It_Inner; 
     for (It_Outer it_o=_ghostCellPreviousTriangles.begin(); it_o!=_ghostCellPreviousTriangles.end(); ++it_o)
         for (It_Inner it_i=it_o->second.begin(); it_i!=it_o->second.end(); ++it_i)
             it_i->second.active = false; 
-    std::cout << "END reset cache" << std::endl;;
 
-    std::cout << "START ghost cell update" << std::endl;;
     std::unordered_map<GhostCellId,std::unordered_map<int,TriangleIdentifier>> ghostCellPreviousTrianglesNew; 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
@@ -822,13 +819,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             p_r = p_rasterize; 
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
     }
-    std::cout << "END ghost cell update" << std::endl;;
     // update the map
-    std::cout << "START map update" << std::endl;;
     for (It_Outer it_o=ghostCellPreviousTrianglesNew.begin(); it_o!=ghostCellPreviousTrianglesNew.end(); ++it_o) 
         for (It_Inner it_i=it_o->second.begin(); it_i!=it_o->second.end(); ++it_i) 
             _ghostCellPreviousTriangles[it_o->first][it_i->first] = it_i->second; 
-    std::cout << "END map update" << std::endl;;
 }
 
 //##############################################################################
@@ -2347,14 +2341,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             _containingObject.at(cell_idx) = containObjectId; 
 
             const bool newIsBulkCell = (containObjectId>=0 ? false : true); 
-            // clear cached triangle if fresh cell
-            if (newIsBulkCell && _isBulkCell.at(cell_idx)) 
-            {
-                const auto it = _ghostCellPreviousTriangles.find(cell_idx); 
-                if (it!=_ghostCellPreviousTriangles.end())
-                    _ghostCellPreviousTriangles.erase(it); 
-            }
-
             _isBulkCell.at(cell_idx) = newIsBulkCell; 
             if (!newIsBulkCell) 
             {
@@ -3096,7 +3082,6 @@ void MAC_Grid::FillVandermondeBoundary(const int &row, const Vector3d &boundaryP
 
 void MAC_Grid::ClearUnusedCache()
 {
-    std::cout << "START ClearUnusedCache" << std::endl;;
     typedef std::unordered_map<GhostCellId, std::unordered_map<int, TriangleIdentifier>>::iterator It_Outer; 
     typedef std::unordered_map<int, TriangleIdentifier>::iterator It_Inner; 
     It_Outer it_o = _ghostCellPreviousTriangles.begin(); 
@@ -3123,7 +3108,6 @@ void MAC_Grid::ClearUnusedCache()
         }
         //std::cout << "here3" << std::endl;
     }
-    std::cout << "END ClearUnusedCache" << std::endl;;
 }
 
 //// debug methods //// 
