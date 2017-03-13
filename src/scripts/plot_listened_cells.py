@@ -65,8 +65,8 @@ if __name__ == '__main__':
     maxValue = np.absolute(listenedData).max()
     print 'Normalize all data by max value = %f' %(maxValue)
     # writing the wav files
-    frontPadTime = 0.1416
-    endPadTime = 1.0
+    frontPadTime = 0.31469
+    endPadTime = 0.0
     N_frontPad = int(frontPadTime*float(wavRate))
     N_endPad = int(endPadTime*float(wavRate))
     N_frontPadStep = int(frontPadTime*float(stepRate))
@@ -140,7 +140,7 @@ if __name__ == '__main__':
                     plt.plot(analyticalListenedData[:, ii], 'x', color=colors[ii], )
                 # else:
                     # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
-            plt.legend(loc=4)
+            # plt.legend(loc=4)
         plt.title('Collocated formulation with PML')
         plt.xlabel('frame') 
         plt.ylabel('Pressure (Pascal)')
