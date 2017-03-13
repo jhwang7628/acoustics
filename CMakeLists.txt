@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.0.2)
 # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
-SET(CMAKE_CXX_FLAGS "-std=c++11")
+SET(CMAKE_CXX_FLAGS "-std=c++14")
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
@@ -76,6 +76,7 @@ else ( USE_DEBUG )
     MESSAGE(STATUS "Using release mode")
     set(CMAKE_BUILD_TYPE Release)
     add_definitions(-Wall)
+    add_definitions(-Wno-unused-result -Wno-sign-compare -Wno-unused-variable -Wno-unused-local-typedefs)
 endif ( USE_DEBUG )
 
 if (USE_DEBUG_PRINT)

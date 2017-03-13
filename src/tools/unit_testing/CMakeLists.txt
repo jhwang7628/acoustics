@@ -7,11 +7,6 @@ if (BUILD_UNIT_TESTING)
     # ===================
     set(GENERAL_TESTING_SRCS
         testing.h) 
-
-    # ===================
-    # Settings
-    # ===================
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
     
     # ===================
     # Definitions

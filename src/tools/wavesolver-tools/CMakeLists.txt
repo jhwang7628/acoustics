@@ -7,7 +7,6 @@ if ( BUILD_WAVESOLVER_TOOLS )
     # Definitions
     # ===================
     add_definitions(-DUSE_RECORDER) # needed for testing recorder
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
     # ===================
     # Target
