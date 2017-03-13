@@ -819,7 +819,7 @@ int AdaptiveDistanceField::load(const std::string& filename)
         }
     }
     
-    if (!recursiveNodeCount(&_adfNodes[0]) == numNodes)
+    if (!(recursiveNodeCount(&_adfNodes[0]) == numNodes))
     {
         printf("whole-tree traversal counted different number of nodes than numNodes!\n");
         return 2;
