@@ -365,18 +365,13 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     const Vector3d originalPointObject = WorldToObjectPoint(originalPoint); 
     int closestTriangleIndex; 
     Vector3d projectedPoint; // object space
-    MAC_Grid::GhostCell::ghostCellTimers[12].start(); 
     if (startFromTriangle<0) 
     {
-      MAC_Grid::GhostCell::ghostCellTimers[16].start(); 
       distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      MAC_Grid::GhostCell::ghostCellTimers[16].pause(); 
     }
     else
     {
-      MAC_Grid::GhostCell::ghostCellTimers[17].start(); 
       distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      MAC_Grid::GhostCell::ghostCellTimers[17].pause(); 
       // uncomment if want to test between graph-search and kdtree-search results
       //int graph = closestTriangleIndex; 
       //const Vector3d bpGraph = boundaryPoint; 
@@ -389,11 +384,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
       //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
       //}
     }
-    
-    MAC_Grid::GhostCell::ghostCellTimers[12].pause(); 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
-
-    MAC_Grid::GhostCell::ghostCellTimers[13].start(); 
     if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
         std::cerr << "**WARNING** distance smaller than tolerance\n";
@@ -440,8 +431,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
     }
 #endif
-
-    MAC_Grid::GhostCell::ghostCellTimers[13].pause(); 
     return closestTriangleIndex;
 }
 

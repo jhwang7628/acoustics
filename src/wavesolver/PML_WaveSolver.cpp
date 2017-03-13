@@ -486,32 +486,6 @@ bool PML_WaveSolver::stepSystem()
     if (_useGhostCellBoundary) 
     {
         printf( " - Ghost-cell update   took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
-        printf( "   - Find correct neighbouring object took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[0].elapsed());
-        printf( "   - Find reflection point            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[1].elapsed());
-        printf( "     - compute closest point mesh     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[12].elapsed());
-        printf( "       USING KD-TREE                  took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[16].elapsed());
-        //printf( "       - KD-tree search               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[14].elapsed());
-        //printf( "       - find projection point        took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[15].elapsed());
-        printf( "       USING GRAPH                    took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[17].elapsed());
-        printf( "       - linked list access           took %f sec\n", TriangleMeshGraph<REAL>::timers[0].elapsed()); TriangleMeshGraph<REAL>::timers[0].reset();
-        printf( "         - traverse                   took %f sec\n", TriangleMeshGraph<REAL>::timers[3].elapsed()); TriangleMeshGraph<REAL>::timers[3].reset();
-        printf( "         - insert memo                took %f sec\n", TriangleMeshGraph<REAL>::timers[4].elapsed()); TriangleMeshGraph<REAL>::timers[4].reset();
-        printf( "         - insert into container      took %f sec\n", TriangleMeshGraph<REAL>::timers[5].elapsed()); TriangleMeshGraph<REAL>::timers[5].reset();
-        printf( "       - sort distances               took %f sec\n", TriangleMeshGraph<REAL>::timers[1].elapsed()); TriangleMeshGraph<REAL>::timers[1].reset();
-        printf( "       - copy container               took %f sec\n", TriangleMeshGraph<REAL>::timers[2].elapsed()); TriangleMeshGraph<REAL>::timers[2].reset();
-        printf( "     - find distance, normal etc      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[13].elapsed());
-        printf( "   - Evaluate boundary acceleration   took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[2].elapsed());
-        printf( "     - NN search for each vertex      took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[4].elapsed());
-        printf( "     - Encode                         took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[5].elapsed());
-        printf( "       - L2 solve                     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[7].elapsed());
-        printf( "       - L1 solve                     took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[8].elapsed());
-        printf( "       - Update q basis               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[9].elapsed());
-        printf( "       - Update a basis               took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[10].elapsed());
-        printf( "         - Copy matrix col            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[11].elapsed());
-        printf( "     - Decode                         took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[6].elapsed());
-        printf( "   - Compute interpolation            took %f sec\n", MAC_Grid::GhostCell::ghostCellTimers[3].elapsed());
-        for (int ii=0; ii<MAC_Grid::GhostCell::ghostCellTimers.size(); ++ii)
-            MAC_Grid::GhostCell::ghostCellTimers.at(ii).reset(); 
     }
 #endif
 

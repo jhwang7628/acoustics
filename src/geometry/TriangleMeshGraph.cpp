@@ -46,7 +46,6 @@ void TriangleMeshGraph<T>::
 FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
     const TriangleDistanceComp<T> sorter(this, point); 
-    TriangleMeshGraph<T>::timers[0].start();
     if (maxLevel <= 1)
     {
         NeighboursOfTriangle(startTriangleIndex, triangleIndices); 
@@ -57,15 +56,10 @@ FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &max
         NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
         triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
     }
-    TriangleMeshGraph<T>::timers[0].pause();
     if (triangleIndices.size()<k)
         throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
-    TriangleMeshGraph<T>::timers[1].start();
     std::partial_sort(triangleIndices.begin(), triangleIndices.begin()+k, triangleIndices.end(), sorter); 
-    TriangleMeshGraph<T>::timers[1].pause();
-    TriangleMeshGraph<T>::timers[2].start();
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
-    TriangleMeshGraph<T>::timers[2].pause();
 }
 
 //##############################################################################
@@ -152,20 +146,14 @@ NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &
     // base case if run out of reach, or memoized
     if (maxReach==0 || (memo.find(t_id)!=memo.end())) 
         return; 
-    TriangleMeshGraph<T>::timers[3].start();
     neighbours.insert(_graph.array.at(t_id).begin(), _graph.array.at(t_id).end()); 
-    TriangleMeshGraph<T>::timers[3].pause();
-    TriangleMeshGraph<T>::timers[4].start();
     memo.insert(t_id);
-    TriangleMeshGraph<T>::timers[4].pause();
     // recursively call all neighbours
     std::set<int> newNeighbours; 
     if (maxReach-1==0)
         for (const int &n : neighbours) 
             NeighboursOfTriangleRec(n, maxReach-1, newNeighbours, memo); 
-    TriangleMeshGraph<T>::timers[5].start();
     neighbours.insert(newNeighbours.begin(), newNeighbours.end());
-    TriangleMeshGraph<T>::timers[5].pause();
 }
 
 //##############################################################################
