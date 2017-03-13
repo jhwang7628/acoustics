@@ -113,7 +113,7 @@ void RigidMesh::fitEllipsoid( ObjectMeasure measure )
     REAL                       V;
     REAL                       A;
     REAL                       ellipseArea;
-    REAL                       volumeScaling;
+    REAL                       volumeScaling = 0.;
 
     const REAL                 p = 1.6075;
 

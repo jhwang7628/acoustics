@@ -510,7 +510,7 @@ void RigidBodySimulator::apply_contact_impulse(
 #ifdef USE_RECORDER
     const Vector3<REAL> Jt = j*cRec.impulseDir;
     b->apply_impulse_to_prediction(Jt, r);
-#warning ------ NOTE HERE ------
+//#warning ------ NOTE HERE ------
     //m_impRec.record_impulse(m_ts, Jt, cRec.vtxId, b, true);
 #else
     b->apply_impulse_to_prediction(j*cRec.impulseDir, r);

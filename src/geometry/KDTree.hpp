@@ -255,7 +255,7 @@ class KDTree
         {
             int nodeId = locate_parent(pt);  // which node is pt in
 
-            int nrstId;
+            int nrstId = -1;
             typename _Acc::result_type nrstDist = LARGE_VAL;
             for(int i = m_nodes[nodeId].loIdx;i < m_nodes[nodeId].hiIdx;++ i)
             {
