@@ -61,7 +61,7 @@ if __name__ == '__main__':
     ## customized fields 
     download_dir = 'downloaded'
     query_models = [
-        'p_bowl'
+        'p_birdhouse'
     ]
     download_files = [
         'proj.obj',
