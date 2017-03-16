@@ -83,6 +83,7 @@ class ScalarField {
         {
             return cellPosition( cellIndex( flatIndex ) );
         }
+        Tuple3i                  enclosingCell(const Vector3d &position) const; 
 
         // Returns this cell's neighbours
         void                     cellNeighbours( const Tuple3i &index,

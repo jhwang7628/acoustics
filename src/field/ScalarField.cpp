@@ -132,6 +132,25 @@ void ScalarField::cellPosition( const Tuple3i &index, Vector3d &pos ) const
 }
 
 //////////////////////////////////////////////////////////////////////
+// Returns the cell that encloses the position
+//////////////////////////////////////////////////////////////////////
+Tuple3i ScalarField::enclosingCell(const Vector3d &position) const
+{
+    const Vector3d diff = position - _bbox.minBound(); 
+    Tuple3i indices; 
+    indices.x = (int) (diff.x/_cellSize); 
+    indices.y = (int) (diff.y/_cellSize); 
+    indices.z = (int) (diff.z/_cellSize); 
+    if (indices.x < 0 || indices.x >= _divisions[0]) 
+        throw std::runtime_error("**ERROR** enclosingCell out of bounds"); 
+    if (indices.y < 0 || indices.y >= _divisions[1]) 
+        throw std::runtime_error("**ERROR** enclosingCell out of bounds"); 
+    if (indices.z < 0 || indices.z >= _divisions[2]) 
+        throw std::runtime_error("**ERROR** enclosingCell out of bounds"); 
+    return indices; 
+}
+
+//////////////////////////////////////////////////////////////////////
 // Returns this cell's neighbours
 //////////////////////////////////////////////////////////////////////
 void ScalarField::cellNeighbours( const Tuple3i &index, IntArray &neighbours ) const
