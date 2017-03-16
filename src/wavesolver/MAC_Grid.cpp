@@ -803,8 +803,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                     ++it; 
                 }
             }
-            if (neighbours.size() >= 4)
+            //std::cout << "neighbour size = " << neighbours.size() << std::endl;  // FIXME debug
+            if (neighbours.size() > 4)
             {
+                //REAL condNum = 0.;
+                //const MLSVal mlsVal = mls.lookup(evalPt, points, attributes, (REAL)(-1), &condNum); 
+                //std::cout << " MLS solve cond num = " << condNum << std::endl; 
                 const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
                 p_r = mlsVal(0, 0);
             }
@@ -813,12 +817,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 p_r = p_rasterize; 
             }
         }
-        
         // after processing, if difference between interpolation and rasterize is over certain threshold, clamp it
         if (abs(p_rasterize) > SMALL_NUM && abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL)
             p_r = p_rasterize; 
         pGC.at(ghost_cell_idx) = p_r + weightedPressure; 
     }
+
     // update the map
     for (It_Outer it_o=ghostCellPreviousTrianglesNew.begin(); it_o!=ghostCellPreviousTrianglesNew.end(); ++it_o) 
         for (It_Inner it_i=it_o->second.begin(); it_i!=it_o->second.end(); ++it_i) 
