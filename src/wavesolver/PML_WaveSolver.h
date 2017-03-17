@@ -187,7 +187,7 @@ class PML_WaveSolver : public Solver
         void FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data); 
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
-        void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
+        void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const BoundingBox *sceneBox=nullptr);
         void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
         void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
         void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;

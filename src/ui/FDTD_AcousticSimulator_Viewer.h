@@ -66,6 +66,9 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         BEMSolverPtr    _bemSolver;
         int             _bemModePointer = 0; 
 
+        // scene parameters 
+        BoundingBox *_sceneBox; 
+
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawImpulses(); 
@@ -100,6 +103,10 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
                 InitializeBEMSolver();
         }
+        ~FDTD_AcousticSimulator_Viewer()
+        {
+            if (_sceneBox) delete _sceneBox; 
+        }
 
         inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
         void InitializeBEMSolver(); 
@@ -112,6 +119,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 
         void Push_Back_ReflectionArrows(const std::string &filename); 
+        void MoveSceneCenter(const int &dim, const double &displacement); 
 
     friend FDTD_AcousticSimulator_Widget; 
 };

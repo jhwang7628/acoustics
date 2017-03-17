@@ -325,7 +325,7 @@ void PML_WaveSolver::FetchVelocityData(const Vector3Array &listeningPoints, cons
 }
 
 // get neareset neighbour cell type
-void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data)
+void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const BoundingBox *sceneBox)
 {
     const int N = listeningPoints.size(); 
     if (N==0) return; 
@@ -360,7 +360,7 @@ void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, 
                 index = neighbours.at(nei_idx); 
             }
         }
-        data(ii, 0) = grid.PressureCellType(index); 
+        data(ii, 0) = grid.PressureCellType(index, sceneBox); 
     }
 }
 

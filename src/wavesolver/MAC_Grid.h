@@ -173,6 +173,8 @@ class MAC_Grid
             REAL updateCoefficient[3]; 
             REAL divergenceCoefficient[3]; 
             REAL absorptionCoefficient; 
+            Vector3d position;
+            bool needRemove; 
         };
 
         struct PML_VelocityCell
@@ -184,6 +186,8 @@ class MAC_Grid
             int neighbour_p_right;
             REAL updateCoefficient; 
             REAL gradientCoefficient; 
+            Vector3d position;
+            bool needRemove;
         }; 
 
     private: 
@@ -371,13 +375,15 @@ class MAC_Grid
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
-        REAL PressureCellType(const int &idx) const;
+        REAL PressureCellType(const int &idx, const BoundingBox *sceneBox=nullptr) const;
         void ResetCellHistory(const bool &valid); 
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
         int InPressureCell(const Vector3d &position); 
+        void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
+        void UpdatePML(const BoundingBox &sceneBox);
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
@@ -393,14 +399,12 @@ class MAC_Grid
         // interfacial cell
         void classifyCells( bool useBoundary );
 
-        int InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
+        bool InsidePML(const Vector3d &x, const REAL &absorptionWidth, int &flag, const BoundingBox *sceneBox=nullptr); 
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
-        //
-        // FIXME: For now, we will use a quadratic profile here, though
-        // we may need to try something more complex later on.
-        inline REAL PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension );
+        inline REAL PML_absorptionCoefficient(const Vector3d &x, REAL absorptionWidth, int dimension, 
+                                              const BoundingBox *sceneBox=nullptr) const;
 
         // Scaling factor for the initial velocity update in each time step
         //

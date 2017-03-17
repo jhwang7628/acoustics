@@ -322,6 +322,12 @@ DrawBox()
     _simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
+    if (_sceneBox) 
+    {
+        glColor3f(1.0f, 0.0f, 1.0f);
+        GL_Wrapper::DrawWireBox(&(_sceneBox->minBound()[0]), 
+                                &(_sceneBox->maxBound()[0])); 
+    }
 }
 
 //##############################################################################
@@ -874,6 +880,12 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "u pressed\n";
         DrawHalfFrameForward(); 
     }
+    else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
+        MoveSceneCenter(0, _solverSettings->cellSize/10.); 
+    }
+    else if ((e->key() == Qt::Key_Left) && (modifiers == Qt::NoButton)) {
+        MoveSceneCenter(0, -_solverSettings->cellSize/10.); 
+    }
     else {
         handled = false; 
     }
@@ -1054,7 +1066,7 @@ ComputeAndCacheSliceData(const int &dataPointer, Slice &slice)
         else if (dataPointer == 1)
         {
             // 0.0: bulk cell; 1: solid cell; -1: ghost cell
-            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data);
+            _simulator->GetSolver()->FetchPressureCellType(slice.samples, data, _sceneBox);
         } 
         else if (dataPointer == 2)
         {
@@ -1285,3 +1297,18 @@ Push_Back_ReflectionArrows(const std::string &filename)
     }
 }
 
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+MoveSceneCenter(const int &dim, const double &displacement) 
+{
+    if (!_sceneBox) 
+    {
+        const BoundingBox bbox = _simulator->GetGrid().PressureBoundingBox();
+        _sceneBox = new BoundingBox(bbox.minBound(), bbox.maxBound()); 
+    }
+    (_sceneBox->minBound())[dim] += displacement; 
+    (_sceneBox->maxBound())[dim] += displacement; 
+    std::cout << _sceneBox->center() << std::endl; 
+    _simulator->GetGrid().UpdatePMLAbsorptionCoeffs(*_sceneBox); 
+}
