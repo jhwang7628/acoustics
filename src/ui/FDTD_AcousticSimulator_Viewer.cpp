@@ -1310,5 +1310,5 @@ MoveSceneCenter(const int &dim, const double &displacement)
     (_sceneBox->minBound())[dim] += displacement; 
     (_sceneBox->maxBound())[dim] += displacement; 
     std::cout << _sceneBox->center() << std::endl; 
-    _simulator->GetGrid().UpdatePMLAbsorptionCoeffs(*_sceneBox); 
+    _simulator->GetGrid().UpdatePML(*_sceneBox); 
 }

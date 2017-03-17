@@ -425,12 +425,15 @@ void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MA
 #endif
     for (int ii=0; ii<N_cells; ++ii)
     {
-        const auto &cell = _pmlVelocityCells.at(ii);
-        const int &cell_idx = cell.index; 
+        auto &cell = _pmlVelocityCells.at(ii);
+        int &cell_idx = cell.index; 
         // update velocity
         v[cell.dimension](cell_idx, 0) *= cell.updateCoefficient; 
         v[cell.dimension](cell_idx, 0) += cell.gradientCoefficient * pFull(cell.neighbour_p_right, 0); 
         v[cell.dimension](cell_idx, 0) -= cell.gradientCoefficient * pFull(cell.neighbour_p_left , 0); 
+        //cell.velocity *= cell.updateCoefficient; 
+        //cell.velocity += cell.gradientCoefficient * pFull(cell.neighbour_p_right, 0); 
+        //cell.velocity -= cell.gradientCoefficient * pFull(cell.neighbour_p_left , 0); 
     }
 }
 
@@ -3072,16 +3075,6 @@ void MAC_Grid::UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox)
     // update pressure PML cells coeff
     for (auto &p_cell : _pmlPressureCells)
     {
-        int flag; 
-        if (!InsidePML(p_cell.position, _PML_absorptionWidth, flag, &sceneBox)) 
-        {
-            p_cell.needRemove = true; 
-            continue; 
-        }
-        else 
-        {
-            p_cell.needRemove = false; 
-        }
         REAL maxAbsorptionCoefficient = std::numeric_limits<REAL>::min(); 
         for (int dim=0; dim<3; ++dim)
         {
@@ -3096,16 +3089,6 @@ void MAC_Grid::UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox)
     // update velocity PML cells coeff
     for (auto &v_cell : _pmlVelocityCells)
     {
-        int flag; 
-        if (!InsidePML(v_cell.position, _PML_absorptionWidth, flag, &sceneBox))
-        {
-            v_cell.needRemove = true; 
-            continue; 
-        }
-        else 
-        {
-            v_cell.needRemove = false; 
-        }
         const REAL absorptionCoefficient = PML_absorptionCoefficient(v_cell.position, _PML_absorptionWidth, v_cell.dimension); 
         const REAL updateCoefficient = PML_velocityUpdateCoefficient(absorptionCoefficient, dt);
         const REAL gradientCoefficient  = PML_pressureGradientCoefficient(absorptionCoefficient, dt, dx, rho);
@@ -3115,12 +3098,48 @@ void MAC_Grid::UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox)
 }
 
 //##############################################################################
+// Function RemoveOldPML
+//##############################################################################
+void MAC_Grid::RemoveOldPML(const BoundingBox &sceneBox)
+{
+    std::cout << "Remove Old PML\n"; 
+    // flag all cells need removal
+    int flag; 
+    int removeP=0, removeV=0;
+    for (auto &p_cell : _pmlPressureCells) 
+    {
+        p_cell.needRemove = 
+            (!InsidePML(p_cell.position, _PML_absorptionWidth, flag, &sceneBox)); 
+        _isPMLCell.at(p_cell.index)  = (!p_cell.needRemove); 
+        _isBulkCell.at(p_cell.index) = ( p_cell.needRemove); 
+        if (p_cell.needRemove) ++removeP;
+    }
+    for (auto &v_cell : _pmlVelocityCells)
+    {
+        v_cell.needRemove = 
+            (!InsidePML(v_cell.position, _PML_absorptionWidth, flag, &sceneBox)); 
+        if (v_cell.needRemove) ++removeV;
+    }
+    _pmlPressureCells.erase(std::remove_if(_pmlPressureCells.begin(), 
+                                           _pmlPressureCells.end(), 
+                                           [](const auto &a){return a.needRemove;}),
+                            _pmlPressureCells.end()); 
+    _pmlVelocityCells.erase(std::remove_if(_pmlVelocityCells.begin(), 
+                                           _pmlVelocityCells.end(), 
+                                           [](const auto &a){return a.needRemove;}),
+                            _pmlVelocityCells.end()); 
+    std::cout << " remove pressure: " << removeP << "; now = " << _pmlPressureCells.size() << std::endl; 
+    std::cout << " remove velocity: " << removeV << "; now = " << _pmlVelocityCells.size() << std::endl; 
+}
+
+//##############################################################################
 // Function UpdatePML
 //   This function updates all the pml cells 
 //##############################################################################
 void MAC_Grid::UpdatePML(const BoundingBox &sceneBox) 
 {
     // flag all the cells that need removal
+    RemoveOldPML(sceneBox); 
     UpdatePMLAbsorptionCoeffs(sceneBox); 
     //TODO 
 }

@@ -165,6 +165,9 @@ class MAC_Grid
             REAL                RHS; 
         };
 
+        struct PML_PressureCell;
+        struct PML_VelocityCell; 
+
         struct PML_PressureCell
         {
             int index; 
@@ -175,6 +178,8 @@ class MAC_Grid
             REAL absorptionCoefficient; 
             Vector3d position;
             bool needRemove; 
+            PML_VelocityCell *lNeighbours[3]; 
+            PML_VelocityCell *rNeighbours[3]; 
         };
 
         struct PML_VelocityCell
@@ -186,6 +191,7 @@ class MAC_Grid
             int neighbour_p_right;
             REAL updateCoefficient; 
             REAL gradientCoefficient; 
+            REAL velocity; 
             Vector3d position;
             bool needRemove;
         }; 
@@ -382,6 +388,7 @@ class MAC_Grid
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
         int InPressureCell(const Vector3d &position); 
+        void RemoveOldPML(const BoundingBox &sceneBox); 
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
         void UpdatePML(const BoundingBox &sceneBox);
 
