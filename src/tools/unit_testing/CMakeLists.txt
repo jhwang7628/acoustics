@@ -122,6 +122,10 @@ if (BUILD_UNIT_TESTING)
         test_Eigen.cpp
         )
 
+    add_executable(unit_testing_Engquist_ABC
+        test_Engquist_ABC.cpp
+        )
+
     add_executable(unit_testing_Rigid
         test_Rigid.cpp 
         ${IO_SRC}
