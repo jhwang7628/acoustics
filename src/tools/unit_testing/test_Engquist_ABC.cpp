@@ -90,7 +90,6 @@ int main(int argc, char **argv)
 {
     // parse
     const int N_steps = (argc==1 ? 200 : atoi(argv[1]));
-    std::cout << STEP_SIZE << std::endl;
     // run
     Grid grid(N, N); 
     Solver solver(grid); 
@@ -113,15 +112,32 @@ int main(int argc, char **argv)
 void Solver::
 Step() 
 {
-    auto &data_n = _grid._data[(_grid._p + 1) % 3]; 
-    auto &data_c = _grid._data[(_grid._p    ) % 3]; 
-    auto &data_p = _grid._data[(_grid._p + 2) % 3]; 
+    auto &data_n = _grid._data[(_grid._p + 1) % 3]; //next
+    auto &data_c = _grid._data[(_grid._p    ) % 3]; //current
+    auto &data_p = _grid._data[(_grid._p + 2) % 3]; //past
     const T lambda  = SOUND_SPEED * STEP_SIZE / CELL_SIZE; 
     const T lambda2 = pow(lambda, 2); 
+    std::cout << "lambda = " << lambda << std::endl;
     for (int jj=0; jj<N; ++jj) 
     {
         for (int ii=0; ii<N; ++ii)
         {
+            if (ii==N-1 && jj!=0 && jj!=N-1)
+            {   
+                // first-order upwinding
+                //data_n(ii,jj) = data_c(ii,jj) - lambda*(data_c(ii-1,jj));  
+                // second-order Bilbao
+                //data_n(ii,jj) = lambda2/(1.+lambda)*(
+                //        (2./lambda2 - 4.)*data_c(ii,jj)
+                //        + data_c(ii,jj+1) + data_c(ii,jj-1)
+                //        +2.*data_c(ii-1,jj) - 1./lambda2*data_p(ii,jj));
+                // second-order mine
+                data_n(ii,jj) = lambda2/(1.+2.*lambda)*(
+                        (2./lambda2 + 2./lambda - 4.)*data_c(ii,jj)
+                        + data_c(ii,jj+1) + data_c(ii,jj-1)
+                        +2.*data_c(ii-1,jj) - 1./lambda2*data_p(ii,jj));
+                continue; 
+            }
             const int jj_p = std::min(jj+1, N-1); 
             const int jj_n = std::max(jj-1, 0  ); 
             const int ii_p = std::min(ii+1, N-1); 
