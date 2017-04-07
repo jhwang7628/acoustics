@@ -136,7 +136,11 @@ if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     find_package(OpenGL REQUIRED)
     find_package(GLUT REQUIRED)
 
-    find_package(Qt4 REQUIRED)
+    if (USE_QT5)
+        find_package(Qt5Widgets REQUIRED)
+    else (USE_QT5)
+        find_package(Qt4 REQUIRED)
+    endif (USE_QT5)
 
     # check the existence of libQGLViewer
     find_package(QGLViewer 1.0 REQUIRED)
