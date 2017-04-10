@@ -1285,6 +1285,9 @@ public:
 	std::vector<Eigen::Vector3i> m_triangles;
     std::vector<int> m_triType;
 
+    std::vector<int> m_surfTris; // list of surface triangles (where the velocity solution data is)
+    std::vector<Eigen::Vector3d> m_surfTriCenters;
+
 	loadGmsh(const std::string &fileName)
 	{
         std::ifstream in(fileName.c_str());
@@ -1333,8 +1336,19 @@ public:
 
             m_triangles[i] << v1 - 1, v2 - 1, v3 - 1;
             m_triType[i] = type;
+
+            // TODO: confirm whether solution data is full mesh
+            // or just fluid surface data
+            if (type == FLUID_AIR || type == RIGID)
+            {
+                m_surfTris.push_back(i);
+
+                m_surfTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
+            }
         }
 	}
+
+	// TODO: implement filter?
 };
 
 typedef struct
@@ -1344,11 +1358,11 @@ typedef struct
     std::complex<double> xfrIn; // TODO: unnecessary here
 } BubbleInputInfo;
 
-static void
-parseFreqFile(const std::string &fName,
-              std::vector<BubbleInputInfo> &bubInfo)
+static std::vector<BubbleInputInfo>
+parseFreqFile(const std::string &fName)
 {
     using namespace std;
+    vector<BubbleInputInfo> bubInfo;
 
     ifstream in(fName.c_str());
 
@@ -1396,15 +1410,22 @@ parseFreqFile(const std::string &fName,
 
         getline(in, line);
     }
+
+    return bubInfo;
 }
 
+// indexed by bubble id, then vector of triangle velocities
 typedef std::map<int, std::vector<double>> SurfaceVelocityData;
+typedef MLSModeInterpolator<double, 3, 1> MLSInterp; // TODO: should this be 1d or 3d? (interpolate normal velocities or full velocity vectors?)
+typedef KDTree<3, Eigen::Vector1d, Dist> PointKDTree;
 
 Mesh m1, m2;
 SurfaceVelocityData v1, v2;
+MLSInterp mls;
+std::shared_ptr<PointKDTree> kd1, kd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
 std::vector<BubbleInputInfo> b1, b2;
-std::vector<double> totalV1, totalV2;
 double t1, t2; // surrounding times for surface data
+
 
 struct FileNames
 {
@@ -1415,13 +1436,13 @@ struct FileNames
 
 std::map<double, FileNames> fileInfo; // indexed by time
 
-void
+SurfaceVelocityData
 loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
                    const std::string &fileName,
-                   const Mesh &mesh,
-                   SurfaceVelocityData &output)
+                   const Mesh &mesh)
 {
     std::ifstream in(fileName.c_str());
+    SurfaceVelocityData output;
 
     // Count number of fluid surface triangles
     int airTris = 0;
@@ -1465,6 +1486,8 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             curOutput.at(j) = (val / factor).real();
         }
     }
+
+    return output;
 }
 
 void
@@ -1515,11 +1538,13 @@ updateOscillators(REAL time)
     }
 }
 
-void
+std::pair<Eigen::VectorXd, Eigen::VectorXd>
 computeVelocities(REAL time)
 {
+    using namespace Eigen;
+
 	// Set all velocities to 0
-	zeroVelocities(tNext);
+    VectorXd output = VectorXd::Zero(m2.m_surfTris.size());
 
 	// Loop through the oscillators
     for (int i = 0; i < m_oscillators.size(); ++i)
@@ -1528,8 +1553,15 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time)) continue;
 
-        // Add this oscillators velocities to the current time velocities
 	}
+}
+
+std::shared_ptr<PointKDTree>
+createKDTree(const Mesh &m)
+{
+    std::shared_ptr<PointKDTree> tree(new PointKDTree(m.m_surfTriCenters.data(), m.m_surfTriCenters.size(), false));
+
+    return tree;
 }
 
 void
@@ -1538,20 +1570,33 @@ updateSurfaceVelocityData(REAL time)
     if (time <= t2) return;
 
     auto iter = fileInfo.lower_bound(time);
+
+    if (iter == fileInfo.end())
+    {
+        // arghhh
+        throw std::runtime_error("handle this");
+    }
+
     t1 = t2;
     t2 = iter->first;
 
+    m1 = m2;
+    m2.loadGmsh(iter->second.meshFile);
 
+    b1 = b2;
+    b2 = parseFreqFile(iter->second.freqFile);
 
+    v1 = v2;
+    v2 = loadSurfaceDatFile(b2,
+                            iter->second.datFile,
+                            m2);
+
+    kd1 = kd2;
+    kd2 = createKDTree(m2);
 }
 
 void
 projectToPlane()
-{
-}
-
-void
-createMLSInterpolators()
 {
 }
 
@@ -1571,9 +1616,6 @@ updateTime(REAL time)
     // Project to plane
     // This step is only necessary until the wavesolver handles deforming geometry
     projectToPlane();
-
-    // Set up mls interpolators for previous and next time
-    createMLSInterpolators();
 }
 
 void
