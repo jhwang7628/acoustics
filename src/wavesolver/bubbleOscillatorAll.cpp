@@ -1418,7 +1418,7 @@ parseFreqFile(const std::string &fName)
 }
 
 // indexed by bubble id, then vector of triangle velocities
-typedef std::map<int, std::vector<double>> SurfaceVelocityData;
+typedef std::map<int, std::vector<Eigen::Vector1d>> SurfaceVelocityData;
 typedef MLSModeInterpolator<double, 3, 1> MLSInterp; // TODO: should this be 1d or 3d? (interpolate normal velocities or full velocity vectors?)
 typedef KDTree<3, Eigen::Vector1d, Dist> PointKDTree;
 
@@ -1428,6 +1428,7 @@ MLSInterp mls;
 std::shared_ptr<PointKDTree> kd1, kd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
 std::vector<BubbleInputInfo> b1, b2;
 double t1, t2; // surrounding times for surface data
+Eigen::VectorXd velT1, velT2;
 
 
 struct FileNames
@@ -1477,7 +1478,7 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
 
         output[bubInfo[i].bubNum].resize(airTris);
 
-        std::vector<double> &curOutput = output[bubInfo[i].bubNum];
+        std::vector<Eigen::Vector1d> &curOutput = output[bubInfo[i].bubNum];
 
         // Read the velocity data and store it
         for (int j = 0; j < airTris; ++j)
@@ -1486,7 +1487,7 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             in.read((char*)&val.imag(), sizeof(val.imag()));
 
             // Convert from pressure gradient to velocity here
-            curOutput.at(j) = (val / factor).real();
+            curOutput.at(j) << (val / factor).real();
         }
     }
 
@@ -1541,7 +1542,7 @@ updateOscillators(REAL time)
     }
 }
 
-std::pair<Eigen::VectorXd, Eigen::VectorXd>
+void
 computeVelocities(REAL time)
 {
     using namespace std;
@@ -1555,7 +1556,8 @@ computeVelocities(REAL time)
     double localT1 = time - dt;
     double localT2 = time + dt;
 
-    std::pair<VectorXd, VectorXd> output = std::make_pair(VectorXd::Zero(m.m_surfTris.size(), VectorXd::Zero(m.m_surfTris.size())));
+    velT1 = VectorXd::Zero(m.m_surfTris.size());
+    velT2 = VectorXd::Zero(m.m_surfTris.size());
 
     std::vector<int> closest1, closest2;
 
@@ -1580,6 +1582,31 @@ computeVelocities(REAL time)
         Mesh &localM1 = existT1 ? m1 : m2;
         Mesh &localM2 = existT2 ? m2 : m1;
 
+        auto iter = osc.m_trackedBubbleNumbers.lower_bound(t1 - 1e-15);
+        if (iter == osc.m_trackedBubbleNumbers.end())
+        {
+            throw runtime_error("bad tracked bubble numbers lookup t1");
+        }
+
+        int bubbleNumber1 = iter->second;
+
+        iter = osc.m_trackedBubbleNumbers.lower_bound(t2 - 1e-15);
+        if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
+        {
+            throw runtime_error("bad tracked bubble numbers lookup t2");
+        }
+
+        int bubbleNumber2 = iter->second;
+
+        if (!existT1)
+        {
+            bubbleNumber1 = bubbleNumber2;
+        }
+        else if (!existT2)
+        {
+            bubbleNumber2 = bubbleNumber1;
+        }
+
         for (int j = 0; j < m.m_surfTris.size(); ++j)
         {
             // Now interpolate to correct times
@@ -1594,30 +1621,29 @@ computeVelocities(REAL time)
                                6,
                                closest2);
 
+            // Values at t1 and t2
             val1 = mls.lookup(p,
                               localM1.m_surfTriCenters,
-                              vel1[bubbleNumber1],
+                              vel1.at(bubbleNumber1),
                               -1,
                               NULL,
                               closest1);
 
             val2 = mls.lookup(p,
                               localM2.m_surfTriCenters,
-                              vel2[bubbleNumber2],
+                              vel2.at(bubbleNumber2),
                               -1,
                               NULL,
                               closest2);
 
             // Now interpolate
             double pct = (localT1 - t1) / (t2 - t1);
-            output.first(j) += osc.m_lastVals(0) * ( pct * val2 + (1 - pct) * val1 );
+            velT1(j) += osc.m_lastVals(0) * ( pct * val2 + (1 - pct) * val1 );
 
             pct = (localT2 - t1) / (t2 - t1);
-            output.first(j) += osc.m_lastVals(2) * ( pct * val2 + (1 - pct) * val1 );
+            velT2(j) += osc.m_lastVals(2) * ( pct * val2 + (1 - pct) * val1 );
         }
 	}
-
-	return output;
 }
 
 std::shared_ptr<PointKDTree>
@@ -1631,7 +1657,10 @@ createKDTree(const Mesh &m)
 void
 updateSurfaceVelocityData(REAL time)
 {
-    if (time <= t2) return;
+    if (time <= t2)
+    {
+        return;
+    }
 
     auto iter = fileInfo.lower_bound(time);
 
@@ -1676,6 +1705,9 @@ updateTime(REAL time)
 
     // Compute velocity before and after current time step
     computeVelocities(time);
+
+    // Compute acceleration
+    Eigen::VectorXd accel = (velT2 - velT1) / (2 * dt);
 
     // Project to plane
     // This step is only necessary until the wavesolver handles deforming geometry
