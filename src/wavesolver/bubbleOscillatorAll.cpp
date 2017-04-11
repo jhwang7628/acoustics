@@ -108,7 +108,10 @@ public:
 
         double endTime = m_endTime > 1000 ? m_startTime + .001 : m_endTime;
 
-        if (m_currentTime > 0 && m_currentTime > endTime && m_state.norm() <= 1e-15) return false;
+        if (m_currentTime > 0 && m_currentTime > endTime && m_state.norm() <= 1e-15)
+        {
+            return false;
+        }
 
         return true;
 	}
@@ -1541,10 +1544,20 @@ updateOscillators(REAL time)
 std::pair<Eigen::VectorXd, Eigen::VectorXd>
 computeVelocities(REAL time)
 {
+    using namespace std;
     using namespace Eigen;
 
-	// Set all velocities to 0
-    VectorXd output = VectorXd::Zero(m2.m_surfTris.size());
+    bool useT1 = std::fabs(time - t1) < std::fabs(t2 - time);
+
+    // Interpolate onto the mesh that is closest
+    Mesh &m = useT1 ? m1 : m2;
+
+    double localT1 = time - dt;
+    double localT2 = time + dt;
+
+    std::pair<VectorXd, VectorXd> output = std::make_pair(VectorXd::Zero(m.m_surfTris.size(), VectorXd::Zero(m.m_surfTris.size())));
+
+    std::vector<int> closest1, closest2;
 
 	// Loop through the oscillators
     for (int i = 0; i < m_oscillators.size(); ++i)
@@ -1553,7 +1566,58 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time)) continue;
 
+        bool existT1 = osc.m_startTime <= t1;
+        bool existT2 = osc.m_startTime <= t2;
+
+        if (!existT1 && !existT2) continue;
+
+        std::shared_ptr<PointKDTree> tree1(existT1 ? kd1 : kd2);
+        std::shared_ptr<PointKDTree> tree2(existT2 ? kd2 : kd1);
+
+        SurfaceVelocityData &vel1 = existT1 ? v1 : v2;
+        SurfaceVelocityData &vel2 = existT2 ? v2 : v1;
+
+        Mesh &localM1 = existT1 ? m1 : m2;
+        Mesh &localM2 = existT2 ? m2 : m1;
+
+        for (int j = 0; j < m.m_surfTris.size(); ++j)
+        {
+            // Now interpolate to correct times
+            MLSVal val1, val2;
+            MLSPoint p = m.m_surfTriCenters[j];
+
+            tree1.find_nearest(p,
+                               6,
+                               closest1);
+
+            tree2.find_nearest(p,
+                               6,
+                               closest2);
+
+            val1 = mls.lookup(p,
+                              localM1.m_surfTriCenters,
+                              vel1[bubbleNumber1],
+                              -1,
+                              NULL,
+                              closest1);
+
+            val2 = mls.lookup(p,
+                              localM2.m_surfTriCenters,
+                              vel2[bubbleNumber2],
+                              -1,
+                              NULL,
+                              closest2);
+
+            // Now interpolate
+            double pct = (localT1 - t1) / (t2 - t1);
+            output.first(j) += osc.m_lastVals(0) * ( pct * val2 + (1 - pct) * val1 );
+
+            pct = (localT2 - t1) / (t2 - t1);
+            output.first(j) += osc.m_lastVals(2) * ( pct * val2 + (1 - pct) * val1 );
+        }
 	}
+
+	return output;
 }
 
 std::shared_ptr<PointKDTree>
