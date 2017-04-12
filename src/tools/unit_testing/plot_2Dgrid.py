@@ -19,20 +19,25 @@ for filename in filenames:
     ifs = open(filename, 'rb')
     size = struct.unpack('ii', ifs.read(8))
     data = np.zeros((size[0],size[1]))
+    fetch_pt = (int(size[0]/4), int(size[1]/2))
     for col in range(size[1]): 
         for row in range(size[0]): 
             data[row, col] = struct.unpack('d', ifs.read(8))[0]
+    ldata = data[fetch_pt[0], fetch_pt[1]]
+    listened.append(ldata)
     if filename == filenames[0]:
-        p = plt.imshow(data, interpolation='none', clim=(-50,50))
+        p = plt.imshow(data, interpolation='none', clim=(-2,2))
+        plt.plot(fetch_pt[1], fetch_pt[0], 'kx', markersize=10)
+        plt.plot([int(size[1]/2), int(size[1]/2)], 
+                 [0,              int(size[0]-1)], 'k:', linewidth=0.5)
+        plt.plot([0,              int(size[1]-1)],
+                 [int(size[0]/2), int(size[0]/2)], 'k:', linewidth=0.5)
+        plt.xlim([0, size[1]])
+        plt.ylim([0, size[0]])
     else: 
         p.set_data(data)
-    fetch_pt = (int(size[0]/2+70), int(size[1]/2))
-    print fetch_pt
-    ldata = data[fetch_pt[0], fetch_pt[1]]
-    # ldata = data[int(size[0]/2), int(size[1]/2)]
-    listened.append(ldata)
     plt.pause(0.01)
-    # plt.savefig('frames/test2-%.4d.jpg' %(count))
+    # plt.savefig('frames/long-%.4d.jpg' %(count))
     count += 1
     if stop and count == stop:
         break

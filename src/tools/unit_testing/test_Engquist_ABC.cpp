@@ -10,6 +10,7 @@
 typedef double T; 
 typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> Matrix2D;
 typedef Eigen::Matrix<T, 2, 1> Vector2;
+typedef Eigen::Matrix<int, 2, 1> Vector2i;
 static const T AIR_DENSITY = 1.2; 
 static const T SOUND_SPEED = 343.; 
 static const int N = 150;
@@ -19,9 +20,20 @@ static const T STEP_SIZE = CELL_SIZE / (sqrt(3.)*SOUND_SPEED);
 static const T BOX_SIZE = CELL_SIZE*(T)N;
 
 //##############################################################################
+// Helper functions
+//##############################################################################
+template <typename _T> 
+_T clamp(const _T &low, const _T &high, const _T &val)
+{
+    return std::max(low, std::min(high, val)); 
+}
+
+//##############################################################################
 // Forward declaration
 //##############################################################################
 class Grid; 
+class WorldGrid; 
+class ComputeGrid; 
 class Solver; 
 class DivergenceSource; 
 
@@ -63,7 +75,8 @@ public:
 //##############################################################################
 class Grid 
 {
-private: 
+protected: 
+    enum Type{COMPUTE, WORLD} _type;
     std::vector<Matrix2D> _data; 
     Vector2 _minBound; 
     Vector2 _maxBound; 
@@ -73,21 +86,25 @@ public:
     Grid(const int &Nx, const int &Ny) 
         : _p(1), _source(nullptr)
     {
+        const T low_corner = -BOX_SIZE/2.;
+        const T top_corner =  BOX_SIZE/2.;
+        _minBound << low_corner, low_corner;
+        _maxBound << top_corner, top_corner;
         _data.resize(3); 
         for (int ii=0; ii<3; ++ii) 
         {
             _data[ii].setZero(Nx, Ny); 
         }
-        const T low_corner = -BOX_SIZE/2.;
-        const T top_corner =  BOX_SIZE/2.;
-        _minBound << low_corner, low_corner;
-        _maxBound << top_corner, top_corner;
     }
     ~Grid()
     {
         if (_source) delete _source; 
     }
-    inline Vector2 CellPosition(const int &x, const int &y)
+    inline Vector2i Dimension() const
+    {
+        return {(int)_data[_p].rows(), (int)_data[_p].cols()}; 
+    }
+    inline Vector2 CellPosition(const int &x, const int &y) const
     {
         Vector2 pos = _minBound;
         pos.array() += CELL_SIZE/2.0;
@@ -95,9 +112,22 @@ public:
         pos[1] += (T)y * CELL_SIZE;
         return pos;
     }
-    inline Matrix2D &GetData() 
+    inline Vector2i CellIndex(const Vector2 &pos) const
     {
-        return _data.at(_p); 
+        Vector2i ind; 
+        ind[0] = clamp(0, (int)_data[_p].rows()-1, 
+                       (int)((pos[0] - _minBound[0])/CELL_SIZE)); 
+        ind[1] = clamp(0, (int)_data[_p].cols()-1, 
+                       (int)((pos[1] - _minBound[1])/CELL_SIZE)); 
+        return ind; 
+    }
+    inline std::vector<Matrix2D> &GetAllData()
+    {
+        return _data; 
+    }
+    inline Matrix2D &GetData(const int &p=-1) 
+    {
+        return (p<0 ? _data.at(_p) : _data.at(p)); 
     }
     inline void SetData(const int &ind_x, const int &ind_y, const T &d)
     {
@@ -107,6 +137,49 @@ public:
     void InitializeGaussian(const T &radius);
 friend Solver;
 }; 
+
+//##############################################################################
+// Class WorldGrid
+//##############################################################################
+class WorldGrid : public Grid
+{
+private: 
+    static constexpr T NO_VAL = std::numeric_limits<T>::max();
+    ComputeGrid *_computeGrid; 
+public: 
+    WorldGrid(const int &Nx, const int &Ny) 
+        : Grid(Nx, Ny), _computeGrid(nullptr)
+    {
+        _type = WORLD; 
+        _p = 0;
+        ResetData();
+    }
+    inline void ResetData()
+    {
+        for (int ii=0; ii<3; ++ii)
+        {
+            _data[ii].setZero();
+            //_data[ii].setOnes();
+            //_data[ii].array()*=NO_VAL; 
+        }
+    }
+    inline void SetComputeGrid(ComputeGrid *grid){_computeGrid = grid;}
+    void MoveComputeGrid(const int &direction, const T &amount); 
+};
+
+//##############################################################################
+// Class ComputeGrid
+//##############################################################################
+class ComputeGrid : public Grid
+{
+public: 
+    ComputeGrid(const int &Nx, const int &Ny)
+        : Grid(Nx, Ny)
+    {
+        _type = COMPUTE; 
+    }
+friend WorldGrid; 
+};
 
 //##############################################################################
 // Class Solver
@@ -131,16 +204,20 @@ int main(int argc, char **argv)
     // parse
     const int N_steps = (argc==1 ? 200 : atoi(argv[1]));
     // run
-    Grid grid(N+1, N); 
-    Solver solver(grid); 
-    grid.InitializeGaussian(STEP_SIZE*10.);
+    Grid *cgrid = new ComputeGrid(N+1, N); 
+    WorldGrid *wgrid = new WorldGrid(2*N+1, N); 
+    Solver solver(*cgrid); 
+    cgrid->InitializeGaussian(STEP_SIZE*4.);
+    wgrid->SetComputeGrid((ComputeGrid*)cgrid); 
     char filename[512];
     int c = 0;
     while (c<N_steps)
     {
         std::cout << "step " << c << "" << std::endl;
         snprintf(filename, 512, "data/%.5d.dat", c); 
-        grid.SaveData(filename);
+        wgrid->SaveData(filename);
+        //wgrid->MoveComputeGrid(0, CELL_SIZE/10.);
+        wgrid->MoveComputeGrid(0, 0.);
         solver.Step();
         ++c; 
     }
@@ -164,24 +241,26 @@ Step()
         for (int ii=0; ii<N; ++ii)
         {
             const Vector2 position = _grid.CellPosition(ii, jj); 
-            if (ii==N-1 && jj!=0 && jj!=N-1)
+            if (ii==N-1)// || ii==1)
             {   
-                // first-order upwinding
-                //data_n(ii,jj) = data_c(ii,jj) - lambda*(data_c(ii-1,jj));  
-                // second-order Bilbao
+                const int jj_p = std::min(jj+1, N-1); 
+                const int jj_n = std::max(jj-1, 0  ); 
+                const int ii_p = (ii==N-1 ? ii+1 : ii-1); 
+                const int ii_n = (ii==N-1 ? ii-1 : ii+1); 
+                // upwinding
+                //data_n(ii,jj) = data_c(ii,jj) - lambda*(data_c(ii_n,jj));  
+                // Bilbao
                 //data_n(ii,jj) = lambda2/(1.+lambda)*(
                 //        (2./lambda2 - 4.)*data_c(ii,jj)
-                //        + data_c(ii,jj+1) + data_c(ii,jj-1)
-                //        +2.*data_c(ii-1,jj) - 1./lambda2*data_p(ii,jj));
-                // second-order mine
+                //        + data_c(ii,jj_p) + data_c(ii,jj_n)
+                //        +2.*data_c(ii_n,jj) - 1./lambda2*data_p(ii,jj));
+                // mine
                 data_n(ii,jj) = lambda2/(1.+2.*lambda)*(
                         (2./lambda2 + 2./lambda - 4.)*data_c(ii,jj)
-                        + data_c(ii,jj+1) + data_c(ii,jj-1)
-                        +2.*data_c(ii-1,jj) - 1./lambda2*data_p(ii,jj));
-
-                data_n(ii+1,jj) = 2./lambda*(data_c(ii,jj)-data_n(ii,jj))
-                                + data_c(ii-1,jj); 
-
+                        + data_c(ii,jj_p) + data_c(ii,jj_n)
+                        +2.*data_c(ii_n,jj) - 1./lambda2*data_p(ii,jj));
+                data_n(ii_p,jj) = 2./lambda*(data_c(ii,jj)-data_n(ii,jj))
+                                + data_c(ii_n,jj); 
                 continue; 
             }
             const int jj_p = std::min(jj+1, N-1); 
@@ -244,14 +323,28 @@ InitializeGaussian(const T &radius_time)
     //        data_c(ii,jj) = Gaussian(pos); 
     //    }
     //}
-    //for (int jj=1; jj<N-1; ++jj)
-    //{
-    //    for (int ii=1; ii<N-1; ++ii)
-    //    {
-    //        data_n(ii,jj) = data_c(ii,jj) + pow(SOUND_SPEED*STEP_SIZE/CELL_SIZE,2)
-    //                                       *(data_c(ii+1,jj  )-data_c(ii,jj)+data_c(ii-1,jj  )
-    //                                        +data_c(ii  ,jj+1)-data_c(ii,jj)+data_c(ii  ,jj-1)); 
-    //    }
-    //}
-    //_p = (_p+1)%3;
+}
+
+//##############################################################################
+// Function MoveComputeGrid
+//##############################################################################
+void WorldGrid::
+MoveComputeGrid(const int &direction, const T &amount)
+{
+    if (!_computeGrid)
+        return; 
+    const Vector2i dim = _computeGrid->Dimension();
+    ResetData(); 
+    const Vector2i ind0 = CellIndex(_computeGrid->_minBound); 
+    // move computegrid bounds
+    (_computeGrid->_minBound)[direction] += amount; 
+    (_computeGrid->_maxBound)[direction] += amount; 
+    const Vector2i ind1 = CellIndex(_computeGrid->_minBound); 
+    // transfer computegrid data to worldgrid and back
+    for (int i=0; i<3; ++i)
+    {
+        _data[i].block(ind0[0], ind0[1], dim[0], dim[1]) = _computeGrid->GetData(i);
+        _computeGrid->GetData(i) = _data[i].block(ind1[0], ind1[1], dim[0], dim[1]); 
+    }
+    _p = _computeGrid->_p;
 }
