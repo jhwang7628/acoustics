@@ -1350,8 +1350,6 @@ public:
             }
         }
 	}
-
-	// TODO: implement filter?
 };
 
 typedef struct

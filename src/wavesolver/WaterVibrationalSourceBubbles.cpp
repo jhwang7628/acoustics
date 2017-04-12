@@ -8,8 +8,8 @@
 //##############################################################################
 //##############################################################################
 WaterVibrationalSourceBubbles::
-WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &wavFile, const REAL &decayRadius)
-    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr()), _decayRadius(decayRadius)
+WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
+    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
 {
     Initialize(wavFile);
 }
@@ -61,12 +61,9 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
 //##############################################################################
 //##############################################################################
 void WaterVibrationalSourceBubbles::
-Initialize(const std::string &wavFile)
+Initialize(const std::string &dataDir)
 {
-    std::cout << "Initialize WaterVibrationalSource with file: " << wavFile << std::endl;
+    std::cout << "Initialize WaterVibrationalSourceBubbles from directory: " << dataDir << std::endl;
     ReadOscillatorFromWav(wavFile);
-    ComputeVelocityAndAcceleration();
-    PrecomputeInterpolation();
-    InitializeDecayModel();
 }
 
