@@ -5,13 +5,15 @@
 #include <utils/STL_Wrapper.h>
 #include <fstream>
 
+#include "bubbles/FileInput.hpp"
+
 //##############################################################################
 //##############################################################################
 WaterVibrationalSourceBubbles::
 WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
     : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
 {
-    Initialize(wavFile);
+    Initialize(dataDir);
 }
 
 //##############################################################################
@@ -41,13 +43,7 @@ Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 REAL WaterVibrationalSourceBubbles::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    if (normal.dotProduct(_wantedNormal)/normal.length() > _validAngleThreshold)
-    {
-        const REAL decay = Decay(position);
-        return _interpolatorVelocity.eval(time) * decay;
-    }
-    else
-        return 0.0;
+    throw std::runtime_error("**ERROR** not implemented");
 }
 
 //##############################################################################
@@ -64,6 +60,12 @@ void WaterVibrationalSourceBubbles::
 Initialize(const std::string &dataDir)
 {
     std::cout << "Initialize WaterVibrationalSourceBubbles from directory: " << dataDir << std::endl;
-    ReadOscillatorFromWav(wavFile);
+    ParseFileNames(dataDir);
 }
 
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSourceBubbles::
+ParseFileNames(const std::string &dataDir)
+{
+}

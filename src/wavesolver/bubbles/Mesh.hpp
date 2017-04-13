@@ -3,6 +3,7 @@
 
 #include <string>
 #include <fstream>
+#include <vector>
 #include <Eigen/Dense>
 
 // Class to hold a Gmsh triangle mesh
@@ -13,7 +14,7 @@ public:
     {
         FLUID_AIR = 1,
         SOLID = 2
-    }
+    };
 
 	std::vector<Eigen::Vector3d> m_vertices;
 	std::vector<Eigen::Vector3i> m_triangles;
@@ -22,6 +23,7 @@ public:
     std::vector<int> m_surfTris; // list of surface triangles (where the velocity solution data is)
     std::vector<Eigen::Vector3d> m_surfTriCenters;
 
+    void
 	loadGmsh(const std::string &fileName)
 	{
         std::ifstream in(fileName.c_str());
@@ -73,7 +75,7 @@ public:
 
             // TODO: confirm whether solution data is full mesh
             // or just fluid surface data
-            if (type == FLUID_AIR || type == RIGID)
+            if (type == FLUID_AIR || type == SOLID)
             {
                 m_surfTris.push_back(i);
 

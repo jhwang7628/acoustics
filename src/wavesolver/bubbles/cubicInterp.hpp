@@ -3,14 +3,7 @@
 
 #include <stdexcept>
 #include <Eigen/Dense>
-#include <splineDerivatives.hpp>
-
-// Unnamed namespace for the using declaration
-namespace {
-
-using namespace Eigen;
-
-}
+#include "splineDerivatives.hpp"
 
 /**
  * A cubic hermite spline interpolator
@@ -36,7 +29,7 @@ public:
      */
     Scalar
     operator() (Scalar p,
-                const Matrix<Scalar, Dynamic, 2> &data) const
+                const Eigen::Matrix<Scalar, Eigen::Dynamic, 2> &data) const
     {
         int index = findIndex(p,
                               data);
@@ -78,7 +71,7 @@ private:
      */
     int
     findIndex(Scalar p,
-              const Matrix<Scalar, Dynamic, 2> &data) const
+              const Eigen::Matrix<Scalar, Eigen::Dynamic, 2> &data) const
     {
         int i = 0;
 

@@ -6,17 +6,31 @@
 #include <wavesolver/VibrationalSource.h>
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
+#include <geometry/KDTree.hpp>
 
 #include "bubbles/Oscillator.hpp"
 #include "bubbles/Mesh.hpp"
+#include "bubbles/FileInput.hpp"
 
 //##############################################################################
 // This class handles source evaluation for water surface objects using data from the bubbles project.
 //##############################################################################
-class WaterVibrationalSource : public VibrationalSource
+class WaterVibrationalSourceBubbles : public VibrationalSource
 {
     public:
         typedef std::shared_ptr<TriangleMesh<REAL> > TriangleMeshPtr;
+
+        // indexed by bubble id, then vector of triangle velocities
+        typedef Eigen::Matrix<double, 1, 1> VelocityValue;
+        typedef std::map<int, std::vector<VelocityValue>> SurfaceVelocityData;
+        typedef MLSModeInterpolator<double, 3, 1> MLSInterp; // TODO: should this be 1d or 3d? (interpolate normal velocities or full velocity vectors?)
+
+        struct DistSq
+        {
+            double operator() (const Eigen::Vector3d &a, const Eigen::Vector3d &b) {return (a-b).squaredNorm();}
+        };
+
+        typedef KDTree<3, Eigen::Vector3d, DistSq> PointKDTree;
 
     private:
         Vector3d            _wantedNormal = Vector3d(0, 1, 0);
@@ -26,6 +40,16 @@ class WaterVibrationalSource : public VibrationalSource
         REAL                _startTime = 0.0;
 
         REAL                _dt;
+
+        double _t1, _t2; // surrounding times for surface data
+        Mesh _m1, _m2;
+        SurfaceVelocityData _v1, _v2;
+        MLSInterp _mls;
+        std::shared_ptr<PointKDTree> _kd1, _kd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
+        std::vector<BubbleInputInfo> _b1, _b2;
+        Eigen::VectorXd _velT1, _velT2;
+
+        void ParseFileNames(const std::string &dataDir);
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);
