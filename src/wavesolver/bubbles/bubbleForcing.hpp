@@ -2,9 +2,12 @@
 #define _BUBBLE_FORCING_HPP
 
 #include <random>
+#include <memory>
+#include <map>
 #include <cmath>
 #include "timeSeries.hpp"
 #include "constants.h"
+#include "Bubble.hpp"
 
 static const double fTimeCutoff = 0.0006;
 
@@ -268,6 +271,210 @@ private:
     double m_length;
     TimeSeries<double> m_series;
 };
+
+static std::shared_ptr<ForcingFunction>
+makeForcingFunc(const Bubble& bub,
+                int curBubNum,
+                const std::map<int, Bubble>& bubbles)
+{
+    bool noSplit = false;
+    bool noMerge = false;
+    bool noEntrain = false;
+
+    std::shared_ptr<ForcingFunction> forcing;
+
+    //if (bub.m_endTime - bub.m_startTime < 0.01)
+    //{
+        //forcing.reset(new ZeroForcing());
+    //}
+
+    // If this bubble came from another bubble, set the state correctly
+    if (bub.m_startType == Bubble::SPLIT)
+    {
+        if (bub.m_prevBubbles.size() > 1)
+        {
+            throw std::runtime_error("split from more than one bubble");
+        }
+
+        int prevBub = bub.m_prevBubbles.at(0);
+        double minR = std::numeric_limits<double>::infinity();
+        int minBub = -1;
+
+        if (bubbles.count(prevBub))
+        {
+            for ( auto b : bubbles.at(prevBub).m_nextBubbles )
+            {
+                minR = std::min(minR, bubbles.at(b).m_radius);
+                minBub = b;
+            }
+        }
+
+        //if (prevBub == 270)
+        //{
+            //std::cout << "r: " << bub.m_radius << " minR: " << minR << " start: " << bub.m_startTime
+                      //<< " end: " << bub.m_endTime << std::endl;
+        //}
+
+        //std::cout << "minR: " << minR << std::endl;
+
+        //forcing.reset(new CzerskiJetForcing(bub.m_radius));
+
+        if (bubbles.at(prevBub).m_radius < bub.m_radius)
+        {
+            forcing.reset(new ZeroForcing());
+        }
+        else
+        {
+            if (curBubNum == minBub)
+            {
+                forcing.reset(new CzerskiJetForcing(bub.m_radius,
+                                                    5000,
+                                                    //bub.m_endTime - bub.m_startTime,
+                                                    //std::min(bub.m_endTime - bub.m_startTime, 0.5 / (3.0 / minR)),
+                                                    //ETA_SPLIT,
+                                                    ETA,
+                                                    false,
+                                                    false));
+                                                    //true));
+            }
+            else
+            {
+                forcing.reset(new CzerskiJetForcing(bub.m_radius,
+                                                    5000,
+                                                    //bub.m_endTime - bub.m_startTime,
+                                                    //std::min(bub.m_endTime - bub.m_startTime, 0.5 / (3.0 / minR)),
+                                                    //ETA_SPLIT,
+                                                    ETA,
+                                                    false,
+                                                    false));
+                                                    //true));
+            }
+        }
+        //forcing.reset(new CzerskiJetForcing(minR,
+                                            //std::min(bub.m_endTime - bub.m_startTime, 0.5 / (3.0 / minR))));
+        if (noSplit)
+        {
+            forcing.reset(new ZeroForcing());
+        }
+    }
+    else if (bub.m_startType == Bubble::MERGE)
+    {
+        if (bub.m_prevBubbles.size() < 2)
+        {
+            forcing.reset(new ZeroForcing());
+            return forcing;
+            //throw std::runtime_error("merged from less than two bubbles");
+        }
+
+        if (bub.m_prevBubbles.size() > 2)
+        {
+            forcing.reset(new ZeroForcing());
+        }
+        else
+        {
+            // Make sure all parent bubbles merged completely with this one
+            // Sometimes a bubble can split into two, and the smaller fragment
+            // can merge with another one. This is probably just resolution and/or
+            // bubble tracking issues
+            bool allMerge = true;
+            for (auto p : bub.m_prevBubbles)
+            {
+                allMerge = allMerge && bubbles.at(p).m_endType == Bubble::MERGE;
+            }
+
+            if (allMerge)
+            {
+                int p1 = bub.m_prevBubbles.at(0);
+                int p2 = bub.m_prevBubbles.at(1);
+                double r1 = 0, r2 = 0;
+
+                if (bubbles.count(p1) && bubbles.count(p2))
+                {
+                    r1 = bubbles.at(p1).m_radius;
+                    r2 = bubbles.at(p2).m_radius;
+                }
+                else
+                {
+                    throw std::runtime_error("Missing parent");
+                }
+
+                if (r1 + r2 > bub.m_radius)
+                {
+                    double v1 = 4./3. * M_PI * r1 * r1 * r1;
+                    double v2 = 4./3. * M_PI * r2 * r2 * r2;
+                    double vn = 4./3. * M_PI * bub.m_radius * bub.m_radius * bub.m_radius;
+
+                    double diff = v1 + v2 - vn;
+
+                    if (diff > std::max<double>(v1, v2))
+                    {
+                        // In this case both parent bubbles must have split off...
+                        forcing.reset(new ZeroForcing());
+                    }
+                    else
+                    {
+                        if (v1 > v2)
+                        {
+                            v1 -= diff;
+                        }
+                        else
+                        {
+                            v2 -= diff;
+                        }
+
+                        r1 = std::pow(3./4. / M_PI * v1, 1./3.);
+                        r2 = std::pow(3./4. / M_PI * v2, 1./3.);
+
+                        forcing.reset(new MergeForcing(bub.m_radius,
+                                                       r1,
+                                                       r2,
+                                                       5000));
+                                                       //bub.m_endTime - bub.m_startTime));
+                    }
+                }
+                else
+                {
+                    forcing.reset(new MergeForcing(bub.m_radius,
+                                                   r1,
+                                                   r2,
+                                                   5000));
+                                                   //bub.m_endTime - bub.m_startTime));
+                }
+            }
+            else
+            {
+                forcing.reset(new ZeroForcing());
+            }
+
+            if (noMerge)
+            {
+                forcing.reset(new ZeroForcing());
+            }
+        }
+    }
+    else if (bub.m_startType == Bubble::ENTRAIN)
+    {
+        forcing.reset(new CzerskiJetForcing(bub.m_radius,
+                                            5000,
+                                            //bub.m_endTime - bub.m_startTime,
+                                            //ETA_ENTRAIN,
+                                            ETA,
+                                            true,
+                                            false,
+                                            1));
+
+        if (noEntrain)
+        {
+            forcing.reset(new ZeroForcing());
+        }
+    }
+    else
+    {
+        throw std::runtime_error("bad start event");
+    }
+
+    return forcing;
+}
 
 #endif // _BUBBLE_FORCING_HPP
 

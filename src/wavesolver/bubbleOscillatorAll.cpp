@@ -301,13 +301,6 @@ enum FreqType
     MINNAERT
 };
 
-// Returns the (angular) Minnaert frequency
-static double
-minnaertFreq(double radius)
-{
-    return std::sqrt(3 * GAMMA * ATM - 2 * SIGMA / radius) / (radius * std::sqrt(RHO_WATER));
-}
-
 Bubble
 parseDataFile (const char *fileName,
                FreqType fType)

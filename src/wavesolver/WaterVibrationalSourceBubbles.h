@@ -8,6 +8,7 @@
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <geometry/KDTree.hpp>
 
+#include "bubbles/Bubble.hpp"
 #include "bubbles/Oscillator.hpp"
 #include "bubbles/Mesh.hpp"
 #include "bubbles/FileInput.hpp"
@@ -30,6 +31,12 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         typedef KDTree<3, Eigen::Vector3d, DistSq> PointKDTree;
 
+        enum FreqType
+        {
+            CAPACITANCE,
+            MINNAERT
+        };
+
     private:
         Vector3d            _wantedNormal = Vector3d(0, 1, 0);
         REAL                _validAngleThreshold = 0.5; // use to determine if the vertex has source. See Evaluate() for usage. default: 0.5
@@ -47,8 +54,17 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         Eigen::VectorXd _velT1, _velT2; // the total velocities before and after current time (not at _t1 and _t2)
 
         std::map<double, FileNames> _fileInfo; // indexed by time
+        std::map<int, Bubble> _bubbles;
+        std::vector<Oscillator> _oscillators;
 
         void step(REAL time);
+        void parseConfigFile(const std::string &, FreqType fType);
+        std::pair<int, Bubble> parseBubbleInfo (std::ifstream &in, FreqType fType);
+
+        // Attach the bubbles together to get the full oscillator lifetime
+        void makeOscillators(const std::map<int, Bubble> &singleBubbles);
+
+        void updateOscillators(REAL time);
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);

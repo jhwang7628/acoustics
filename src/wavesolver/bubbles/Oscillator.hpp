@@ -5,41 +5,8 @@
 #include <map>
 #include <Eigen/Dense>
 #include "timeSeries.hpp"
+#include "Bubble.hpp"
 #include "bubbleForcing.hpp"
-
-// Class to represent bubble events
-class Bubble
-{
-public:
-    enum EventType
-    {
-        ENTRAIN,
-        MERGE,
-        SPLIT,
-        COLLAPSE
-    };
-
-    EventType m_startType;
-    EventType m_endType;
-
-    // Bubbles that this one came from
-    std::vector<int> m_prevBubbles;
-
-    // Bubbles that this one merged/split into
-    std::vector<int> m_nextBubbles;
-
-    double m_startTime;
-    double m_endTime;
-
-    std::vector<double> m_times;
-    std::vector<double> m_frequencies;
-    std::vector<double> m_transfer;
-    std::vector<double> m_pressure;
-    std::vector<int> m_nums;
-
-    // Equivalent radius
-    double m_radius;
-};
 
 // Class used to represent an oscillator
 // can be multiple Bubble objects chained together
