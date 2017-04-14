@@ -104,7 +104,12 @@ step(REAL time)
         if (iter == _fileInfo.end())
         {
             // Past the last solution data time
-            _t2 = -1;
+            // TODO: is this the best solution?
+            _t2 = 50000;
+            _m2 = _m1;
+            _v2 = _v1;
+            _kd2 = _kd1;
+            _b2 = _b1;
         }
         else
         {
@@ -114,12 +119,33 @@ step(REAL time)
             _v2 = loadSurfaceDatFile(_b2,
                                      iter->second.datFile,
                                      _m2);
+
+            _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), false));
+        }
+
+        if (_t1 < 0)
+        {
+            _t1 = 0;
+            _m1 = _m2;
+            _v1 = _v2;
+            _kd1 = _kd2;
+            _b1 = _b2;
         }
     }
 
     // TODO:
     // Update all oscillators to the correct time (one timestep after this time)
     updateOscillators(time);
+
+    // Compute velocity before and after current time step
+    computeVelocities(time);
+
+    // Compute acceleration
+    Eigen::VectorXd accel = (velT2 - velT1) / (2 * dt);
+
+    // Project to plane
+    // This step is only necessary until the wavesolver handles deforming geometry
+    projectToPlane();
 
     _curTime = time;
 }
@@ -685,4 +711,111 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
 
     std::cout << std::endl;
     std::cout << "numFiltered: " << numFiltered << std::endl;
+}
+
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSourceBubbles::
+computeVelocities(REAL time)
+{
+    using namespace std;
+    using namespace Eigen;
+
+    bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
+
+    // Interpolate onto the mesh that is closest
+    Mesh &m = useT1 ? _m1 : _m2;
+
+    double localT1 = time - _dt;
+    double localT2 = time + _dt;
+
+    _velT1 = VectorXd::Zero(m.m_surfTris.size());
+    _velT2 = VectorXd::Zero(m.m_surfTris.size());
+
+    std::vector<int> closest1, closest2;
+
+	// Loop through the oscillators
+    for (int i = 0; i < _oscillators.size(); ++i)
+    {
+        Oscillator &osc = _oscillators[i];
+
+        if (!osc.isActive(time)) continue;
+
+        bool existT1 = osc.m_startTime <= t1;
+        bool existT2 = osc.m_startTime <= t2;
+
+        if (!existT1 && !existT2) continue;
+
+        std::shared_ptr<PointKDTree> tree1(existT1 ? _kd1 : _kd2);
+        std::shared_ptr<PointKDTree> tree2(existT2 ? _kd2 : _kd1);
+
+        SurfaceVelocityData &vel1 = existT1 ? _v1 : _v2;
+        SurfaceVelocityData &vel2 = existT2 ? _v2 : _v1;
+
+        Mesh &localM1 = existT1 ? _m1 : _m2;
+        Mesh &localM2 = existT2 ? _m2 : _m1;
+
+        auto iter = osc.m_trackedBubbleNumbers.lower_bound(_t1 - 1e-15);
+        if (iter == osc.m_trackedBubbleNumbers.end())
+        {
+            throw runtime_error("bad tracked bubble numbers lookup t1");
+        }
+
+        int bubbleNumber1 = iter->second;
+
+        iter = osc.m_trackedBubbleNumbers.lower_bound(_t2 - 1e-15);
+        if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
+        {
+            throw runtime_error("bad tracked bubble numbers lookup t2");
+        }
+
+        int bubbleNumber2 = iter->second;
+
+        if (!existT1)
+        {
+            bubbleNumber1 = bubbleNumber2;
+        }
+        else if (!existT2)
+        {
+            bubbleNumber2 = bubbleNumber1;
+        }
+
+        for (int j = 0; j < m.m_surfTris.size(); ++j)
+        {
+            // Now interpolate to correct times
+            MLSVal val1, val2;
+            MLSPoint p = m.m_surfTriCenters[j];
+
+            tree1.find_nearest(p,
+                               6,
+                               closest1);
+
+            tree2.find_nearest(p,
+                               6,
+                               closest2);
+
+            // Values at t1 and t2
+            val1 = _mls.lookup(p,
+                               localM1.m_surfTriCenters,
+                               vel1.at(bubbleNumber1),
+                               -1,
+                               NULL,
+                               closest1);
+
+            val2 = _mls.lookup(p,
+                               localM2.m_surfTriCenters,
+                               vel2.at(bubbleNumber2),
+                               -1,
+                               NULL,
+                               closest2);
+
+            // Now interpolate
+            double pct = (localT1 - _t1) / (_t2 - _t1);
+            _velT1(j) += osc.m_lastVals(0) * ( pct * val2 + (1 - pct) * val1 );
+
+            pct = (localT2 - _t1) / (_t2 - _t1);
+            _velT2(j) += osc.m_lastVals(2) * ( pct * val2 + (1 - pct) * val1 );
+        }
+	}
 }
