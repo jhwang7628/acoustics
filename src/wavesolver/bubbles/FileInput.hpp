@@ -2,12 +2,20 @@
 #define _FILE_INPUT_HPP
 
 #include <cmath>
+#include <map>
 #include <vector>
 #include <string>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include <Eigen/Dense>
+
+#include "Mesh.hpp"
+
+typedef Eigen::Matrix<double, 1, 1> VelocityValue;
+typedef std::map<int, std::vector<VelocityValue>> SurfaceVelocityData;
 
 struct FileNames
 {
@@ -130,6 +138,64 @@ parseFileNames(const std::string &dataDir)
         f.freqFile = p + string("/bemOutput/info-") + meshTime + string(".txt");
 
         output[t] = f;
+    }
+
+    return output;
+}
+
+static SurfaceVelocityData
+loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
+                   const std::string &fileName,
+                   const Mesh &mesh)
+{
+    std::ifstream in(fileName.c_str());
+    SurfaceVelocityData output;
+
+    // Count number of fluid surface triangles
+    int airTris = 0;
+
+    for (int type : mesh.m_triType)
+    {
+        if (type == Mesh::FLUID_AIR)
+            ++airTris;
+    }
+
+    double rho = 1.184; // Density of air
+
+    for (int i = 0; i < bubInfo.size(); ++i)
+    {
+        // skip bad bubbles
+        if (bubInfo[i].freq < 0) continue;
+
+        double omega = 2 * M_PI * bubInfo[i].freq;
+
+        std::complex<double> factor(0, -omega * rho);
+        std::complex<double> val;
+        double r,c;
+
+        // Read the dirichlet data and discard it
+        for (int j = 0; j < mesh.m_vertices.size(); ++j)
+        {
+            in.read((char*)&r, sizeof(r));
+            in.read((char*)&c, sizeof(c));
+        }
+
+        output[bubInfo[i].bubNum].resize(airTris);
+
+        std::vector<Eigen::Matrix<double, 1, 1>> &curOutput = output[bubInfo[i].bubNum];
+
+        // Read the velocity data and store it
+        for (int j = 0; j < airTris; ++j)
+        {
+            in.read((char*)&r, sizeof(r));
+            in.read((char*)&c, sizeof(c));
+
+            val.real(r);
+            val.imag(c);
+
+            // Convert from pressure gradient to velocity here
+            curOutput.at(j) << (val / factor).real();
+        }
     }
 
     return output;

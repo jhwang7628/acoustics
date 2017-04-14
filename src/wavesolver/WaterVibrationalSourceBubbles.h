@@ -21,8 +21,6 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         typedef std::shared_ptr<TriangleMesh<REAL> > TriangleMeshPtr;
 
         // indexed by bubble id, then vector of triangle velocities
-        typedef Eigen::Matrix<double, 1, 1> VelocityValue;
-        typedef std::map<int, std::vector<VelocityValue>> SurfaceVelocityData;
         typedef MLSModeInterpolator<double, 3, 1> MLSInterp; // TODO: should this be 1d or 3d? (interpolate normal velocities or full velocity vectors?)
 
         struct DistSq
@@ -36,20 +34,21 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         Vector3d            _wantedNormal = Vector3d(0, 1, 0);
         REAL                _validAngleThreshold = 0.5; // use to determine if the vertex has source. See Evaluate() for usage. default: 0.5
         TriangleMeshPtr     _surfaceMesh;
-        REAL                _sampleRate;
-        REAL                _startTime = 0.0;
 
         REAL                _dt;
 
+        double _curTime; // current time step
         double _t1, _t2; // surrounding times for surface data
         Mesh _m1, _m2;
         SurfaceVelocityData _v1, _v2;
         MLSInterp _mls;
         std::shared_ptr<PointKDTree> _kd1, _kd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
         std::vector<BubbleInputInfo> _b1, _b2;
-        Eigen::VectorXd _velT1, _velT2;
+        Eigen::VectorXd _velT1, _velT2; // the total velocities before and after current time (not at _t1 and _t2)
 
-        std::map<double, FileNames> fileInfo; // indexed by time
+        std::map<double, FileNames> _fileInfo; // indexed by time
+
+        void step(REAL time);
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);

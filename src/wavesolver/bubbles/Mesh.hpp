@@ -26,6 +26,12 @@ public:
     void
 	loadGmsh(const std::string &fileName)
 	{
+	    m_vertices.clear();
+	    m_triangles.clear();
+	    m_triType.clear();
+	    m_surfTris.clear();
+	    m_surfTriCenters.clear();
+
         std::ifstream in(fileName.c_str());
 
 		std::string line;
