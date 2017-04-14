@@ -60,12 +60,6 @@ void WaterVibrationalSourceBubbles::
 Initialize(const std::string &dataDir)
 {
     std::cout << "Initialize WaterVibrationalSourceBubbles from directory: " << dataDir << std::endl;
-    ParseFileNames(dataDir);
+    parseFileNames(dataDir);
 }
 
-//##############################################################################
-//##############################################################################
-void WaterVibrationalSourceBubbles::
-ParseFileNames(const std::string &dataDir)
-{
-}

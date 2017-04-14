@@ -49,7 +49,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         std::vector<BubbleInputInfo> _b1, _b2;
         Eigen::VectorXd _velT1, _velT2;
 
-        void ParseFileNames(const std::string &dataDir);
+        std::map<double, FileNames> fileInfo; // indexed by time
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);
