@@ -90,6 +90,7 @@ Initialize(const std::string &dataDir)
 void WaterVibrationalSourceBubbles::
 step(REAL time)
 {
+    // First load new solution data if necessary
     if (time >= _t2)
     {
         // Advance
@@ -133,7 +134,6 @@ step(REAL time)
         }
     }
 
-    // TODO:
     // Update all oscillators to the correct time (one timestep after this time)
     updateOscillators(time);
 
@@ -141,11 +141,11 @@ step(REAL time)
     computeVelocities(time);
 
     // Compute acceleration
-    Eigen::VectorXd accel = (velT2 - velT1) / (2 * dt);
+    _accel = (_velT2 - _velT1) / (2 * _dt);
 
-    // Project to plane
+    // Project to surface
     // This step is only necessary until the wavesolver handles deforming geometry
-    projectToPlane();
+    projectToSurface();
 
     _curTime = time;
 }
@@ -725,13 +725,13 @@ computeVelocities(REAL time)
     bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
 
     // Interpolate onto the mesh that is closest
-    Mesh &m = useT1 ? _m1 : _m2;
+    _m = useT1 ? &_m1 : &_m2;
 
     double localT1 = time - _dt;
     double localT2 = time + _dt;
 
-    _velT1 = VectorXd::Zero(m.m_surfTris.size());
-    _velT2 = VectorXd::Zero(m.m_surfTris.size());
+    _velT1 = VectorXd::Zero(_m->m_surfTris.size());
+    _velT2 = VectorXd::Zero(_m->m_surfTris.size());
 
     std::vector<int> closest1, closest2;
 
@@ -742,8 +742,8 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time)) continue;
 
-        bool existT1 = osc.m_startTime <= t1;
-        bool existT2 = osc.m_startTime <= t2;
+        bool existT1 = osc.m_startTime <= _t1;
+        bool existT2 = osc.m_startTime <= _t2;
 
         if (!existT1 && !existT2) continue;
 
@@ -781,19 +781,19 @@ computeVelocities(REAL time)
             bubbleNumber2 = bubbleNumber1;
         }
 
-        for (int j = 0; j < m.m_surfTris.size(); ++j)
+        for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
             // Now interpolate to correct times
             MLSVal val1, val2;
-            MLSPoint p = m.m_surfTriCenters[j];
+            MLSPoint p = _m->m_surfTriCenters[j];
 
-            tree1.find_nearest(p,
-                               6,
-                               closest1);
+            tree1->find_nearest(p,
+                                5,
+                                closest1);
 
-            tree2.find_nearest(p,
-                               6,
-                               closest2);
+            tree2->find_nearest(p,
+                                5,
+                                closest2);
 
             // Values at t1 and t2
             val1 = _mls.lookup(p,
@@ -819,3 +819,29 @@ computeVelocities(REAL time)
         }
 	}
 }
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSourceBubbles::
+projectToSurface()
+{
+    _projectedAccel.resize(_surfaceMesh->num_triangles());
+    _projectedAccel.setZero();
+
+    // For each triangle, find closest one on parent mesh and project
+    for (int i = 0; i < _accel.size(); ++i)
+    {
+        Vector3<REAL> p(_m->m_surfTriCenters[i](0),
+                        _m->m_surfTriCenters[i](1),
+                        _m->m_surfTriCenters[i](2));
+
+        int nearestTri;
+        REAL dist = _surfaceMesh->FindNearestTriangle(p, nearestTri);
+
+        if (std::fabs(_accel[i]) > std::fabs(_projectedAccel[nearestTri]))
+        {
+            _projectedAccel[nearestTri] = _accel[i];
+        }
+    }
+}
+

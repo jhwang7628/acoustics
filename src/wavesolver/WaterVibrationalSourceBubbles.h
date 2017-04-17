@@ -47,11 +47,15 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         double _curTime; // current time step
         double _t1, _t2; // surrounding times for surface data
         Mesh _m1, _m2;
+        Mesh *_m; // mesh that is currently being used
         SurfaceVelocityData _v1, _v2;
         MLSInterp _mls;
         std::shared_ptr<PointKDTree> _kd1, _kd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
         std::vector<BubbleInputInfo> _b1, _b2;
         Eigen::VectorXd _velT1, _velT2; // the total velocities before and after current time (not at _t1 and _t2)
+
+        Eigen::VectorXd _accel;
+        Eigen::VectorXd _projectedAccel;
 
         std::map<double, FileNames> _fileInfo; // indexed by time
         std::map<int, Bubble> _bubbles;
@@ -65,6 +69,10 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         void makeOscillators(const std::map<int, Bubble> &singleBubbles);
 
         void updateOscillators(REAL time);
+
+        void computeVelocities(REAL time);
+
+        void projectToSurface();
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);
