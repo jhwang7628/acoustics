@@ -801,21 +801,21 @@ computeVelocities(REAL time)
                                vel1.at(bubbleNumber1),
                                -1,
                                NULL,
-                               closest1);
+                               &closest1);
 
             val2 = _mls.lookup(p,
                                localM2.m_surfTriCenters,
                                vel2.at(bubbleNumber2),
                                -1,
                                NULL,
-                               closest2);
+                               &closest2);
 
             // Now interpolate
             double pct = (localT1 - _t1) / (_t2 - _t1);
-            _velT1(j) += osc.m_lastVals(0) * ( pct * val2 + (1 - pct) * val1 );
+            _velT1(j) += osc.m_lastVals(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
 
             pct = (localT2 - _t1) / (_t2 - _t1);
-            _velT2(j) += osc.m_lastVals(2) * ( pct * val2 + (1 - pct) * val1 );
+            _velT2(j) += osc.m_lastVals(2) * ( pct * val2(0) + (1 - pct) * val1(0) );
         }
 	}
 }

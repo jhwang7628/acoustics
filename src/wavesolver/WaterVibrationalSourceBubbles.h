@@ -7,6 +7,7 @@
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <geometry/KDTree.hpp>
+#include <math/MLSModeInterpolator.hpp>
 
 #include "bubbles/Bubble.hpp"
 #include "bubbles/Oscillator.hpp"

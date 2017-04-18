@@ -301,7 +301,7 @@ class KDTree
         /*!
          * find n nearest points to the given point pt
          */
-        void find_nearest(const _Val& pt, const size_t n, std::vector<int>& ret) const
+        void find_nearest(const _Val& pt, const size_t n, std::vector<int>& ret)
         {
             ret.clear();
             int nodeId = locate_parent(pt, n);
