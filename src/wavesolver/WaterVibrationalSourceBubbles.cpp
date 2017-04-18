@@ -23,6 +23,12 @@ WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
 REAL WaterVibrationalSourceBubbles::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
+    // step if necessary
+    if (std::fabs(time - _curTime) > 1e-12)
+    {
+        step(time);
+    }
+
     // transform the sample point to object frame
     //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z); 
     //const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
