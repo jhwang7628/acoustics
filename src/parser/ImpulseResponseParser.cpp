@@ -6,6 +6,7 @@
 #include <wavesolver/AccelerationNoiseVibrationalSource.h> 
 #include <wavesolver/WaterVibrationalSource.h> 
 #include <wavesolver/FDTD_PlaneConstraint.h>
+#include <wavesolver/WaterVibrationalSourceBubbles.h> 
 #include <modal_model/SparseModalEncoder.h>
 
 //##############################################################################
@@ -236,6 +237,40 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         auto constraint = std::make_shared<FDTD_PlaneConstraint>(direction, sign, height); 
         objects->AddConstraint(id, constraint); 
         node = node->NextSiblingElement(name.c_str());
+    }
+
+    // Load data from the previous bubbles project
+    // Currently using a static
+    const std::string bubblesNodeName("water_surface_bubbles_object");
+    TiXmlElement *bubblesNode;
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(bubblesNode, inputRoot, bubblesNodeName.c_str());
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No water_surface_bubbles_object found\n";
+    }
+    while (bubblesNode != NULL)
+    {
+        const int meshID = queryRequiredInt(bubblesNode, "id");
+        const std::string meshName = std::to_string(meshID);
+        const std::string workingDirectory = queryRequiredAttr(bubblesNode, "working_directory");
+        const std::string objectPrefix = queryRequiredAttr(bubblesNode, "object_prefix");
+        const int sdfResolutionValue = queryRequiredInt(bubblesNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(bubblesNode, "scale", 1.0);
+        const REAL initialPosition_x = queryOptionalReal(bubblesNode, "initial_position_x", 0.0);
+        const REAL initialPosition_y = queryOptionalReal(bubblesNode, "initial_position_y", 0.0);
+        const REAL initialPosition_z = queryOptionalReal(bubblesNode, "initial_position_z", 0.0);
+        const std::string dataDir = queryRequiredAttr(bubblesNode, "data_dir");
+
+        const bool buildFromTetMesh = false;
+        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z);
+        VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir);
+        object->AddVibrationalSource(sourcePtr);
+        objects->AddObject(meshName, object);
+        bubblesNode = bubblesNode->NextSiblingElement(bubblesNodeName.c_str());
     }
 }
 

@@ -23,6 +23,7 @@ WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
 REAL WaterVibrationalSourceBubbles::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
+    // TODO: make this explicit
     // step if necessary
     if (std::fabs(time - _curTime) > 1e-12)
     {
@@ -30,24 +31,24 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
     }
 
     // transform the sample point to object frame
-    //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z); 
-    //const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);  
+    //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z);
+    //const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);
 
     const Vector3d samplePointObject = _owner->WorldToObjectPoint(position);
 
     // use spatial partitioning
-    int closestTriangle; 
+    int closestTriangle;
     if (hintTriangle < 0)
     {
 #ifdef USE_OPENMP
 #pragma omp critical
 #endif
-        _surfaceMesh->FindNearestTriangle(samplePointObject, closestTriangle); 
+        _surfaceMesh->FindNearestTriangle(samplePointObject, closestTriangle);
     }
-    else 
+    else
     {
-        std::vector<int> neighbours; 
-        std::dynamic_pointer_cast<TriangleMeshGraph<REAL>>(_surfaceMesh)->FindKNearestTrianglesGraph(1, samplePointObject, 1, hintTriangle, neighbours); 
+        std::vector<int> neighbours;
+        std::dynamic_pointer_cast<TriangleMeshGraph<REAL>>(_surfaceMesh)->FindKNearestTrianglesGraph(1, samplePointObject, 1, hintTriangle, neighbours);
         closestTriangle = neighbours.at(0);
     }
 
