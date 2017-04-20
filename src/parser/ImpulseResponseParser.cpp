@@ -240,7 +240,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
 
     // Load data from the previous bubbles project
-    // Currently using a static
+    // Currently using a static mesh
     const std::string bubblesNodeName("water_surface_bubbles_object");
     TiXmlElement *bubblesNode;
     try

@@ -750,6 +750,7 @@ computeVelocities(REAL time)
 
     // Interpolate onto the mesh that is closest
     _m = useT1 ? &_m1 : &_m2;
+    _kd = useT1 ? _kd1 : _kd2;
 
     double localT1 = time - _dt;
     double localT2 = time + _dt;
@@ -853,18 +854,18 @@ projectToSurface()
     _projectedAccel.setZero();
 
     // For each triangle, find closest one on parent mesh and project
-    for (int i = 0; i < _accel.size(); ++i)
+    //for (int i = 0; i < _accel.size(); ++i)
+    for (int i = 0; i < _surfaceMesh->num_triangles(); ++i)
     {
-        Vector3<REAL> p(_m->m_surfTriCenters[i](0),
-                        _m->m_surfTriCenters[i](1),
-                        _m->m_surfTriCenters[i](2));
+        Point3<REAL> p = _surfaceMesh->triangle_centroid(i);
 
-        int nearestTri;
-        REAL dist = _surfaceMesh->FindNearestTriangle(p, nearestTri);
+        Eigen::Vector3d ep(p.x, p.y, p.z);
 
-        if (std::fabs(_accel[i]) > std::fabs(_projectedAccel[nearestTri]))
+        int nearestTri = _kd->find_nearest(ep);
+
+        if (std::fabs(_accel[nearestTri]) < std::fabs(_projectedAccel[i]))
         {
-            _projectedAccel[nearestTri] = _accel[i];
+            _projectedAccel[i] = _accel[nearestTri];
         }
     }
 }
