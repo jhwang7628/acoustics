@@ -14,7 +14,7 @@ typedef Eigen::Matrix<int, 2, 1> Vector2i;
 static const T AIR_DENSITY = 1.2; 
 static const T SOUND_SPEED = 343.; 
 static const int N = 150;
-static const T CELL_SIZE = 0.005;
+static const T CELL_SIZE = 0.0025;
 // derived
 static const T STEP_SIZE = CELL_SIZE / (sqrt(3.)*SOUND_SPEED);
 static const T BOX_SIZE = CELL_SIZE*(T)N;
@@ -254,18 +254,24 @@ Step()
                 //        (2./lambda2 - 4.)*data_c(ii,jj)
                 //        + data_c(ii,jj_p) + data_c(ii,jj_n)
                 //        +2.*data_c(ii_n,jj) - 1./lambda2*data_p(ii,jj));
-                // mine
-                data_n(ii,jj) = lambda2/(1.+2.*lambda)*(
-                        (2./lambda2 + 2./lambda - 4.)*data_c(ii,jj)
+                // 1st order Engquist (using 1st order space discretization)
+                //std::cout << "mine\n";
+                //data_n(ii,jj) = lambda2/(1.+2.*lambda)*(
+                //        (2./lambda2 + 2./lambda - 4.)*data_c(ii,jj)
+                //        + data_c(ii,jj_p) + data_c(ii,jj_n)
+                //        +2.*data_c(ii_n,jj) - 1./lambda2*data_p(ii,jj));
+                // 1st order Engquist (using 2nd order space discretization)
+                data_n(ii,jj) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 4.)*data_c(ii,jj)
                         + data_c(ii,jj_p) + data_c(ii,jj_n)
-                        +2.*data_c(ii_n,jj) - 1./lambda2*data_p(ii,jj));
+                        +2.*data_c(ii_n,jj) +(lambda - 1.0)/lambda2*data_p(ii,jj));
                 data_n(ii_p,jj) = 2./lambda*(data_c(ii,jj)-data_n(ii,jj))
                                 + data_c(ii_n,jj); 
                 continue; 
             }
             const int jj_p = std::min(jj+1, N-1); 
             const int jj_n = std::max(jj-1, 0  ); 
-            const int ii_p = std::min(ii+1, N-1); 
+            const int ii_p = ii+1; //std::min(ii+1, N-1); 
             const int ii_n = std::max(ii-1, 0  ); 
             data_n(ii,jj) = 2.0*data_c(ii,jj) - data_p(ii,jj)
                           + lambda2*(data_c(ii_p,jj  )+data_c(ii_n,jj  ) 
@@ -278,6 +284,23 @@ Step()
             }
         }
     }
+    // second order Engquist
+    //for (int jj=0; jj<N; ++jj)
+    //{
+    //    const int jj_p = std::min(jj+1, N-1); 
+    //    const int jj_n = std::max(jj-1, 0  ); 
+    //    data_n(N, jj) =     (data_n(N-1,jj)-data_p(N-1,jj)+    data_p(N  ,jj))/(2.*CELL_SIZE*STEP_SIZE)
+    //                  - 0.5*(               data_p(N  ,jj)-2.0*data_c(N  ,jj))/(   STEP_SIZE*STEP_SIZE)
+    //                  - 0.5*(data_n(N-1,jj)+data_p(N-1,jj)-2.0*data_c(N-1,jj))/(   STEP_SIZE*STEP_SIZE)
+    //                  + 0.25*(data_p(N  ,jj_p)+data_p(N  ,jj_n)-2.0*data_p(N  ,jj))/(CELL_SIZE*CELL_SIZE)
+    //                  + 0.25*(data_p(N-1,jj_p)+data_p(N-1,jj_n)-2.0*data_p(N-1,jj))/(CELL_SIZE*CELL_SIZE); 
+    //    data_n(N,jj) *= 2.*CELL_SIZE*STEP_SIZE*STEP_SIZE / (STEP_SIZE + CELL_SIZE); 
+    //}
+    //std::cout << "---------------" << std::endl;
+    //std::cout << data_n.row(N) << std::endl;
+    //std::cout << data_n.row(N-1) << std::endl;
+    //std::cout << data_n.row(N-2) << std::endl;
+    //std::cout << data_n.row(N-3) << std::endl;
     _grid._p = (_grid._p + 1) % 3; 
     _time += STEP_SIZE; 
 }
