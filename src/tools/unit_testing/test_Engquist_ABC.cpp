@@ -207,7 +207,7 @@ int main(int argc, char **argv)
     Grid *cgrid = new ComputeGrid(N+1, N); 
     WorldGrid *wgrid = new WorldGrid(2*N+1, N); 
     Solver solver(*cgrid); 
-    cgrid->InitializeGaussian(STEP_SIZE*4.);
+    cgrid->InitializeGaussian(STEP_SIZE*10.);
     wgrid->SetComputeGrid((ComputeGrid*)cgrid); 
     char filename[512];
     int c = 0;

@@ -26,7 +26,7 @@ for filename in filenames:
     ldata = data[fetch_pt[0], fetch_pt[1]]
     listened.append(ldata)
     if filename == filenames[0]:
-        p = plt.imshow(data, interpolation='none', clim=(-2,2))
+        p = plt.imshow(data, interpolation='none', clim=(-20,20))
         plt.plot(fetch_pt[1], fetch_pt[0], 'kx', markersize=10)
         plt.plot([int(size[1]/2), int(size[1]/2)], 
                  [0,              int(size[0]-1)], 'k:', linewidth=0.5)
