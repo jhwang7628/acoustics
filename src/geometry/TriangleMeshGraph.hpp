@@ -48,6 +48,9 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
             std::vector<std::vector<int> > array; 
             void Initialize(const int &V); 
             void AddEdge(const int &src, const int &dest); 
+            void Save(const std::string &filename); 
+            void Load(const std::string &filename); 
+            bool TryLoad(const std::string &filename); 
         };
 
         Graph _graph; 
@@ -57,7 +60,7 @@ class TriangleMeshGraph : public TriangleMeshKDTree<T>
         static std::vector<Timer<false> > timers;
         void FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex,  std::vector<int> &triangleIndices) const;
         T ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const T &errorTol=0.999, const int &N_neighbours=5, const int &maxLevel=1) const; 
-        void BuildGraph(const T &nnRadius=0.0); 
+        void BuildGraph(const std::string &loadName = "N/A", const T &nnRadius=0.0); 
         void NeighboursOfTriangleRec(const int &t_id, const size_t &maxReach, std::set<int> &neighbours, std::set<int> &memo) const;
         void NeighboursOfTriangle(const int &t_id, const size_t &maxReach, std::set<int> &neighbours) const;
         void NeighboursOfTriangle(const int &t_id, std::vector<int> &neighbours) const;

@@ -143,7 +143,10 @@ Initialize(const bool &buildFromTetMesh)
     const REAL t_max = sqrt(_mesh->largest_triangle_area(largestTriangle)); 
     //const REAL d_max=0.0;
     //const REAL t_max=0.0;
-    _meshGraph->BuildGraph(d_max+t_max); 
+    const double knnradius = d_max + t_max; 
+    const std::string meshGraphFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + 
+        "." + std::to_string(knnradius) + ".meshgraph"; 
+    _meshGraph->BuildGraph(meshGraphFile, knnradius); 
     UpdateBoundingBox();
 }
 

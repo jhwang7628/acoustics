@@ -3098,44 +3098,6 @@ void MAC_Grid::UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox)
 }
 
 //##############################################################################
-// Function AddNewPML
-//##############################################################################
-void MAC_Grid::AddNewPML(const BoundingBox &sceneBox)
-{
-    //for (int idx=0; idx<_pressureField.numCells(); ++idx)
-    //{
-    //    // classify and cache pml parameters
-    //    int pmlDirection; 
-    //    if (InsidePML(cellPos, _PML_absorptionWidth, pmlDirection) &&
-    //        !_isPMLCell(idx))
-    //    {
-    //        PML_PressureCell cell; 
-    //        cell.index = idx; 
-    //        REAL maxAbsorptionCoefficient = std::numeric_limits<REAL>::min(); 
-    //        for (int dim=0; dim<3; ++dim)
-    //        {
-    //            const REAL absorptionCoefficient = PML_absorptionCoefficient(cellPos, _PML_absorptionWidth, dim); 
-    //            maxAbsorptionCoefficient = std::max<REAL>(maxAbsorptionCoefficient, absorptionCoefficient); 
-    //            const REAL directionalCoefficient = PML_directionalCoefficient(absorptionCoefficient, dt);
-    //            cell.updateCoefficient[dim] = PML_pressureUpdateCoefficient(absorptionCoefficient, dt, directionalCoefficient);
-    //            cell.divergenceCoefficient[dim] = PML_divergenceCoefficient(rho, c, directionalCoefficient); 
-
-    //            // figure out neighbours
-    //            Tuple3i cellIndices = _pressureField.cellIndex(idx); 
-    //            cell.neighbour_v_left[dim] = _velocityField[dim].cellIndex(cellIndices); 
-    //            cellIndices[dim] += 1;
-    //            cell.neighbour_v_right[dim] = _velocityField[dim].cellIndex(cellIndices); 
-    //        }
-    //       
-    //        cell.position = cellPos; 
-    //        cell.absorptionCoefficient = maxAbsorptionCoefficient; 
-    //        _pmlPressureCells.push_back(cell); 
-    //        _isPMLCell.at(idx) = true; 
-    //    }
-    //}
-}
-
-//##############################################################################
 // Function RemoveOldPML
 //##############################################################################
 void MAC_Grid::RemoveOldPML(const BoundingBox &sceneBox)
@@ -3177,7 +3139,6 @@ void MAC_Grid::RemoveOldPML(const BoundingBox &sceneBox)
 void MAC_Grid::UpdatePML(const BoundingBox &sceneBox) 
 {
     // flag all the cells that need removal
-    AddNewPML(sceneBox); 
     RemoveOldPML(sceneBox); 
     UpdatePMLAbsorptionCoeffs(sceneBox); 
     //TODO 
