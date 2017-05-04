@@ -442,9 +442,12 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
     const REAL &timeStep = _waveSolverSettings->timeStepSize; 
     const REAL one_over_dx = 1.0/_waveSolverSettings->cellSize; 
     const REAL c2_k2 = pow(_waveSolverSettings->soundSpeed*timeStep, 2); 
+    const REAL lambda = _waveSolverSettings->soundSpeed*_waveSolverSettings->timeStepSize/_waveSolverSettings->cellSize; 
+    const REAL lambda2 = pow(lambda,2); 
     const int N_cells = _pressureField.numCells(); 
     const int N_pmlCells = _pmlPressureCells.size(); 
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
+    const Tuple3i &Ns = _pressureField.cellDivisions(); 
       
     // first update PML region
     for (int ii=0; ii<N_pmlCells; ++ii)
@@ -470,11 +473,101 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             continue; 
 
         const Vector3d cell_position = _pressureField.cellPosition( cell_idx );
-        pNext(cell_idx, 0) = pCurr(cell_idx, 0) * 2.0 - pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
+        const Tuple3i indices = _pressureField.cellIndex(cell_idx); 
+        const int &ii = indices[0]; 
+        const int &jj = indices[1]; 
+        const int &kk = indices[2]; 
+        unsigned char btype = _pressureField.boundaryCellType(cell_idx); 
+        // update boundary cells
+#define PCELL_IDX(i,j,k) _pressureField.cellIndex(i,j,k)
+        if (btype & ScalarField::BoundaryType::Positive_X_Boundary)
+        {
+                const int jj_p = std::min(jj+1, Ns[1]-1); 
+                const int jj_n = std::max(jj-1, 0      ); 
+                const int kk_p = std::min(kk+1, Ns[2]-1); 
+                const int kk_n = std::max(kk-1, 0      ); 
+                const int ii_n = ii-1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
+        {
+                const int jj_p = std::min(jj+1, Ns[1]-1); 
+                const int jj_n = std::max(jj-1, 0      ); 
+                const int kk_p = std::min(kk+1, Ns[2]-1); 
+                const int kk_n = std::max(kk-1, 0      ); 
+                const int ii_p = ii+1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii_p,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else if (btype & ScalarField::BoundaryType::Positive_Y_Boundary)
+        {
+                const int ii_p = std::min(ii+1, Ns[0]-1); 
+                const int ii_n = std::max(ii-1, 0      ); 
+                const int kk_p = std::min(kk+1, Ns[2]-1); 
+                const int kk_n = std::max(kk-1, 0      ); 
+                const int jj_n = jj-1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii,jj_n,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else if (btype & ScalarField::BoundaryType::Negative_Y_Boundary)
+        {
+                const int ii_p = std::min(ii+1, Ns[0]-1); 
+                const int ii_n = std::max(ii-1, 0      ); 
+                const int kk_p = std::min(kk+1, Ns[2]-1); 
+                const int kk_n = std::max(kk-1, 0      ); 
+                const int jj_p = jj+1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii,jj_p,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else if (btype & ScalarField::BoundaryType::Positive_Z_Boundary)
+        {
+                const int ii_p = std::min(ii+1, Ns[0]-1); 
+                const int ii_n = std::max(ii-1, 0      ); 
+                const int jj_p = std::min(jj+1, Ns[1]-1); 
+                const int jj_n = std::max(jj-1, 0      ); 
+                const int kk_n = kk-1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii,jj,kk_n),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else if (btype & ScalarField::BoundaryType::Negative_Z_Boundary)
+        {
+                const int ii_p = std::min(ii+1, Ns[0]-1); 
+                const int ii_n = std::max(ii-1, 0      ); 
+                const int jj_p = std::min(jj+1, Ns[1]-1); 
+                const int jj_n = std::max(jj-1, 0      ); 
+                const int kk_p = kk+1; 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                        +2.*pCurr(PCELL_IDX(ii,jj,kk_p),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        } 
+        else 
+        {
+            // update normal cells
+            pNext(cell_idx, 0) = pCurr(cell_idx, 0) * 2.0 - pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
+        }
         // evaluate external sources only happens not in PML
         // Liu Eq (16) f6x term
         if (evaluateExternalSource)
             pNext(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+#undef PCELL_IDX
     }
 
 }

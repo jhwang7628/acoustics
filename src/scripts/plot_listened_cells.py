@@ -141,7 +141,8 @@ if __name__ == '__main__':
                 # else:
                     # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
             # plt.legend(loc=4)
-        plt.title('Collocated formulation with PML')
+        # plt.title('Collocated formulation with PML')
+        plt.legend()
         plt.xlabel('frame') 
         plt.ylabel('Pressure (Pascal)')
         plt.grid()
