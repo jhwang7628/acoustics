@@ -53,6 +53,7 @@ class ScalarField {
     private:
         BoundingBox              _bbox;
         Tuple3i                  _divisions;
+        Tuple3i                  _indexOffset; 
         REAL                     _cellSize;
 
         ScalarArray3D           *_fieldValues;
@@ -200,6 +201,8 @@ class ScalarField {
 
         inline Vector3d minBound() const {return cellPosition(0);}
         inline Vector3d maxBound() const {return cellPosition(numCells()-1);}
+
+        void MoveCenter(const Tuple3i &amount); 
 
         //// debug methods ////
         void TestSubindices();

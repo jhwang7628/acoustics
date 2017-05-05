@@ -12,6 +12,15 @@
 #include <wavesolver/FDTD_Objects.h> 
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 
+//#############################################################################
+// Sturct SimBox
+//#############################################################################
+struct SimBox
+{
+    Tuple3i  rasterizedCenter; 
+    Vector3d continuousCenter;
+};
+
 //##############################################################################
 // A managing class to coordinate wavesolver, rigid body simulator, parser, 
 // GUI, IO
@@ -29,6 +38,7 @@ class FDTD_AcousticSimulator
         std::shared_ptr<PML_WaveSolver_Settings>    _acousticSolverSettings; 
         std::shared_ptr<FDTD_Objects>               _sceneObjects; 
         std::shared_ptr<FDTD_RigidObject_Animator>  _sceneObjectsAnimator; 
+        SimBox                                      _simBox;
 
         // state representation
         bool                    _canInitializeSolver; 
@@ -84,7 +94,10 @@ class FDTD_AcousticSimulator
         void Pause(); 
         void SaveSolverConfig(); 
         void LoadSolverResult(const std::string &dataDirectory); 
+
+        // scene and simbox kinematics
         void AnimateObjects(const REAL newTime=-1); 
+        void MoveSimBox(const Vector3d &amount);  
 
         //// debug method //// 
         void TestAllComponents(); 

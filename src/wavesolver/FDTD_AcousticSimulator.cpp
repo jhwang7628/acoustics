@@ -368,6 +368,8 @@ InitializeSolver()
     _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
+    _simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(_acousticSolverSettings->domainCenter); 
+    _simBox.continuousCenter = _acousticSolverSettings->domainCenter; 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
@@ -581,6 +583,24 @@ AnimateObjects(const REAL newTime)
                 object->SetRigidBodyTransform(newCOM, quaternion);
             }
         }
+    }
+}
+
+//##############################################################################
+// Function MoveSimBox
+//   This function moves the sim box 
+//##############################################################################
+void FDTD_AcousticSimulator:: 
+MoveSimBox(const Vector3d &amount) 
+{
+    auto &field = GetGrid().pressureField(); 
+    const Vector3d newCenter = _simBox.continuousCenter + amount; 
+    const Tuple3i newRasterize = field.enclosingCell(newCenter);
+    const Tuple3i offset = newRasterize - _simBox.rasterizedCenter; 
+    const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
+    if (l1 > 0) 
+    {
+        field.MoveCenter(offset); 
     }
 }
 

@@ -15,6 +15,7 @@ const int ScalarField::NUM_NEIGHBOURS = 6;
 ScalarField::ScalarField()
     : _bbox( Vector3d( 0, 0, 0 ), Vector3d( 0, 0, 0 ) ),
       _divisions( 1, 1, 1 ),
+      _indexOffset(0,0,0),
       _cellSize( 0.0 ),
       _fieldValues( NULL )
 {
@@ -26,7 +27,8 @@ ScalarField::ScalarField()
 // to ensure square cells.
 //////////////////////////////////////////////////////////////////////
 ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
-    : _cellSize( cellSize ),
+    : _indexOffset(0,0,0),
+      _cellSize( cellSize ),
       _fieldValues( NULL )
 {
     Vector3d                   minBound;
@@ -52,6 +54,7 @@ ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
 //////////////////////////////////////////////////////////////////////
 ScalarField::ScalarField( const Vector3d &minBound, const Tuple3i &divisions, REAL cellSize )
     : _divisions( divisions ),
+      _indexOffset(0,0,0),
       _cellSize( cellSize ),
       _fieldValues( NULL )
 {
@@ -83,10 +86,13 @@ ScalarField::~ScalarField()
 int ScalarField::cellIndex( const Tuple3i &index ) const
 {
     int                        flatIndex;
-
-    flatIndex = index[ 0 ] * ( _divisions[ 1 ] * _divisions[ 2 ] );
-    flatIndex += index[ 1 ] * _divisions[ 2 ];
-    flatIndex += index[ 2 ];
+    // with offset
+    const int newIndex[3] = {(index[0] + _indexOffset[0]) % _divisions[0], 
+                             (index[1] + _indexOffset[1]) % _divisions[1],
+                             (index[2] + _indexOffset[2]) % _divisions[2]}; 
+    flatIndex = newIndex[0] * ( _divisions[1] * _divisions[2] );
+    flatIndex += newIndex[ 1 ] * _divisions[ 2 ];
+    flatIndex += newIndex[ 2 ];
 
     return flatIndex;
 }
@@ -106,6 +112,10 @@ Tuple3i ScalarField::cellIndex( int flatIndex ) const
     flatIndex -= index[ 1 ] * _divisions[ 2 ];
 
     index[ 2 ] = flatIndex;
+
+    // with offset
+    for (int d=0; d<3; ++d)
+        index[d] = (index[d] - _indexOffset[d] + _divisions[d]) % _divisions[d]; 
 
     return index;
 }
@@ -437,6 +447,19 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
                 1, data.cols(), /* Copy size */
                 coef.second /* multiplier */ );
     }
+}
+
+/////////////////////////////////////////////////////////////////////
+// Move the center towards direction and amount indicated by amount.
+// This will rotate the way cellIndex is computed, effectively shift
+// all data. For example, if amount=(1,0,0), the scene center moves 
+// one unit towards positive x, therefore the data should rotate 
+// one unit towards negative x (similar to moving origin of coord
+// system).
+/////////////////////////////////////////////////////////////////////
+void ScalarField::MoveCenter(const Tuple3i &amount)
+{
+    _indexOffset - amount; 
 }
 
 void ScalarField::TestSubindices()

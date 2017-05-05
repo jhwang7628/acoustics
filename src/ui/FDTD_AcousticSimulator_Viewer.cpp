@@ -1311,4 +1311,7 @@ MoveSceneCenter(const int &dim, const double &displacement)
     (_sceneBox->maxBound())[dim] += displacement; 
     std::cout << _sceneBox->center() << std::endl; 
     _simulator->GetGrid().UpdatePML(*_sceneBox); 
+    Vector3d move; 
+    move[dim] = displacement;
+    _simulator->MoveSimBox(move); 
 }

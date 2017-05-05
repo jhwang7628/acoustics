@@ -359,6 +359,7 @@ class MAC_Grid
         inline BoundingBox PressureBoundingBox() const {return _pressureField.bbox();}
         inline BoundingBox VelocityBoundingBox(const int &dim) const {return _velocityField[dim].bbox();}
         inline const ScalarField &pressureField() const { return _pressureField; }
+        inline ScalarField &pressureField() { return _pressureField; }
         inline const ScalarField &velocityField(const int &ind) const { return _velocityField[ind]; }
         inline Vector3d pressureFieldPosition(const Tuple3i &index) const { return _pressureField.cellPosition( index ); }
         inline Vector3d pressureFieldPosition(int index) const { return _pressureField.cellPosition( index ); }
