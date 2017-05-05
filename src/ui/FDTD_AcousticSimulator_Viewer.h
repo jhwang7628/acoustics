@@ -102,6 +102,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             _solverSettings = _simulator->GetSolverSettings(); 
             if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
                 InitializeBEMSolver();
+            _sceneBox = nullptr; 
         }
         ~FDTD_AcousticSimulator_Viewer()
         {
