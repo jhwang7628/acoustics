@@ -881,10 +881,10 @@ keyPressEvent(QKeyEvent *e)
         DrawHalfFrameForward(); 
     }
     else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, _solverSettings->cellSize/10.); 
+        MoveSceneCenter(0, _solverSettings->cellSize*0.99); 
     }
     else if ((e->key() == Qt::Key_Left) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, -_solverSettings->cellSize/10.); 
+        MoveSceneCenter(0, -_solverSettings->cellSize*0.99); 
     }
     else {
         handled = false; 
@@ -1313,5 +1313,18 @@ MoveSceneCenter(const int &dim, const double &displacement)
     _simulator->GetGrid().UpdatePML(*_sceneBox); 
     Vector3d move; 
     move[dim] = displacement;
-    _simulator->MoveSimBox(move); 
+    const bool changed = _simulator->MoveSimBox(move); 
+    if (changed)
+    {
+        // recompute slices
+        for (auto &slice : _sliceCin)
+        {
+            slice.samples.clear(); 
+            slice.gridLines.clear(); 
+            slice.cells.clear(); 
+            ConstructSliceSamples(slice); 
+            slice.dataReady = false; 
+        }
+        updateGL();
+    }
 }

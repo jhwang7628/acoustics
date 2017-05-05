@@ -459,7 +459,15 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
 /////////////////////////////////////////////////////////////////////
 void ScalarField::MoveCenter(const Tuple3i &amount)
 {
-    _indexOffset - amount; 
+    for (int d=0; d<3; ++d) 
+    {
+        _indexOffset[d] = (_indexOffset[d] + amount[d]) % _divisions[d]; 
+    }
+    Vector3d offset(((double)amount[0])*_cellSize,
+                    ((double)amount[1])*_cellSize,
+                    ((double)amount[2])*_cellSize); 
+    _bbox.setMinBound(_bbox.minBound() + offset); 
+    _bbox.setMaxBound(_bbox.maxBound() + offset); 
 }
 
 void ScalarField::TestSubindices()

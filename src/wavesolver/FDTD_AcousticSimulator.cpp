@@ -590,18 +590,20 @@ AnimateObjects(const REAL newTime)
 // Function MoveSimBox
 //   This function moves the sim box 
 //##############################################################################
-void FDTD_AcousticSimulator:: 
+bool FDTD_AcousticSimulator:: 
 MoveSimBox(const Vector3d &amount) 
 {
     auto &field = GetGrid().pressureField(); 
-    const Vector3d newCenter = _simBox.continuousCenter + amount; 
-    const Tuple3i newRasterize = field.enclosingCell(newCenter);
+    _simBox.continuousCenter += amount; 
+    const Tuple3i newRasterize = field.enclosingCell(_simBox.continuousCenter);
     const Tuple3i offset = newRasterize - _simBox.rasterizedCenter; 
     const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
     if (l1 > 0) 
     {
         field.MoveCenter(offset); 
+        return true; 
     }
+    return false; 
 }
 
 //##############################################################################

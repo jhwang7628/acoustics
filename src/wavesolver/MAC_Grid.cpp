@@ -480,33 +480,33 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         unsigned char btype = _pressureField.boundaryCellType(cell_idx); 
         // update boundary cells
 #define PCELL_IDX(i,j,k) _pressureField.cellIndex(i,j,k)
-        if (btype & ScalarField::BoundaryType::Positive_X_Boundary)
-        {
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int ii_n = ii-1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
-        else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
-        {
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int ii_p = ii+1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii_p,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
-        else if (btype & ScalarField::BoundaryType::Positive_Y_Boundary)
+        //if (btype & ScalarField::BoundaryType::Positive_X_Boundary)
+        //{
+        //        const int jj_p = std::min(jj+1, Ns[1]-1); 
+        //        const int jj_n = std::max(jj-1, 0      ); 
+        //        const int kk_p = std::min(kk+1, Ns[2]-1); 
+        //        const int kk_n = std::max(kk-1, 0      ); 
+        //        const int ii_n = ii-1; 
+        //        pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+        //                (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+        //                + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+        //                + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+        //                +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        //} 
+        //else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
+        //{
+        //        const int jj_p = std::min(jj+1, Ns[1]-1); 
+        //        const int jj_n = std::max(jj-1, 0      ); 
+        //        const int kk_p = std::min(kk+1, Ns[2]-1); 
+        //        const int kk_n = std::max(kk-1, 0      ); 
+        //        const int ii_p = ii+1; 
+        //        pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+        //                (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+        //                + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+        //                + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+        //                +2.*pCurr(PCELL_IDX(ii_p,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        //} 
+        /*else*/ if (btype & ScalarField::BoundaryType::Positive_Y_Boundary)
         {
                 const int ii_p = std::min(ii+1, Ns[0]-1); 
                 const int ii_n = std::max(ii-1, 0      ); 
@@ -2416,7 +2416,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         for (int kk=start.z; kk<start.z+range.z; ++kk)
         {
             const Tuple3i cellIndices(ii,jj,kk);
-            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            const int cell_idx = _pressureField.cellIndex(cellIndices);  
             if (_classified.at(cell_idx)) continue; 
             const Vector3d cellPos = _pressureField.cellPosition( cell_idx );
 
@@ -3103,7 +3103,7 @@ void MAC_Grid::SetClassifiedSubset(const ScalarField &field, const int &N, const
         for (int jj=start.y; jj<start.y+range.y; ++jj){
         for (int kk=start.z; kk<start.z+range.z; ++kk){
             const Tuple3i cellIndices(ii,jj,kk);
-            const int cell_idx = field.cellIndex(cellIndices);
+            const int cell_idx = field.cellIndex(cellIndices); 
             _classified.at(cell_idx) = state;}}}}
 }
 

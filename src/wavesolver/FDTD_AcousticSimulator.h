@@ -97,7 +97,7 @@ class FDTD_AcousticSimulator
 
         // scene and simbox kinematics
         void AnimateObjects(const REAL newTime=-1); 
-        void MoveSimBox(const Vector3d &amount);  
+        bool MoveSimBox(const Vector3d &amount);  
 
         //// debug method //// 
         void TestAllComponents(); 
