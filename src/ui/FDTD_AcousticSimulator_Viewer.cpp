@@ -881,10 +881,10 @@ keyPressEvent(QKeyEvent *e)
         DrawHalfFrameForward(); 
     }
     else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, _solverSettings->cellSize*0.99); 
+        MoveSceneCenter(0, _solverSettings->cellSize*0.5); 
     }
     else if ((e->key() == Qt::Key_Left) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, -_solverSettings->cellSize*0.99); 
+        MoveSceneCenter(0, -_solverSettings->cellSize*0.5); 
     }
     else {
         handled = false; 
