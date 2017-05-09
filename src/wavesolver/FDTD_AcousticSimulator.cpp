@@ -505,7 +505,7 @@ PostStepping(const REAL &odeTime)
     for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
 
-    std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
+    std::cout << "Acoustic simulator time = " << _simulationTime << "; step index= " << _stepIndex << "; Modal ODE time = " << odeTime << std::endl;
     _stepIndex ++;
     _simulationTime += settings->timeStepSize; 
 
@@ -601,6 +601,10 @@ MoveSimBox(const Vector3d &amount)
     if (l1 > 0) 
     {
         field.MoveCenter(offset); 
+        GetGrid().velocityField(0).MoveCenter(offset);  // TODO need to get rid of these..
+        GetGrid().velocityField(1).MoveCenter(offset); 
+        GetGrid().velocityField(2).MoveCenter(offset); 
+        // TODO must cleanup invalid buffer, currently only rotation
         return true; 
     }
     return false; 
