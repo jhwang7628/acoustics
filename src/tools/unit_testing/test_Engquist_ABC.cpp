@@ -216,8 +216,8 @@ int main(int argc, char **argv)
         std::cout << "step " << c << "" << std::endl;
         snprintf(filename, 512, "data/%.5d.dat", c); 
         wgrid->SaveData(filename);
-        //wgrid->MoveComputeGrid(0, CELL_SIZE/10.);
-        wgrid->MoveComputeGrid(0, 0.);
+        wgrid->MoveComputeGrid(0, CELL_SIZE/10.);
+        //wgrid->MoveComputeGrid(0, 0.);
         solver.Step();
         ++c; 
     }
