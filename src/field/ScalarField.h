@@ -201,6 +201,7 @@ class ScalarField {
 
         inline Vector3d minBound() const {return cellPosition(0);}
         inline Vector3d maxBound() const {return cellPosition(numCells()-1);}
+        inline const Tuple3i &indexOffset() const {return _indexOffset;}
 
         void MoveCenter(const Tuple3i &amount); 
 

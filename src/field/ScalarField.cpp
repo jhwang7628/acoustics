@@ -449,14 +449,13 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
     }
 }
 
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Move the center towards direction and amount indicated by amount.
 // This will rotate the way cellIndex is computed, effectively shift
 // all data. For example, if amount=(1,0,0), the scene center moves 
 // one unit towards positive x, therefore the data should rotate 
-// one unit towards negative x (similar to moving origin of coord
-// system).
-/////////////////////////////////////////////////////////////////////
+// one unit towards negative x (or move offset towards positive x).
+////////////////////////////////////////////////////////////////////////////////
 void ScalarField::MoveCenter(const Tuple3i &amount)
 {
     for (int d=0; d<3; ++d) 

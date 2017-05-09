@@ -394,6 +394,28 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
 }
 
 #ifdef USE_COLLOCATED
+
+void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
+{
+    const auto &field = _grid.pressureField(); 
+    const Tuple3i &div = field.cellDivisions(); 
+    const int &d0 =  dim; 
+    const int  d1 = (dim+1)%3; 
+    const int  d2 = (dim+2)%3; 
+    Tuple3i indices; 
+    // clear data in i0
+    for (int ii=0; ii<div[d1]; ++ii)
+    for (int jj=0; jj<div[d2]; ++jj)
+    {
+        indices[d0] = ind; 
+        indices[d1] = ii;
+        indices[d2] = jj; 
+        const int cell_idx = field.cellIndex(indices); 
+        for (int dd=0; dd<3; ++dd)
+            _pCollocated[dd](cell_idx,0) = 0.0;
+    }
+}
+
 void PML_WaveSolver::GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind)
 {
     for (int dim=0; dim<3; ++dim)

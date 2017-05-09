@@ -601,10 +601,25 @@ MoveSimBox(const Vector3d &amount)
     if (l1 > 0) 
     {
         field.MoveCenter(offset); 
-        GetGrid().velocityField(0).MoveCenter(offset);  // TODO need to get rid of these..
+        // TODO need to get rid of these if using collocated scheme START
+        GetGrid().velocityField(0).MoveCenter(offset);
         GetGrid().velocityField(1).MoveCenter(offset); 
         GetGrid().velocityField(2).MoveCenter(offset); 
-        // TODO must cleanup invalid buffer, currently only rotation
+        // TODO need to get rid of these if using collocated scheme END
+          
+        // clear invalid data due to center move, data is stored in 
+        // PML_WaveSolver class. 
+        const Tuple3i &ind_origin = field.indexOffset(); 
+        const Tuple3i &div        = field.cellDivisions(); 
+        for (int dd=0; dd<3; ++dd)
+        {
+            for (int oo=0; oo<abs(offset[dd]); ++oo)
+            {
+                const int clearInd = (-offset[dd]+div[dd])%div[dd]; 
+                _acousticSolver->ClearCollocatedData(dd, clearInd); 
+            }
+        }
+        
         return true; 
     }
     return false; 
