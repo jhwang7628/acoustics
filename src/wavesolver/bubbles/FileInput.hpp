@@ -100,7 +100,7 @@ parseFileNames(const std::string &dataDir)
     using namespace boost::filesystem;
 
     vector<string> meshFiles;
-    boost::regex gmsh("gmsh*.msh");
+    boost::regex gmsh("gmsh.*\.msh");
 
     for (directory_iterator i(dataDir), endIt; i != endIt; ++i)
     {
@@ -110,7 +110,11 @@ parseFileNames(const std::string &dataDir)
         boost::smatch what;
 
         // Skip if not a match
-        if (!boost::regex_match( i->path().filename().native(), what, gmsh )) continue;
+        if (!boost::regex_match( i->path().filename().native(), what, gmsh ))
+        {
+            //std::cout << i->path().filename().native() << " did not match" << std::endl;
+            continue;
+        }
 
         // Match
         meshFiles.push_back( i->path().native() );
@@ -128,7 +132,8 @@ parseFileNames(const std::string &dataDir)
 
         // parse time out
         // hacky, should really use boost split or something
-        string meshTime = m.substr(5, 10);
+        string fn = path(m).filename().native();
+        string meshTime = fn.substr(5, 10);
         double t = boost::lexical_cast<double>(meshTime);
 
         FileNames f;

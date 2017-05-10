@@ -97,14 +97,12 @@ Initialize(const std::string &dataDir)
                   << "   " << iter->second.freqFile << std::endl;
     }
 
-    exit(1);
-
     _curTime = -1;
     _t1 = _t2 = -1;
     _dt = 1.0 / 192000;
 
     FreqType ft = CAPACITANCE;
-    std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubbleInfo.txt");
+    std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubInfo.txt");
     parseConfigFile(infoFile, ft);
     makeOscillators(_bubbles);
 }
@@ -245,11 +243,11 @@ parseConfigFile(const std::string &infoFile, FreqType fType)
             _bubbles.insert(bub);
         }
 
-        std::cout << "\rLoaded " << bub.first << "    ";
-        std::cout.flush();
+        //std::cout << "\rLoaded " << bub.first << "    ";
+        //std::cout.flush();
     }
 
-    std::cout << std::endl;
+    std::cout << "Loaded " << _bubbles.size() << " bubbles" << std::endl;
 }
 
 // Returns the (angular) Minnaert frequency
@@ -393,8 +391,8 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
 
     for (const auto& bubPair : singleBubbles)
     {
-        std::cout << "\rTracking " << bubPair.first << " of " << singleBubbles.size() << "       ";
-        std::cout.flush();
+        //std::cout << "\rTracking " << bubPair.first << " of " << singleBubbles.size() << "       ";
+        //std::cout.flush();
 
         if (!used.count(bubPair.first))
         {
@@ -473,7 +471,7 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
                 if (false && curBub->m_frequencies.size() > 0 && curBub->m_frequencies.at(0) <= 500 * 2 * M_PI)
                 {
                     forceThisBub = false;
-                    std::cout << "Filtered bub at time: " << curBub->m_startTime << std::endl;
+                    //std::cout << "Filtered bub at time: " << curBub->m_startTime << std::endl;
                     ++numFiltered;
                 }
 

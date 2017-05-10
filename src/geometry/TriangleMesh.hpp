@@ -898,6 +898,13 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
         }
         else // remaining case is u<0, v<0, (u+v)>=1 but this case is impossible
         {
+            std::cout.precision(12);
+            std::cout << p0.x << " " << p0.y << " " << p0.z << std::endl;
+            std::cout << p1.x << " " << p1.y << " " << p1.z << std::endl;
+            std::cout << p2.x << " " << p2.y << " " << p2.z << std::endl;
+            std::cout << queryPoint.x << " " << queryPoint.y << " " << queryPoint.z << std::endl;
+            std::cout << projectedPointBuffer.x << " " << projectedPointBuffer.y << " " << projectedPointBuffer.z << std::endl;
+            std::cout << u << " " << v << std::endl;
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
         const T distance = sgn*(queryPoint - closestPointBuffer).lengthSqr();
