@@ -674,8 +674,8 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
     {
-        setSnapshotFormat("PNG");
-        setSnapshotQuality(100);
+        setSnapshotFormat("JPEG");
+        setSnapshotQuality(80);
         setSnapshotFileName("frames/test");
         _takeSnapshots = !_takeSnapshots;
         std::cout << "takeSnapshots: " << std::boolalpha << _takeSnapshots << std::endl;
@@ -881,10 +881,16 @@ keyPressEvent(QKeyEvent *e)
         DrawHalfFrameForward(); 
     }
     else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, _solverSettings->cellSize*0.5); 
+        MoveSceneCenter(0, _solverSettings->cellSize*0.9); 
     }
     else if ((e->key() == Qt::Key_Left) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, -_solverSettings->cellSize*0.5); 
+        MoveSceneCenter(0, -_solverSettings->cellSize*0.9); 
+    }
+    else if ((e->key() == Qt::Key_Up) && (modifiers == Qt::NoButton)) {
+        MoveSceneCenter(2, _solverSettings->cellSize*0.9); 
+    }
+    else if ((e->key() == Qt::Key_Down) && (modifiers == Qt::NoButton)) {
+        MoveSceneCenter(2, -_solverSettings->cellSize*0.9); 
     }
     else {
         handled = false; 
@@ -1182,9 +1188,9 @@ DrawOneFrameForward()
     {
         _currentFrame += _previewSpeed;
         _simulator->PreviewStepping(_previewSpeed);
-        if (_takeSnapshots)
-            saveSnapshot(true, true);
     }
+    if (_takeSnapshots)
+        saveSnapshot(true, true);
     PrintFrameInfo();
     updateGL(); 
 }
@@ -1302,15 +1308,15 @@ Push_Back_ReflectionArrows(const std::string &filename)
 void FDTD_AcousticSimulator_Viewer::
 MoveSceneCenter(const int &dim, const double &displacement) 
 {
-    if (!_sceneBox) 
-    {
-        const BoundingBox bbox = _simulator->GetGrid().PressureBoundingBox();
-        _sceneBox = new BoundingBox(bbox.minBound(), bbox.maxBound()); 
-    }
-    (_sceneBox->minBound())[dim] += displacement; 
-    (_sceneBox->maxBound())[dim] += displacement; 
-    std::cout << _sceneBox->center() << std::endl; 
-    _simulator->GetGrid().UpdatePML(*_sceneBox); 
+    //if (!_sceneBox) 
+    //{
+    //    const BoundingBox bbox = _simulator->GetGrid().PressureBoundingBox();
+    //    _sceneBox = new BoundingBox(bbox.minBound(), bbox.maxBound()); 
+    //}
+    //(_sceneBox->minBound())[dim] += displacement; 
+    //(_sceneBox->maxBound())[dim] += displacement; 
+    //std::cout << _sceneBox->center() << std::endl; 
+    //_simulator->GetGrid().UpdatePML(*_sceneBox); 
     Vector3d move; 
     move[dim] = displacement;
     const bool changed = _simulator->MoveSimBox(move); 
