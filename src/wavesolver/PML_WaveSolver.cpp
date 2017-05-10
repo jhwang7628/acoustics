@@ -395,6 +395,10 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
 
 #ifdef USE_COLLOCATED
 
+void PML_WaveSolver::ScheduleMoveBox(const Tuple3i &offset)
+{
+}
+
 void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
 {
     const auto &field = _grid.pressureField(); 
@@ -414,6 +418,15 @@ void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
         for (int dd=0; dd<3; ++dd)
             _pCollocated[dd](cell_idx,0) = 0.0;
     }
+}
+
+void PML_WaveSolver::FillBoundaryFreshCell(const int &dim, const int &ind)
+{
+    MATRIX &pm1 = _pCollocated[(_pCollocatedInd+2)%3]; 
+    MATRIX &p0  = _pCollocated[ _pCollocatedInd     ]; 
+    MATRIX &pm2 = _pCollocated[(_pCollocatedInd+1)%3]; 
+    _grid.FillBoundaryFreshCellGrid(dim, ind, p0, pm1); 
+    _grid.FillBoundaryFreshCellGrid(dim, ind, pm1, pm2); 
 }
 
 void PML_WaveSolver::GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind)

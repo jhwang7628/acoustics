@@ -3312,6 +3312,55 @@ void MAC_Grid::ClearUnusedCache()
     }
 }
 
+void MAC_Grid::FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX &pCurr, const MATRIX &pLast)
+{
+    if (!(ind==0 || ind==(_pressureField.cellDivisions()[dim]-1)))
+        throw std::runtime_error("**ERROR** Wrong MAC_GRid::FillBoundaryFreshCellGrid input: ind");
+    const auto &field = _pressureField; 
+    const Tuple3i &div = field.cellDivisions(); 
+    const int &d0 =  dim; 
+    const int  d1 = (dim+1)%3; 
+    const int  d2 = (dim+2)%3; 
+    const int interior_dir = (ind==0 ? 1 : -1); 
+    const double &h = _waveSolverSettings->cellSize; 
+    const double &k = _waveSolverSettings->timeStepSize; 
+    const double &c = _waveSolverSettings->soundSpeed; 
+    const double lambda = k*c/h; 
+    const double lambda2 = pow(lambda,2); 
+    Tuple3i indices, indices_int; 
+    // fill data in i0
+    for (int ii=0; ii<div[d1]; ++ii)
+    for (int jj=0; jj<div[d2]; ++jj)
+    {
+        indices[d0] = ind; 
+        indices[d1] = ii;
+        indices[d2] = jj; 
+        const int cell_idx_off0 = field.cellIndex(indices); 
+        indices[d0] = ind + interior_dir;
+        indices[d1] = ii; 
+        indices[d2] = jj; 
+        const int cell_idx_off1 = field.cellIndex(indices);
+        indices[d0] = ind + interior_dir*2;
+        indices[d1] = ii; 
+        indices[d2] = jj; 
+        const int cell_idx_off2 = field.cellIndex(indices);
+        const int  ii_p = std::min(ii+1, div[d1]-1); 
+        const int  ii_n = std::max(ii-1, 0      ); 
+        const int  jj_p = std::min(jj+1, div[d2]-1); 
+        const int  jj_n = std::max(jj-1, 0      ); 
+        const int &kk   = ind; 
+        const int  kk_p = kk+interior_dir; 
+#define PCELL_IDX(_i,_j,_k) field.cellIndex(d1,d2,d0,_i,_j,_k)
+        const double pNext = lambda2/(1.+ lambda)*(
+                (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                +2.*pCurr(PCELL_IDX(ii,jj,kk_p),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+        pCurr(cell_idx_off0,0) = pCurr(cell_idx_off2,0) + 1.0/lambda*(pLast(cell_idx_off1,0)-pNext); 
+#undef PCELL_IDX
+    }
+}
+
 //// debug methods //// 
 void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldName) 
 {

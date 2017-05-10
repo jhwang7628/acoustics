@@ -33,11 +33,11 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
-        //const REAL omega = 2.0*M_PI*500.0;
-        //const REAL phase = 0.0;
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        const REAL omega = 2.0*M_PI*2000.0;
+        const REAL phase = 0.0;
+        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
     }
@@ -607,16 +607,26 @@ MoveSimBox(const Vector3d &amount)
         GetGrid().velocityField(2).MoveCenter(offset); 
         // TODO need to get rid of these if using collocated scheme END
           
-        // clear invalid data due to center move, data is stored in 
-        // PML_WaveSolver class. 
+        // clear/fill the new matrix elements. 
         const Tuple3i &ind_origin = field.indexOffset(); 
         const Tuple3i &div        = field.cellDivisions(); 
         for (int dd=0; dd<3; ++dd)
         {
-            for (int oo=0; oo<abs(offset[dd]); ++oo)
+            //// clear
+            //for (int oo=0; oo<abs(offset[dd]); ++oo)
+            //{
+            //    int clearInd; 
+            //    if (offset[dd] > 0)
+            //        clearInd = (-offset[dd]+div[dd])%div[dd]; 
+            //    else 
+            //        clearInd = (-offset[dd]-1); 
+            //    _acousticSolver->ClearCollocatedData(dd, clearInd); 
+            //}
+            // fill
+            if (abs(offset[dd])==1)
             {
-                const int clearInd = (-offset[dd]+div[dd])%div[dd]; 
-                _acousticSolver->ClearCollocatedData(dd, clearInd); 
+                const int fillInd = (offset[dd]==1 ? div[dd]-1 : 0); 
+                _acousticSolver->FillBoundaryFreshCell(dd, fillInd); 
             }
         }
         

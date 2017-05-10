@@ -393,6 +393,7 @@ class MAC_Grid
         void RemoveOldPML(const BoundingBox &sceneBox); 
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
         void UpdatePML(const BoundingBox &sceneBox);
+        void FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX &pCurr, const MATRIX &pLast); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

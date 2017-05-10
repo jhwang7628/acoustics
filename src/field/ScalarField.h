@@ -85,6 +85,16 @@ class ScalarField {
         // Returns the x, y and z index for the given flat cell index
         Tuple3i                  cellIndex( int flatIndex ) const;
 
+        inline int               cellIndex(const int &d0, const int &d1, const int &d2,
+                                           const int &i0, const int &i1, const int &i2) const
+        {
+            Tuple3i indices; 
+            indices[d0] = i0; 
+            indices[d1] = i1; 
+            indices[d2] = i2; 
+            return cellIndex(indices); 
+        }
+
         // Cell center for the given index
         Vector3d                 cellPosition( const Tuple3i &index ) const;
         void                     cellPosition( const Tuple3i &index, Vector3d &pos ) const;
