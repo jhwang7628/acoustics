@@ -25,7 +25,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 {
     // TODO: make this explicit
     // step if necessary
-    if (std::fabs(time - _curTime) > 1e-12)
+    while (std::fabs(time - _curTime) > 1e-12)
     {
         step(time);
     }
@@ -811,11 +811,11 @@ computeVelocities(REAL time)
             MLSPoint p = _m->m_surfTriCenters[j];
 
             tree1->find_nearest(p,
-                                5,
+                                static_cast<size_t>(5),
                                 closest1);
 
             tree2->find_nearest(p,
-                                5,
+                                static_cast<size_t>(5),
                                 closest2);
 
             // Values at t1 and t2
