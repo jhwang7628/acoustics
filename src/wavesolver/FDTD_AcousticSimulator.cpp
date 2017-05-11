@@ -600,36 +600,7 @@ MoveSimBox(const Vector3d &amount)
     const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
     if (l1 > 0) 
     {
-        field.MoveCenter(offset); 
-        // TODO need to get rid of these if using collocated scheme START
-        GetGrid().velocityField(0).MoveCenter(offset);
-        GetGrid().velocityField(1).MoveCenter(offset); 
-        GetGrid().velocityField(2).MoveCenter(offset); 
-        // TODO need to get rid of these if using collocated scheme END
-          
-        // clear/fill the new matrix elements. 
-        const Tuple3i &ind_origin = field.indexOffset(); 
-        const Tuple3i &div        = field.cellDivisions(); 
-        for (int dd=0; dd<3; ++dd)
-        {
-            //// clear
-            //for (int oo=0; oo<abs(offset[dd]); ++oo)
-            //{
-            //    int clearInd; 
-            //    if (offset[dd] > 0)
-            //        clearInd = (-offset[dd]+div[dd])%div[dd]; 
-            //    else 
-            //        clearInd = (-offset[dd]-1); 
-            //    _acousticSolver->ClearCollocatedData(dd, clearInd); 
-            //}
-            // fill
-            if (abs(offset[dd])==1)
-            {
-                const int fillInd = (offset[dd]==1 ? div[dd]-1 : 0); 
-                _acousticSolver->FillBoundaryFreshCell(dd, fillInd); 
-            }
-        }
-        
+        _acousticSolver->ScheduleMoveBox(offset); 
         return true; 
     }
     return false; 

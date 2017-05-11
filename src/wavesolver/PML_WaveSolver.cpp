@@ -397,6 +397,7 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
 
 void PML_WaveSolver::ScheduleMoveBox(const Tuple3i &offset)
 {
+    _boxMoveControl.Push(offset); 
 }
 
 void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
@@ -591,6 +592,48 @@ void PML_WaveSolver::writeWaveOutput() const
     ( *_callback )( _waveOutput );
 }
 
+void PML_WaveSolver::MoveSimBox()
+{
+    if (!_boxMoveControl.CanMove())
+    {
+        _boxMoveControl.counter += 1; 
+        return; 
+    }
+    const Tuple3i offset = _boxMoveControl.Pop(); 
+    _boxMoveControl.counter = 0;
+
+    auto &field = GetGrid().pressureField(); 
+    field.MoveCenter(offset); 
+    // TODO need to get rid of these if using collocated scheme START
+    _grid.velocityField(0).MoveCenter(offset);
+    _grid.velocityField(1).MoveCenter(offset); 
+    _grid.velocityField(2).MoveCenter(offset); 
+    // TODO need to get rid of these if using collocated scheme END
+      
+    // clear/fill the new matrix elements. 
+    const Tuple3i &ind_origin = field.indexOffset(); 
+    const Tuple3i &div        = field.cellDivisions(); 
+    for (int dd=0; dd<3; ++dd)
+    {
+        //// clear
+        //for (int oo=0; oo<abs(offset[dd]); ++oo)
+        //{
+        //    int clearInd; 
+        //    if (offset[dd] > 0)
+        //        clearInd = (-offset[dd]+div[dd])%div[dd]; 
+        //    else 
+        //        clearInd = (-offset[dd]-1); 
+        //    _acousticSolver->ClearCollocatedData(dd, clearInd); 
+        //}
+        // fill
+        if (abs(offset[dd])==1)
+        {
+            const int fillInd = (offset[dd]==1 ? div[dd]-1 : 0); 
+            FillBoundaryFreshCell(dd, fillInd); 
+        }
+    }
+}
+
 void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
@@ -703,6 +746,8 @@ void PML_WaveSolver::stepCollocated()
 #endif
     //std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
     //std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
+      
+    MoveSimBox(); 
 
     _currentTime += _timeStep;
 }
@@ -772,4 +817,21 @@ std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
        << "--------------------------------------------------------------------------------" 
        << std::flush; 
     return os; 
+}
+
+Tuple3i PML_WaveSolver::SimBoxMoveControl::Pop()
+{
+    Tuple3i tmp = queue.front(); 
+    queue.pop(); 
+    return tmp;
+}
+
+bool PML_WaveSolver::SimBoxMoveControl::CanMove()
+{
+    if (queue.empty()) // no need to move
+        return false; 
+    if (counter<minInterval) // not allowed to move
+        return false; 
+    else
+        return true; 
 }

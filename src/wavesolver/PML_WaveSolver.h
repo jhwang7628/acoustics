@@ -6,6 +6,8 @@
 #ifndef PML_WAVE_SOLVER_H
 #define PML_WAVE_SOLVER_H
 
+#include <queue>
+
 #include <distancefield/distanceField.h>
 
 #include <field/ScalarField.h>
@@ -104,6 +106,16 @@ class PML_WaveSolver : public Solver
         // objects in the scene 
         std::shared_ptr<FDTD_Objects> _objects; 
         PML_WaveSolver_Settings_Ptr _waveSolverSettings;
+
+        struct SimBoxMoveControl
+        {
+            int counter = 0; 
+            int minInterval = 0; 
+            std::queue<Tuple3i> queue; 
+            void Push(const Tuple3i &offset){queue.push(offset);}
+            Tuple3i Pop();            
+            bool CanMove(); 
+        } _boxMoveControl;
 
     public: 
         PML_WaveSolver() 
@@ -220,6 +232,8 @@ class PML_WaveSolver : public Solver
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
         virtual void vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const;
         virtual void writeWaveOutput() const;
+
+        void MoveSimBox();
 
         //// debugging/testing methods ////
         REAL GetMaxCFL();
