@@ -25,9 +25,13 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 {
     // TODO: make this explicit
     // step if necessary
+#pragma omp critical
     while (std::fabs(time - _curTime) > 1e-12)
     {
         step(time);
+        std::cout << "Bubbles time: " << _curTime << std::endl;
+        std::cout << "Accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
+        std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
     }
 
     // transform the sample point to object frame
@@ -60,8 +64,10 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 REAL WaterVibrationalSourceBubbles::
 Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 {
-    throw std::runtime_error("**ERROR** Cannot sample water vibrational source using vertexID");
-    return 0.0;
+    return Evaluate(_surfaceMesh->vertex(vertexID), vertexNormal, time, -1);
+
+    //throw std::runtime_error("**ERROR** Cannot sample water vibrational source using vertexID");
+    //return 0.0;
 }
 
 //##############################################################################
@@ -148,7 +154,7 @@ step(REAL time)
 
         if (_t1 < 0)
         {
-            _t1 = 0;
+            _t1 = -1;
             _m1 = _m2;
             _v1 = _v2;
             _kd1 = _kd2;
@@ -766,7 +772,7 @@ computeVelocities(REAL time)
         if (!osc.isActive(time)) continue;
 
         bool existT1 = osc.m_startTime <= _t1;
-        bool existT2 = osc.m_startTime <= _t2;
+        bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime >= _t2;
 
         if (!existT1 && !existT2) continue;
 
@@ -779,15 +785,18 @@ computeVelocities(REAL time)
         Mesh &localM1 = existT1 ? _m1 : _m2;
         Mesh &localM2 = existT2 ? _m2 : _m1;
 
-        auto iter = osc.m_trackedBubbleNumbers.lower_bound(_t1 - 1e-15);
+        double lookupT = existT1 ? _t1 : _t2;
+        auto iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
         if (iter == osc.m_trackedBubbleNumbers.end())
         {
+            cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
             throw runtime_error("bad tracked bubble numbers lookup t1");
         }
 
         int bubbleNumber1 = iter->second;
 
-        iter = osc.m_trackedBubbleNumbers.lower_bound(_t2 - 1e-15);
+        lookupT = existT2 >= _t2 ? _t2 : _t1;
+        iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
         if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
         {
             throw runtime_error("bad tracked bubble numbers lookup t2");
@@ -795,14 +804,14 @@ computeVelocities(REAL time)
 
         int bubbleNumber2 = iter->second;
 
-        if (!existT1)
-        {
-            bubbleNumber1 = bubbleNumber2;
-        }
-        else if (!existT2)
-        {
-            bubbleNumber2 = bubbleNumber1;
-        }
+        //if (!existT1)
+        //{
+        //    bubbleNumber1 = bubbleNumber2;
+        //}
+        //else if (!existT2)
+        //{
+        //    bubbleNumber2 = bubbleNumber1;
+        //}
 
         for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
@@ -811,11 +820,11 @@ computeVelocities(REAL time)
             MLSPoint p = _m->m_surfTriCenters[j];
 
             tree1->find_nearest(p,
-                                static_cast<size_t>(5),
+                                5,
                                 closest1);
 
             tree2->find_nearest(p,
-                                static_cast<size_t>(5),
+                                5,
                                 closest2);
 
             // Values at t1 and t2
@@ -835,9 +844,20 @@ computeVelocities(REAL time)
 
             // Now interpolate
             double pct = (localT1 - _t1) / (_t2 - _t1);
+            if (pct < 0 || pct > 1)
+            {
+                std::cout << "localT1: " << localT1 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+                throw std::runtime_error("bad pct");
+            }
+
             _velT1(j) += osc.m_lastVals(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
 
             pct = (localT2 - _t1) / (_t2 - _t1);
+            if (pct < 0 || pct > 1)
+            {
+                std::cout << "localT2: " << localT2 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+                throw std::runtime_error("bad pct");
+            }
             _velT2(j) += osc.m_lastVals(2) * ( pct * val2(0) + (1 - pct) * val1(0) );
         }
 	}
