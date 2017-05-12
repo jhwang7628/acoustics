@@ -51,7 +51,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         Mesh *_m; // mesh that is currently being used
         SurfaceVelocityData _v1, _v2;
         MLSInterp _mls;
-        std::shared_ptr<PointKDTree> _kd1, _kd2, _kd; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
+        std::shared_ptr<PointKDTree> _kd1, _kd2, _kd, _fullKd1, _fullKd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary
         std::vector<BubbleInputInfo> _b1, _b2;
         Eigen::VectorXd _velT1, _velT2; // the total velocities before and after current time (not at _t1 and _t2)
 

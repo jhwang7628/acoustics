@@ -18,10 +18,12 @@ public:
 
 	std::vector<Eigen::Vector3d> m_vertices;
 	std::vector<Eigen::Vector3i> m_triangles;
+    std::vector<Eigen::Vector3d> m_allTriCenters;
     std::vector<int> m_triType;
 
     std::vector<int> m_surfTris; // list of surface triangles (where the velocity solution data is)
     std::vector<Eigen::Vector3d> m_surfTriCenters;
+    std::map<int, int> m_fullToSurf;
 
     void
 	loadGmsh(const std::string &fileName)
@@ -86,7 +88,15 @@ public:
                 m_surfTris.push_back(i);
 
                 m_surfTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
+
+                m_fullToSurf[i] = m_surfTris.size() - 1;
             }
+            else
+            {
+                m_fullToSurf[i] = -1;
+            }
+
+            m_allTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
         }
 	}
 };

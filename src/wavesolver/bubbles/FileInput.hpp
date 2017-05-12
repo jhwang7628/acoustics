@@ -61,7 +61,7 @@ parseFreqFile(const std::string &fName)
 
         // TODO: freq file bubble number does not match mesh bubble number
         BubbleInputInfo curInfo;
-        curInfo.bubNum = atoi(data[0].c_str());
+        curInfo.bubNum = atoi(data[0].c_str()) + 1; // change to 1 based indexing here
 
         if (data.size() == 2)
         {
@@ -199,8 +199,20 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             val.imag(c);
 
             // Convert from pressure gradient to velocity here
-            curOutput.at(j) << (val / factor).real();
+            curOutput.at(j) << std::abs((val / factor));
         }
+
+        //double maxVal = 0;
+        //for (auto val : curOutput)
+        //{
+        //    if (std::fabs(val(0)) > maxVal)
+        //    {
+        //        maxVal = std::fabs(val(0));
+        //    }
+        //}
+
+        //std::cout << "Max loaded vel: " << maxVal << std::endl;
+        //exit(1);
     }
 
     return output;

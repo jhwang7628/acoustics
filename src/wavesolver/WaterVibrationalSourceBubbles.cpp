@@ -126,6 +126,7 @@ step(REAL time)
         _m1 = _m2;
         _v1 = _v2;
         _kd1 = _kd2;
+        _fullKd1 = _fullKd2;
         _b1 = _b2;
 
         // New t2
@@ -138,6 +139,7 @@ step(REAL time)
             _m2 = _m1;
             _v2 = _v1;
             _kd2 = _kd1;
+            _fullKd2 = _fullKd1;
             _b2 = _b1;
         }
         else
@@ -150,6 +152,7 @@ step(REAL time)
                                      _m2);
 
             _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), false));
+            _fullKd2.reset(new PointKDTree(_m2.m_allTriCenters.data(), _m2.m_allTriCenters.size(), false));
         }
 
         if (_t1 < 0)
@@ -158,6 +161,7 @@ step(REAL time)
             _m1 = _m2;
             _v1 = _v2;
             _kd1 = _kd2;
+            _fullKd1 = _fullKd2;
             _b1 = _b2;
         }
     }
@@ -754,7 +758,7 @@ computeVelocities(REAL time)
 
     // Interpolate onto the mesh that is closest
     _m = useT1 ? &_m1 : &_m2;
-    _kd = useT1 ? _kd1 : _kd2;
+    _kd = useT1 ? _fullKd1 : _fullKd2;
 
     double localT1 = time - _dt;
     double localT2 = time + _dt;
@@ -828,37 +832,73 @@ computeVelocities(REAL time)
                                 closest2);
 
             // Values at t1 and t2
-            val1 = _mls.lookup(p,
-                               localM1.m_surfTriCenters,
-                               vel1.at(bubbleNumber1),
-                               -1,
-                               NULL,
-                               &closest1);
+            try
+            {
+                val1 = _mls.lookup(p,
+                                   localM1.m_surfTriCenters,
+                                   vel1.at(bubbleNumber1),
+                                   -1,
+                                   NULL,
+                                   &closest1);
 
-            val2 = _mls.lookup(p,
-                               localM2.m_surfTriCenters,
-                               vel2.at(bubbleNumber2),
-                               -1,
-                               NULL,
-                               &closest2);
+                val2 = _mls.lookup(p,
+                                   localM2.m_surfTriCenters,
+                                   vel2.at(bubbleNumber2),
+                                   -1,
+                                   NULL,
+                                   &closest2);
+            }
+            catch (...)
+            {
+                std::cout << "time: " << time << ", i: " << i << ", j: " << j << std::endl;
+                std::cout << "num1: " << bubbleNumber1 << ", num2: " << bubbleNumber2 << std::endl;
+
+                for (auto iter = vel1.begin(); iter != vel1.end(); ++iter)
+                {
+                    std::cout << iter->first << std::endl;
+                }
+
+                exit(1);
+            }
 
             // Now interpolate
             double pct = (localT1 - _t1) / (_t2 - _t1);
-            if (pct < 0 || pct > 1)
+            //if (pct < 0 || pct > 1)
+            //{
+            //    std::cout << "localT1: " << localT1 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+            //    throw std::runtime_error("bad pct");
+            //}
+            if (pct < 0)
             {
-                std::cout << "localT1: " << localT1 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
-                throw std::runtime_error("bad pct");
+                _velT1(j) += osc.m_lastVals(0) * val1(0);
             }
-
-            _velT1(j) += osc.m_lastVals(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
+            else if (pct > 1)
+            {
+                _velT1(j) += osc.m_lastVals(0) * val2(0);
+            }
+            else
+            {
+                _velT1(j) += osc.m_lastVals(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
+            }
 
             pct = (localT2 - _t1) / (_t2 - _t1);
-            if (pct < 0 || pct > 1)
+            //if (pct < 0 || pct > 1)
+            //{
+            //    std::cout << "localT2: " << localT2 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+            //    throw std::runtime_error("bad pct");
+            //}
+            if (pct < 0)
             {
-                std::cout << "localT2: " << localT2 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
-                throw std::runtime_error("bad pct");
+                _velT2(j) += osc.m_lastVals(2) * val1(0);
             }
-            _velT2(j) += osc.m_lastVals(2) * ( pct * val2(0) + (1 - pct) * val1(0) );
+            else if (pct > 1)
+            {
+                _velT2(j) += osc.m_lastVals(2) * val2(0);
+            }
+            else
+            {
+                _velT2(j) += osc.m_lastVals(2) * ( pct * val2(0) + (1 - pct) * val1(0) );
+            }
         }
 	}
 }
@@ -881,9 +921,13 @@ projectToSurface()
 
         int nearestTri = _kd->find_nearest(ep);
 
-        if (std::fabs(_accel[nearestTri]) < std::fabs(_projectedAccel[i]))
+        if (_m->m_triType.at(nearestTri) == Mesh::FLUID_AIR)
         {
-            _projectedAccel[i] = _accel[nearestTri];
+            int index = _m->m_fullToSurf.at(nearestTri);
+            if (std::fabs(_accel(index)) < std::fabs(_projectedAccel[i]))
+            {
+                _projectedAccel(i) = _accel(index);
+            }
         }
     }
 }
