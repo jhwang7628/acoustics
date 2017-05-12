@@ -492,6 +492,16 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                         + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
                         + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
                         +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+
+                //FIXME debug hacky dirichlet pressure boundary
+                const double r = sqrt(pow(cell_position[1],2)+pow(cell_position[2],2)); 
+                const double decay = exp(-r); 
+                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                        + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + 1.0*_objects->EvaluateBoundaryInterface("debug",Tuple3i())
+                        + (lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
         } 
         else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
         {

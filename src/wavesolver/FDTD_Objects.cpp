@@ -123,6 +123,14 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
     return sourceValue; 
 }
 
+//##############################################################################
+//##############################################################################
+REAL FDTD_Objects::
+EvaluateBoundaryInterface(const std::string &key, const Tuple3i &ind) const
+{
+    return _interfaces.at(key)->Evaluate(ind); 
+}
+
 ////##############################################################################
 // Compute the reflected stencils until outside all objects. 
 // 
@@ -258,6 +266,17 @@ ClearFailedReflections()
 {
     for (auto &object : _rigidObjects) 
         object->ClearDebugArrow(); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
+Debug_AddInterface()
+{
+    const std::string filename("interface_data.txt"); 
+    const std::string interfaceName("debug"); 
+    BoundaryInterfacePtr interface = BoundaryInterface::Load(filename); 
+    _interfaces[interfaceName] = interface; 
 }
 
 //##############################################################################

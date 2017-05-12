@@ -35,6 +35,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_AcousticSimulator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_AcousticSimulator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Wavesolver_ConstantsAndTypes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.cpp
 
     CACHE FILE "Wave solver sources")
 

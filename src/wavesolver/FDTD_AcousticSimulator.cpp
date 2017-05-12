@@ -10,6 +10,12 @@ _ParseSolverSettings()
     _parser = std::make_shared<ImpulseResponseParser>(_configFile);
     _acousticSolverSettings = std::make_shared<PML_WaveSolver_Settings>(); 
     _sceneObjects = std::make_shared<FDTD_Objects>();
+
+
+    // FIXME debug
+    _sceneObjects->Debug_AddInterface(); 
+
+
     _parser->GetSolverSettings(_acousticSolverSettings); 
     _parser->GetObjects(_acousticSolverSettings, _sceneObjects); 
     _canInitializeSolver = true;
@@ -37,7 +43,7 @@ _SetBoundaryConditions()
         const REAL phase = 0.0;
         VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
     }
