@@ -29,10 +29,12 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
     while (std::fabs(time - _curTime) > 1e-12)
     {
         step(time);
-        std::cout << "Bubbles time: " << _curTime << std::endl;
-        std::cout << "Accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
-        std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
     }
+
+    std::cout << "Bubbles time: " << _curTime << std::endl;
+    std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
 
     // transform the sample point to object frame
     //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z);
@@ -179,7 +181,8 @@ step(REAL time)
     // This step is only necessary until the wavesolver handles deforming geometry
     projectToSurface();
 
-    _curTime = time;
+    //_curTime = time;
+    _curTime += _dt;
 }
 
 //##############################################################################
@@ -773,7 +776,7 @@ computeVelocities(REAL time)
     {
         Oscillator &osc = _oscillators[i];
 
-        if (!osc.isActive(time)) continue;
+        if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
         bool existT1 = osc.m_startTime <= _t1;
         bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime >= _t2;
@@ -794,6 +797,11 @@ computeVelocities(REAL time)
         if (iter == osc.m_trackedBubbleNumbers.end())
         {
             cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
+            for (auto b : osc.m_trackedBubbleNumbers)
+            {
+                cout << b.first << " " << b.second << endl;
+            }
+
             throw runtime_error("bad tracked bubble numbers lookup t1");
         }
 
