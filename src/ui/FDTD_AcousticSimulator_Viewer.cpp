@@ -1233,7 +1233,7 @@ DrawHalfFrameForward()
 void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
-    _wireframe = 2;
+    _wireframe = 3;
     _sliceWireframe.reset(); 
     _sliceWireframe.set(1); // draw face only
     _drawBoxLis = true; 

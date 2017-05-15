@@ -39,7 +39,7 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
-        const REAL omega = 2.0*M_PI*2000.0;
+        const REAL omega = 2.0*M_PI*1000.0;
         const REAL phase = 0.0;
         VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 

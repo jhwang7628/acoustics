@@ -79,7 +79,7 @@ if __name__ == '__main__':
         print 'Creating wav file for listening position', listeningPositions[ii, :]
         outputData = listenedData[:, ii]
         # normalizationConstant = maxValue
-        normalizationConstant = np.absolute(outputData.max())
+        normalizationConstant = np.absolute(outputData).max()
         # if normalizationConstant > 1E-14:
         #     outputData /= normalizationConstant
         outputData = signal.resample(outputData, int(float(len(outputData))/rateRatio))
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         dataR[pt_idx] = np.linalg.norm(listeningPositions[pt_idx, :])
     one_over_r = np.divide(np.ones(N_points), dataR)
    
-    IO.writeMatrixXdBinary('listened_data.dat', listenedData)
+    IO.writeMatrixXdBinary('test_listened_data.dat', listenedData)
     # trim data 
     # listenedData = listenedData[:, ::20]
     # listeningPositions = listeningPositions[::20, :]
