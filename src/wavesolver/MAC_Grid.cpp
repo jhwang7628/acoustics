@@ -500,7 +500,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                         (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
                         + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
                         + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + 1.0*_objects->EvaluateBoundaryInterface("debug",Tuple3i())
+                        + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + _objects->EvaluateBoundaryInterface("debug",Vector3d())
                         + (lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
         } 
         else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)

@@ -45,7 +45,7 @@ class FDTD_Objects
         void AddPressureSource(PressureSourcePtr &sourcePtr); 
         REAL EvaluateNearestVibrationalSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         REAL EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
-        REAL EvaluateBoundaryInterface(const std::string &key, const Tuple3i &ind) const; 
+        REAL EvaluateBoundaryInterface(const std::string &key, const Vector3d &pos) const; 
         bool ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration=1); 
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
         REAL GetEarliestImpactEvent();
@@ -56,6 +56,13 @@ class FDTD_Objects
         void WriteFailedReflections(const std::string &file);
         void ClearFailedReflections();
         void Debug_AddInterface(); 
+        void AdvanceInterface()
+        {
+            for (auto &key : _interfaces)
+            {
+                _interfaces.at(key)->AdvancePointer(); 
+            }
+        }
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
 };

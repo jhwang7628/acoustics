@@ -126,9 +126,10 @@ EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const 
 //##############################################################################
 //##############################################################################
 REAL FDTD_Objects::
-EvaluateBoundaryInterface(const std::string &key, const Tuple3i &ind) const
+EvaluateBoundaryInterface(const std::string &key, const Vector3d &pos) const
 {
-    return _interfaces.at(key)->Evaluate(ind); 
+    auto it = _interfaces.find(key); 
+    return (it==_interfaces.end() ? 0.0 : it->second->Evaluate(pos)); 
 }
 
 ////##############################################################################
@@ -273,10 +274,17 @@ ClearFailedReflections()
 void FDTD_Objects::
 Debug_AddInterface()
 {
-    const std::string filename("interface_data.txt"); 
+    const std::string prefix("data_interface/test"); 
     const std::string interfaceName("debug"); 
-    BoundaryInterfacePtr interface = BoundaryInterface::Load(filename); 
-    _interfaces[interfaceName] = interface; 
+    try 
+    {
+        BoundaryInterfacePtr interface = BoundaryInterface::Load(prefix); 
+        _interfaces[interfaceName] = interface; 
+    }
+    catch (std::runtime_error &e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 }
 
 //##############################################################################
