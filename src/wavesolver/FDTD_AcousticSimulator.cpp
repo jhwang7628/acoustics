@@ -39,11 +39,11 @@ _SetBoundaryConditions()
         //objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
-        const REAL omega = 2.0*M_PI*1000.0;
+        const REAL omega = 2.0*M_PI*4000.0;
         const REAL phase = 0.0;
         VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
     }
@@ -511,14 +511,16 @@ PostStepping(const REAL &odeTime)
     for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
         _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
 
-    std::cout << "Acoustic simulator time = " << _simulationTime << "; step index= " << _stepIndex << "; Modal ODE time = " << odeTime << std::endl;
+    std::cout << "Acoustic simulator time = " << _simulationTime 
+              << "; step index= " << _stepIndex 
+              << "; Modal ODE time = " << odeTime << std::endl;
     _stepIndex ++;
     _simulationTime += settings->timeStepSize; 
 
     // move object to new position
     AnimateObjects(); 
     //TestMoveObjects(); 
-
+      
 #ifdef DEBUG
     _acousticSolver->PrintAllFieldExtremum();
 #endif
