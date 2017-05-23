@@ -29,7 +29,6 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
     _coeff_Q_i = 2.0/(3.0*_omega*omega_di)
                * (_epsilon*cos(_theta+_gamma) - _epsilon_squared*cos(2.0*_theta+_gamma))
                * _material->inverseDensity; 
-
     _initialized = true; 
 }
 
@@ -42,14 +41,13 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
 //  qOld is q^(k-1) for this mode
 //  qNew is q^(k)   for this mode
 //##############################################################################
-void ModalODESolver::
-StepSystem(REAL &qOld, REAL &qNew, const REAL &Q)
+REAL ModalODESolver::
+StepSystem(REAL qOld, REAL qNew, const REAL &Q)
 {
     assert(_initialized); 
     const REAL q = _2_epsilon_cosTheta * qNew
                  - _epsilon_squared    * qOld
                  + _coeff_Q_i          * Q; 
-    qOld = qNew; 
-    qNew = q; 
     _time += _timeStepSize; 
+    return q;
 }
