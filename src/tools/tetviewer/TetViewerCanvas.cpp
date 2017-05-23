@@ -100,6 +100,20 @@ void TetViewerCanvas::keyPressEvent(QKeyEvent* e)
         printf("=======================================\n");
     } else if ( e->key() == Qt::Key_F && modifiers == Qt::NoButton ) {
         parent_->modeData().printAllFrequency(parent_->density()); 
+    }
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier))
+    {   
+        setSnapshotFormat("PNG");
+        setSnapshotQuality(100);
+        char dir[512], cmd[512], filename[512]; 
+        snprintf(dir, 512, "samples_frames"); 
+        snprintf(cmd, 512, "mkdir -p %s", dir); 
+        const int flag = system(cmd); 
+        (void)flag; 
+        snprintf(filename, 512, "%s/samples", dir); 
+        QString filename_q(&(filename[0])); 
+        setSnapshotFileName(filename_q);
+        saveSnapshot(true, false);
     } else {
         QGLViewer::keyPressEvent(e);
     }
