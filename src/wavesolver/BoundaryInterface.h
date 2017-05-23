@@ -25,7 +25,7 @@ public:
     // TODO use a pointer for now, should fix after actual box management
     int pointer = 0; 
     void AdvancePointer()
-    {if (_values.cols()!=0) pointer = (pointer+1) % _values.cols();}
+    {if (_values.cols()!=0) pointer = (pointer+1)%(int)_values.cols();}
 };
 using BoundaryInterfacePtr = std::shared_ptr<BoundaryInterface>; 
 #endif

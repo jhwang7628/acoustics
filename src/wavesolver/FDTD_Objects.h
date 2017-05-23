@@ -58,9 +58,16 @@ class FDTD_Objects
         void Debug_AddInterface(); 
         void AdvanceInterface()
         {
-            for (auto &key : _interfaces)
+            for (auto &entry : _interfaces)
             {
-                _interfaces.at(key)->AdvancePointer(); 
+                entry.second->AdvancePointer(); 
+            }
+        }
+        void SetInterfacePointer(const int &p)
+        {
+            for (auto &entry : _interfaces)
+            {
+                entry.second->pointer = p; 
             }
         }
 

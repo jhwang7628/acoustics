@@ -487,21 +487,22 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 const int kk_p = std::min(kk+1, Ns[2]-1); 
                 const int kk_n = std::max(kk-1, 0      ); 
                 const int ii_n = ii-1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-
-                //FIXME debug hacky dirichlet pressure boundary
-                const double r = sqrt(pow(cell_position[1],2)+pow(cell_position[2],2)); 
-                const double decay = exp(-r); 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + _objects->EvaluateBoundaryInterface("debug",Vector3d())
-                        + (lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+                const double p1 = lambda2/(1.+ lambda)*(
+                    (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
+                    + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                    + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                    +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+                // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
+                const double p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii_n,jj,kk),0);
+                const double p_p1src = _objects->EvaluateBoundaryInterface("debug",cell_position);
+                // corrected update pressure using superpositioned abc + src
+                const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
+                    + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                               + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
+                               + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + (p_p1abc + p_p1src)
+                               -6.*pCurr(PCELL_IDX(ii,jj,kk),0));
+                pNext(cell_idx,0) = p2; 
+                //pNext(cell_idx,0) = p1; 
         } 
         else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
         {
@@ -576,10 +577,10 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         // evaluate external sources only happens not in PML
         // Liu Eq (16) f6x term
         if (evaluateExternalSource)
-            pNext(cell_idx, 0) += _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
+            pNext(cell_idx, 0) += 
+                _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
 #undef PCELL_IDX
     }
-
 }
 
 void MAC_Grid::PML_pressureUpdate( const MATRIX &v, MATRIX &pDirectional, MATRIX &pFull, int dimension, REAL timeStep, REAL c, const ExternalSourceEvaluator *sourceEvaluator, const REAL simulationTime, REAL density )

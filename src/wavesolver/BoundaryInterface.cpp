@@ -30,7 +30,7 @@ Evaluate(const Vector3d &pos) const
         const REAL dist = pow(pos[0] - _positions(r,0), 2) 
                         + pow(pos[1] - _positions(r,1), 2) 
                         + pow(pos[2] - _positions(r,2), 2); 
-        if (dist<mindist && dist>POS_TOL)
+        if (dist<mindist && dist<POS_TOL)
         {
             mindist = dist; 
             minind = r; 
