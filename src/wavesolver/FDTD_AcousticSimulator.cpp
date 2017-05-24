@@ -11,14 +11,11 @@ _ParseSolverSettings()
     _acousticSolverSettings = std::make_shared<PML_WaveSolver_Settings>(); 
     _sceneObjects = std::make_shared<FDTD_Objects>();
 
-
     // FIXME debug
     _sceneObjects->Debug_AddInterface(); 
 
-
     _parser->GetSolverSettings(_acousticSolverSettings); 
     _parser->GetObjects(_acousticSolverSettings, _sceneObjects); 
-    _canInitializeSolver = true;
 }
 
 //##############################################################################
@@ -26,10 +23,11 @@ _ParseSolverSettings()
 void FDTD_AcousticSimulator::
 _SetBoundaryConditions()
 {
-    const int N_objects = _sceneObjects->N();
-    for (int index=0; index<N_objects; ++index)
+    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    for (auto &m : objects)
     {
-        RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+        RigidSoundObjectPtr objectPtr = m.second; 
+        //RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
         // add modal vibrational source
         //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
@@ -55,7 +53,7 @@ void FDTD_AcousticSimulator::
 _SetPressureSources()
 {
     std::vector<PressureSourcePtr> &scenePressureSources = _sceneObjects->GetPressureSources(); 
-    _parser->GetPressureSources(_acousticSolverSettings->soundSpeed, scenePressureSources); 
+   _parser->GetPressureSources(_acousticSolverSettings->soundSpeed, scenePressureSources); 
 }
 
 //##############################################################################
@@ -292,8 +290,9 @@ void FDTD_AcousticSimulator::
 _SaveModalFrequencies(const std::string &filename)
 {
     auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-    for (const auto &object : objects)
+    for (const auto &m : objects)
     {
+        const auto &object = m.second; 
         if (object->IsModalObject())
         {
             const std::string objFilename = filename + "_" + object->GetMeshName();
@@ -352,16 +351,26 @@ _SaveSimulationSnapshot(const std::string &numbering)
 void FDTD_AcousticSimulator::
 InitializeSolver()
 {
-    if (!_canInitializeSolver)
+    if (CanInitializeSolver())
         _ParseSolverSettings();
+    InitializeSolver(_acousticSolverSettings); 
+}
 
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+InitializeSolver(const PML_WaveSolver_Settings_Ptr &settings)
+{
+    assert(CanInitializeSolver()); 
     // if rigidsim data exists, read and apply them to objects before
     // initializing solver.
-    const auto &settings = _acousticSolverSettings; 
+    if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
     if (settings->rigidsimDataRead)
     {
         _sceneObjectsAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
-        _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
+        _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, 
+                                                 settings->fileVelocity, 
+                                                 settings->fileAcceleration); 
         AnimateObjects(); // apply the transformation right away
     }
     else 
@@ -371,18 +380,18 @@ InitializeSolver()
 
     // initialize solver and set various things
     _SetListeningPoints(); 
-    _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
+    _acousticSolver = std::make_shared<PML_WaveSolver>(settings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
-    _simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(_acousticSolverSettings->domainCenter); 
-    _simBox.continuousCenter = _acousticSolverSettings->domainCenter; 
+    _simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(settings->domainCenter); 
+    _simBox.continuousCenter = settings->domainCenter; 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources() && _acousticSolverSettings->fastForwardToEarliestImpact)
-        startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
+    if (!_sceneObjects->HasExternalPressureSources() && settings->fastForwardToEarliestImpact)
+        startTime = _sceneObjects->GetEarliestImpactEvent() - settings->timeStepSize; 
     else 
-        startTime = _acousticSolverSettings->fastForwardToEventTime; 
+        startTime = settings->fastForwardToEventTime; 
     ResetStartTime(startTime);
 
     // save settings
@@ -401,14 +410,15 @@ ResetStartTime(const REAL &startTime)
     {
         AnimateObjects();
         auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-        for (auto &object : objects) 
-            if (object->Animated())
-                object->ResetUnionBox();
+        for (auto &m : objects) 
+            if (m.second->Animated())
+                m.second->ResetUnionBox();
     }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
     auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-    for (auto &object : objects) 
+    for (auto &m : objects) 
     {
+        auto &object = m.second;
         if (object->IsModalObject())
         {
             // take one step to update q Vectors. Note that this way all modal odes are one

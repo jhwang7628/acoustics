@@ -2400,15 +2400,15 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     // get all bounding boxes and iteration range
     const int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> indices(N); 
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
-    for (int object_id=0; object_id<N; ++object_id)
+    auto &objects = _objects->GetRigidSoundObjects(); 
+    int bbox_id = 0;
+    for (auto &m : objects)
     {
-        const FDTD_MovableObject::BoundingBox &unionBBox = _objects->Get(object_id).GetUnionBBox();
+        const FDTD_MovableObject::BoundingBox &unionBBox = m.second->GetUnionBBox();
         const Vector3d maxBound = unionBBox.maxBound + 2.0*_cellSize; 
         const Vector3d minBound = unionBBox.minBound - 2.0*_cellSize; 
-        _pressureField.GetIterationBox(minBound, maxBound, indices[object_id]); 
+        _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
+        ++ bbox_id; 
     } 
 
     SetClassifiedSubset(_pressureField, N, indices, false); 
@@ -2752,10 +2752,10 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
 
     // hash triangles
     _fvMetaData.Clear(); 
-    const int N_objects = _objects->N();
-    for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
+    auto &objects = _objects->GetRigidSoundObjects(); 
+    for (auto &m : objects)
     {
-        RigidSoundObjectPtr object = _objects->GetPtr(obj_idx); 
+        auto &object = m.second; 
         std::shared_ptr<TriangleMesh<REAL> > mesh = object->GetMeshPtr(); 
         std::shared_ptr<TriangleMeshKDTree<REAL> > meshkd = std::dynamic_pointer_cast<TriangleMeshKDTree<REAL> >(mesh); 
         const int N_triangles = mesh->num_triangles(); 
@@ -2764,7 +2764,7 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
             const Vector3d centroid = object->ObjectToWorldPoint(meshkd->TriangleCentroid(t_idx)); 
             const Vector3d normal   = object->ObjectToWorldVector(meshkd->triangle_normal(t_idx)); 
             const int cell_idx = InPressureCell(centroid); 
-            const TriangleIdentifier tri_id(obj_idx, t_idx, centroid, normal);
+            const TriangleIdentifier tri_id(m.first, t_idx, centroid, normal);
             auto &list = _fvMetaData.cellMap[cell_idx]; 
             if (!list) 
                 list = std::make_shared<std::vector<TriangleIdentifier> >(1, tri_id); 
@@ -3300,7 +3300,6 @@ void MAC_Grid::ClearUnusedCache()
     It_Outer it_o = _ghostCellPreviousTriangles.begin(); 
     while (it_o != _ghostCellPreviousTriangles.end())
     {
-        //std::cout << "here1" << std::endl;
         It_Inner it_i = it_o->second.begin(); 
         while (it_i != it_o->second.end())
         {
@@ -3308,18 +3307,14 @@ void MAC_Grid::ClearUnusedCache()
             if (!it_i->second.active) it_i = it_o->second.erase(it_i); 
             else                      ++it_i; 
         }
-        //std::cout << "here2" << std::endl;
         if (it_o->second.size()==0) 
         {
-            //std::cout << "here2-a" << std::endl;
             it_o = _ghostCellPreviousTriangles.erase(it_o); 
         } 
         else 
         {
-            //std::cout << "here2-b" << std::endl;
             ++it_o; 
         }
-        //std::cout << "here3" << std::endl;
     }
 }
 

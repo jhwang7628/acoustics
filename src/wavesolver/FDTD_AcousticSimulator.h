@@ -67,14 +67,18 @@ class FDTD_AcousticSimulator
 
     public: 
         FDTD_AcousticSimulator()
-            : _canInitializeSolver(false), _stepIndex(0), _snapshotIndex(0), _simulationTime(0.0)
+            : _stepIndex(0), _snapshotIndex(0), _simulationTime(0.0)
         {}
         FDTD_AcousticSimulator(const std::string &configFile)
-            : _canInitializeSolver(false), _stepIndex(0), _snapshotIndex(0),  _simulationTime(0.0), _configFile(configFile)
+            : _stepIndex(0), _snapshotIndex(0),  _simulationTime(0.0), _configFile(configFile)
         {} 
 
+        inline bool CanInitializeSolver() const {return _parser && _sceneObjects && _acousticSolverSettings;}
         inline bool SceneHasModalObject() const {return _sceneObjects->HasModalObject();}
         inline bool ShouldContinue() const {return _simulationTime < _acousticSolverSettings->timeEnd;}
+        inline void SetParser(const ImpulseResponseParser_Ptr &parser){_parser = parser;}
+        inline void SetSolverSettings(PML_WaveSolver_Settings_Ptr rhs){_acousticSolverSettings = rhs;} 
+        inline void SetSceneObjects(FDTD_Objects_Ptr objects){_sceneObjects = objects;}
         inline const std::shared_ptr<PML_WaveSolver> &GetSolver() const {return _acousticSolver;}
         inline const std::shared_ptr<PML_WaveSolver_Settings> &GetSolverSettings() const {return _acousticSolverSettings;}
         inline const std::shared_ptr<FDTD_Objects> &GetSceneObjects() const {return _sceneObjects;} 
@@ -83,7 +87,8 @@ class FDTD_AcousticSimulator
         inline REAL GetSimulationTime(){return _simulationTime;}
 
         // parse, instance grid and solver, read mesh 
-        void InitializeSolver(); 
+        void InitializeSolver(); // wrapper
+        void InitializeSolver(const PML_WaveSolver_Settings_Ptr &settings); 
         void ResetStartTime(const REAL &startTime); 
         bool RunForSteps(const int &N_steps); 
         void Run(); 
@@ -104,5 +109,6 @@ class FDTD_AcousticSimulator
         void TestMoveObjects(); 
         void TestAnimateObjects(const int &N_steps); 
 };
+using FDTD_AcousticSimulator_Ptr = std::shared_ptr<FDTD_AcousticSimulator>; 
 
 #endif

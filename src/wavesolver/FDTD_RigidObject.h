@@ -44,7 +44,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
         std::string                         _workingDirectory;
         std::string                         _objectPrefix; 
 
-        int                                 _meshID; 
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
@@ -78,7 +77,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
         FDTD_RigidObject()
             : _workingDirectory("NOT_IDENTIFIED"),
               _objectPrefix("NOT_IDENTIFIED"),
-              _meshID(-1), 
               _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
               _solverSettings(nullptr),
@@ -89,7 +87,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
         FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
             : _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
-              _meshID(-1), 
               _meshScale(scale), 
               _meshName(meshName),
               _solverSettings(solverSettings),
@@ -111,8 +108,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
-        inline void SetMeshID(const int &ID){_meshID = ID;}
-        inline int GetMeshID(){return _meshID;}
         void Initialize(const bool &buildFromTetMesh); 
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 

@@ -5,15 +5,9 @@
 // note this is not thread safe
 //##############################################################################
 void FDTD_Objects::
-AddObject(const std::string &objectName, RigidSoundObjectPtr &object)
+AddObject(const int &objectName, RigidSoundObjectPtr &object)
 {
-    if (_meshIDMap.find(objectName) == _meshIDMap.end())
-    {
-        const int objectID = _rigidObjects.size()-1; 
-        _rigidObjects.push_back(object); 
-        _meshIDMap[objectName] = objectID; 
-        object->SetMeshID(objectID); 
-    }
+    _rigidObjects[objectName] = object; 
 }
 
 //##############################################################################
@@ -22,11 +16,11 @@ int FDTD_Objects::
 OccupyByObject(const Vector3d &positionWorld) 
 {
     const int N_objects = N(); 
-    for (int ii=0; ii<N_objects; ii++) 
+    for (const auto &m : _rigidObjects)
     {
-        const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
+        const double distance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
         if (distance < DISTANCE_TOLERANCE) 
-            return ii; 
+            return m.first; 
     }
     return -1;
 }
@@ -36,7 +30,7 @@ OccupyByObject(const Vector3d &positionWorld)
 REAL FDTD_Objects::
 ObjectDistance(const int &objectIndex, const Vector3d &positionWorld) 
 {
-    return _rigidObjects[objectIndex]->DistanceToMesh(positionWorld.x,positionWorld.y,positionWorld.z);
+    return _rigidObjects.at(objectIndex)->DistanceToMesh(positionWorld.x,positionWorld.y,positionWorld.z);
 }
 
 //##############################################################################
@@ -45,8 +39,8 @@ REAL FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld) 
 {
     REAL distance = std::numeric_limits<REAL>::max(); 
-    for (int ii=0; ii<N(); ++ii) 
-        distance = std::min<REAL>(distance, _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z)); 
+    for (const auto &m : _rigidObjects) 
+        distance = std::min<REAL>(distance, m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z)); 
     return distance; 
 }
 
@@ -62,14 +56,13 @@ LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectI
     REAL queriedDistance; 
     distance = std::numeric_limits<REAL>::max(); 
     objectID = std::numeric_limits<int>::max(); 
-    const int N_objects = N(); 
-    for (int ii=0; ii<N_objects; ++ii) 
+    for (const auto &m : _rigidObjects) 
     {
-        queriedDistance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
+        queriedDistance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
         if (queriedDistance < distance)
         {
             distance = queriedDistance; 
-            objectID = ii;
+            objectID = m.first;
         }
     } 
 }
@@ -79,7 +72,7 @@ LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectI
 void FDTD_Objects::
 ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal) 
 {
-    _rigidObjects[objectIndex]->NormalToMesh(positionWorld.x,positionWorld.y,positionWorld.z, queriedNormal);
+    _rigidObjects.at(objectIndex)->NormalToMesh(positionWorld.x,positionWorld.y,positionWorld.z, queriedNormal);
 }
 
 //##############################################################################
@@ -184,9 +177,9 @@ ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPo
     {
         _rigidObjects.at(objectID)->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distance); 
         if (distance < 0) // originalPoint was inside the object
-            accumulatedBoundaryConditionValue += -2.0*distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+            accumulatedBoundaryConditionValue += -2.0*distance*_rigidObjects.at(objectID)->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
         else if (distance >= 0) // originalPoint was outside the object
-            accumulatedBoundaryConditionValue += distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+            accumulatedBoundaryConditionValue += distance*_rigidObjects.at(objectID)->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
 
         // if new reflectedPoint is outside object, break the loop
         objectID = OccupyByObject(reflectedPoint); 
@@ -205,8 +198,8 @@ REAL FDTD_Objects::
 AdvanceAllModalODESolvers(const int &N_steps)
 {
     for (auto &object : _rigidObjects)
-        object->AdvanceModalODESolvers(N_steps); 
-    return (_rigidObjects.size()>0 ? _rigidObjects.at(0)->GetODESolverTime() : -1);
+        object.second->AdvanceModalODESolvers(N_steps); 
+    return (_rigidObjects.size()>0 ? _rigidObjects.begin()->second->GetODESolverTime() : -1);
 }
 
 //##############################################################################
@@ -217,8 +210,8 @@ GetEarliestImpactEvent()
     REAL earliestTime = std::numeric_limits<REAL>::max(); 
     for (const auto &object : _rigidObjects)
     {
-        if (object->N_Impulses() > 0)
-            earliestTime = min(earliestTime, object->GetFirstImpulseTime());
+        if (object.second->N_Impulses() > 0)
+            earliestTime = min(earliestTime, object.second->GetFirstImpulseTime());
     }
     return earliestTime; 
 }
@@ -255,8 +248,8 @@ WriteFailedReflections(const std::string &filename)
 {
     for (auto &object : _rigidObjects) 
     {
-        const std::string objFilename = filename + object->GetMeshName();
-        object->WriteDebugArrow(objFilename); 
+        const std::string objFilename = filename + object.second->GetMeshName();
+        object.second->WriteDebugArrow(objFilename); 
     }
 }
 
@@ -266,7 +259,7 @@ void FDTD_Objects::
 ClearFailedReflections()
 {
     for (auto &object : _rigidObjects) 
-        object->ClearDebugArrow(); 
+        object.second->ClearDebugArrow(); 
 }
 
 //##############################################################################
@@ -294,11 +287,9 @@ std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects)
     os << "--------------------------------------------------------------------------------\n" 
        << "Class FDTD_Objects\n" 
        << "--------------------------------------------------------------------------------\n";
-    for (int ii=0; ii<objects.N(); ++ii) 
+    for (const auto &m : objects._rigidObjects)
     {
-        const std::string &meshName = objects.GetMeshName(ii); 
-        os << " Object " << ii << ": " << meshName
-           << " <ID:" << objects.GetMeshID(meshName) << ">\n"; 
+        os << " Object <" << m.first << ", " << m.second->GetMeshName() << "\n"; 
     }
     os << "--------------------------------------------------------------------------------" 
        << std::flush; 

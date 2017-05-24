@@ -23,14 +23,13 @@ class FDTD_AcousticSimulator_Widget;
 class FDTD_AcousticSimulator_Viewer : public QGLViewer
 {
     public: 
-        typedef std::shared_ptr<FDTD_AcousticSimulator> SimulatorPtr; 
         typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
         struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; Vector3d minBound; Vector3d maxBound; std::vector<MAC_Grid::Cell> cells; bool dataReady = false;};
 
     private: 
-        SimulatorPtr                             _simulator; 
+        FDTD_AcousticSimulator_Ptr               _simulator; 
         std::shared_ptr<PML_WaveSolver_Settings> _solverSettings;
 
         uint                    _previewSpeed = 0; 

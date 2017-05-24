@@ -1,6 +1,6 @@
 #ifndef FDTD_OBJECTS_H 
 #define FDTD_OBJECTS_H 
-
+#include <unordered_map> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <wavesolver/FDTD_RigidSoundObject.h>
@@ -8,14 +8,18 @@
 #include <wavesolver/BoundaryInterface.h> 
 
 //##############################################################################
+// Forward declaration
+//##############################################################################
+class SimWorld;
+
+//##############################################################################
 // Handles a list of objects embedded in the wave solver
 //##############################################################################
 class FDTD_Objects
 {
     private: 
-        std::vector<RigidSoundObjectPtr>    _rigidObjects; 
+        std::unordered_map<int, RigidSoundObjectPtr> _rigidObjects; 
         std::vector<PressureSourcePtr>      _pressureSources; 
-        std::map<std::string, int>          _meshIDMap; 
         std::map<std::string, BoundaryInterfacePtr> _interfaces; 
 
     public: 
@@ -24,15 +28,21 @@ class FDTD_Objects
         inline FDTD_RigidSoundObject &Get(const int &ind){return *(_rigidObjects.at(ind));} 
         inline RigidSoundObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
         inline PressureSourcePtr &GetPressureSourcePtr(const int &ind){return _pressureSources.at(ind);} 
-        inline std::string GetMeshName(const int &ind) const {return std::string(_rigidObjects.at(ind)->GetMeshName());}
-        inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
+        inline std::string GetMeshName(const int &ind) const {return _rigidObjects.at(ind)->GetMeshName();}
+        //inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
-        inline const std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects() const {return _rigidObjects;}
-        inline std::vector<RigidSoundObjectPtr> &GetRigidSoundObjects(){return _rigidObjects;}
-        inline bool HasModalObject() const {bool has=false; for (const auto &object : _rigidObjects) has = (has || object->IsModalObject()); return has;}
+        inline const auto &GetRigidSoundObjects() const {return _rigidObjects;}
+        inline auto &GetRigidSoundObjects(){return _rigidObjects;}
+        inline bool HasModalObject() const 
+        {
+            bool has=false; 
+            for (const auto &m : _rigidObjects) 
+                has = (has || m.second->IsModalObject()); 
+            return has;
+        }
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
-        void AddObject(const std::string &objectName, RigidSoundObjectPtr &object); 
+        void AddObject(const int &objectName, RigidSoundObjectPtr &object); 
         // return index of the object that occupies the position, -1 if none. 
         // in the case where multiple objects are occupying that position (due
         // to numerical errors), return the first in the vector
@@ -72,6 +82,8 @@ class FDTD_Objects
         }
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
+    friend SimWorld; 
 };
+using FDTD_Objects_Ptr = std::shared_ptr<FDTD_Objects>; 
 
 #endif 

@@ -67,7 +67,7 @@ init()
     if (strcmp(vDISPLAY, ":0") != 0) 
     {
         _remoteConnection = true;
-        std::cout << "Remote connection detected. Some functions might be skipped.\n";
+        std::cout << "Remote connection detected.\n";
     }
 
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
@@ -79,7 +79,7 @@ void FDTD_AcousticSimulator_Viewer::
 init_gl()
 {
     // fetch objects to set up for colors, material for gl rendering
-    const int N_objects = _simulator->GetSceneObjects()->GetRigidSoundObjects().size(); 
+    const int N_objects = _simulator->GetSceneObjects()->N(); 
     _objectColors.resize(N_objects); 
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
     {
@@ -1233,7 +1233,7 @@ DrawHalfFrameForward()
 void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
-    _wireframe = 3;
+    _wireframe = (_remoteConnection ? 3 : 2); 
     _sliceWireframe.reset(); 
     _sliceWireframe.set(1); // draw face only
     _drawBoxLis = true; 

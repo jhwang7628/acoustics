@@ -52,5 +52,6 @@ struct PML_WaveSolver_Settings
     // additional options
     bool validateUsingFBem; 
 };
+using PML_WaveSolver_Settings_Ptr = std::shared_ptr<PML_WaveSolver_Settings>; 
 
 #endif
