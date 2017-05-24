@@ -39,13 +39,14 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         std::cout << "No rigid_sound_object found\n";
     }
 
+    int meshCount = 0; 
     std::vector<ImpulseSeriesReader> readers; 
     while (rigidSoundObjectNode != NULL)
     {
         //const std::string meshFileName = queryRequiredAttr(rigidSoundObjectNode, "file");
         //const std::string sdfFilePrefix = queryRequiredAttr(rigidSoundObjectNode, "distancefield");
-        const int meshID = queryRequiredInt(rigidSoundObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        //const int meshID = queryRequiredInt(rigidSoundObjectNode, "id"); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(rigidSoundObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(rigidSoundObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(rigidSoundObjectNode, "fieldresolution");
@@ -95,7 +96,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
         object->FDTD_RigidSoundObject::Initialize(); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        objects->AddObject(meshName,object); 
+        objects->AddObject(std::stoi(meshName),object); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
     }
 
@@ -126,8 +127,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (rigidObjectNode != NULL)
     {
-        const int meshID = queryRequiredInt(rigidObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(rigidObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(rigidObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(rigidObjectNode, "fieldresolution");
@@ -151,7 +151,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        objects->AddObject(meshName,object); 
+        objects->AddObject(std::stoi(meshName),object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
 
@@ -169,8 +169,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (waterSurfaceObjectNode != NULL)
     {
-        const int meshID = queryRequiredInt(waterSurfaceObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(waterSurfaceObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(waterSurfaceObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(waterSurfaceObjectNode, "fieldresolution");
@@ -186,7 +185,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSource>(object, inputRecordingFile, decayRadius); 
         object->AddVibrationalSource(sourcePtr); 
-        objects->AddObject(meshName, object); 
+        objects->AddObject(std::stoi(meshName), object); 
         waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
     }
 }
