@@ -85,6 +85,38 @@ if (BUILD_UNIT_TESTING)
         test_FDTD_AcousticSimulator.cpp
         ) 
 
+    add_executable(unit_testing_SimWorld
+        ${DISTANCEFIELD_SRC}              
+        ${WAVESOLVER_SRC} 
+        ${MESH_UTILS_SRC}
+        ${GENERAL_TESTING_SRCS} 
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
+        ${GENERIC_SRC}                    
+        ${IO_SRC} 
+        ${LOGGING_SRC}                    
+        ${LINEARALGEBRA_SRC} 
+        ${MATH_SRC} 
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${GEOMETRY_SRC} 
+        ${FIELD_SRC}                      
+        ${UTILS_SRC}                      
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${MODAL_MODEL_SRC}
+        ${MODAL_MATERIAL_SRC}
+        ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
+        ${RIGID_PARSER_SRC}
+        ${SND_IO_SRC}
+        test_SimWorld.cpp
+        ) 
+
     add_executable(unit_testing_Modal
         test_Modal.cpp
         ${IO_SRC}
@@ -176,6 +208,22 @@ if (BUILD_UNIT_TESTING)
         boost_regex) 
 
     target_link_libraries(unit_testing_FDTD_AcousticSimulator
+        ${MKL_LIBRARY}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
+        sndfile
+        boost_thread
+        boost_system                    
+        boost_timer
+        boost_filesystem
+        boost_regex) 
+
+    target_link_libraries(unit_testing_SimWorld
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             
         ${GTS_LIBRARIES}
