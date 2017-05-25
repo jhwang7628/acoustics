@@ -78,10 +78,13 @@ _SetListeningPoints()
 //##############################################################################
 //##############################################################################
 std::string FDTD_AcousticSimulator::
-_CompositeFilename(const std::string filename)
+_CompositeFilename(const std::string filename_)
 {
     char buffer[512];
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    const std::string filename = 
+        (_simulatorID ? (*_simulatorID) + "_" + filename_ : filename_); 
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), 
+             filename.c_str()); 
     return std::string(buffer); 
 }
 

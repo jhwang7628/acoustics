@@ -19,8 +19,8 @@ class FDTD_Objects
 {
     private: 
         std::unordered_map<int, RigidSoundObjectPtr> _rigidObjects; 
-        std::vector<PressureSourcePtr>      _pressureSources; 
-        std::map<std::string, BoundaryInterfacePtr> _interfaces; 
+        std::vector<PressureSourcePtr>               _pressureSources; 
+        std::map<std::string, BoundaryInterfacePtr>  _interfaces; 
 
     public: 
         inline int N() const {return _rigidObjects.size();} 

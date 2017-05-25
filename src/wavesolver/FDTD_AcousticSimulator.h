@@ -49,6 +49,7 @@ class FDTD_AcousticSimulator
         int                     _snapshotIndex;
         double                  _simulationTime; 
         std::string             _configFile; 
+        std::string            *_simulatorID = nullptr;  // unique id that is optional
 
     private: 
         void _ParseSolverSettings();
@@ -67,12 +68,18 @@ class FDTD_AcousticSimulator
         void _SaveSimulationSnapshot(const std::string &numbering);
 
     public: 
-        FDTD_AcousticSimulator()
-            : _stepIndex(0), _snapshotIndex(0), _simulationTime(0.0)
+        FDTD_AcousticSimulator(std::string *simulatorID=nullptr)
+            : FDTD_AcousticSimulator("", simulatorID)
         {}
-        FDTD_AcousticSimulator(const std::string &configFile)
-            : _stepIndex(0), _snapshotIndex(0),  _simulationTime(0.0), _configFile(configFile)
+        FDTD_AcousticSimulator(const std::string &configFile, std::string *simulatorID=nullptr)
+            : _stepIndex(0), _snapshotIndex(0), _simulationTime(0.0), 
+              _configFile(configFile),
+              _simulatorID(simulatorID)
         {} 
+        ~FDTD_AcousticSimulator()
+        {
+            if (_simulatorID) delete _simulatorID; 
+        }
 
         inline bool CanInitializeSolver() const {return _parser && _sceneObjects && _acousticSolverSettings;}
         inline bool SceneHasModalObject() const {return _sceneObjects->HasModalObject();}
@@ -86,6 +93,7 @@ class FDTD_AcousticSimulator
         inline std::shared_ptr<FDTD_Objects> &GetSceneObjects(){return _sceneObjects;} 
         inline MAC_Grid &GetGrid(){return _acousticSolver->GetGrid();}
         inline REAL GetSimulationTime(){return _simulationTime;}
+        inline std::string *GetSimulatorID(){return _simulatorID;}
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); // wrapper
