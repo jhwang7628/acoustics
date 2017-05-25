@@ -9,7 +9,7 @@ void TestBuildWorldAndRun(const std::string &xmlName)
     SimWorld world; 
     world.Build(parser); 
     int count = 0;
-    while (count++ < 10)
+    while (count++ < 1000)
         world.StepWorld(); 
 }
 
