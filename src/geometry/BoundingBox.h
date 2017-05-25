@@ -89,8 +89,12 @@ class BoundingBox {
     // cellSize*cellDivision length in each dimension
     BoundingBox(const REAL &cellSize, const int &cellDivisions, const Vector3d &center,
                 bool is3D=true)
-        : _minBound(center.x-cellSize*(REAL)cellDivisions/2.0,center.y-cellSize*(REAL)cellDivisions/2.0,center.z-cellSize*(REAL)cellDivisions/2.0), 
-          _maxBound(center.x+cellSize*(REAL)cellDivisions/2.0,center.y+cellSize*(REAL)cellDivisions/2.0,center.z+cellSize*(REAL)cellDivisions/2.0), 
+        : _minBound(center.x-cellSize*(REAL)cellDivisions/2.0,
+                    center.y-cellSize*(REAL)cellDivisions/2.0,
+                    center.z-cellSize*(REAL)cellDivisions/2.0), 
+          _maxBound(center.x+cellSize*(REAL)cellDivisions/2.0,
+                    center.y+cellSize*(REAL)cellDivisions/2.0,
+                    center.z+cellSize*(REAL)cellDivisions/2.0), 
           _is3D(is3D)
     {
     }
