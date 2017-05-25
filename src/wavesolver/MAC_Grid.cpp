@@ -64,7 +64,9 @@ MAC_Grid::MAC_Grid( const BoundingBox &bbox, REAL cellSize,
     Reinitialize_MAC_Grid(bbox, cellSize); 
 }
 
-MAC_Grid::MAC_Grid(const BoundingBox &bbox, PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
+MAC_Grid::MAC_Grid(const BoundingBox &bbox, 
+                   PML_WaveSolver_Settings_Ptr settings, 
+                   std::shared_ptr<FDTD_Objects> objects)
     : _pressureField(bbox,settings->cellSize), 
       _N(1), // no longer supports multiple fields, 
       _useGhostCellBoundary(settings->useGhostCell),
@@ -143,6 +145,7 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
     const auto &field = _pressureField; 
     const int N_cells = field.numCells(); 
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+    const Tuple3i &pFieldDivs = _pressureField.cellDivisions(); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -153,9 +156,9 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
         Tuple3i buf = cellIndices; 
         // skip if its boundary
-        if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
-            cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
-            cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
+        if (cellIndices[0]==0 || cellIndices[0]==pFieldDivs[0]-1 ||
+            cellIndices[1]==0 || cellIndices[1]==pFieldDivs[1]-1 ||
+            cellIndices[2]==0 || cellIndices[2]==pFieldDivs[2]-1)
             continue; 
         laplacian(cell_idx, 0) = -6.0*(value(cell_idx, 0)); // v_i
         for (int dim=0; dim<3; ++dim)
@@ -177,6 +180,7 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
     const auto &field = _pressureField; 
     const int N_cells = field.numCells(); 
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
+    const Tuple3i &pFieldDivs = _pressureField.cellDivisions(); 
     laplacian.clear();
 
 #ifdef USE_OPENMP
@@ -199,7 +203,7 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
             int isBoundaryFace = 0; // detect boundary face
             if (cellIndices[dim]==0) 
                 isBoundaryFace = -1;
-            else if (cellIndices[dim]==_waveSolverSettings->cellDivisions-1)
+            else if (cellIndices[dim]==pFieldDivs[dim]-1)
                 isBoundaryFace =  1;
 
             if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
@@ -1248,7 +1252,6 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
     const REAL &k        = _waveSolverSettings->timeStepSize; 
     const REAL &h        = _waveSolverSettings->cellSize; 
     const REAL &rho      = _waveSolverSettings->airDensity;
-    const int  &cell_div = _waveSolverSettings->cellDivisions; 
     const REAL  h_sub    = h/(REAL)N_sub; 
     const REAL  h_over_2 = h/2.0;
     const REAL  h_sub_over_2 = h_sub/2.0; 
@@ -1286,7 +1289,7 @@ UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime)
                     Vector3d normal(0,0,0);
                     normal[dim_0] = (np==0 ? -1.0 : 1.0) * A_sub; 
                     indicesBuffer[dim_0] += (np==0 ? -1 : 1); 
-                    assert(indicesBuffer[dim_0]>=0 && indicesBuffer[dim_0]<cell_div); 
+                    assert(indicesBuffer[dim_0]>=0 && indicesBuffer[dim_0]<_pressureField.cellDivisions()[dim_0]); 
                     const int neighbour_idx = _pressureField.cellIndex(indicesBuffer); 
                     const int gc_value_idx = (neighbour_idx > gc->parent_idx ? dim_0*2+1 : dim_0*2); 
                     indicesBuffer[dim_0] -= (np==0 ? -1 : 1); // reset buffer
@@ -1438,7 +1441,7 @@ void MAC_Grid::SampleAxisAlignedSlice(const int &dim, const REAL &offset, MATRIX
     const int dim1 = (dim+1)%3;
     const int dim2 = (dim+2)%3; 
     sampledCells.resize(divs[dim1] * divs[dim2]); 
-    const int k = std::min<int>((int)((offset - lowerCorner)/_waveSolverSettings->cellSize), _waveSolverSettings->cellDivisions-1); 
+    const int k = std::min<int>((int)((offset - lowerCorner)/_waveSolverSettings->cellSize), divs[dim]-1); 
 
     int count = 0;
     for (int i=0; i<divs[dim1]; ++i)
@@ -3087,9 +3090,9 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
     cell.vy[0] = v[1](_velocityField[1].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
     cell.vz[0] = v[2](_velocityField[2].cellIndex(Tuple3i(indicesBuffer[0], indicesBuffer[1], indicesBuffer[2])), 0); 
 
-    const int xUpper = std::min<int>(indicesBuffer.x + 1, _waveSolverSettings->cellDivisions); 
-    const int yUpper = std::min<int>(indicesBuffer.y + 1, _waveSolverSettings->cellDivisions); 
-    const int zUpper = std::min<int>(indicesBuffer.z + 1, _waveSolverSettings->cellDivisions); 
+    const int xUpper = std::min<int>(indicesBuffer.x + 1, _pressureField.cellDivisions()[0]); 
+    const int yUpper = std::min<int>(indicesBuffer.y + 1, _pressureField.cellDivisions()[1]); 
+    const int zUpper = std::min<int>(indicesBuffer.z + 1, _pressureField.cellDivisions()[2]); 
 
     // upper velocity cell
     cell.vx[1] = v[0](_velocityField[0].cellIndex(Tuple3i(xUpper          , indicesBuffer[1], indicesBuffer[2])), 0); 
@@ -3151,10 +3154,10 @@ int MAC_Grid::InPressureCell(const Vector3d &position)
 {
     const Vector3d &pBBoxLower = _pressureField.bbox().minBound();
     const REAL &h = _waveSolverSettings->cellSize; 
-    const int &div = _waveSolverSettings->cellDivisions; 
-    const Tuple3i cellIndices = Tuple3i(std::max<int>(std::min<int>((int)((position.x - pBBoxLower.x)/h), div-1), 0),
-                                        std::max<int>(std::min<int>((int)((position.y - pBBoxLower.y)/h), div-1), 0),
-                                        std::max<int>(std::min<int>((int)((position.z - pBBoxLower.z)/h), div-1), 0)); 
+    const Tuple3i &divs = _pressureField.cellDivisions(); 
+    const Tuple3i cellIndices = Tuple3i(std::max<int>(std::min<int>((int)((position.x - pBBoxLower.x)/h), divs[0]-1), 0),
+                                        std::max<int>(std::min<int>((int)((position.y - pBBoxLower.y)/h), divs[1]-1), 0),
+                                        std::max<int>(std::min<int>((int)((position.z - pBBoxLower.z)/h), divs[2]-1), 0)); 
     return _pressureField.cellIndex(cellIndices); 
 }
 
@@ -3445,7 +3448,7 @@ REAL MAC_Grid::EstimateEnergy(const MATRIX &pCurr, const MATRIX &pLast)
     const int N_pcells = numPressureCells(); 
     const REAL &h = _waveSolverSettings->cellSize;
     const REAL &k = _waveSolverSettings->timeStepSize;
-    const int &N_div = _waveSolverSettings->cellDivisions;
+    const Tuple3i &pFieldDivs = _pressureField.cellDivisions();
     REAL E = 0.0;
 #ifdef USE_OPENMP
     const int N_max_threads = omp_get_max_threads();
@@ -3465,7 +3468,7 @@ REAL MAC_Grid::EstimateEnergy(const MATRIX &pCurr, const MATRIX &pLast)
         {
             const int indBuf = cellIndices[dim]; 
             cellIndices[dim] += 1; // p_i+1
-            cellIndices[dim] = std::min<int>(N_div-1, cellIndices[dim]);
+            cellIndices[dim] = std::min<int>(pFieldDivs[dim]-1, cellIndices[dim]);
             cell_p = _pressureField.cellIndex(cellIndices); 
             cellIndices[dim] -= 2; // p_i-1
             cellIndices[dim] = std::max<int>(0, cellIndices[dim]);

@@ -159,8 +159,10 @@ class PML_WaveSolver : public Solver
                         REAL endTime = -1.0
                         );
 
-        // initialize from settings parsed from xml
-        PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects);
+        // initialize from settings parsed from xml and bounding box
+        PML_WaveSolver(const BoundingBox &bbox,
+                       PML_WaveSolver_Settings_Ptr settings, 
+                       std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
         void Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime); 

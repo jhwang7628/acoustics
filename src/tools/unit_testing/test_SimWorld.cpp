@@ -1,6 +1,6 @@
 #include "wavesolver/SimWorld.h" 
 
-void TestBuildWorld(const std::string &xmlName)
+void TestBuildWorldAndRun(const std::string &xmlName)
 {
     // build parser
     ImpulseResponseParser_Ptr parser = std::make_shared<ImpulseResponseParser>(xmlName); 
@@ -8,7 +8,9 @@ void TestBuildWorld(const std::string &xmlName)
     // build world
     SimWorld world; 
     world.Build(parser); 
-
+    int count = 0;
+    while (count++ < 10)
+        world.StepWorld(); 
 }
 
 //##############################################################################
@@ -23,6 +25,6 @@ int main(int argc, char ** argv)
     const int steps = (argc == 3 ? atoi(argv[2]) : -1); 
     {
         boost::timer::auto_cpu_timer timer;
-        TestBuildWorld(xmlName); 
+        TestBuildWorldAndRun(xmlName); 
     }
 } 

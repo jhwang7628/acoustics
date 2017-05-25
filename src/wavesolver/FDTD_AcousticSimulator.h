@@ -3,6 +3,7 @@
 
 #include <string> 
 #include <parser/ImpulseResponseParser.h> 
+#include <geometry/BoundingBox.h> 
 #include <wavesolver/PML_WaveSolver.h> 
 #include <wavesolver/PML_WaveSolver_Settings.h> 
 #include <wavesolver/VibrationalSource.h> 
@@ -88,7 +89,7 @@ class FDTD_AcousticSimulator
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); // wrapper
-        void InitializeSolver(const PML_WaveSolver_Settings_Ptr &settings); 
+        void InitializeSolver(const BoundingBox &solverBox, const PML_WaveSolver_Settings_Ptr &settings); 
         void ResetStartTime(const REAL &startTime); 
         bool RunForSteps(const int &N_steps); 
         void Run(); 

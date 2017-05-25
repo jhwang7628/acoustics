@@ -32,6 +32,7 @@ class SimWorld
 
 public: 
     void Build(ImpulseResponseParser_Ptr &parser); 
+    bool StepWorld(); 
 };
 
 #endif

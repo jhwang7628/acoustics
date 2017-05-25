@@ -217,6 +217,20 @@ GetEarliestImpactEvent()
 }
 
 //##############################################################################
+// Function StepObjectStates
+//##############################################################################
+void FDTD_Objects::
+StepObjectStates()
+{
+    // update modal vectors for the next time step
+    for (auto &m : _rigidObjects) 
+        m.second->UpdateQPointers(); 
+
+    // TODO: Need to move the animate function to objects class
+    //AnimateObjects();
+}
+
+//##############################################################################
 //##############################################################################
 void FDTD_Objects::
 TestObjectDistanceField(const size_t &ind)

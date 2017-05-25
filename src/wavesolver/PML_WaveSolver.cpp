@@ -75,10 +75,13 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
     Reinitialize_PML_WaveSolver(useBoundary, 0.0);
 }
 
-PML_WaveSolver::PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects)
+PML_WaveSolver::PML_WaveSolver(const BoundingBox &bbox, 
+                               PML_WaveSolver_Settings_Ptr settings, 
+                               std::shared_ptr<FDTD_Objects> objects)
     : _waveSpeed(settings->soundSpeed), 
       _density(settings->airDensity), 
-      _grid(BoundingBox(settings->cellSize,settings->cellDivisions,settings->domainCenter),settings,objects),
+      //_grid(BoundingBox(settings->cellSize,settings->cellDivisions,settings->domainCenter),settings,objects),
+      _grid(bbox,settings,objects),
       _cellSize(settings->cellSize), 
       _subSteps(settings->timeSavePerStep), 
       _endTime(settings->timeEnd), 

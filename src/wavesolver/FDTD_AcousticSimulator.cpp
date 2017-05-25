@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
+#include <geometry/BoundingBox.h>
 #include <utils/IO/IO.h>
 #include <macros.h>
 
@@ -103,14 +104,14 @@ _SaveSolverSettings(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SavePressureCellPositions(const std::string &filename)
 {
-    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const Tuple3i &pFieldDivisions = GetGrid().pressureFieldDivisions(); 
     const int N_cells = _acousticSolver->numCells();
     Eigen::MatrixXd vertexPosition(N_cells,3); 
     int count = 0;
     Vector3d vPosition; 
-    for (int kk=0; kk<N_cellsEachDimension; kk++)
-        for (int jj=0; jj<N_cellsEachDimension; jj++)
-            for (int ii=0; ii<N_cellsEachDimension; ii++)
+    for (int kk=0; kk<pFieldDivisions[2]; kk++)
+        for (int jj=0; jj<pFieldDivisions[1]; jj++)
+            for (int ii=0; ii<pFieldDivisions[0]; ii++)
             {
                 Tuple3i  vIndex(ii, jj, kk);
                 vPosition = _acousticSolver->fieldPosition(vIndex);
@@ -189,13 +190,13 @@ _SaveListeningPositions(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SavePressureTimestep(const std::string &filename)
 {
-    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const Tuple3i &pFieldDivisions = GetGrid().pressureFieldDivisions(); 
     const int N_cells = _acousticSolver->numCells();
     int count = 0;
     std::shared_ptr<Eigen::MatrixXd> vertexPressure(new Eigen::MatrixXd(N_cells, 1)); 
-    for (int kk=0; kk<N_cellsEachDimension; kk++)
-        for (int jj=0; jj<N_cellsEachDimension; jj++)
-            for (int ii=0; ii<N_cellsEachDimension; ii++)
+    for (int kk=0; kk<pFieldDivisions[2]; kk++)
+        for (int jj=0; jj<pFieldDivisions[1]; jj++)
+            for (int ii=0; ii<pFieldDivisions[0]; ii++)
             {
                 Tuple3i  vIndex( ii, jj, kk );
                 VECTOR vPressure;
@@ -353,13 +354,17 @@ InitializeSolver()
 {
     if (CanInitializeSolver())
         _ParseSolverSettings();
-    InitializeSolver(_acousticSolverSettings); 
+    BoundingBox solverBox(_acousticSolverSettings->cellSize, 
+                          _acousticSolverSettings->cellDivisions, 
+                          _acousticSolverSettings->domainCenter); 
+    InitializeSolver(solverBox, _acousticSolverSettings); 
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-InitializeSolver(const PML_WaveSolver_Settings_Ptr &settings)
+InitializeSolver(const BoundingBox &solverBox, 
+                 const PML_WaveSolver_Settings_Ptr &settings)
 {
     assert(CanInitializeSolver()); 
     // if rigidsim data exists, read and apply them to objects before
@@ -375,16 +380,17 @@ InitializeSolver(const PML_WaveSolver_Settings_Ptr &settings)
     }
     else 
     {
-        std::cerr << "**WARNING** no rigidsim data read\n";
+        std::cerr << "**MESSAGE** no rigidsim data read\n";
     }
 
     // initialize solver and set various things
     _SetListeningPoints(); 
-    _acousticSolver = std::make_shared<PML_WaveSolver>(settings, _sceneObjects); 
+    _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
-    _simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(settings->domainCenter); 
-    _simBox.continuousCenter = settings->domainCenter; 
+    // FIXME debug
+    //_simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(settings->domainCenter); 
+    //_simBox.continuousCenter = settings->domainCenter; 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
@@ -517,9 +523,9 @@ PostStepping(const REAL &odeTime)
         }
     }
 
-    // update modal vectors for the next time step
-    for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-        _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
+    //// update modal vectors for the next time step
+    //for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
+    //    _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
 
     std::cout << "Acoustic simulator time = " << _simulationTime 
               << "; step index= " << _stepIndex 

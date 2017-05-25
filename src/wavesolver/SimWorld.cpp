@@ -1,3 +1,4 @@
+#include "geometry/BoundingBox.h" 
 #include "wavesolver/SimWorld.h"
 
 //##############################################################################
@@ -28,7 +29,29 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
         simUnit->simulator->SetSceneObjects(simUnit->objects); 
-        simUnit->simulator->InitializeSolver(_simulatorSettings); 
+        auto meshPtr = obj->GetMeshPtr(); 
+        const Vector3d meshCentroid = meshPtr->ComputeCentroid(); 
+        const int divs = 
+            (int)(meshPtr->boundingSphereRadius(meshCentroid)/_simulatorSettings->cellSize)/2*2 + 10;
+        const BoundingBox simUnitBox(
+                _simulatorSettings->cellSize, divs, meshCentroid); 
+        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
+        _simUnits.insert(std::move(simUnit)); 
     }
 }
+
+//##############################################################################
+// Function Build
+//##############################################################################
+bool SimWorld::
+StepWorld()
+{
+    bool continueStepping = true; 
+    for (auto &u : _simUnits)
+        u->simulator->RunForSteps(1); 
+    _objectCollections->StepObjectStates(); 
+
+    return continueStepping; // TODO 
+}
+
 //##############################################################################
