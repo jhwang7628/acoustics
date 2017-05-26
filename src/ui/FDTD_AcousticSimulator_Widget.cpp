@@ -18,8 +18,8 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
       _text_impulseScaling->setFixedWidth(100);
     _slider_simulationTimeline = new QSlider(Qt::Horizontal, this); 
     _slider_simulationTimeline->setRange(0, (int)ceil(_solverSettings->timeEnd/_solverSettings->timeStepSize)); 
-    _slider_simulationTimeline->setValue((int)ceil(_viewer->_simulator->GetSimulationTime()/_solverSettings->timeStepSize));
-     _label_simulationTimeline = new QLabel(QString("%1").arg(_viewer->_simulator->GetSimulationTime())); 
+    _slider_simulationTimeline->setValue((int)ceil(_viewer->_simWorld->GetWorldTime()/_solverSettings->timeStepSize));
+     _label_simulationTimeline = new QLabel(QString("%1").arg(_viewer->_simWorld->GetWorldTime())); 
      _label_simulationTimeline->setFixedWidth(200);
       _text_simulationTimeline = new QLabel("Simulation Time"); 
       _text_simulationTimeline->setFixedWidth(200);
@@ -70,14 +70,15 @@ FDTD_AcousticSimulator_Widget::
 void FDTD_AcousticSimulator_Widget::
 SliderValueChanged()
 {
-    const REAL impulseScaling = (REAL)_slider_impulseScaling->value()*IMP_SLIDER_SCALE; 
-    const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
-    _label_impulseScaling->setText(QString("%1").arg(impulseScaling));
-    _label_simulationTimeline->setText(QString("%1").arg(newTime));
-    // update viewer
-    _viewer->_drawImpulseScaling = pow(10., impulseScaling); 
-    _viewer->_simulator->AnimateObjects(newTime); 
-    _viewer->updateGL();
+    // FIXME debug
+    //const REAL impulseScaling = (REAL)_slider_impulseScaling->value()*IMP_SLIDER_SCALE; 
+    //const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
+    //_label_impulseScaling->setText(QString("%1").arg(impulseScaling));
+    //_label_simulationTimeline->setText(QString("%1").arg(newTime));
+    //// update viewer
+    //_viewer->_drawImpulseScaling = pow(10., impulseScaling); 
+    //_viewer->_simulator->AnimateObjects(newTime); 
+    //_viewer->updateGL();
 }
 
 //##############################################################################
@@ -85,11 +86,12 @@ SliderValueChanged()
 void FDTD_AcousticSimulator_Widget::
 ResetSystemTime()
 {
-    const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
-    _viewer->_simulator->ResetStartTime(newTime);
-    _viewer->SetAllSliceDataReady(false);
-    _viewer->_currentFrame = 0;
-    _viewer->updateGL();
+    // FIXME debug
+    //const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
+    //_viewer->_simulator->ResetStartTime(newTime);
+    //_viewer->SetAllSliceDataReady(false);
+    //_viewer->_currentFrame = 0;
+    //_viewer->updateGL();
 }
 
 //##############################################################################

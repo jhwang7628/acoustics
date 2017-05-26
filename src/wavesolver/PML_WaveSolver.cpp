@@ -396,6 +396,11 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
     }
 }
 
+const BoundingBox PML_WaveSolver::GetSolverBBox() const
+{
+    return _grid.PressureBoundingBox(); 
+}
+
 #ifdef USE_COLLOCATED
 
 void PML_WaveSolver::ScheduleMoveBox(const Tuple3i &offset)

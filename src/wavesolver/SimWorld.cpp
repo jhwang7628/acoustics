@@ -2,6 +2,18 @@
 #include "wavesolver/SimWorld.h"
 
 //##############################################################################
+// Function GetSolverBBoxs
+//##############################################################################
+std::vector<BoundingBox> SimWorld::
+GetSolverBBoxs()
+{
+    std::vector<BoundingBox> bboxs; 
+    for (const auto &m : _simUnits)
+        bboxs.push_back(m->simulator->GetSolver()->GetSolverBBox()); 
+    return bboxs; 
+}
+
+//##############################################################################
 // Function Build
 //##############################################################################
 void SimWorld::
@@ -54,7 +66,6 @@ StepWorld()
     }
     _objectCollections->StepObjectStates(); 
 
-    return continueStepping; // TODO 
+    return continueStepping;
 }
-
 //##############################################################################

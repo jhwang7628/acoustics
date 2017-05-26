@@ -205,6 +205,7 @@ class PML_WaveSolver : public Solver
         void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
         void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
         void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;
+        const BoundingBox GetSolverBBox() const; 
 #ifdef USE_COLLOCATED
         void ScheduleMoveBox(const Tuple3i &offset); 
         void ClearCollocatedData(const int &dim, const int &ind); 

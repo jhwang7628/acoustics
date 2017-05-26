@@ -1,6 +1,7 @@
 #include <string>
 #include <memory>
 #include <qapplication.h>
+#include <wavesolver/SimWorld.h>
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
 #include <ui/FDTD_AcousticSimulator_Widget.h>
 #include <boost/program_options.hpp>
@@ -42,7 +43,12 @@ int main(int argc, char** argv)
 
     QApplication application(argc,argv);
 
-    std::shared_ptr<FDTD_AcousticSimulator_Viewer> viewer = std::make_shared<FDTD_AcousticSimulator_Viewer>(xmlFile, preview_speed);
+
+    ImpulseResponseParser_Ptr parser = std::make_shared<ImpulseResponseParser>(xmlFile); 
+    SimWorld_UPtr world(new SimWorld()); 
+    world->Build(parser); 
+    std::shared_ptr<FDTD_AcousticSimulator_Viewer> viewer = 
+        std::make_shared<FDTD_AcousticSimulator_Viewer>(std::move(world));
     FDTD_AcousticSimulator_Widget widget(viewer); 
     widget.setWindowTitle("FDTD Acoustic Simulator Widget");
     widget.show();

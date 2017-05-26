@@ -6,6 +6,7 @@
 #include <wavesolver/FDTD_AcousticSimulator.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
 #include <wavesolver/PML_WaveSolver_Settings.h>
+#include <wavesolver/SimWorld.h>
 #include <modal_model/KirchhoffIntegralSolver.h>
 #include <linearalgebra/Vector3.hpp>
 #include <linearalgebra/Vector2.hpp>
@@ -26,10 +27,22 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
-        struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; Vector3d minBound; Vector3d maxBound; std::vector<MAC_Grid::Cell> cells; bool dataReady = false;};
+        struct Slice
+        {
+            int dim; 
+            Vector3d origin; 
+            Vector3Array samples; 
+            Eigen::MatrixXd data; 
+            Vector3Array gridLines; 
+            int N_sample_per_dim; 
+            Vector3d minBound; 
+            Vector3d maxBound; 
+            std::vector<MAC_Grid::Cell> cells; 
+            bool dataReady = false;
+        };
 
     private: 
-        FDTD_AcousticSimulator_Ptr               _simulator; 
+        SimWorld_UPtr                            _simWorld; 
         std::shared_ptr<PML_WaveSolver_Settings> _solverSettings;
 
         uint                    _previewSpeed = 0; 
@@ -66,7 +79,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int             _bemModePointer = 0; 
 
         // scene parameters 
-        BoundingBox *_sceneBox; 
+        BoundingBox *_sceneBox = nullptr; 
 
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
@@ -93,15 +106,21 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
 
     public: 
 
-        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile, const uint &preview_speed)
-            : _simulator(new FDTD_AcousticSimulator(simulationXMLFile)), _previewSpeed(preview_speed)
+        //FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile, const uint &preview_speed)
+        //    : _simulator(new FDTD_AcousticSimulator(simulationXMLFile)), _previewSpeed(preview_speed)
+        //{
+        //    RestoreDefaultDrawOptions();
+        //    _simulator->InitializeSolver(); 
+        //    _solverSettings = _simulator->GetSolverSettings(); 
+        //    if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
+        //        InitializeBEMSolver();
+        //    _sceneBox = nullptr; 
+        //}
+        FDTD_AcousticSimulator_Viewer(SimWorld_UPtr world)
+            : _simWorld(std::move(world))
         {
-            RestoreDefaultDrawOptions();
-            _simulator->InitializeSolver(); 
-            _solverSettings = _simulator->GetSolverSettings(); 
-            if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
-                InitializeBEMSolver();
-            _sceneBox = nullptr; 
+            RestoreDefaultDrawOptions(); 
+            _solverSettings = _simWorld->GetSolverSettings(); 
         }
         ~FDTD_AcousticSimulator_Viewer()
         {
