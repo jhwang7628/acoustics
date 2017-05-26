@@ -267,6 +267,8 @@ class TriangleMesh
         std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
         std::valarray<T>            m_vtxAreas;     // area of each triangles
         std::vector<T>              m_vtxMeanCurvatures;
+        mutable bool                m_centroidComputed = false; 
+        mutable Vector3<T>          m_centroid; 
 };
 
 template <typename T>
@@ -774,12 +776,15 @@ template <typename T>
 Vector3<T> TriangleMesh<T>::
 ComputeCentroid() const
 {
-    Vector3<T> accumulate(0, 0, 0); 
+    if (m_centroidComputed)
+        return m_centroid;
+    m_centroid.set((T)0,(T)0,(T)0); 
     const int N_vertices = num_vertices(); 
     for (int v_idx=0; v_idx<N_vertices; ++v_idx)
-        accumulate += vertex(v_idx); 
-    accumulate /= (T)N_vertices; 
-    return accumulate; 
+        m_centroid += vertex(v_idx); 
+    m_centroid /= (T)N_vertices; 
+    m_centroidComputed = true; 
+    return m_centroid; 
 }
 
 /* 
