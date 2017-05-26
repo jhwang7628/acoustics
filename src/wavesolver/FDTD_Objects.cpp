@@ -220,14 +220,50 @@ GetEarliestImpactEvent()
 // Function StepObjectStates
 //##############################################################################
 void FDTD_Objects::
-StepObjectStates()
+StepObjectStates(const REAL time)
 {
     // update modal vectors for the next time step
     for (auto &m : _rigidObjects) 
         m.second->UpdateQPointers(); 
 
     // TODO: Need to move the animate function to objects class
-    //AnimateObjects();
+    AnimateObjects(time);
+}
+
+//##############################################################################
+// Function InitializeAnimator
+//##############################################################################
+void FDTD_Objects::
+InitializeAnimator(const std::string &fileDisplacement,
+                   const std::string &fileVelocity,
+                   const std::string &fileAcceleration)
+{
+    _objectAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
+    _objectAnimator->ReadAllKinematics(fileDisplacement, 
+                                       fileVelocity, 
+                                       fileAcceleration); 
+    AnimateObjects(0.0); // apply the transformation right away
+}
+
+//##############################################################################
+// Function AnimateObjects
+//##############################################################################
+void FDTD_Objects::
+AnimateObjects(const REAL toTime)
+{
+    if (!_objectAnimator)
+        return; 
+    Point3d newCOM; 
+    Quaternion<REAL> quaternion; 
+    for (auto &m : _rigidObjects)
+    {
+        const auto &object = m.second;
+        if (object->Animated())
+        {
+            _objectAnimator->GetRigidObjectTransform(m.first, toTime, newCOM, quaternion); 
+            object->SetRigidBodyTransform(newCOM, quaternion);
+        }
+    }
 }
 
 //##############################################################################

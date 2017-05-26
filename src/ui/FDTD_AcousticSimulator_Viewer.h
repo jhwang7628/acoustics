@@ -105,22 +105,13 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         virtual void postSelection(const QPoint &point); 
 
     public: 
-
-        //FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile, const uint &preview_speed)
-        //    : _simulator(new FDTD_AcousticSimulator(simulationXMLFile)), _previewSpeed(preview_speed)
-        //{
-        //    RestoreDefaultDrawOptions();
-        //    _simulator->InitializeSolver(); 
-        //    _solverSettings = _simulator->GetSolverSettings(); 
-        //    if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
-        //        InitializeBEMSolver();
-        //    _sceneBox = nullptr; 
-        //}
         FDTD_AcousticSimulator_Viewer(SimWorld_UPtr world)
             : _simWorld(std::move(world))
         {
             RestoreDefaultDrawOptions(); 
             _solverSettings = _simWorld->GetSolverSettings(); 
+            //if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
+            //    InitializeBEMSolver();
         }
         ~FDTD_AcousticSimulator_Viewer()
         {

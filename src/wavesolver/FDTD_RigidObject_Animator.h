@@ -31,5 +31,6 @@ class FDTD_RigidObject_Animator
         void ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVelocity, const std::string &fileAcceleration);
         void GetRigidObjectTransform(const int &objectID, const REAL &time, Point3d &displacement, Quaternion<REAL> &quaterion);
 };
+using FDTD_RigidObject_Animator_Ptr = std::shared_ptr<FDTD_RigidObject_Animator>; 
 
 #endif

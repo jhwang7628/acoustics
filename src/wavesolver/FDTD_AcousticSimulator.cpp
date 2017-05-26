@@ -370,21 +370,7 @@ InitializeSolver(const BoundingBox &solverBox,
                  const PML_WaveSolver_Settings_Ptr &settings)
 {
     assert(CanInitializeSolver()); 
-    // if rigidsim data exists, read and apply them to objects before
-    // initializing solver.
     if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
-    if (settings->rigidsimDataRead)
-    {
-        _sceneObjectsAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
-        _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, 
-                                                 settings->fileVelocity, 
-                                                 settings->fileAcceleration); 
-        AnimateObjects(); // apply the transformation right away
-    }
-    else 
-    {
-        std::cerr << "**MESSAGE** no rigidsim data read\n";
-    }
 
     // initialize solver and set various things
     _SetListeningPoints(); 
@@ -417,7 +403,7 @@ ResetStartTime(const REAL &startTime)
     _simulationTime = startTime; 
     if (_acousticSolverSettings->rigidsimDataRead)
     {
-        AnimateObjects();
+        AnimateObjects(_simulationTime);
         auto &objects = _sceneObjects->GetRigidSoundObjects(); 
         for (auto &m : objects) 
             if (m.second->Animated())
@@ -537,7 +523,7 @@ PostStepping(const REAL &odeTime)
     _simulationTime += settings->timeStepSize; 
 
     // move object to new position
-    AnimateObjects(); 
+    AnimateObjects(_simulationTime); 
     //TestMoveObjects(); 
       
 #ifdef DEBUG
@@ -562,7 +548,7 @@ PreviewStepping(const uint &speed)
     std::cout << "Acoustic simulator time = " << _simulationTime << std::endl;
     _stepIndex += speed;
     _simulationTime += settings->timeStepSize*(REAL)speed; 
-    AnimateObjects(); 
+    AnimateObjects(_simulationTime); 
 }
 
 
@@ -595,22 +581,7 @@ SaveSolverConfig()
 void FDTD_AcousticSimulator::
 AnimateObjects(const REAL newTime)
 {
-    const REAL newSimulationTime = (newTime<0.0 ? _simulationTime : newTime); 
-    if (_sceneObjectsAnimator) 
-    {
-        Point3d newCOM; 
-        Quaternion<REAL> quaternion; 
-        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-        {
-            const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
-            const auto &object = _sceneObjects->GetPtr(rigidsimObjectID);
-            if (object->Animated())
-            {
-                _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, newSimulationTime, newCOM, quaternion); 
-                object->SetRigidBodyTransform(newCOM, quaternion);
-            }
-        }
-    }
+    _sceneObjects->AnimateObjects(newTime); 
 }
 
 //##############################################################################
@@ -680,6 +651,6 @@ TestAnimateObjects(const int &N_steps)
     for (int ii=0; ii<N_steps; ++ii)
     {
         _simulationTime += settings->timeStepSize; 
-        AnimateObjects(); 
+        AnimateObjects(_simulationTime); 
     }
 }

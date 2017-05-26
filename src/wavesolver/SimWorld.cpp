@@ -26,6 +26,14 @@ Build(ImpulseResponseParser_Ptr &parser)
     parser->GetSolverSettings(_simulatorSettings); 
     parser->GetObjects(_simulatorSettings, _objectCollections); 
 
+    // read and initialize animator if data exists
+    if (_simulatorSettings->rigidsimDataRead)
+    {
+        _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement, 
+                                               _simulatorSettings->fileVelocity, 
+                                               _simulatorSettings->fileAcceleration);
+    }
+
     // TEST: assign a box to each object
     for (auto &m : _objectCollections->_rigidObjects)
     {
@@ -42,19 +50,20 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
         simUnit->simulator->SetSceneObjects(simUnit->objects); 
         auto meshPtr = obj->GetMeshPtr(); 
-        const Vector3d meshCentroid = meshPtr->ComputeCentroid(); 
+        const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
+        const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
         const int divs = (int)std::ceil(
-                meshPtr->boundingSphereRadius(meshCentroid)/_simulatorSettings->cellSize
+                meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
                 )*2 + 6;
         const BoundingBox simUnitBox(
-                _simulatorSettings->cellSize, divs, meshCentroid); 
+                _simulatorSettings->cellSize, divs, meshCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         _simUnits.insert(std::move(simUnit)); 
     }
 }
 
 //##############################################################################
-// Function Build
+// Function StepWorld
 //##############################################################################
 bool SimWorld::
 StepWorld()
@@ -64,7 +73,8 @@ StepWorld()
     {
         continueStepping = (u->simulator->RunForSteps(1) || continueStepping); 
     }
-    _objectCollections->StepObjectStates(); 
+    _state.time += _simulatorSettings->timeStepSize; 
+    _objectCollections->StepObjectStates(_state.time); 
 
     return continueStepping;
 }

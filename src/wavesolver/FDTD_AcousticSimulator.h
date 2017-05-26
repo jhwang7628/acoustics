@@ -110,7 +110,7 @@ class FDTD_AcousticSimulator
         void LoadSolverResult(const std::string &dataDirectory); 
 
         // scene and simbox kinematics
-        void AnimateObjects(const REAL newTime=-1); 
+        void AnimateObjects(const REAL newTime); 
         bool MoveSimBox(const Vector3d &amount);  
 
         //// debug method //// 
