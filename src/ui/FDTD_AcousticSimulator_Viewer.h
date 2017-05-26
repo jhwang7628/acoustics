@@ -34,11 +34,12 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             Vector3Array samples; 
             Eigen::MatrixXd data; 
             Vector3Array gridLines; 
-            int N_sample_per_dim; 
+            Tuple3i N_sample_per_dim; 
             Vector3d minBound; 
             Vector3d maxBound; 
             std::vector<MAC_Grid::Cell> cells; 
             bool dataReady = false;
+            ActiveSimUnit_Ptr intersectingUnit; 
         };
 
     private: 
@@ -122,9 +123,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void InitializeBEMSolver(); 
         void AddSlice(const int &dim, const REAL &offset);
         void ConstructSliceSamples(Slice &slice); 
-        void ComputeAndCacheSliceData(const int &dataPointer, Slice &slice); 
+        void ComputeAndCacheSliceData(const int &dataPointer); 
         void DrawOneFrameForward(); 
-        void DrawHalfFrameForward(); 
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 

@@ -41,7 +41,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         std::cout << "Construct Sim unit for object: " << obj->GetMeshName()
                   << std::endl; 
         const auto &bbox = obj->GetBBox(); 
-        ActiveSimUnit_UPtr simUnit = std::make_unique<ActiveSimUnit>(); 
+        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
         std::string *simulatorID = new std::string(std::to_string(m.first));
         simUnit->objects = std::make_shared<FDTD_Objects>(); 
         simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);  
@@ -78,4 +78,13 @@ StepWorld()
 
     return continueStepping;
 }
+
+//##############################################################################
+// Function PreviewStepping
+//##############################################################################
+void SimWorld::
+PreviewStepping(const int &previewSpeed) // TODO!
+{
+}
+
 //##############################################################################
