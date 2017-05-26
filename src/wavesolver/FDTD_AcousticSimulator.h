@@ -1,5 +1,5 @@
 #ifndef FDTD_ACOUSTIC_SIMULATOR_H
-#define FDTD_ACOUTSIC_SIMULATOR_H 
+#define FDTD_ACOUSTIC_SIMULATOR_H 
 
 #include <string> 
 #include <parser/ImpulseResponseParser.h> 
