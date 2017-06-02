@@ -382,7 +382,7 @@ DrawListeningPoints()
         glPushMatrix();
         glTranslatef(vertex.x, vertex.y, vertex.z); 
         glColor3f(0.9f, 0.1f, 0.1f);
-        GL_Wrapper::DrawSphere(1.5E-3, 10, 10); 
+        GL_Wrapper::DrawSphere(5E-3, 30, 30); 
         glPopMatrix(); 
     }
     glDisable(GL_LIGHTING);

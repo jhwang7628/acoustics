@@ -66,7 +66,7 @@ Build(ImpulseResponseParser_Ptr &parser)
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
         const int divs = (int)std::ceil(
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-                )*2 + 6;
+                )*2 + 8;
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
