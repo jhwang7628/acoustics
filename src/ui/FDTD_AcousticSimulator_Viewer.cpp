@@ -320,12 +320,20 @@ void FDTD_AcousticSimulator_Viewer::
 DrawBox()
 {
     const auto bboxs = _simWorld->GetSolverBBoxs(); 
-    for (const auto &bbox : bboxs)
+    for (const auto &p : bboxs)
     {
         //Vector3d minBound, maxBound; 
         //_simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
-        const Vector3d &minBound = bbox.minBound(); 
-        const Vector3d &maxBound = bbox.maxBound(); 
+        auto &unit = p.first; 
+        auto newBoxCenter = SimWorld::rasterizer.rasterize(p.second.center()); 
+        auto oldBoxCenter = SimWorld::rasterizer.rasterize(unit->boxCenter); 
+        if (!newBoxCenter.equals(oldBoxCenter))
+        {
+            unit->boxCenterChanged = true;
+            unit->boxCenter = p.second.center(); 
+        }
+        const Vector3d &minBound = p.second.minBound(); 
+        const Vector3d &maxBound = p.second.maxBound(); 
         glColor3f(1.0f, 1.0f, 1.0f);
         GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
         if (_sceneBox) 
@@ -996,7 +1004,6 @@ AddSlice(const int &dim, const REAL &offset)
 void FDTD_AcousticSimulator_Viewer::
 ConstructSliceSamples(Slice &slice)
 {
-    std::cout << "RECONSTRUCTING SLICES\n";
     const int &dim = slice.dim; 
     const Vector3d &origin = slice.origin; 
     Vector3Array &samples = slice.samples; 
@@ -1080,11 +1087,12 @@ ComputeAndCacheSliceData(const int &dataPointer)
     for (int s_idx=0; s_idx<N_slices; ++s_idx) 
     {
         auto &slice = _sliceCin.at(s_idx); 
-        if (slice.intersectingUnit->viewerUpdate)
+        auto &unit = slice.intersectingUnit; 
+        if (unit->boxCenterChanged)
         {
             ConstructSliceSamples(slice); 
-            slice.intersectingUnit->viewerUpdate = false; 
             slice.dataReady = false; 
+            unit->boxCenterChanged = false; // reset
         }
         if (slice.dataReady)
             continue; 

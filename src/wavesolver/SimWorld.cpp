@@ -9,12 +9,14 @@ SimWorld::WorldRasterizer SimWorld::rasterizer;
 //##############################################################################
 // Function GetSolverBBoxs
 //##############################################################################
-std::vector<BoundingBox> SimWorld::
+std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> SimWorld::
 GetSolverBBoxs()
 {
-    std::vector<BoundingBox> bboxs; 
+    std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> bboxs; 
     for (const auto &m : _simUnits)
-        bboxs.push_back(m->simulator->GetSolver()->GetSolverBBox()); 
+        bboxs.push_back(
+                std::pair<ActiveSimUnit_Ptr,BoundingBox>(
+                    m,m->simulator->GetSolver()->GetSolverBBox())); 
     return bboxs; 
 }
 
@@ -31,6 +33,7 @@ Build(ImpulseResponseParser_Ptr &parser)
     parser->GetSolverSettings(_simulatorSettings); 
     parser->GetObjects(_simulatorSettings, _objectCollections); 
     SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
+    SetWorldTime(_simulatorSettings->fastForwardToEventTime); 
 
     // read and initialize animator if data exists
     if (_simulatorSettings->rigidsimDataRead)
@@ -67,7 +70,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
-        simUnit->boxCenter = rastCentroid_w; 
+        simUnit->boxCenter = SimWorld::rasterizer.rasterize(rastCentroid_w); 
         _simUnits.insert(std::move(simUnit)); 
     }
 }
@@ -93,12 +96,7 @@ UpdateObjectState(const REAL &time)
             newCenter += meshCentroid_w; 
         }
         newCenter /= (REAL)objects.size(); 
-        const bool moved = unit->simulator->SetFieldCenter(newCenter); 
-        if (moved)
-        {
-            unit->boxCenter = newCenter; 
-            unit->viewerUpdate = true; 
-        }
+        unit->simulator->SetFieldCenter(newCenter); 
     }
 }
 
