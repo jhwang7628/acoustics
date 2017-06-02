@@ -996,10 +996,13 @@ AddSlice(const int &dim, const REAL &offset)
 void FDTD_AcousticSimulator_Viewer::
 ConstructSliceSamples(Slice &slice)
 {
+    std::cout << "RECONSTRUCTING SLICES\n";
     const int &dim = slice.dim; 
     const Vector3d &origin = slice.origin; 
     Vector3Array &samples = slice.samples; 
     Vector3Array &gridLines = slice.gridLines; 
+    samples.clear(); 
+    gridLines.clear(); 
 
     const auto &settings = _solverSettings; 
     const auto &simulator = slice.intersectingUnit->simulator; 
@@ -1077,6 +1080,12 @@ ComputeAndCacheSliceData(const int &dataPointer)
     for (int s_idx=0; s_idx<N_slices; ++s_idx) 
     {
         auto &slice = _sliceCin.at(s_idx); 
+        if (slice.intersectingUnit->viewerUpdate)
+        {
+            ConstructSliceSamples(slice); 
+            slice.intersectingUnit->viewerUpdate = false; 
+            slice.dataReady = false; 
+        }
         if (slice.dataReady)
             continue; 
         Eigen::MatrixXd &data = slice.data; 
