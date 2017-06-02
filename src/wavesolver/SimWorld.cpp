@@ -2,6 +2,11 @@
 #include "wavesolver/SimWorld.h"
 
 //##############################################################################
+// Static member definition
+//##############################################################################
+SimWorld::WorldRasterizer SimWorld::rasterizer; 
+
+//##############################################################################
 // Function GetSolverBBoxs
 //##############################################################################
 std::vector<BoundingBox> SimWorld::
@@ -25,6 +30,7 @@ Build(ImpulseResponseParser_Ptr &parser)
     // parse settings and construct objects in the scene
     parser->GetSolverSettings(_simulatorSettings); 
     parser->GetObjects(_simulatorSettings, _objectCollections); 
+    SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
 
     // read and initialize animator if data exists
     if (_simulatorSettings->rigidsimDataRead)
@@ -53,14 +59,15 @@ Build(ImpulseResponseParser_Ptr &parser)
         auto meshPtr = obj->GetMeshPtr(); 
         const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
+        const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
+                                        SimWorld::rasterizer.rasterize(meshCentroid_w)); 
         const int divs = (int)std::ceil(
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
                 )*2 + 6;
         const BoundingBox simUnitBox(
-                _simulatorSettings->cellSize, divs, meshCentroid_w); 
-        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings, 
-                                             meshCentroid_w); 
-        simUnit->boxCenter = meshCentroid_w; 
+                _simulatorSettings->cellSize, divs, rastCentroid_w); 
+        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
+        simUnit->boxCenter = rastCentroid_w; 
         _simUnits.insert(std::move(simUnit)); 
     }
 }

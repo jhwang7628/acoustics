@@ -360,16 +360,14 @@ InitializeSolver()
     BoundingBox solverBox(_acousticSolverSettings->cellSize, 
                           _acousticSolverSettings->cellDivisions, 
                           _acousticSolverSettings->domainCenter); 
-    InitializeSolver(solverBox, _acousticSolverSettings, 
-                     _acousticSolverSettings->domainCenter); 
+    InitializeSolver(solverBox, _acousticSolverSettings); 
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
 InitializeSolver(const BoundingBox &solverBox, 
-                 const PML_WaveSolver_Settings_Ptr &settings,
-                 const Vector3d &center)
+                 const PML_WaveSolver_Settings_Ptr &settings)
 {
     assert(CanInitializeSolver()); 
     if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
@@ -379,7 +377,7 @@ InitializeSolver(const BoundingBox &solverBox,
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
-    _simBox.continuousCenter = center; 
+    _simBox.continuousCenter = solverBox.center(); 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event

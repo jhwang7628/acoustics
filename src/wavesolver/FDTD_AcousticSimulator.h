@@ -96,7 +96,7 @@ class FDTD_AcousticSimulator
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); // wrapper
-        void InitializeSolver(const BoundingBox &solverBox, const PML_WaveSolver_Settings_Ptr &settings, const Vector3d &center); 
+        void InitializeSolver(const BoundingBox &solverBox, const PML_WaveSolver_Settings_Ptr &settings); 
         void ResetStartTime(const REAL &startTime); 
         bool RunForSteps(const int &N_steps); 
         void Run(); 
