@@ -385,6 +385,7 @@ class MAC_Grid
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
         REAL PressureCellType(const int &idx, const BoundingBox *sceneBox=nullptr) const;
         void ResetCellHistory(const bool &valid); 
+        void ResetClassified(){std::fill(_classified.begin(), _classified.end(), false);}
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 

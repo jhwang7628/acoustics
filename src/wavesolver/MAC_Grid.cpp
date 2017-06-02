@@ -192,11 +192,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
         Tuple3i bufPos = cellIndices, bufNeg = cellIndices; 
         int buf_iPos = -1, buf_iNeg = -1; 
-        // skip if its boundary
-        //if (cellIndices[0]==0 || cellIndices[0]==_waveSolverSettings->cellDivisions-1 ||
-        //    cellIndices[1]==0 || cellIndices[1]==_waveSolverSettings->cellDivisions-1 ||
-        //    cellIndices[2]==0 || cellIndices[2]==_waveSolverSettings->cellDivisions-1)
-        //    continue; 
         for (int dim=0; dim<3; ++dim)
         {
             int isBoundaryFace = 0; // detect boundary face
@@ -2412,7 +2407,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
         ++ bbox_id; 
     } 
-
     SetClassifiedSubset(_pressureField, N, indices, false); 
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
@@ -2468,6 +2462,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 
     // Classify pressure ghost cells
     SetClassifiedSubset(_pressureField, N, indices, false); 
+
     _ghostCells.clear(); 
     _ghostCellsChildren.clear(); 
     IntArray childrenIndex(6, -1);  // always fully subdivided
@@ -2711,6 +2706,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     v[dimension](cell_idx, 0) = 0.0; // clear solid velocity cell
                     numSolidCells[dimension] ++; 
                 }
+
                 if (infoUsed) 
                     ghostCellInfoThreads.at(thread_idx).push_back(ghostCellInfo); 
                 _classified.at(cell_idx) = true; // toggle on to prevent reclassification
@@ -2729,7 +2725,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 
     if (verbose) 
     {
-        printf( "MAC_Grid: classifyCellsDynamic:\n" );
+        printf( "MAC_Grid: classifyCellsDynamic_FAST:\n" );
         printf( "\tFound %d ghost cells\n", (int)_ghostCells.size() );
         printf( "\tFound %d v_x interfacial cells\n", (int)_velocityInterfacialCells[ 0 ].size() );
         printf( "\tFound %d v_y interfacial cells\n", (int)_velocityInterfacialCells[ 1 ].size() );
@@ -3106,9 +3102,6 @@ void MAC_Grid::SetClassifiedSubset(const ScalarField &field, const int &N, const
     for (int bbox_id=0; bbox_id<N; ++bbox_id){ 
         const Vector3i &start = indices[bbox_id].startIndex;
         const Vector3i &range = indices[bbox_id].dimensionIteration;
-#ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
-#endif
         for (int ii=start.x; ii<start.x+range.x; ++ii){
         for (int jj=start.y; jj<start.y+range.y; ++jj){
         for (int kk=start.z; kk<start.z+range.z; ++kk){
@@ -3129,7 +3122,7 @@ void MAC_Grid::CheckClassified()
 // not thread-safe!
 void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3])
 {
-    _ghostCellsChildren.at(_ghostCellsInverse[info.ghostCellParent]).at(info.childArrayPosition) = gcIndex; 
+    _ghostCellsChildren.at(_ghostCellsInverse.at(info.ghostCellParent)).at(info.childArrayPosition) = gcIndex; 
     _ghostCellChildArrayPositions.push_back(info.childArrayPosition); 
     _velocityInterfacialCells[info.dim].push_back(info.cellIndex);
     _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject);

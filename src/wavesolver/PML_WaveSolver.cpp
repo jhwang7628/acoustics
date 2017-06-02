@@ -617,22 +617,13 @@ void PML_WaveSolver::MoveSimBox()
     _grid.velocityField(1).MoveCenter(offset); 
     _grid.velocityField(2).MoveCenter(offset); 
     // TODO need to get rid of these if using collocated scheme END
+    _grid.ResetClassified(); 
       
     // clear/fill the new matrix elements. 
     const Tuple3i &ind_origin = field.indexOffset(); 
     const Tuple3i &div        = field.cellDivisions(); 
     for (int dd=0; dd<3; ++dd)
     {
-        //// clear
-        //for (int oo=0; oo<abs(offset[dd]); ++oo)
-        //{
-        //    int clearInd; 
-        //    if (offset[dd] > 0)
-        //        clearInd = (-offset[dd]+div[dd])%div[dd]; 
-        //    else 
-        //        clearInd = (-offset[dd]-1); 
-        //    _acousticSolver->ClearCollocatedData(dd, clearInd); 
-        //}
         // fill
         if (abs(offset[dd])==1)
         {
@@ -752,11 +743,7 @@ void PML_WaveSolver::stepCollocated()
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
 #endif
-    //std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
-    //std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
-      
     MoveSimBox(); 
-
     _currentTime += _timeStep;
 }
 
