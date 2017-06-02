@@ -61,7 +61,7 @@ class FDTD_Objects
         bool ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration=1); 
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
         REAL GetEarliestImpactEvent();
-        void StepObjectStates(const REAL time); 
+        void SetObjectStates(const REAL time); 
         void InitializeAnimator(const std::string &fileDisplacement,
                                 const std::string &fileVelocity,
                                 const std::string &fileAcceleration); 

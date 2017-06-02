@@ -182,7 +182,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
     const REAL scale = 1.0/pow(_waveSolverSettings->cellSize,2); 
     const Tuple3i &pFieldDivs = _pressureField.cellDivisions(); 
     laplacian.clear();
-
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif

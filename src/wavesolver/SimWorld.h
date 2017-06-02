@@ -15,6 +15,8 @@ struct ActiveSimUnit
 {
     FDTD_AcousticSimulator_Ptr simulator; 
     FDTD_Objects_Ptr           objects; 
+    Vector3d                   boxCenter; 
+    bool                       viewerUpdate = false; 
 }; 
 using ActiveSimUnit_UPtr = std::unique_ptr<ActiveSimUnit>; 
 using ActiveSimUnit_Ptr = std::shared_ptr<ActiveSimUnit>; 
@@ -34,7 +36,7 @@ class SimWorld
 {
     struct State
     {
-        REAL time = 0.0; 
+        REAL time = 0.25; 
     } _state; 
 
     FDTD_Objects_Ptr            _objectCollections; 
@@ -50,6 +52,7 @@ public:
     std::vector<BoundingBox> GetSolverBBoxs(); 
     // 
     void Build(ImpulseResponseParser_Ptr &parser); 
+    void UpdateObjectState(const REAL &time); 
     bool StepWorld(); 
     void PreviewStepping(const int &previewSpeed);
 };

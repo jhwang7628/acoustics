@@ -360,14 +360,16 @@ InitializeSolver()
     BoundingBox solverBox(_acousticSolverSettings->cellSize, 
                           _acousticSolverSettings->cellDivisions, 
                           _acousticSolverSettings->domainCenter); 
-    InitializeSolver(solverBox, _acousticSolverSettings); 
+    InitializeSolver(solverBox, _acousticSolverSettings, 
+                     _acousticSolverSettings->domainCenter); 
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
 InitializeSolver(const BoundingBox &solverBox, 
-                 const PML_WaveSolver_Settings_Ptr &settings)
+                 const PML_WaveSolver_Settings_Ptr &settings,
+                 const Vector3d &center)
 {
     assert(CanInitializeSolver()); 
     if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
@@ -377,9 +379,7 @@ InitializeSolver(const BoundingBox &solverBox,
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
-    // FIXME debug
-    //_simBox.rasterizedCenter = GetGrid().pressureField().enclosingCell(settings->domainCenter); 
-    //_simBox.continuousCenter = settings->domainCenter; 
+    _simBox.continuousCenter = center; 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
@@ -589,16 +589,20 @@ AnimateObjects(const REAL newTime)
 //   This function moves the sim box 
 //##############################################################################
 bool FDTD_AcousticSimulator:: 
-MoveSimBox(const Vector3d &amount) 
+SetFieldCenter(const Vector3d &center) 
 {
     auto &field = GetGrid().pressureField(); 
-    _simBox.continuousCenter += amount; 
-    const Tuple3i newRasterize = field.enclosingCell(_simBox.continuousCenter);
-    const Tuple3i offset = newRasterize - _simBox.rasterizedCenter; 
+    Tuple3i offset; 
+    for (int d=0; d<3; ++d)
+    {
+        offset[d] = (int)((center[d] - _simBox.continuousCenter[d])
+            /_acousticSolverSettings->cellSize); 
+    }
     const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
     if (l1 > 0) 
     {
         _acousticSolver->ScheduleMoveBox(offset); 
+        _simBox.continuousCenter = center; 
         return true; 
     }
     return false; 

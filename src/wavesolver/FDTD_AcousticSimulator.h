@@ -18,7 +18,6 @@
 //#############################################################################
 struct SimBox
 {
-    Tuple3i  rasterizedCenter; 
     Vector3d continuousCenter;
 };
 
@@ -97,7 +96,7 @@ class FDTD_AcousticSimulator
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); // wrapper
-        void InitializeSolver(const BoundingBox &solverBox, const PML_WaveSolver_Settings_Ptr &settings); 
+        void InitializeSolver(const BoundingBox &solverBox, const PML_WaveSolver_Settings_Ptr &settings, const Vector3d &center); 
         void ResetStartTime(const REAL &startTime); 
         bool RunForSteps(const int &N_steps); 
         void Run(); 
@@ -111,7 +110,7 @@ class FDTD_AcousticSimulator
 
         // scene and simbox kinematics
         void AnimateObjects(const REAL newTime); 
-        bool MoveSimBox(const Vector3d &amount);  
+        bool SetFieldCenter(const Vector3d &center);  
 
         //// debug method //// 
         void TestAllComponents(); 

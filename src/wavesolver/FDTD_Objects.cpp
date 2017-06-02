@@ -217,16 +217,14 @@ GetEarliestImpactEvent()
 }
 
 //##############################################################################
-// Function StepObjectStates
+// Function SetObjectStates
 //##############################################################################
 void FDTD_Objects::
-StepObjectStates(const REAL time)
+SetObjectStates(const REAL time)
 {
     // update modal vectors for the next time step
     for (auto &m : _rigidObjects) 
-        m.second->UpdateQPointers(); 
-
-    // TODO: Need to move the animate function to objects class
+        m.second->UpdateQPointers();  // FIXME debug this might cause problems
     AnimateObjects(time);
 }
 

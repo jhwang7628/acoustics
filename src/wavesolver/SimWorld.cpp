@@ -32,6 +32,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement, 
                                                _simulatorSettings->fileVelocity, 
                                                _simulatorSettings->fileAcceleration);
+        UpdateObjectState(_state.time); 
     }
 
     // TEST: assign a box to each object
@@ -57,8 +58,40 @@ Build(ImpulseResponseParser_Ptr &parser)
                 )*2 + 6;
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, meshCentroid_w); 
-        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
+        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings, 
+                                             meshCentroid_w); 
+        simUnit->boxCenter = meshCentroid_w; 
         _simUnits.insert(std::move(simUnit)); 
+    }
+}
+
+//##############################################################################
+// Function UpdateObjectState
+//##############################################################################
+void SimWorld::
+UpdateObjectState(const REAL &time)
+{
+    // logic for updating bbox and determine whether to move simbox
+    _objectCollections->SetObjectStates(time); 
+    for (auto &unit : _simUnits)
+    {
+        const auto &objects = unit->objects->GetRigidSoundObjects(); 
+        Vector3d newCenter(0.,0.,0.); 
+        for (const auto &objpair : objects) 
+        {
+            const auto &obj = objpair.second; 
+            auto meshPtr = obj->GetMeshPtr(); 
+            const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
+            const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
+            newCenter += meshCentroid_w; 
+        }
+        newCenter /= (REAL)objects.size(); 
+        const bool moved = unit->simulator->SetFieldCenter(newCenter); 
+        if (moved)
+        {
+            unit->boxCenter = newCenter; 
+            unit->viewerUpdate = true; 
+        }
     }
 }
 
@@ -69,12 +102,14 @@ bool SimWorld::
 StepWorld()
 {
     bool continueStepping = true; 
-    for (auto &u : _simUnits)
+    // update simulation
+    for (auto &unit : _simUnits)
     {
-        continueStepping = (u->simulator->RunForSteps(1) || continueStepping); 
+        continueStepping = (unit->simulator->RunForSteps(1) || continueStepping); 
     }
+    // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
-    _objectCollections->StepObjectStates(_state.time); 
+    UpdateObjectState(_state.time); 
 
     return continueStepping;
 }
