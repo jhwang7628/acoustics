@@ -3,6 +3,7 @@
 #include <QMouseEvent>
 #include <QMap>
 #include <QCursor>
+#include <qimage.h>
 #include <complex>
 #include <math.h>
 #include <stdlib.h> // RAND_MAX
@@ -55,10 +56,13 @@ init()
 {
     restoreStateFromFile();
     RestoreDefaultDrawOptions(); 
+    setSceneRadius(5.0);
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
     //setGridIsDrawn();
+    setBackgroundColor(QColor(102,153,255)); 
     SetAllKeyDescriptions();
+
     setAnimationPeriod(40); // in milliseconds
     init_gl();
 
@@ -89,6 +93,21 @@ init_gl()
         _objectColors[obj_idx] = Vector3f(x, y, z);
     }
 
+    // antialiasing
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Enable GL textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    LoadGround(); 
+
     DrawLights();
 }
 
@@ -105,8 +124,7 @@ draw()
     DrawDebugCin();
     if (_sliceWireframe.count() != 0)
         DrawSlices(_sliceDataPointer); 
-    if (_drawGround)
-        DrawGround();
+    DrawGround();
     if (_drawHashedCells)
         DrawHashedCells();
 
@@ -119,11 +137,9 @@ draw()
     }
 
     glLineWidth(3.0f);
+    DrawListeningPoints();
     if (_drawBoxLis)
-    {
-        DrawListeningPoints();
         DrawBox(); 
-    }
 }
 
 //##############################################################################
@@ -346,24 +362,59 @@ DrawBox()
 }
 
 //##############################################################################
+// Load image for ground
+//##############################################################################
+void FDTD_AcousticSimulator_Viewer::
+LoadGround()
+{
+    QImage glImg = QGLWidget::convertToGLFormat(QImage(textureMeta.name));
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
+    textureMeta.groundLoaded = true; 
+}
+
+//##############################################################################
 // Draw simulation listening point
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
 DrawGround()
 {
-    const float GD_SIZE = 0.01;
-    const float step = GD_SIZE * 10;
-    float d = step;
-    glColor3f(0.7, 0.7, 0.7);
-    for(int i=0; i<20; ++i, d+=step)
+    if (_drawGround == 0) 
     {
-        glBegin(GL_LINE_LOOP);
-        glVertex3f(-d, 0, -d);
-        glVertex3f( d, 0, -d);
-        glVertex3f( d, 0,  d);
-        glVertex3f(-d, 0,  d);
-        glEnd();
+        return; 
     }
+    else if (_drawGround == 1)
+    {
+        const float GD_SIZE = 0.01;
+        const float step = GD_SIZE * 10;
+        float d = step;
+        glColor3f(0.7, 0.7, 0.7);
+        for(int i=0; i<20; ++i, d+=step)
+        {
+            glBegin(GL_LINE_LOOP);
+            glVertex3f(-d, 0, -d);
+            glVertex3f( d, 0, -d);
+            glVertex3f( d, 0,  d);
+            glVertex3f(-d, 0,  d);
+            glEnd();
+        }
+    }
+    else if (textureMeta.groundLoaded && _drawGround == 2)
+    {
+        const float floorsize = 10.0f; 
+        const float uvbound = floorsize/textureMeta.blockSizeUV; 
+        glEnable(GL_TEXTURE_2D);
+        // Display the quad
+        glColor3f(1.0, 1.0, 1.0);
+        glNormal3f(0.0, 1.0, 0.0);
+        glBegin(GL_QUADS);
+        glTexCoord2f(-uvbound, -uvbound);	glVertex3f(-floorsize, 0., -floorsize);
+        glTexCoord2f(-uvbound,  uvbound);	glVertex3f(-floorsize, 0.,  floorsize);
+        glTexCoord2f( uvbound,  uvbound);	glVertex3f( floorsize, 0.,  floorsize);
+        glTexCoord2f( uvbound, -uvbound);	glVertex3f( floorsize, 0., -floorsize);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    } 
 }
 
 //##############################################################################
@@ -382,7 +433,7 @@ DrawListeningPoints()
         glPushMatrix();
         glTranslatef(vertex.x, vertex.y, vertex.z); 
         glColor3f(0.9f, 0.1f, 0.1f);
-        GL_Wrapper::DrawSphere(5E-3, 30, 30); 
+        GL_Wrapper::DrawSphere(1E-2, 30, 30); 
         glPopMatrix(); 
     }
     glDisable(GL_LIGHTING);
@@ -689,7 +740,7 @@ keyPressEvent(QKeyEvent *e)
       }
     }
     else if ((e->key() == Qt::Key_G) && (modifiers == Qt::NoButton)) {
-        _drawGround = !_drawGround; 
+        _drawGround = (_drawGround + 1)%3; 
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
@@ -1231,7 +1282,7 @@ RestoreDefaultDrawOptions()
     _sliceWireframe.reset(); 
     _sliceWireframe.set(1); // draw face only
     _drawBoxLis = true; 
-    _drawGround = false; 
+    _drawGround = (_remoteConnection ? 0 : 2); 
     _drawHashedCells = false;
     _sliceDataPointer = 0; 
 }

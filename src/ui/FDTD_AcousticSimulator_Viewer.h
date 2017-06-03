@@ -41,6 +41,13 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             bool dataReady = false;
             ActiveSimUnit_Ptr intersectingUnit; 
         };
+        struct TextureMeta
+        {
+            QString name 
+                = "/home/jui-hsien/code/acoustics/src/ui/assets/checkerboard.png"; 
+            float blockSizeUV = 0.2; 
+            bool groundLoaded = false; 
+        } textureMeta;
 
     private: 
         SimWorld_UPtr                            _simWorld; 
@@ -56,7 +63,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                     _wireframe;
         std::bitset<2>          _sliceWireframe;
         bool                    _drawBoxLis; 
-        bool                    _drawGround;
+        int                     _drawGround;
         bool                    _drawHashedCells;
         bool                    _takeSnapshots = false;
         std::vector<Vector3f>   _objectColors; 
@@ -86,6 +93,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawMesh(); 
         void DrawImpulses(); 
         void DrawBox(); 
+        void LoadGround();
         void DrawGround();
         void DrawListeningPoints(); 
         void DrawSelection(); 
