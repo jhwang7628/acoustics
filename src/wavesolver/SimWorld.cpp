@@ -4,6 +4,7 @@
 //##############################################################################
 // Static member definition
 //##############################################################################
+std::vector<Vector3d> ListeningUnit::microphones; 
 SimWorld::WorldRasterizer SimWorld::rasterizer; 
 
 //##############################################################################
@@ -34,6 +35,7 @@ Build(ImpulseResponseParser_Ptr &parser)
     parser->GetObjects(_simulatorSettings, _objectCollections); 
     SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
     SetWorldTime(_simulatorSettings->fastForwardToEventTime); 
+    ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
 
     // read and initialize animator if data exists
     if (_simulatorSettings->rigidsimDataRead)

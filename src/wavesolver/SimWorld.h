@@ -9,12 +9,26 @@
 #include "wavesolver/FDTD_AcousticSimulator.h" 
 
 //##############################################################################
+// Struct ListeningUnit
+//##############################################################################
+struct ListeningUnit
+{
+    Vector3d                     speaker; 
+    static std::vector<Vector3d> microphones;
+}; 
+using ListeningUnit_UPtr = std::unique_ptr<ListeningUnit>; 
+
+//##############################################################################
 // Struct ActiveSimUnit
 //##############################################################################
 struct ActiveSimUnit
 {
+    // main components
     FDTD_AcousticSimulator_Ptr simulator; 
     FDTD_Objects_Ptr           objects; 
+    ListeningUnit              listen; 
+
+    // viewer stuff
     Vector3d                   boxCenter; 
     bool                       boxCenterChanged = false; 
 }; 
