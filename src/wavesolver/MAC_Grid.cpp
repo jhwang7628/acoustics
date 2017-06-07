@@ -19,6 +19,7 @@
 #include <linearalgebra/SparseLinearSystemSolver.h>
 //#include <graph/UndirectedGraph.h> 
 
+#include <queue>
 #include <unistd.h> 
 
 #ifdef USE_OPENMP
@@ -229,6 +230,7 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
 #else
+            try {
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
                 laplacian(cell_idx, 0) += (  ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)).at(dim*2))
                                            + ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)).at(dim*2+1))
@@ -245,6 +247,32 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                 laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
+            } 
+            catch (std::out_of_range &e) { // FIXME debug: remove try-catch
+#pragma omp critical
+                {
+                std::cerr << "\n==========================\n"; 
+                std::cerr << e.what() << std::endl; 
+                std::cerr << cell_idx << " [" << dim << "]: " << buf_iPos << "; " << buf_iNeg << std::endl; 
+                if (_isGhostCell.at(buf_iPos)) {
+                    std::cerr << "--- + ---\n";
+                    std::cerr << buf_iPos << std::endl; 
+                    std::cerr << _ghostCellsInverse.at(buf_iPos) << std::endl;
+                    auto &tmp = _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)); 
+                    std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<int>(std::cout, " ")); 
+                    std::cerr << _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)).at(dim*2  ); 
+                }
+                if (_isGhostCell.at(buf_iNeg)) {
+                    std::cerr << "--- - ---\n";
+                    std::cerr << buf_iNeg << std::endl; 
+                    std::cerr << _ghostCellsInverse.at(buf_iNeg) << std::endl;
+                    auto &tmp = _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)); 
+                    std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<int>(std::cout, " ")); 
+                    std::cerr << _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)).at(dim*2+1); 
+                }
+                exit(1); 
+                }
+            }
 #endif
             if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
                 bufPos[dim] -= 1; 
@@ -2395,7 +2423,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     if (!useBoundary) return;
 
     // get all bounding boxes and iteration range
-    const int N = _objects->N(); 
+    int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> indices(N); 
     auto &objects = _objects->GetRigidSoundObjects(); 
     int bbox_id = 0;
@@ -2407,6 +2435,25 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         _pressureField.GetIterationBox(minBound, maxBound, indices[bbox_id]); 
         ++ bbox_id; 
     } 
+
+
+    // FIXME debug START
+    N = 1; 
+    indices.clear(); 
+    ScalarField::RangeIndices tmp; 
+    tmp.startIndex.set(0,0,0); 
+    tmp.dimensionIteration.set(_pressureField.cellDivisions()[0],
+                               _pressureField.cellDivisions()[1],
+                               _pressureField.cellDivisions()[2]); 
+    indices.push_back(std::move(tmp)); 
+    // FIXME debug END
+
+
+    std::cout << "test 7-1\n"; // FIXME debug
+    std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); // FIXME debug
+    std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); // FIXME debug 
+    std::fill(_containingObject.begin(), _containingObject.end(), -1); // FIXME debug
+
     SetClassifiedSubset(_pressureField, N, indices, false); 
     for (int bbox_id=0; bbox_id<N; ++bbox_id)
     {
@@ -2421,7 +2468,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         {
             const Tuple3i cellIndices(ii,jj,kk);
             const int cell_idx = _pressureField.cellIndex(cellIndices);  
-            if (_classified.at(cell_idx)) continue; 
+            if (_classified.at(cell_idx)) continue;
             const Vector3d cellPos = _pressureField.cellPosition( cell_idx );
 
             // before doing anything, first update history array
@@ -2460,6 +2507,8 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         }
     }
 
+    std::cout << "test 7-2\n"; // FIXME debug
+
     // Classify pressure ghost cells
     SetClassifiedSubset(_pressureField, N, indices, false); 
 
@@ -2490,7 +2539,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 #else
             const int thread_idx = 0; 
 #endif
-            if (_classified.at(cell_idx)) continue; 
+            if (_classified.at(cell_idx)) continue;
             // if it is bulk, it is not ghost
             if (_isBulkCell.at(cell_idx)) 
             {
@@ -2519,6 +2568,9 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             _classified.at(cell_idx) = true; // toggle on to prevent reclassification
         }
     }
+
+    std::cout << "test 7-3\n"; // FIXME debug
+
     // push back ghost cells
     for (const IntArray &gcIndThread : ghostCellsThreads)
         for (const int &gcInd : gcIndThread)
@@ -2526,8 +2578,10 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
             _ghostCells.push_back(gcInd); 
             _ghostCellsChildren.push_back(childrenIndex); 
         }
+    std::cout << "test 7-4\n"; // FIXME debug
     ComputeGhostCellInverseMap(); 
 
+    std::cout << "test 7-5\n"; // FIXME debug
     // Classify velocity cells
     pGCFull.clear(); 
     _ghostCellParents.clear(); 
@@ -2546,9 +2600,21 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     int numSolidCells[3] = {0, 0, 0}; 
     SetClassifiedSubset(_pressureField, N, indices, false); 
     std::vector<std::vector<GhostCellInfo> > ghostCellInfoThreads(N_max_threads);
+
     //int countGhostCells = 0;
+    std::cerr << "test 7-6\n"; // FIXME debug
     for (int dimension = 0; dimension < 3; dimension++)
     {
+        // FIXME debug START
+        N = 1; 
+        indices.clear(); 
+        ScalarField::RangeIndices tmp; 
+        tmp.startIndex.set(0,0,0); 
+        tmp.dimensionIteration.set(_velocityField[dimension].cellDivisions()[0],
+                                   _velocityField[dimension].cellDivisions()[1],
+                                   _velocityField[dimension].cellDivisions()[2]); 
+        indices.push_back(std::move(tmp)); 
+        // FIXME debug END
         for (int bbox_id=0; bbox_id<N; ++bbox_id)
         {
             const Vector3i &start = indices[bbox_id].startIndex; 
@@ -2565,49 +2631,68 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 #else
                 const int thread_idx = 0; 
 #endif
+
                 const Tuple3i cellIndices(ii,jj,kk);
                 const int cell_idx = _velocityField[dimension].cellIndex(cellIndices); 
-                if (_classified.at(cell_idx)) continue; 
+try{
+                if (_classified.at(cell_idx)) continue;
                 if (IsVelocityCellSolid(cell_idx, dimension)) 
                     _velocityCellHasValidHistory[dimension].at(cell_idx) = false; 
                 else
                     _velocityCellHasValidHistory[dimension].at(cell_idx) = true; 
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 1\n"; 
+    exit(1); 
+}
 
                 Tuple3i cell_coordinates = _velocityField[ dimension ].cellIndex( cell_idx );
+try{
                 // We will assume that boundary cells are not interfacial
                 if ( cell_coordinates[ dimension ] == 0
                   || cell_coordinates[ dimension ] == _velocityField[ dimension ].cellDivisions()[ dimension ] - 1 )
                 {
                     _isVelocityBulkCell[dimension].at(cell_idx) = true; 
-                    _isVelocityInterfacialCell[dimension][cell_idx] = false; 
+                    _isVelocityInterfacialCell[dimension].at(cell_idx) = false; 
                     continue;
                 }
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 2\n"; 
+    exit(1); 
+}
+
 
                 // Look at our neighbours in the pressure field
                 cell_coordinates[ dimension ] -= 1;
                 const int pressure_cell_idx1 = _pressureField.cellIndex( cell_coordinates );
                 cell_coordinates[ dimension ] += 1;
                 const int pressure_cell_idx2 = _pressureField.cellIndex( cell_coordinates );
+try{
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 3\n"; 
+    exit(1); 
+}
+
 
                 GhostCellInfo ghostCellInfo;
                 bool infoUsed = false; 
-                if (_isBulkCell[ pressure_cell_idx1 ] && _isBulkCell[ pressure_cell_idx2 ])
+try{
+                if (_isBulkCell.at(pressure_cell_idx1) && _isBulkCell.at(pressure_cell_idx2))
                 {
                     // Both pressure cell neighbours are bulk cells, so this is
                     // a bulk cell too
                     _isVelocityBulkCell[dimension].at(cell_idx) = true; 
                     _isVelocityInterfacialCell[dimension].at(cell_idx) = false; 
                 }
-                else if ( _isBulkCell[ pressure_cell_idx1 ] 
-                        && !_isBulkCell[ pressure_cell_idx2 ] )
+                else if (   _isBulkCell.at(pressure_cell_idx1)
+                        && !_isBulkCell.at(pressure_cell_idx2) )
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
                     _isVelocityBulkCell[dimension].at(cell_idx) = false; 
-                    _isVelocityInterfacialCell[ dimension ][ cell_idx ] = true;
+                    _isVelocityInterfacialCell[ dimension ].at(cell_idx) = true;
 
                     // Get the object ID for the boundary that we are adjacent to
-                    const int boundaryObject = _containingObject[ pressure_cell_idx2 ];
+                    const int boundaryObject = _containingObject.at(pressure_cell_idx2);
                     TRACE_ASSERT( boundaryObject >= 0 );
 
                     // Determine a scaling coefficient based on the angle between
@@ -2615,7 +2700,14 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     Vector3d normal( 0.0, 0.0, 0.0 );
                     Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                     Vector3d gradient; 
+try {
                     _objects->ObjectNormal(boundaryObject, position, gradient); 
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 4-1\n"; 
+    std::cerr << e.what() << std::endl;
+    COUT_SDUMP(boundaryObject);
+    exit(1); 
+}
                     gradient.normalize();
                     const REAL coefficient = gradient[dimension];
                     // initialize a ghost cell dedicated to this interfacial cell
@@ -2648,8 +2740,8 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     //pGC[2].push_back(0.0); 
                     //pGCFull.push_back(0.0);
                 }
-                else if ( !_isBulkCell[ pressure_cell_idx1 ]
-                        && _isBulkCell[ pressure_cell_idx2 ] )
+                else if ( !_isBulkCell.at(pressure_cell_idx1)
+                        && _isBulkCell.at(pressure_cell_idx2) )
                 {
                     // Only one neighbour is inside the domain, so this must
                     // be an interfacial cell
@@ -2657,7 +2749,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     _isVelocityInterfacialCell[dimension].at(cell_idx) = true;
 
                     // Get the object ID for the boundary that we are adjacent to
-                    int boundaryObject = _containingObject[ pressure_cell_idx1 ];
+                    int boundaryObject = _containingObject.at(pressure_cell_idx1);
                     TRACE_ASSERT( boundaryObject >= 0 );
 
                     // Determine a scaling coefficient based on the angle between
@@ -2665,7 +2757,14 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                     Vector3d normal( 0.0, 0.0, 0.0 );
                     Vector3d position = _velocityField[ dimension ].cellPosition( cell_idx );
                     Vector3d gradient; 
+try{
                     _objects->ObjectNormal(boundaryObject, position, gradient); 
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 4-2\n"; 
+    std::cerr << e.what() << std::endl;
+    COUT_SDUMP(boundaryObject);
+    exit(1); 
+}
                     gradient.normalize();
                     const REAL coefficient = gradient[dimension];
                     // initialize a ghost cell dedicated to this interfacial cell
@@ -2701,19 +2800,36 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
                 }
                 else // both sides aren't bulk, this is a solid cell
                 {
-                    _isVelocityBulkCell[dimension][cell_idx] = false; 
-                    _isVelocityInterfacialCell[dimension][cell_idx] = false;
+                    _isVelocityBulkCell[dimension].at(cell_idx) = false; 
+                    _isVelocityInterfacialCell[dimension].at(cell_idx) = false;
                     v[dimension](cell_idx, 0) = 0.0; // clear solid velocity cell
                     numSolidCells[dimension] ++; 
                 }
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 4\n"; 
+    std::cerr << e.what() << std::endl;
+    exit(1); 
+}
 
+try{
                 if (infoUsed) 
                     ghostCellInfoThreads.at(thread_idx).push_back(ghostCellInfo); 
                 _classified.at(cell_idx) = true; // toggle on to prevent reclassification
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 5\n"; 
+    exit(1); 
+}
             }
         }
+try{
         SetClassifiedSubset(_velocityField[dimension], N, indices, false); 
+
+} catch (std::out_of_range &e) {
+    std::cerr << "seg 6\n"; 
+    exit(1); 
+}
     }
+    std::cout << "test 7-7\n"; // FIXME debug
     // push back all info gathered by each threads
     int gcCount = 0;
     for (const auto &gcInfoThread : ghostCellInfoThreads)
@@ -2735,7 +2851,86 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
         printf( "\tFound %d v_z solid cells\n", numSolidCells[2] );
     }
 
+    std::cout << "test 7-7\n"; // FIXME debug
     ClearUnusedCache();
+}
+
+//##############################################################################
+// Function classifyCells_FAST
+//   This function classify cells. 
+//   NOTE: Only works for collocated scheme + non-pml impl. 
+//##############################################################################
+void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, 
+                                  const bool &verbose)
+{
+    // set history valid for interpolation
+    const int numCells = _pressureField.numCells(); 
+    std::copy(_isBulkCell.begin(), _isBulkCell.end(), 
+              _pressureCellHasValidHistory.begin()); 
+      
+    // set default field values
+    std::fill(_isBulkCell.begin() , _isBulkCell.end() , true ); 
+    std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
+    _ghostCells.clear(); 
+    _ghostCellsChildren.clear(); 
+    _ghostCellsInverse.clear(); 
+    
+    // find the set of cells containing triangles
+    std::set<int> hashed_cells; 
+    auto &objects = _objects->GetRigidSoundObjects(); 
+    for (auto &m : objects)
+    {
+        auto &object = m.second; 
+        auto mesh = object->GetMeshPtr(); 
+        auto meshkd = std::dynamic_pointer_cast<TriangleMeshKDTree<REAL>>(mesh); 
+        const int N_triangles = mesh->num_triangles(); 
+        for (int t_idx=0; t_idx<N_triangles; ++t_idx)
+        {
+            const Vector3d centroid = 
+                object->ObjectToWorldPoint(meshkd->TriangleCentroid(t_idx)); 
+            // TODO: place more samples here
+            const int cell_idx = InPressureCell(centroid); 
+            hashed_cells.insert(cell_idx); 
+        }
+    }
+    std::queue<int> to_proc; 
+    std::for_each(hashed_cells.begin(), hashed_cells.end(), 
+                  [&to_proc](const int i){to_proc.push(i);});  
+
+    // helper lambdas
+    auto isFluid = [&,this](int c){
+        return hashed_cells.find(c)==hashed_cells.end()
+            && _objects->OccupyByObject(_pressureField.cellPosition(c));}; 
+
+    // altered flood-fill
+    IntArray neighbours; neighbours.reserve(6); 
+    IntArray topology;   topology.reserve(6); 
+    std::set<int> processed; 
+    int gc_count = 0; 
+    while (!to_proc.empty())
+    {
+        const int s = to_proc.front(); 
+        to_proc.pop(); 
+        _pressureField.cellNeighbours(s, neighbours, topology); 
+        for (const int &ns : neighbours)
+        {
+            if (isFluid(ns))
+            {
+                _isGhostCell.at(ns) = true; 
+                // add ghost cell at edge s-ns
+
+            } 
+            else 
+            {
+                _isBulkCell.at(ns) = false; 
+                if (processed.find(ns)==processed.end())
+                {
+                    to_proc.push(ns); 
+                }
+            }
+        }
+        processed.insert(s); 
+    }
 }
 
 //##############################################################################
@@ -3099,15 +3294,16 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
 
 void MAC_Grid::SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state)
 {
-    for (int bbox_id=0; bbox_id<N; ++bbox_id){ 
-        const Vector3i &start = indices[bbox_id].startIndex;
-        const Vector3i &range = indices[bbox_id].dimensionIteration;
-        for (int ii=start.x; ii<start.x+range.x; ++ii){
-        for (int jj=start.y; jj<start.y+range.y; ++jj){
-        for (int kk=start.z; kk<start.z+range.z; ++kk){
-            const Tuple3i cellIndices(ii,jj,kk);
-            const int cell_idx = field.cellIndex(cellIndices); 
-            _classified.at(cell_idx) = state;}}}}
+    std::fill(_classified.begin(), _classified.end(), state); 
+    //for (int bbox_id=0; bbox_id<N; ++bbox_id){ 
+    //    const Vector3i &start = indices[bbox_id].startIndex;
+    //    const Vector3i &range = indices[bbox_id].dimensionIteration;
+    //    for (int ii=start.x; ii<start.x+range.x; ++ii){
+    //    for (int jj=start.y; jj<start.y+range.y; ++jj){
+    //    for (int kk=start.z; kk<start.z+range.z; ++kk){
+    //        const Tuple3i cellIndices(ii,jj,kk);
+    //        const int cell_idx = field.cellIndex(cellIndices); 
+    //        _classified.at(cell_idx) = state;}}}}
 }
 
 void MAC_Grid::CheckClassified()
@@ -3122,21 +3318,76 @@ void MAC_Grid::CheckClassified()
 // not thread-safe!
 void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3])
 {
+    try{ // FIXME debug
     _ghostCellsChildren.at(_ghostCellsInverse.at(info.ghostCellParent)).at(info.childArrayPosition) = gcIndex; 
+    }
+    catch (std::out_of_range &e) {
+        std::cout << e.what() << __FILE__ << ": " << __LINE__ << std::endl;
+        std::cout << info.ghostCellParent; 
+    }
+
     _ghostCellChildArrayPositions.push_back(info.childArrayPosition); 
-    _velocityInterfacialCells[info.dim].push_back(info.cellIndex);
-    _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject);
-    _interfacialBoundaryDirections[info.dim].push_back(info.boundaryDirection);
-    _interfacialBoundaryCoefficients[info.dim].push_back(info.boundaryCoefficient);
-    _interfacialGhostCellID[info.dim].push_back(gcIndex); 
+    _velocityInterfacialCells[info.dim].push_back(info.cellIndex); // not used in collocated
+    _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject); // not used in collocated
+    _interfacialBoundaryDirections[info.dim].push_back(info.boundaryDirection); // not used in collocated
+    _interfacialBoundaryCoefficients[info.dim].push_back(info.boundaryCoefficient); // not used in collocated
+    _interfacialGhostCellID[info.dim].push_back(gcIndex);  // not used in collocated
     _ghostCellParents.push_back(info.ghostCellParent);
     _ghostCellPositions.push_back(info.ghostCellPosition); 
-    _ghostCellBoundaryIDs.push_back(info.ghostCellBoundaryID); 
-    pGC[0].push_back(0.0); 
-    pGC[1].push_back(0.0); 
-    pGC[2].push_back(0.0); 
-    pGCFull.push_back(0.0);
+    _ghostCellBoundaryIDs.push_back(info.ghostCellBoundaryID);  // not used in collocated
+    pGC[0].push_back(0.0); // can be optimized
+    pGC[1].push_back(0.0); // can be optimized
+    pGC[2].push_back(0.0); // can be optimized
+    pGCFull.push_back(0.0);// can be optimized
 }
+
+//##############################################################################
+// Function Push_Back_GhostCellInfo
+//  @param gcIndex 0-based ghost cell index
+//  @param cell cell index
+//  @param neighbour neighbour index
+//  @param topology topology of the neighbour to this cell, returned value by
+//                  ScalarField::cellNeighbours(int, IntArray, IntArray)
+//##############################################################################
+void MAC_Grid::Push_Back_GhostCellInfo(const int gcIndex, const int cell, 
+                                       const int neighbour, const int topology)
+{
+//    _ghostCells.push_back(cell); 
+//    _ghostCellsInverse[cell] = _ghostCells.size()-1; 
+//    std::vector<int> subarray(6,-1); 
+//    // want to map the topology from
+//    // {+1, -1, +2, -2, +3, -3} to
+//    // { 0,  1,  2,  3,  4,  5}
+//    const int si = (abs(topology)-1)*2 + (topology>0 ? 0 : 1); 
+//    
+//
+//    _ghostCellsChildren.push_back(std::move(subarray)); 
+//
+//
+//
+//    try{ // FIXME debug
+//    _ghostCellsChildren.at(_ghostCellsInverse.at(info.ghostCellParent)).at(info.childArrayPosition) = gcIndex; 
+//    }
+//    catch (std::out_of_range &e) {
+//        std::cout << e.what() << __FILE__ << ": " << __LINE__ << std::endl;
+//        std::cout << info.ghostCellParent; 
+//    }
+//
+//    _ghostCellChildArrayPositions.push_back(info.childArrayPosition); 
+//    _velocityInterfacialCells[info.dim].push_back(info.cellIndex); // not used in collocated
+//    _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject); // not used in collocated
+//    _interfacialBoundaryDirections[info.dim].push_back(info.boundaryDirection); // not used in collocated
+//    _interfacialBoundaryCoefficients[info.dim].push_back(info.boundaryCoefficient); // not used in collocated
+//    _interfacialGhostCellID[info.dim].push_back(gcIndex);  // not used in collocated
+//    _ghostCellParents.push_back(info.ghostCellParent);
+//    _ghostCellPositions.push_back(info.ghostCellPosition); 
+//    _ghostCellBoundaryIDs.push_back(info.ghostCellBoundaryID);  // not used in collocated
+//    pGC[0].push_back(0.0); // can be optimized
+//    pGC[1].push_back(0.0); // can be optimized
+//    pGC[2].push_back(0.0); // can be optimized
+//    pGCFull.push_back(0.0);// can be optimized
+}
+
 
 //##############################################################################
 // This function returns flat index of the pressure cell that contains the 

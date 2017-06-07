@@ -108,6 +108,9 @@ class ScalarField {
         // Returns this cell's neighbours
         void                     cellNeighbours( const Tuple3i &index,
                                                  IntArray &neighbours ) const;
+        void                     cellNeighbours( const int &flatIndex, 
+                                                 IntArray &neighbours,
+                                                 IntArray &neighbourTopology) const; 
 
         inline void              cellNeighbours( int flatIndex, 
                                                  IntArray &neighbours ) const

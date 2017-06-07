@@ -182,6 +182,38 @@ void ScalarField::cellNeighbours( const Tuple3i &index, IntArray &neighbours ) c
     }
 }
 
+//////////////////////////////////////////////////////////////////////
+// Returns this cell's neighbours and topology
+// @return neighbourTopology 
+//   +1: neighbour at positive x relative to queried cell
+//   -1: neighbour at negative x relative to queried cell
+//   +2: neighbour at positive y relative to queried cell
+//   -2: neighbour at negative y relative to queried cell
+//   +3: neighbour at positive z relative to queried cell
+//   -3: neighbour at negative z relative to queried cell
+//////////////////////////////////////////////////////////////////////
+void ScalarField::cellNeighbours(const int &flatIndex, IntArray &neighbours, 
+                                 IntArray &neighbourTopology) const
+{
+    neighbours.clear();
+    neighbourTopology.clear(); 
+    const Tuple3i index = cellIndex(flatIndex); 
+    for ( int dimension = 0; dimension < 3; dimension++ )
+    {
+        Tuple3i neighbourIndex = index;
+        for ( int idx = -1; idx <= 1; idx += 2 )
+        {
+            neighbourIndex[ dimension ] = index[ dimension ] + idx;
+            if ( neighbourIndex[ dimension ] >= 0
+                    && neighbourIndex[ dimension ] < _divisions[ dimension ] )
+            {
+                neighbours.push_back( cellIndex( neighbourIndex ) );
+                neighbourTopology.push_back(idx*(dimension+1)); 
+            }
+        }
+    }
+}
+
 void ScalarField::AddCornerNeighbours( const int &flatIndex, IntArray &neighbours ) const
 {
     const Tuple3i index = cellIndex(flatIndex); 
