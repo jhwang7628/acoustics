@@ -611,7 +611,6 @@ void PML_WaveSolver::MoveSimBox()
     const Tuple3i offset = _boxMoveControl.Pop(); 
     _boxMoveControl.counter = 0;
 
-    std::cout << "MoveSimBox\n";
     auto &field = GetGrid().pressureField(); 
     field.MoveCenter(offset); 
     // TODO need to get rid of these if using collocated scheme START
@@ -731,29 +730,22 @@ void PML_WaveSolver::stepCollocated()
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    std::cout << "test 1\n"; 
     _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     //_grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
-    std::cout << "test 2\n"; 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
-    std::cout << "test 3\n"; 
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
     _freshCellTimer.pause(); 
     _ghostCellTimer.start(); 
     //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-    std::cout << "test 4\n"; 
     _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _ghostCellTimer.pause(); 
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    std::cout << "test 5\n"; 
     //_grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
-    std::cout << "test 6\n"; 
     _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, _pLaplacian); 
-    std::cout << "test 7\n"; 
     _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, _pLaplacian); 
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
