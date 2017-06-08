@@ -275,6 +275,7 @@ class MAC_Grid
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
         std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
         std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
+        using GhostCellType = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
         //std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr, GhostCell_Hash> _ghostCellsCached; 
         std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
         //IntArray                 _ghostCells;
@@ -435,6 +436,7 @@ class MAC_Grid
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
+        inline const GhostCellType &GetGhostCells(){return _ghostCells;}
         //inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
         inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 
@@ -450,7 +452,7 @@ class MAC_Grid
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
-        void Push_Back_GhostCellInfo(const int cell, const int neighbour, const int topology); 
+        std::unique_ptr<GhostCell> MakeGhostCell(const int cell, const int neighbour, const int topology); 
         int InPressureCell(const Vector3d &position); 
         void RemoveOldPML(const BoundingBox &sceneBox); 
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 

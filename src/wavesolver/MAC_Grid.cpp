@@ -1502,7 +1502,7 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
         
         if (distance < DISTANCE_TOLERANCE)
-            throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. Distance: " + std::to_string(distance)); 
+            throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. objectID: " + std::to_string(objectID)); 
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceTravelled; 
         _objects->Get(objectID).ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
@@ -2837,53 +2837,56 @@ try{
 void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, 
                                   const bool &verbose)
 {
+    SimpleTimer timers[15]; 
+
+    timers[0].Start(); 
+
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
     std::copy(_isBulkCell.begin(), _isBulkCell.end(), 
               _pressureCellHasValidHistory.begin()); 
 
+    timers[0].Pause(); 
+    timers[1].Start(); 
+
     // set default field values
     std::fill(_isBulkCell.begin() , _isBulkCell.end() , true ); 
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
+    std::fill(_classified.begin(), _classified.end(), false); 
+
+    timers[1].Pause(); 
+    timers[2].Start(); 
 
     // copy the cache to map and clear ghost cells
     for (auto &m : _ghostCells)
         if (m.second->cache)
             _ghostCellsCached[m.second->MakeKey()] = std::move(m.second->cache); 
     _ghostCells.clear(); 
-    
-    // find the set of cells containing triangles
-    std::set<int> hashed_cells; 
+
+    timers[2].Pause(); 
+    timers[3].Start(); 
+
+    // we only have to check bounding box around each objects
+    // first get the bounding box
+    int N = _objects->N(); 
+    std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     auto &objects = _objects->GetRigidSoundObjects(); 
+    int count = 0;
     for (auto &m : objects)
     {
-        auto &object = m.second; 
-        auto mesh = object->GetMeshPtr(); 
-        auto meshkd = std::dynamic_pointer_cast<TriangleMeshKDTree<REAL>>(mesh); 
-        // hash centroids
-        const int N_triangles = mesh->num_triangles(); 
-        for (int t_idx=0; t_idx<N_triangles; ++t_idx)
-        {
-            const Vector3d centroid = 
-                object->ObjectToWorldPoint(meshkd->TriangleCentroid(t_idx)); 
-            // TODO: place more samples here
-            const int cell_idx = InPressureCell(centroid); 
-            hashed_cells.insert(cell_idx); 
-        }
-        // hash vertices
-        const auto &vertices = mesh->vertices(); 
-        for (const auto &vertex : vertices)
-        {
-            const int cell_idx = InPressureCell(
-                    object->ObjectToWorldPoint(vertex)); 
-            hashed_cells.insert(cell_idx); 
-        }
-    }
+        const FDTD_MovableObject::BoundingBox &unionBBox = m.second->GetUnionBBox();
+        const Vector3d maxBound = unionBBox.maxBound + 2.0*_cellSize; 
+        const Vector3d minBound = unionBBox.minBound - 2.0*_cellSize; 
+        _pressureField.GetIterationBox(minBound, maxBound, bbox_rast[count]); 
+        ++ count; 
+    } 
+
+    timers[3].Pause(); 
+    timers[4].Start(); 
 
     // helper lambdas
     auto isFluid = [&,this](int c){
-        return hashed_cells.find(c)==hashed_cells.end()
-            && _objects->OccupyByObject(_pressureField.cellPosition(c))<0
+        return _objects->OccupyByObject(_pressureField.cellPosition(c))<0
             && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
@@ -2891,45 +2894,107 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
             && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;};
 
-    // altered flood-fill
-    IntArray neighbours; neighbours.reserve(6); 
-    IntArray topology;   topology.reserve(6); 
-    std::set<int> processed;
-    std::queue<int> to_proc; 
-    std::for_each(hashed_cells.begin(), hashed_cells.end(), 
-                  [&to_proc](const int i){to_proc.push(i);});  
-    while (!to_proc.empty())
+    // initialize threading containers
+#ifdef USE_OPENMP
+    const int N_max_threads = omp_get_max_threads();
+#else
+    const int N_max_threads = 1;
+#endif
+    std::vector<GhostCellType> thread_GCMap(N_max_threads); 
+    std::vector<IntArray> thread_candidate_cells(N_max_threads); 
+    for (auto &tcc : thread_candidate_cells)
+        tcc.reserve(numCells/8/N_max_threads); 
+
+    // loop through each of the box and set bulk/ghost cell identities
+    timers[8].Start(); 
+    for (const auto &bbox : bbox_rast)
     {
-        const int s = to_proc.front(); 
-        to_proc.pop(); 
-        if (processed.find(s)!=processed.end()) 
-            continue; 
-        else 
-            processed.insert(s); 
-        _pressureField.cellNeighbours(s, neighbours, topology); 
+        const Vector3i &start = bbox.startIndex; 
+        const Vector3i &range = bbox.dimensionIteration; 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+        for (int ii=start.x; ii<start.x+range.x; ++ii)
+        for (int jj=start.y; jj<start.y+range.y; ++jj)
+        for (int kk=start.z; kk<start.z+range.z; ++kk)
+        {
+            const Tuple3i cellIndices(ii,jj,kk); 
+            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            if (_classified.at(cell_idx)) continue;
+            if (!isFluid(cell_idx))
+            {
+                _isBulkCell.at(cell_idx) = false; 
+#ifdef USE_OPENMP
+                const int thread_idx = omp_get_thread_num(); 
+#else
+                const int thread_idx = 0; 
+#endif
+                thread_candidate_cells.at(thread_idx).push_back(cell_idx); 
+            }
+            _classified.at(cell_idx) = true; 
+        }
+    }
+    timers[8].Pause(); 
+    timers[9].Start(); 
+    // concatenate
+    for (int tid=1; tid<N_max_threads; ++tid)
+        thread_candidate_cells.at(0).insert(thread_candidate_cells.at(0).end(),
+                                            thread_candidate_cells.at(tid).begin(),
+                                            thread_candidate_cells.at(tid).end()); 
+    timers[9].Pause(); 
+
+    timers[10].Start(); 
+    const IntArray &candidate_cells = thread_candidate_cells.at(0); 
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+    for (int ii=0; ii<candidate_cells.size(); ++ii)
+    {
+        const int cell_idx = candidate_cells.at(ii);
+        _isBulkCell.at(cell_idx) = false; 
+        pFull(cell_idx,0) = 0.0; 
+        IntArray neighbours, topology; 
+        neighbours.reserve(6); topology.reserve(6); 
+        _pressureField.cellNeighbours(cell_idx, neighbours, topology); 
         for (int ii=0; ii<neighbours.size(); ++ii)
         {
             const int ns = neighbours.at(ii); 
             const int to = topology.at(ii); 
             if (isFluid(ns))
             {
-                _isGhostCell.at(s) = true; 
-                Push_Back_GhostCellInfo(s, ns, to); 
+                _isGhostCell.at(cell_idx) = true; 
+                auto gc = MakeGhostCell(cell_idx, ns, to); 
+#ifdef USE_OPENMP
+                const int thread_idx = omp_get_thread_num(); 
+#else
+                const int thread_idx = 0; 
+#endif
+                thread_GCMap.at(thread_idx)[gc->MakeKey()] = std::move(gc); 
             } 
-            else 
-            {
-                if (processed.find(ns)==processed.end())
-                {
-                    to_proc.push(ns); 
-                }
-            }
         }
-        _isBulkCell.at(s) = false; 
-        pFull(s,0) = 0.0;
     }
+    timers[10].Pause(); 
+
+    timers[4].Pause(); 
+    timers[5].Start(); 
+    
+    // combine containers for each thread
+    using IT_GC = GhostCellType::iterator; 
+    using MV_IT = std::move_iterator<IT_GC>;
+    for (auto &thread_map : thread_GCMap)
+        _ghostCells.insert(MV_IT(thread_map.begin()), MV_IT(thread_map.end())); 
+
+    timers[5].Pause(); 
+    timers[6].Start(); 
+
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
+
+    timers[6].Pause(); 
+
+    for (int ii=0; ii<15; ++ii)
+        std::cout << "timer " << ii << ": " << timers[ii].Duration() << std::endl;
 }
 
 //##############################################################################
@@ -3225,6 +3290,11 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
 {
     cell.index = cellIndex; 
     cell.r_identity = PressureCellType(cellIndex); 
+    cell.indices = _pressureField.cellIndex(cellIndex); 
+    cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
+    cell.lowerCorner = cell.centroidPosition - _waveSolverSettings->cellSize/2.0; 
+    cell.upperCorner = cell.centroidPosition + _waveSolverSettings->cellSize/2.0; 
+
     if (EQUAL_FLOATS(cell.r_identity, 0.5))
         cell.s_identity = std::string("Pressure Bulk Cell"); 
     else if (EQUAL_FLOATS(cell.r_identity, 1.0))
@@ -3248,11 +3318,18 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
         }
 #else
         cell.gcValue.resize(6, -1); 
-        for (int a_idx=0; a_idx<6; ++a_idx)
+        int count=0;
+        for (int dim=0; dim<3; ++dim)
         {
-            const int &gc_idx = _ghostCellsChildren.at(_ghostCellsInverse.at(cellIndex)).at(a_idx); 
-            if (gc_idx != -1)
-                cell.gcValue.at(a_idx) = pGC.at(gc_idx);
+            for (int dir=-1; dir<=1; dir+=2)
+            {
+                Tuple3i neighbour = cell.indices; 
+                neighbour[dim] += dir; 
+                const int neighbour_idx = _pressureField.cellIndex(neighbour); 
+                auto key = GhostCell::MakeKey(cellIndex, neighbour_idx); 
+                if (_ghostCells.find(key) != _ghostCells.end())
+                    cell.gcValue[count] = _ghostCells.at(key)->pressure; 
+            }
         }
 #endif
     }
@@ -3260,11 +3337,6 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
     {
         cell.s_identity = std::string("Pressure PML Cell"); 
     }
-
-    cell.indices = _pressureField.cellIndex(cellIndex); 
-    cell.centroidPosition = _pressureField.cellPosition(cellIndex); 
-    cell.lowerCorner = cell.centroidPosition - _waveSolverSettings->cellSize/2.0; 
-    cell.upperCorner = cell.centroidPosition + _waveSolverSettings->cellSize/2.0; 
 
     cell.pFull = pFull(cellIndex, 0); 
     cell.pDirectional[0] = pDirectional[0](cellIndex, 0); 
@@ -3347,8 +3419,9 @@ void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &
 //  @param topology topology of the neighbour to this cell, returned value by
 //                  ScalarField::cellNeighbours(int, IntArray, IntArray)
 //##############################################################################
-void MAC_Grid::Push_Back_GhostCellInfo(const int cell, const int neighbour, 
-                                       const int topology)
+std::unique_ptr<MAC_Grid::GhostCell> MAC_Grid::
+MakeGhostCell(const int cell, const int neighbour, 
+              const int topology)
 {
     auto gc = std::make_unique<GhostCell>(); 
     gc->ownerCell = cell; 
@@ -3365,7 +3438,7 @@ void MAC_Grid::Push_Back_GhostCellInfo(const int cell, const int neighbour,
         gc->cache = std::move(it->second); 
     else 
         gc->cache = std::make_unique<GhostCell_Cache>(); 
-    _ghostCells[key] = std::move(gc); 
+    return gc; 
 }
 
 
