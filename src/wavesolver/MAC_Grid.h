@@ -64,10 +64,11 @@ class MAC_Grid
         {
             int objectID; 
             int triangleID; 
-            bool active; 
+            bool active;
             Vector3d centroid; 
             Vector3d normal;
             TriangleIdentifier()
+                : objectID(-1), triangleID(-1)
             {}
             TriangleIdentifier(const int &o_id, const int &t_id) 
                 : objectID(o_id), triangleID(t_id)
@@ -76,6 +77,7 @@ class MAC_Grid
                 : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
             {}
         };
+        using TriangleIdentifier_UPtr = std::unique_ptr<TriangleIdentifier>; 
 
         class FVMetaData
         {
@@ -84,7 +86,58 @@ class MAC_Grid
             void Clear(){cellMap.clear();}
         };
 
-        class GhostCell
+        //######################################################################
+        // Struct MAC_Grid::GhostCell
+        //  ownerCell flat cell index that owns this ghost cell, the owner cell
+        //            is always a solid cell (but has fluid neighbour)
+        //  neighbourCell flat cell index that share this ghost cell with owner,
+        //                the neighbourCell is always a fluid cell
+        //  topology topology (edge) between owner and neighbour. can only
+        //           take values {+1, -1, +2, -2, +3, -3}
+        //           +1: neighbour is at positive x direction relative to owner
+        //           -1: neighbour is at negative x direction relative to owner
+        //           +2: neighbour is at positive y direction relative to owner
+        //           -2: neighbour is at negative y direction relative to owner
+        //           +3: neighbour is at positive z direction relative to owner
+        //           -3: neighbour is at negative z direction relative to owner
+        //  pressure pressure value stored at this ghost cell
+        //  tid identify last-seen closest triangle
+        //  cache associated cached field
+        //######################################################################
+        struct GhostCell_Cache
+        {
+            TriangleIdentifier tid; 
+        }; 
+        using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
+        using GhostCell_Key  = std::string; 
+        struct GhostCell
+        {
+            int ownerCell; 
+            int neighbourCell; 
+            int topology;
+            Vector3d position; 
+            REAL pressure; 
+            GhostCell_Cache_UPtr cache; 
+            static GhostCell_Key MakeKey(int cell, int neighbour)
+            {
+                return   std::to_string(std::min(cell,neighbour)) 
+                       + ":" 
+                       + std::to_string(std::max(cell,neighbour));
+            }
+            inline GhostCell_Key MakeKey() const 
+            {return GhostCell::MakeKey(ownerCell, neighbourCell);}
+        };
+        using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
+        struct GhostCell_Hash
+        {
+            std::string operator()(const GhostCell_Key &k) const
+            {
+                //return (k.first+k.second)*(k.first+k.second+1)/2 + k.second; 
+                return k;
+            }
+        };
+
+        class GhostCell_Deprecated
         {
             public:
                 static std::vector<Timer<false> > ghostCellTimers; // NOTE not thread safe
@@ -117,7 +170,7 @@ class MAC_Grid
                 std::vector<BoundarySamples> boundarySamples; 
                 std::vector<VolumeSamples> volumeSamples; 
                 std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
-                GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
+                GhostCell_Deprecated(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
                     : validSample(true), parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
                 {}
         };
@@ -220,8 +273,11 @@ class MAC_Grid
 
         std::vector<PML_PressureCell> _pmlPressureCells; 
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
-        std::unordered_map<int, std::shared_ptr<GhostCell> > _ghostCellsCollection; 
-        IntArray                 _ghostCells;
+        std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
+        std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
+        //std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr, GhostCell_Hash> _ghostCellsCached; 
+        std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
+        //IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
         BoolArray                _pressureCellHasValidHistory; 
@@ -324,7 +380,9 @@ class MAC_Grid
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
         void PML_pressureUpdateGhostCells_Coupled(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+#ifdef USE_FV
         void UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime); 
+#endif
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
@@ -372,12 +430,12 @@ class MAC_Grid
         inline Tuple3i velocityFieldVertexIndex( int index, const int &dim ) const { return _velocityField[dim].cellIndex( index ); }
         inline const Tuple3i &pressureFieldDivisions() const { return _pressureField.cellDivisions(); }
         inline const Tuple3i &velocityFieldDivisions(const int &dim) const { return _velocityField[dim].cellDivisions(); }
-        inline const IntArray &ghostCells() const { return _ghostCells; }
+        //inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
         inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
-        inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
+        //inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
         inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 
         void classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, const bool &verbose=false); 
@@ -392,7 +450,7 @@ class MAC_Grid
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
-        void Push_Back_GhostCellInfo(const int gcIndex, const int cell, const int neighbour, const int topology); 
+        void Push_Back_GhostCellInfo(const int cell, const int neighbour, const int topology); 
         int InPressureCell(const Vector3d &position); 
         void RemoveOldPML(const BoundingBox &sceneBox); 
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
