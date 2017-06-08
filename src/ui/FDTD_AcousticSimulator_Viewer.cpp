@@ -288,6 +288,24 @@ DrawMesh()
             }
             glEnd(); 
         }
+
+        // draw rasterized cells
+        if (_wireframe == 3)
+        {
+            const auto &simUnits = _simWorld->GetActiveSimUnits();
+            for (const auto &unit : simUnits)
+            {
+                const auto &gcMap = unit->simulator->GetGrid().GetGhostCells(); 
+                for (const auto &m : gcMap)
+                {
+                    const auto &cell_idx = m.second->ownerCell; 
+                    MAC_Grid::Cell cell; 
+                    unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
+                    glColor3f(1.0f, 0.0f, 0.0f); 
+                    GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+                }
+            }
+        }
         glDisable(GL_LIGHTING);
     }
 }
@@ -401,7 +419,7 @@ DrawGround()
     }
     else if (textureMeta.groundLoaded && _drawGround == 2)
     {
-        const float floorsize = 10.0f; 
+        const float floorsize = 2.0f; 
         const float uvbound = floorsize/textureMeta.blockSizeUV; 
         glEnable(GL_TEXTURE_2D);
         // Display the quad
@@ -693,7 +711,7 @@ keyPressEvent(QKeyEvent *e)
     bool optionsChanged = false;
     bool handled = true; 
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
-        _wireframe = (_wireframe+1)%4; 
+        _wireframe = (_wireframe+1)%5; 
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
