@@ -2837,33 +2837,20 @@ try{
 void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, 
                                   const bool &verbose)
 {
-    SimpleTimer timers[10]; 
-
-
-    timers[0].Start();
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
     std::copy(_isBulkCell.begin(), _isBulkCell.end(), 
               _pressureCellHasValidHistory.begin()); 
 
-    timers[0].Pause();
-    timers[1].Start();
-      
     // set default field values
     std::fill(_isBulkCell.begin() , _isBulkCell.end() , true ); 
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
-
-    timers[1].Pause();
-    timers[2].Start();
 
     // copy the cache to map and clear ghost cells
     for (auto &m : _ghostCells)
         if (m.second->cache)
             _ghostCellsCached[m.second->MakeKey()] = std::move(m.second->cache); 
     _ghostCells.clear(); 
-
-    timers[2].Pause();
-    timers[3].Start();
     
     // find the set of cells containing triangles
     std::set<int> hashed_cells; 
@@ -2893,31 +2880,24 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
         }
     }
 
-    timers[3].Pause();
-    timers[4].Start();
-
-    std::queue<int> to_proc; 
-    std::for_each(hashed_cells.begin(), hashed_cells.end(), 
-                  [&to_proc](const int i){to_proc.push(i);});  
-
-    timers[4].Pause();
-    timers[5].Start();
-
     // helper lambdas
     auto isFluid = [&,this](int c){
         return hashed_cells.find(c)==hashed_cells.end()
             && _objects->OccupyByObject(_pressureField.cellPosition(c))<0
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(1.,0.,0.)*0.5*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(1.,0.,0.)*0.5*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,1.,0.)*0.5*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,1.,0.)*0.5*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,0.,1.)*0.5*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,0.,1.)*0.5*_waveSolverSettings->cellSize)<0;};
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;};
 
     // altered flood-fill
     IntArray neighbours; neighbours.reserve(6); 
     IntArray topology;   topology.reserve(6); 
     std::set<int> processed;
+    std::queue<int> to_proc; 
+    std::for_each(hashed_cells.begin(), hashed_cells.end(), 
+                  [&to_proc](const int i){to_proc.push(i);});  
     while (!to_proc.empty())
     {
         const int s = to_proc.front(); 
@@ -2947,14 +2927,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
         _isBulkCell.at(s) = false; 
         pFull(s,0) = 0.0;
     }
-    timers[5].Pause();
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
-
-
-    for (int ii=0; ii<10; ++ii)
-        std::cout << "timer " << ii << ": " << timers[ii].Duration() << std::endl; 
 }
 
 //##############################################################################
@@ -3383,7 +3358,7 @@ void MAC_Grid::Push_Back_GhostCellInfo(const int cell, const int neighbour,
     gc->position = _pressureField.cellPosition(cell); 
     const int dim = abs(topology)-1; 
     gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
-                      *  0.5*_waveSolverSettings->cellSize; 
+                      *  0.25*_waveSolverSettings->cellSize; 
     auto key = gc->MakeKey(); 
     auto it = _ghostCellsCached.find(key); 
     if (it != _ghostCellsCached.end())
