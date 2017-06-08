@@ -45,6 +45,7 @@ typedef boost::multi_array<bool, 3>		    BoolArray3D;
 typedef boost::multi_array<int, 2>		    IntArray2D;
 typedef boost::multi_array<int, 3>		    IntArray3D;
 
+
 #define QNAN_R std::numeric_limits<REAL>::quiet_NaN() 
 #define QNAN_I std::numeric_limits<int>::quiet_NaN() 
 
