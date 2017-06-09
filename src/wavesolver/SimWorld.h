@@ -7,24 +7,7 @@
 #include "parser/ImpulseResponseParser.h" 
 #include "wavesolver/PML_WaveSolver_Settings.h" 
 #include "wavesolver/FDTD_AcousticSimulator.h" 
-
-//##############################################################################
-// Struct AudioOutput
-//##############################################################################
-struct AudioOutput
-{
-    // IO
-    std::fstream stream; 
-    void WriteStream(const FloatArray &data)
-    {
-        for (const auto &d : data)
-            stream.write((char*) &d, sizeof(REAL));
-    }
-    inline void OpenStream(const std::string &filename)
-    {stream.open(filename.c_str(), std::ios::binary|std::ios::out);}
-    inline void CloseStream()
-    {stream.close();}
-}; 
+#include "wavesolver/AudioOutput.h" 
 
 //##############################################################################
 // Struct ListeningUnit
@@ -36,7 +19,6 @@ struct ListeningUnit
     static Vector3Array microphones;
     static REAL DelayLineScaling(const Vector3d &spk, const Vector3d &mic)
     {return 1./(spk-mic).length();}
-    static AudioOutput audioOutput; 
 }; 
 using ListeningUnit_UPtr = std::unique_ptr<ListeningUnit>; 
 

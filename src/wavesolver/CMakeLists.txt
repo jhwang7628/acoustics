@@ -39,6 +39,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SimWorld.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SimWorld.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/AudioOutput.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/AudioOutput.cpp
 
     CACHE FILE "Wave solver sources")
 

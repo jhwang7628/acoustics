@@ -4,9 +4,8 @@
 //##############################################################################
 // Static member definition
 //##############################################################################
-Vector3Array ListeningUnit::microphones; 
-AudioOutput ListeningUnit::audioOutput; 
 SimWorld::WorldRasterizer SimWorld::rasterizer; 
+Vector3Array ListeningUnit::microphones; 
 
 //##############################################################################
 // Function GetSolverBBoxs
@@ -91,7 +90,7 @@ Build(ImpulseResponseParser_Ptr &parser)
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
         const int divs = (int)std::ceil(
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-                )*2 + 4;
+                )*2 + 8;
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
@@ -107,7 +106,7 @@ Build(ImpulseResponseParser_Ptr &parser)
     const std::string filename("all_audio.dat"); 
     snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
              filename.c_str()); 
-    ListeningUnit::audioOutput.OpenStream(std::string(buffer)); 
+    AudioOutput::instance()->OpenStream(std::string(buffer)); 
 }
 
 //##############################################################################
