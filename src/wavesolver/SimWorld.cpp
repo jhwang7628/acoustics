@@ -4,7 +4,8 @@
 //##############################################################################
 // Static member definition
 //##############################################################################
-std::vector<Vector3d> ListeningUnit::microphones; 
+Vector3Array ListeningUnit::microphones; 
+AudioOutput ListeningUnit::audioOutput; 
 SimWorld::WorldRasterizer SimWorld::rasterizer; 
 
 //##############################################################################
@@ -19,6 +20,28 @@ GetSolverBBoxs()
                 std::pair<ActiveSimUnit_Ptr,BoundingBox>(
                     m,m->simulator->GetSolver()->GetSolverBBox())); 
     return bboxs; 
+}
+
+//##############################################################################
+// Function UpdateSpeaker
+//##############################################################################
+void ActiveSimUnit::
+UpdateSpeakers()
+{
+    if (!listen)
+        return; 
+
+    // delay line model
+    const int N_mic = ListeningUnit::microphones.size(); 
+    const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
+    if (listen->speakers.size() != N_mic)
+        listen->speakers.resize(N_mic); 
+    for (int ii=0; ii<N_mic; ++ii)
+    {
+        const auto &mic = ListeningUnit::microphones.at(ii); 
+        auto &spk = listen->speakers.at(ii); 
+        spk = boxCenter + (mic - boxCenter)*(lowerRadiusBound-0.5*cellSize); 
+    }
 }
 
 //##############################################################################
@@ -68,13 +91,23 @@ Build(ImpulseResponseParser_Ptr &parser)
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
         const int divs = (int)std::ceil(
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-                )*2 + 8;
+                )*2 + 4;
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         simUnit->boxCenter = SimWorld::rasterizer.rasterize(rastCentroid_w); 
+        simUnit->listen = std::make_unique<ListeningUnit>(); 
+        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
+        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
         _simUnits.insert(std::move(simUnit)); 
     }
+
+    // setup filename for output
+    char buffer[512];
+    const std::string filename("all_audio.dat"); 
+    snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
+             filename.c_str()); 
+    ListeningUnit::audioOutput.OpenStream(std::string(buffer)); 
 }
 
 //##############################################################################

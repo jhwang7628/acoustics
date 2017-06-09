@@ -9,12 +9,34 @@
 #include "wavesolver/FDTD_AcousticSimulator.h" 
 
 //##############################################################################
+// Struct AudioOutput
+//##############################################################################
+struct AudioOutput
+{
+    // IO
+    std::fstream stream; 
+    void WriteStream(const FloatArray &data)
+    {
+        for (const auto &d : data)
+            stream.write((char*) &d, sizeof(REAL));
+    }
+    inline void OpenStream(const std::string &filename)
+    {stream.open(filename.c_str(), std::ios::binary|std::ios::out);}
+    inline void CloseStream()
+    {stream.close();}
+}; 
+
+//##############################################################################
 // Struct ListeningUnit
 //##############################################################################
 struct ListeningUnit
 {
-    Vector3d                     speaker; 
-    static std::vector<Vector3d> microphones;
+    // speaker/mics
+    Vector3Array        speakers; 
+    static Vector3Array microphones;
+    static REAL DelayLineScaling(const Vector3d &spk, const Vector3d &mic)
+    {return 1./(spk-mic).length();}
+    static AudioOutput audioOutput; 
 }; 
 using ListeningUnit_UPtr = std::unique_ptr<ListeningUnit>; 
 
@@ -26,11 +48,16 @@ struct ActiveSimUnit
     // main components
     FDTD_AcousticSimulator_Ptr simulator; 
     FDTD_Objects_Ptr           objects; 
-    ListeningUnit              listen; 
+    ListeningUnit_UPtr         listen; 
 
-    // viewer stuff
+    // topology
+    REAL                       lowerRadiusBound; 
+    REAL                       upperRadiusBound; 
     Vector3d                   boxCenter; 
     bool                       boxCenterChanged = false; 
+
+    // helper
+    void UpdateSpeakers(); 
 }; 
 using ActiveSimUnit_UPtr = std::unique_ptr<ActiveSimUnit>; 
 using ActiveSimUnit_Ptr = std::shared_ptr<ActiveSimUnit>; 
