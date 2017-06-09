@@ -109,7 +109,7 @@ class MAC_Grid
             TriangleIdentifier tid; 
         }; 
         using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
-        using GhostCell_Key  = std::string; 
+        using GhostCell_Key  = unsigned long long int; 
         struct GhostCell
         {
             int ownerCell; 
@@ -118,24 +118,17 @@ class MAC_Grid
             Vector3d position; 
             REAL pressure; 
             GhostCell_Cache_UPtr cache; 
-            static GhostCell_Key MakeKey(int cell, int neighbour)
+            static GhostCell_Key MakeKey(const int &_a, const int &_b)
             {
-                return   std::to_string(std::min(cell,neighbour)) 
-                       + ":" 
-                       + std::to_string(std::max(cell,neighbour));
+                // Szudzik's function
+                const unsigned long long a = std::min(_a, _b); 
+                const unsigned long long b = std::max(_a, _b); 
+                return (a>=b ? a*a+a+b : a+b*b); 
             }
             inline GhostCell_Key MakeKey() const 
             {return GhostCell::MakeKey(ownerCell, neighbourCell);}
         };
         using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
-        struct GhostCell_Hash
-        {
-            std::string operator()(const GhostCell_Key &k) const
-            {
-                //return (k.first+k.second)*(k.first+k.second+1)/2 + k.second; 
-                return k;
-            }
-        };
 
         class GhostCell_Deprecated
         {
@@ -276,9 +269,7 @@ class MAC_Grid
         std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
         std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
         using GhostCellType = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
-        //std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr, GhostCell_Hash> _ghostCellsCached; 
         std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
-        //IntArray                 _ghostCells;
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
         BoolArray                _pressureCellHasValidHistory; 

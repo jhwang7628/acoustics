@@ -2837,62 +2837,45 @@ try{
 void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, 
                                   const bool &verbose)
 {
-    SimpleTimer timers[15]; 
-
-    timers[0].Start(); 
-
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
     std::copy(_isBulkCell.begin(), _isBulkCell.end(), 
               _pressureCellHasValidHistory.begin()); 
-
-    timers[0].Pause(); 
-    timers[1].Start(); 
 
     // set default field values
     std::fill(_isBulkCell.begin() , _isBulkCell.end() , true ); 
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
 
-    timers[1].Pause(); 
-    timers[2].Start(); 
-
     // copy the cache to map and clear ghost cells
     for (auto &m : _ghostCells)
-        if (m.second->cache)
-            _ghostCellsCached[m.second->MakeKey()] = std::move(m.second->cache); 
+        _ghostCellsCached.emplace(
+                std::make_pair(m.second->MakeKey(), std::move(m.second->cache))); 
     _ghostCells.clear(); 
-
-    timers[2].Pause(); 
-    timers[3].Start(); 
 
     // we only have to check bounding box around each objects
     // first get the bounding box
-    int N = _objects->N(); 
+    const int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     auto &objects = _objects->GetRigidSoundObjects(); 
     int count = 0;
     for (auto &m : objects)
     {
         const FDTD_MovableObject::BoundingBox &unionBBox = m.second->GetUnionBBox();
-        const Vector3d maxBound = unionBBox.maxBound + 2.0*_cellSize; 
-        const Vector3d minBound = unionBBox.minBound - 2.0*_cellSize; 
+        const Vector3d maxBound = unionBBox.maxBound; 
+        const Vector3d minBound = unionBBox.minBound; 
         _pressureField.GetIterationBox(minBound, maxBound, bbox_rast[count]); 
         ++ count; 
     } 
-
-    timers[3].Pause(); 
-    timers[4].Start(); 
-
     // helper lambdas
-    auto isFluid = [&,this](int c){
-        return _objects->OccupyByObject(_pressureField.cellPosition(c))<0
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)+Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(_pressureField.cellPosition(c)-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;};
+    auto isFluid = [&,this](const Vector3d &pos){
+        return _objects->OccupyByObject(pos)<0
+            && _objects->OccupyByObject(pos+Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(pos-Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(pos+Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(pos-Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(pos+Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0 
+            && _objects->OccupyByObject(pos-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;};
 
     // initialize threading containers
 #ifdef USE_OPENMP
@@ -2903,10 +2886,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
     std::vector<GhostCellType> thread_GCMap(N_max_threads); 
     std::vector<IntArray> thread_candidate_cells(N_max_threads); 
     for (auto &tcc : thread_candidate_cells)
-        tcc.reserve(numCells/8/N_max_threads); 
+        tcc.reserve(numCells/4); 
 
-    // loop through each of the box and set bulk/ghost cell identities
-    timers[8].Start(); 
+    // loop through each of the box and set bulk cells
     for (const auto &bbox : bbox_rast)
     {
         const Vector3i &start = bbox.startIndex; 
@@ -2921,7 +2903,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
             const Tuple3i cellIndices(ii,jj,kk); 
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
             if (_classified.at(cell_idx)) continue;
-            if (!isFluid(cell_idx))
+            const Vector3d pos = _pressureField.cellPosition(cell_idx);
+            if (!isFluid(pos))
             {
                 _isBulkCell.at(cell_idx) = false; 
 #ifdef USE_OPENMP
@@ -2934,16 +2917,13 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
             _classified.at(cell_idx) = true; 
         }
     }
-    timers[8].Pause(); 
-    timers[9].Start(); 
-    // concatenate
+    // concatenate results from different threads
     for (int tid=1; tid<N_max_threads; ++tid)
         thread_candidate_cells.at(0).insert(thread_candidate_cells.at(0).end(),
                                             thread_candidate_cells.at(tid).begin(),
                                             thread_candidate_cells.at(tid).end()); 
-    timers[9].Pause(); 
 
-    timers[10].Start(); 
+    // loop through all non-bulk and find ghost cells
     const IntArray &candidate_cells = thread_candidate_cells.at(0); 
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
@@ -2960,7 +2940,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
         {
             const int ns = neighbours.at(ii); 
             const int to = topology.at(ii); 
-            if (isFluid(ns))
+            if (_isBulkCell.at(ns))
             {
                 _isGhostCell.at(cell_idx) = true; 
                 auto gc = MakeGhostCell(cell_idx, ns, to); 
@@ -2973,28 +2953,14 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
             } 
         }
     }
-    timers[10].Pause(); 
-
-    timers[4].Pause(); 
-    timers[5].Start(); 
-    
     // combine containers for each thread
     using IT_GC = GhostCellType::iterator; 
     using MV_IT = std::move_iterator<IT_GC>;
     for (auto &thread_map : thread_GCMap)
         _ghostCells.insert(MV_IT(thread_map.begin()), MV_IT(thread_map.end())); 
-
-    timers[5].Pause(); 
-    timers[6].Start(); 
-
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
-
-    timers[6].Pause(); 
-
-    for (int ii=0; ii<15; ++ii)
-        std::cout << "timer " << ii << ": " << timers[ii].Duration() << std::endl;
 }
 
 //##############################################################################
