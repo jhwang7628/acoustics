@@ -1,3 +1,4 @@
+#include <Eigen/Dense>
 #include "geometry/BoundingBox.h" 
 #include "wavesolver/SimWorld.h"
 
@@ -22,15 +23,15 @@ GetSolverBBoxs()
 }
 
 //##############################################################################
-// Function UpdateSpeaker
+// Function UpdateSpeakers
 //##############################################################################
-void ActiveSimUnit::
+Vector3Array &ActiveSimUnit::
 UpdateSpeakers()
 {
     if (!listen)
-        return; 
+        return listen->speakers; 
 
-    // delay line model
+    // straight line connecting boxcenter and speaker
     const int N_mic = ListeningUnit::microphones.size(); 
     const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
     if (listen->speakers.size() != N_mic)
@@ -41,6 +42,7 @@ UpdateSpeakers()
         auto &spk = listen->speakers.at(ii); 
         spk = boxCenter + (mic - boxCenter)*(lowerRadiusBound-0.5*cellSize); 
     }
+    return listen->speakers; 
 }
 
 //##############################################################################
@@ -57,7 +59,6 @@ Build(ImpulseResponseParser_Ptr &parser)
     parser->GetObjects(_simulatorSettings, _objectCollections); 
     SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
     SetWorldTime(_simulatorSettings->fastForwardToEventTime); 
-    ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
 
     // read and initialize animator if data exists
     if (_simulatorSettings->rigidsimDataRead)
@@ -106,6 +107,8 @@ Build(ImpulseResponseParser_Ptr &parser)
     const std::string filename("all_audio.dat"); 
     snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
              filename.c_str()); 
+    ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
+    AudioOutput::instance()->SetBufferSize(ListeningUnit::microphones.size()); 
     AudioOutput::instance()->OpenStream(std::string(buffer)); 
 }
 
@@ -145,7 +148,22 @@ StepWorld()
     for (auto &unit : _simUnits)
     {
         continueStepping = (unit->simulator->RunForSteps(1) || continueStepping); 
+        // update speakers, interpolate pressure values and write to audio output
+        const Vector3Array &spks = unit->UpdateSpeakers();
+        FloatArray pressures(spks.size()); 
+        Eigen::MatrixXd fetch; 
+        unit->simulator->GetSolver()->FetchPressureData(spks, fetch, -1);
+        // scale the pressure, NOTE: ignoring the phase for now
+        for (int ii=0; ii<spks.size(); ++ii)
+        {
+            const auto &mic = ListeningUnit::microphones.at(ii); 
+            const auto &spk = spks.at(ii); 
+            pressures.at(ii) = 
+                ListeningUnit::DelayLineScaling(spk, mic)* fetch(ii,0);
+        }
+        AudioOutput::instance()->AccumulateBuffer(pressures); 
     }
+    AudioOutput::instance()->WriteAndResetBuffer(); 
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
     UpdateObjectState(_state.time); 

@@ -319,6 +319,7 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
 void ImpulseResponseParser::
 GetListeningPoints(Vector3Array &listeningPoints)
 {
+    listeningPoints.clear(); 
     // get the element nodes required
     TiXmlElement *root, *listNode, *node;
     TiXmlDocument *document = &_document;

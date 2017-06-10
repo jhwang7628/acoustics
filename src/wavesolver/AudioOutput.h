@@ -11,16 +11,21 @@
 class AudioOutput
 {
     static std::unique_ptr<AudioOutput> _instance; 
-    std::fstream stream; 
-    FloatArray data; 
-    AudioOutput() = default; 
+    std::ofstream _stream; 
+    FloatArray _buffer; 
+
+    AudioOutput(); 
     
 public: 
-    static std::unique_ptr<AudioOutput> &instance()
-    {return _instance;}
+    static std::unique_ptr<AudioOutput> &instance() {return _instance;}
+    void SetBufferSize(const int N) {_buffer.resize(N,0.0);} 
+    void ResetBuffer();
+    void AccumulateBuffer(const FloatArray &data); 
+
     // IO
     void OpenStream(const std::string &filename); 
     void CloseStream(); 
+    bool WriteAndResetBuffer(); 
 }; 
 using AudioOutput_UPtr = std::unique_ptr<AudioOutput>; 
 

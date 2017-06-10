@@ -39,7 +39,7 @@ struct ActiveSimUnit
     bool                       boxCenterChanged = false; 
 
     // helper
-    void UpdateSpeakers(); 
+    Vector3Array &UpdateSpeakers(); 
 }; 
 using ActiveSimUnit_UPtr = std::unique_ptr<ActiveSimUnit>; 
 using ActiveSimUnit_Ptr = std::shared_ptr<ActiveSimUnit>; 
@@ -67,6 +67,12 @@ class SimWorld
     PML_WaveSolver_Settings_Ptr _simulatorSettings; 
 
 public: 
+    SimWorld() = default;
+    ~SimWorld()
+    {
+        AudioOutput::instance()->CloseStream(); 
+    }
+
     struct WorldRasterizer
     {
         REAL cellSize; 
