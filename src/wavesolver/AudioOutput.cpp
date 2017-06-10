@@ -59,8 +59,6 @@ WriteAndResetBuffer()
         return false; 
     _stream.write((char*) &(_buffer[0]), sizeof(REAL)*_buffer.size()); 
     _stream.flush();
-
-    COUT_SDUMP(_buffer[0]); 
     ResetBuffer(); 
     return true;
 }
