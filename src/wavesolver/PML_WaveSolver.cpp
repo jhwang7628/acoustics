@@ -730,8 +730,8 @@ void PML_WaveSolver::stepCollocated()
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
     _cellClassifyTimer.start(); 
-    _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-    //_grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+    _grid.classifyCells_FAST(_pCollocated, false); 
+    //_grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  

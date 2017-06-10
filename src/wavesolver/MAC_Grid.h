@@ -431,7 +431,7 @@ class MAC_Grid
         //inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
         inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 
-        void classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, const bool &verbose=false); 
+        void classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose=false); 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);

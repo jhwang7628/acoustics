@@ -2394,8 +2394,6 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 {
     if (!useBoundary) return;
 
-    classifyCells_FAST(pFull, pGCFull, verbose); return; // FIXME debug
-
     // get all bounding boxes and iteration range
     int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> indices(N); 
@@ -2834,8 +2832,7 @@ try{
 //   This function classify cells. 
 //   NOTE: Only works for collocated scheme + non-pml impl. 
 //##############################################################################
-void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull, 
-                                  const bool &verbose)
+void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 {
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
@@ -2932,7 +2929,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX &pFull, FloatArray &pGCFull,
     {
         const int cell_idx = candidate_cells.at(ii);
         _isBulkCell.at(cell_idx) = false; 
-        pFull(cell_idx,0) = 0.0; 
+        pCollocated[0](cell_idx,0) = 0.0; // set all pressure data to zero
+        pCollocated[1](cell_idx,0) = 0.0;
+        pCollocated[2](cell_idx,0) = 0.0;
         IntArray neighbours, topology; 
         neighbours.reserve(6); topology.reserve(6); 
         _pressureField.cellNeighbours(cell_idx, neighbours, topology); 
