@@ -179,8 +179,9 @@ step(REAL time)
     _curTime = time;
     //_curTime += _dt;
 
-    std::cout << "Bubbles time: " << _curTime << std::endl;
-    std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Bubbles time: " << _curTime << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+    std::cout << "vel1 max: " << _velT1.cwiseAbs().maxCoeff() << ", vel2 max: " << _velT2.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << ", accel l2: " << _accel.norm() << std::endl;
     std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
     std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
 }
