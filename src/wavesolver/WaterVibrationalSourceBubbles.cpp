@@ -31,11 +31,6 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         step(time);
     }
 
-    std::cout << "Bubbles time: " << _curTime << std::endl;
-    std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << std::endl;
-    std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
-    std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
-
     // transform the sample point to object frame
     //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z);
     //const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);
@@ -107,7 +102,7 @@ Initialize(const std::string &dataDir)
 
     _curTime = -1;
     _t1 = _t2 = -1;
-    _dt = 1.0 / 192000;
+    _dt = 1.0 / 192000.;
 
     FreqType ft = CAPACITANCE;
     std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubInfo.txt");
@@ -181,8 +176,13 @@ step(REAL time)
     // This step is only necessary until the wavesolver handles deforming geometry
     projectToSurface();
 
-    //_curTime = time;
-    _curTime += _dt;
+    _curTime = time;
+    //_curTime += _dt;
+
+    std::cout << "Bubbles time: " << _curTime << std::endl;
+    std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
+    std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
 }
 
 //##############################################################################
@@ -932,7 +932,7 @@ projectToSurface()
         if (_m->m_triType.at(nearestTri) == Mesh::FLUID_AIR)
         {
             int index = _m->m_fullToSurf.at(nearestTri);
-            if (std::fabs(_accel(index)) < std::fabs(_projectedAccel[i]))
+            if (std::fabs(_accel(index)) > std::fabs(_projectedAccel(i)))
             {
                 _projectedAccel(i) = _accel(index);
             }
