@@ -779,7 +779,7 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
-        bool existT1 = osc.m_startTime <= _t1;
+        bool existT1 = osc.m_startTime <= _t1 && osc.m_endtime >= _t1;
         bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime >= _t2;
 
         if (!existT1 && !existT2) continue;
@@ -808,7 +808,7 @@ computeVelocities(REAL time)
 
         int bubbleNumber1 = iter->second;
 
-        lookupT = existT2 >= _t2 ? _t2 : _t1;
+        lookupT = existT2 ? _t2 : _t1;
         iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
         if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
         {
@@ -856,6 +856,18 @@ computeVelocities(REAL time)
                                    -1,
                                    NULL,
                                    &closest2);
+
+                if (std::fabs(val1) > 1e6)
+				{
+					std::cout << "bad val1: " << val1 << std::endl;
+					exit(1);
+				}
+
+                if (std::fabs(val2) > 1e6)
+				{
+					std::cout << "bad val2: " << val2 << std::endl;
+					exit(1);
+				}
             }
             catch (...)
             {
