@@ -762,7 +762,8 @@ computeVelocities(REAL time)
 
     // Interpolate onto the mesh that is closest
     _m = useT1 ? &_m1 : &_m2;
-    _kd = useT1 ? _fullKd1 : _fullKd2;
+    //_kd = useT1 ? _fullKd1 : _fullKd2;
+    _kd = useT1 ? _kd1 : _kd2;
 
     double localT1 = time - _dt;
     double localT2 = time + _dt;
@@ -948,9 +949,10 @@ projectToSurface()
 
         int nearestTri = _kd->find_nearest(ep);
 
-        if (_m->m_triType.at(nearestTri) == Mesh::FLUID_AIR)
+        if (_m->m_triType.at(_m->m_surfToFull.at(nearestTri)) == Mesh::FLUID_AIR)
         {
-            int index = _m->m_fullToSurf.at(nearestTri);
+            //int index = _m->m_fullToSurf.at(nearestTri);
+            int index = nearestTri;
             if (std::fabs(_accel(index)) > std::fabs(_projectedAccel(i)))
             {
                 _projectedAccel(i) = _accel(index);
