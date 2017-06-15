@@ -157,13 +157,15 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
     SurfaceVelocityData output;
 
     // Count number of fluid surface triangles
+    int surfTris = mesh.m_surfTris.size();
     int airTris = 0;
 
-    for (int type : mesh.m_triType)
+    for (auto type : mesh.m_triType)
     {
         if (type == Mesh::FLUID_AIR)
             ++airTris;
     }
+
 
     double rho = 1.184; // Density of air
 
@@ -185,7 +187,7 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             in.read((char*)&c, sizeof(c));
         }
 
-        output[bubInfo[i].bubNum].resize(airTris);
+        output[bubInfo[i].bubNum].resize(surfTris, Eigen::Matrix<double, 1, 1>::Zero());
 
         std::vector<Eigen::Matrix<double, 1, 1>> &curOutput = output[bubInfo[i].bubNum];
 
@@ -199,7 +201,7 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             val.imag(c);
 
             // Convert from pressure gradient to velocity here
-            curOutput.at(j) << std::abs((val / factor));
+            curOutput.at(mesh.m_fluidToFull.at(j)) << std::abs((val / factor));
         }
 
         //double maxVal = 0;

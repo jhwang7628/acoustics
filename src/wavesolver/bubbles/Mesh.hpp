@@ -24,6 +24,8 @@ public:
     std::vector<int> m_surfTris; // list of surface triangles (where the velocity solution data is)
     std::vector<Eigen::Vector3d> m_surfTriCenters;
     std::map<int, int> m_fullToSurf;
+    std::map<int, int> m_surfToFull;
+    std::map<int, int> m_fluidToFull;
 
     void
 	loadGmsh(const std::string &fileName)
@@ -71,6 +73,7 @@ public:
 		m_triangles.resize(numFaces);
 		m_triType.resize(numFaces);
 
+        int fluidCounter = 0;
 		// Read triangles
 		for (int i = 0; i < numFaces; ++i)
         {
@@ -90,6 +93,13 @@ public:
                 m_surfTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
 
                 m_fullToSurf[i] = m_surfTris.size() - 1;
+                m_surfToFull[m_surfTris.size() - 1] = i;
+
+                if (type == FLUID_AIR)
+                {
+                    m_fluidToFull[fluidCounter] = i;
+                    ++fluidCounter;
+                }
             }
             else
             {

@@ -779,7 +779,7 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
-        bool existT1 = osc.m_startTime <= _t1 && osc.m_endtime >= _t1;
+        bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime >= _t1;
         bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime >= _t2;
 
         if (!existT1 && !existT2) continue;
@@ -828,6 +828,11 @@ computeVelocities(REAL time)
 
         for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
+            if (_m->m_triType[_m->m_surfToFull[j]] != Mesh::FLUID_AIR)
+            {
+                continue;
+            }
+
             // Now interpolate to correct times
             MLSVal val1, val2;
             MLSPoint p = _m->m_surfTriCenters[j];
@@ -843,6 +848,7 @@ computeVelocities(REAL time)
             // Values at t1 and t2
             try
             {
+                // TODO: vel1 has only fluid surface data, surfTriCenters also has rigid triangles
                 val1 = _mls.lookup(p,
                                    localM1.m_surfTriCenters,
                                    vel1.at(bubbleNumber1),
@@ -857,13 +863,13 @@ computeVelocities(REAL time)
                                    NULL,
                                    &closest2);
 
-                if (std::fabs(val1) > 1e6)
+                if (std::fabs(val1(0)) > 1e6)
 				{
 					std::cout << "bad val1: " << val1 << std::endl;
 					exit(1);
 				}
 
-                if (std::fabs(val2) > 1e6)
+                if (std::fabs(val2(0)) > 1e6)
 				{
 					std::cout << "bad val2: " << val2 << std::endl;
 					exit(1);
