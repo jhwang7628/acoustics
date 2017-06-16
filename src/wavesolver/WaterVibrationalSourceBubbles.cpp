@@ -587,7 +587,8 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
 
                     // Extend with an exponential
                     double extendTime = 0;
-                    if (1 && times.size() >= 3 && curBub->m_endType == Bubble::COLLAPSE)
+                    // TODO: figure out what to do here with the wavesolver
+                    if (0 && times.size() >= 3 && curBub->m_endType == Bubble::COLLAPSE)
                     {
                         extendTime = 0.030; // TODO: set this based on bubble size?
                         double factor = 1;
@@ -780,8 +781,8 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
-        bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime >= _t1;
-        bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime >= _t2;
+        bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime > _t1;
+        bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime > _t2;
 
         if (!existT1 && !existT2) continue;
 
@@ -813,6 +814,15 @@ computeVelocities(REAL time)
         iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
         if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
         {
+            cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
+            for (auto b : osc.m_trackedBubbleNumbers)
+            {
+                cout << b.first << " " << b.second << endl;
+            }
+
+            cout << "end time: " << osc.m_endTime << endl;
+            cout << "times: " << osc.m_frequencies.getData().col(0) << endl;
+
             throw runtime_error("bad tracked bubble numbers lookup t2");
         }
 
