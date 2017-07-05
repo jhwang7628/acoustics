@@ -15,7 +15,7 @@ This project uses a number of open source projects to work properly. The followi
 * [VLFeat](http://www.vlfeat.org/index.html) - For faster NN lookup in the TriangleMeshKDTree class. This class is only available if the flag `USE_VLFEAT` is on. As a result, this is an optional package. If CMake cannot locate this library and an error is thrown, set environmental variable `VLFEAT_ROOT` to the install directory. For example, on Linux, do `export VLFEAT_ROOT=/home/<name>/opt/src/vlfeat-0.9.20`.
 * [libigl](https://github.com/libigl/libigl) - Libigl is used to replace GTS on computing mesh curvature, since it was found that GTS might fail when computing mean curvatures on tet extracted mesh (used for acceleration noise). A [fork](https://github.com/jhwang7628/libigl) from this library is used with some minor changes in namespace prefix to fix name collision with our own Matrix library and to keep it as lightweight as possible. This is currently integrated into the acoustic repo as submodules. If you are cloning the repo for the first time, you will have the directory `src/libigl` but with no contents in it. To initialize, 
 ``` 
-cd src/libigl
+cd external/libigl
 git submodule init
 git submodule update
 ```
