@@ -28,22 +28,29 @@ More on git submodules: [link](https://git-scm.com/book/en/v2/Git-Tools-Submodul
 ## Build Directions:
 Create build directory within source directory and configure cmake
 ```
-mkdir build
-cd build
+mkdir build_release
+cd build_release
 cmake ..
 ```
 At the last step, you can specify build option such as `cmake -DUSE_OPENMP=ON`. To view all the option, its easiest to use package such as ccmake: `ccmake ..`.
 
+To make a debug build, do the following:
+```
+mkdir build_debug
+cd build_debug
+cmake -DUSE_DEBUG=ON ..
+```
+
 ### Simulator module
 To build the simulator test module in parallel, do
 ```
-make -j8 unit_testing_FDTD_AcousticSimulator
+make -j40 unit_testing_FDTD_AcousticSimulator
 ```
 
 ### Postprocessing module
 The result of the run can be visualized by paraview. The simulator can be configured to dump raw data in `*.dat` files, and we have a converter to turn these files into `*.vtk` files, which can be recognized by paraview. To build the converter, do 
 ```
-make -j8 convert-dat-vtk
+make -j40 convert-dat-vtk
 ```
 
 ## Run the code
