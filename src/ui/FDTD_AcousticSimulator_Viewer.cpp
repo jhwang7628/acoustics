@@ -72,6 +72,7 @@ init()
     {
         _remoteConnection = true;
         std::cout << "Remote connection detected.\n";
+        RestoreDefaultDrawOptions();
     }
 
     std::cout << "\n>> Press key 'h' for help, 'esc' for exit.\n\n";
@@ -1296,7 +1297,7 @@ DrawOneFrameForward()
 void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
-    _wireframe = (_remoteConnection ? 3 : 2); 
+    _wireframe = (_remoteConnection ? 4 : 2); 
     _sliceWireframe.reset(); 
     _sliceWireframe.set(1); // draw face only
     _drawBoxLis = true; 
