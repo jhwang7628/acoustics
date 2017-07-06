@@ -3632,6 +3632,31 @@ void MAC_Grid::FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX 
     }
 }
 
+void MAC_Grid::GetAllBoundaryCells(const int &dimension, const int &sign, std::vector<int> &indices, std::vector<Vector3d> &positions)
+{
+    const Tuple3i divs = pressureFieldDivisions(); 
+    const int &d = dimension; // type less..
+    const int dx = (d+1)%3; 
+    const int dy = (d+2)%3; 
+    const int kk = (sign>0 ? divs[d]-1 : 0); 
+    const int Nx = divs[dx];
+    const int Ny = divs[dy];
+    const int NxNy = Nx*Ny; 
+    Tuple3i indicesBuf; 
+    indicesBuf[d] = kk; 
+    if (indices.size() != NxNy)   indices.resize(NxNy); 
+    if (positions.size() != NxNy) positions.resize(NxNy); 
+    for (int ii=0; ii<Nx; ++ii)
+        for (int jj=0; jj<Ny; ++jj)
+        {
+            const int ind = ii*Nx + jj; 
+            indicesBuf[dx] = ii; 
+            indicesBuf[dy] = jj;
+            indices.at(ind) = pressureFieldVertexIndex(indicesBuf); 
+            positions.at(ind) = pressureFieldPosition(indicesBuf); 
+        }
+}
+
 //// debug methods //// 
 void MAC_Grid::PrintFieldExtremum(const MATRIX &field, const std::string &fieldName) 
 {

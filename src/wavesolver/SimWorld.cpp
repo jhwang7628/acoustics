@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include <Eigen/Dense>
 #include "macros.h"
 #include "geometry/BoundingBox.h" 
@@ -216,7 +217,53 @@ CheckSimUnitBoundaries()
     // establish cell neighbours
     for (auto &interface : _interfaces)
     {
-        
+        auto unit_a = interface->GetSimUnit_a(); 
+        auto unit_b = interface->GetSimUnit_b(); 
+        auto &grid_a = unit_a->simulator->GetGrid(); 
+        auto &grid_b = unit_b->simulator->GetGrid(); 
+        const int dir = interface->GetDirection(); 
+        const bool a_on_top_of_b = 
+            ((unit_a->boxCenter - unit_b->boxCenter)[dir] > 0);
+
+        std::vector<int> bdIndices_a, bdIndices_b; 
+        std::vector<Vector3d> bdPositions_a, bdPositions_b; 
+        if (a_on_top_of_b) // grab pos b and neg a
+        {
+            grid_a.GetAllBoundaryCells(dir, -1, bdIndices_a, bdPositions_a); 
+            grid_b.GetAllBoundaryCells(dir,  1, bdIndices_b, bdPositions_b); 
+        }
+        else  // grab neg b and pos a
+        {
+            grid_a.GetAllBoundaryCells(dir,  1, bdIndices_a, bdPositions_a); 
+            grid_b.GetAllBoundaryCells(dir, -1, bdIndices_b, bdPositions_b); 
+        }
+
+        const bool a_smaller_than_b = (unit_a->divisions < unit_b->divisions); 
+        std::unordered_map<int,int> counter; 
+        if (a_smaller_than_b)
+        {
+            for (const auto &ind : bdIndices_b)
+                counter[ind] = 1; 
+            // TODO START
+            // offset a's boundary to b and see what cell its in
+            for (const auto &pos : bdPositions_a) 
+            {
+            }
+            // pull the ones with couter = 2 and make neighbour pair
+            // TODO END
+        }
+        else
+        {
+            for (const auto &ind : bdIndices_a)
+                counter[ind] = 1; 
+            // TODO START
+            // offset b's boundary to a and see what cell its in
+            for (const auto &pos : bdPositions_b) 
+            {
+            }
+            // pull the ones with couter = 2 and make neighbour pair
+            // TODO END
+        }
     }
     return false; 
 }

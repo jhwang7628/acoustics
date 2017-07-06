@@ -449,6 +449,9 @@ class MAC_Grid
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
         void UpdatePML(const BoundingBox &sceneBox);
         void FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX &pCurr, const MATRIX &pLast); 
+        // if sign>0, grab all +dimension face cell indices and positions
+        // if sign<0, grab all -dimension ...
+        void GetAllBoundaryCells(const int &dimension, const int &sign, std::vector<int> &indices, std::vector<Vector3d> &positions); 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

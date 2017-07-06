@@ -37,6 +37,12 @@ public:
     bool GetOtherCellPressure(const std::string &solver_a, 
                               const int &cell_a,
                                     REAL &pressure_b) const; 
+    inline auto GetDirection()
+    {return _direction;} 
+    inline auto GetSimUnit_a()
+    {return _simUnitPair.first;}
+    inline auto GetSimUnit_b()
+    {return _simUnitPair.second;}
     inline REAL GetBlendCoeff(const REAL &time) const
     {return (time - _blendStartTime)/_blendTotalTime;}
 };
