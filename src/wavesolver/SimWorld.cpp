@@ -1,4 +1,5 @@
 #include <Eigen/Dense>
+#include "macros.h"
 #include "geometry/BoundingBox.h" 
 #include "wavesolver/SimWorld.h"
 
@@ -95,6 +96,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
+        simUnit->divisions = divs; 
         simUnit->boxCenter = SimWorld::rasterizer.rasterize(rastCentroid_w); 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
@@ -164,11 +166,43 @@ StepWorld()
         AudioOutput::instance()->AccumulateBuffer(pressures); 
     }
     AudioOutput::instance()->WriteAndResetBuffer(); 
+
+    // update sim units topology
+    CheckSimUnitBoundaries(); 
+
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
     UpdateObjectState(_state.time); 
 
     return continueStepping;
+}
+
+//##############################################################################
+// Function CheckSimUnitBoundaries
+//##############################################################################
+bool SimWorld::
+CheckSimUnitBoundaries()
+{
+    for (auto it_a=_simUnits.begin(); it_a!=_simUnits.end(); ++it_a)
+    {
+        auto it_b = it_a; 
+        std::advance(it_b, 1); 
+        for (; it_b!=_simUnits.end(); ++it_b)
+        {
+            const Vector3d centerDiff = 
+                (*it_a)->boxCenter - (*it_b)->boxCenter; 
+            const REAL maxDiff = std::max(
+                    std::max(std::abs(centerDiff[0]), std::abs(centerDiff[1])),
+                    std::abs(centerDiff[2])); 
+            const REAL thres = (REAL)((*it_a)->divisions + (*it_b)->divisions)
+                             / (REAL)2 * _simulatorSettings->cellSize; 
+            if (maxDiff < thres || EQUAL_FLOATS(maxDiff, thres)) // <=
+            {
+                std::cout << "two boxes neighbouring\n";
+            }
+        }
+    }
+    return false; 
 }
 
 //##############################################################################

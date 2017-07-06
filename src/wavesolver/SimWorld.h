@@ -8,41 +8,8 @@
 #include "wavesolver/PML_WaveSolver_Settings.h" 
 #include "wavesolver/FDTD_AcousticSimulator.h" 
 #include "wavesolver/AudioOutput.h" 
-
-//##############################################################################
-// Struct ListeningUnit
-//##############################################################################
-struct ListeningUnit
-{
-    // speaker/mics
-    Vector3Array        speakers; 
-    static Vector3Array microphones;
-    static REAL DelayLineScaling(const Vector3d &spk, const Vector3d &mic)
-    {return 1./(spk-mic).length();}
-}; 
-using ListeningUnit_UPtr = std::unique_ptr<ListeningUnit>; 
-
-//##############################################################################
-// Struct ActiveSimUnit
-//##############################################################################
-struct ActiveSimUnit
-{
-    // main components
-    FDTD_AcousticSimulator_Ptr simulator; 
-    FDTD_Objects_Ptr           objects; 
-    ListeningUnit_UPtr         listen; 
-
-    // topology
-    REAL                       lowerRadiusBound; 
-    REAL                       upperRadiusBound; 
-    Vector3d                   boxCenter; 
-    bool                       boxCenterChanged = false; 
-
-    // helper
-    Vector3Array &UpdateSpeakers(); 
-}; 
-using ActiveSimUnit_UPtr = std::unique_ptr<ActiveSimUnit>; 
-using ActiveSimUnit_Ptr = std::shared_ptr<ActiveSimUnit>; 
+#include "wavesolver/SimWorldAuxDS.h" 
+#include "wavesolver/BoundaryInterface.h"
 
 //##############################################################################
 // Class SimWorld 
@@ -62,9 +29,14 @@ class SimWorld
         REAL time = 0.26; 
     } _state; 
 
-    FDTD_Objects_Ptr            _objectCollections; 
-    std::set<ActiveSimUnit_Ptr> _simUnits; 
-    PML_WaveSolver_Settings_Ptr _simulatorSettings; 
+    // 
+    FDTD_Objects_Ptr             _objectCollections; 
+    std::set<ActiveSimUnit_Ptr>  _simUnits; 
+    PML_WaveSolver_Settings_Ptr  _simulatorSettings; 
+
+    // managing topology among simulator units
+    std::list<BoundaryInterface> _interfaces; 
+    std::vector<BoundaryCell>    _boundaryCells; 
 
 public: 
     SimWorld() = default;
@@ -103,6 +75,7 @@ public:
     void Build(ImpulseResponseParser_Ptr &parser); 
     void UpdateObjectState(const REAL &time); 
     bool StepWorld(); 
+    bool CheckSimUnitBoundaries(); 
     void PreviewStepping(const int &previewSpeed);
 };
 using SimWorld_UPtr = std::unique_ptr<SimWorld>; 

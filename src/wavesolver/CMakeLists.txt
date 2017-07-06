@@ -37,6 +37,7 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Wavesolver_ConstantsAndTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SimWorld.h
     ${CMAKE_CURRENT_SOURCE_DIR}/SimWorld.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimWorldAuxDS.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/AudioOutput.h
     ${CMAKE_CURRENT_SOURCE_DIR}/AudioOutput.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.h

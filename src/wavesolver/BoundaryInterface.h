@@ -5,7 +5,7 @@
 #include <memory>
 #include "config.h"
 #include "linearalgebra/Vector3.hpp" 
-#include "wavesolver/SimWorld.h"
+#include "wavesolver/SimWorldAuxDS.h"
 
 //##############################################################################
 // Class BoundaryInterface
