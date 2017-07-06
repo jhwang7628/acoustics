@@ -183,6 +183,8 @@ StepWorld()
 bool SimWorld::
 CheckSimUnitBoundaries()
 {
+    // establish interfaces
+    _interfaces.clear();
     for (auto it_a=_simUnits.begin(); it_a!=_simUnits.end(); ++it_a)
     {
         auto it_b = it_a; 
@@ -198,9 +200,23 @@ CheckSimUnitBoundaries()
                              / (REAL)2 * _simulatorSettings->cellSize; 
             if (maxDiff < thres || EQUAL_FLOATS(maxDiff, thres)) // <=
             {
-                std::cout << "two boxes neighbouring\n";
+                int interfaceDirection = -1; 
+                for (int ii=0; ii<3; ++ii) 
+                    if (EQUAL_FLOATS(std::abs(centerDiff[ii]), thres))
+                        interfaceDirection = ii; 
+                std::cout << "found interface at direction: " 
+                          << interfaceDirection << std::endl;
+                auto interface = std::make_shared<BoundaryInterface>(
+                        (*it_a), (*it_b), GetWorldTime(), interfaceDirection); 
+                _interfaces.push_back(interface); 
             }
         }
+    }
+
+    // establish cell neighbours
+    for (auto &interface : _interfaces)
+    {
+        
     }
     return false; 
 }

@@ -17,15 +17,18 @@ private:
     std::vector<std::pair<int,int>>                 _cellPairs;
     static REAL                                     _blendTotalTime; 
     REAL                                            _blendStartTime;
+    int                                             _direction; //0:x, 1:y, 2:z
 
     int _WhichUnit(const std::string &id) const; 
 
 public: 
     BoundaryInterface(ActiveSimUnit_Ptr unit_a,
                       ActiveSimUnit_Ptr unit_b, 
+                      const int &direction,
                       const REAL &time)
         : _simUnitPair(std::make_pair(unit_a, unit_b)),
-          _blendStartTime(time)
+          _blendStartTime(time),
+          _direction(direction)
     {}
     std::string GetOtherSolver(const std::string &solver_a) const; 
     bool GetOtherCell(const std::string &solver_a, 
@@ -37,5 +40,5 @@ public:
     inline REAL GetBlendCoeff(const REAL &time) const
     {return (time - _blendStartTime)/_blendTotalTime;}
 };
-using BoundaryInterfacePtr = std::shared_ptr<BoundaryInterface>; 
+using BoundaryInterface_Ptr = std::shared_ptr<BoundaryInterface>; 
 #endif

@@ -35,8 +35,7 @@ class SimWorld
     PML_WaveSolver_Settings_Ptr  _simulatorSettings; 
 
     // managing topology among simulator units
-    std::list<BoundaryInterface> _interfaces; 
-    std::vector<BoundaryCell>    _boundaryCells; 
+    std::list<BoundaryInterface_Ptr> _interfaces; 
 
 public: 
     SimWorld() = default;
