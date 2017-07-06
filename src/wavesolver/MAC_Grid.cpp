@@ -523,7 +523,8 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                     +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
                 // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
                 const double p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii_n,jj,kk),0);
-                const double p_p1src = _objects->EvaluateBoundaryInterface("debug",cell_position);
+                //const double p_p1src = _objects->EvaluateBoundaryInterface("debug",cell_position);
+                const double p_p1src = 0.0; // TODO 
                 // corrected update pressure using superpositioned abc + src
                 const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
                     + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)

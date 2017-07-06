@@ -5,27 +5,37 @@
 #include <memory>
 #include "config.h"
 #include "linearalgebra/Vector3.hpp" 
+#include "wavesolver/SimWorld.h"
+
 //##############################################################################
 // Class BoundaryInterface
 //##############################################################################
 class BoundaryInterface
 {
 private: 
-    Tuple3i         _divisions; // [N1, N2, N3]
-    Eigen::MatrixXd _positions; // (N1*N2*N3)-by-3
-    Eigen::MatrixXd _values;    // (N1*N2*N3)-by-t, t is #timesteps read
+    std::pair<ActiveSimUnit_Ptr, ActiveSimUnit_Ptr> _simUnitPair; 
+    std::vector<std::pair<int,int>>                 _cellPairs;
+    static REAL                                     _blendTotalTime; 
+    REAL                                            _blendStartTime;
 
-    static constexpr REAL POS_TOL = 0.01;
+    int _WhichUnit(const std::string &id) const; 
+
 public: 
-    static std::shared_ptr<BoundaryInterface> Load(const std::string &prefix); 
-    inline Eigen::MatrixXd &Positions(){return _positions;}
-    inline Eigen::MatrixXd &Values(){return _values;} 
-    REAL Evaluate(const Vector3d &pos) const; 
-
-    // TODO use a pointer for now, should fix after actual box management
-    int pointer = 0; 
-    void AdvancePointer()
-    {if (_values.cols()!=0) pointer = (pointer+1)%(int)_values.cols();}
+    BoundaryInterface(ActiveSimUnit_Ptr unit_a,
+                      ActiveSimUnit_Ptr unit_b, 
+                      const REAL &time)
+        : _simUnitPair(std::make_pair(unit_a, unit_b)),
+          _blendStartTime(time)
+    {}
+    std::string GetOtherSolver(const std::string &solver_a) const; 
+    bool GetOtherCell(const std::string &solver_a, 
+                      const int &cell_a,
+                            int &cell_b) const; 
+    bool GetOtherCellPressure(const std::string &solver_a, 
+                              const int &cell_a,
+                                    REAL &pressure_b) const; 
+    inline REAL GetBlendCoeff(const REAL &time) const
+    {return (time - _blendStartTime)/_blendTotalTime;}
 };
 using BoundaryInterfacePtr = std::shared_ptr<BoundaryInterface>; 
 #endif

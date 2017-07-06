@@ -5,7 +5,6 @@
 #include <wavesolver/FDTD_RigidObject.h> 
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/PressureSource.h>
-#include <wavesolver/BoundaryInterface.h> 
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 
 //##############################################################################
@@ -21,7 +20,6 @@ class FDTD_Objects
     private: 
         std::unordered_map<int, RigidSoundObjectPtr> _rigidObjects; 
         std::vector<PressureSourcePtr>               _pressureSources; 
-        std::map<std::string, BoundaryInterfacePtr>  _interfaces; 
         FDTD_RigidObject_Animator_Ptr                _objectAnimator; 
 
     public: 
@@ -57,7 +55,6 @@ class FDTD_Objects
         void AddPressureSource(PressureSourcePtr &sourcePtr); 
         REAL EvaluateNearestVibrationalSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         REAL EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const REAL &time); 
-        REAL EvaluateBoundaryInterface(const std::string &key, const Vector3d &pos) const; 
         bool ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration=1); 
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
         REAL GetEarliestImpactEvent();
@@ -72,21 +69,6 @@ class FDTD_Objects
         void PrintAllSources(std::ostream &os); 
         void WriteFailedReflections(const std::string &file);
         void ClearFailedReflections();
-        void Debug_AddInterface(); 
-        void AdvanceInterface()
-        {
-            for (auto &entry : _interfaces)
-            {
-                entry.second->AdvancePointer(); 
-            }
-        }
-        void SetInterfacePointer(const int &p)
-        {
-            for (auto &entry : _interfaces)
-            {
-                entry.second->pointer = p; 
-            }
-        }
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
     friend SimWorld; 
