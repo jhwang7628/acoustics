@@ -17,7 +17,7 @@
 
 #include <distancefield/trilinearInterpolation.h> 
 #include <linearalgebra/SparseLinearSystemSolver.h>
-//#include <graph/UndirectedGraph.h> 
+#include <wavesolver/BoundaryInterface.h>
 
 #include <queue>
 #include <unistd.h> 
@@ -524,7 +524,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
                 const double p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii_n,jj,kk),0);
                 //const double p_p1src = _objects->EvaluateBoundaryInterface("debug",cell_position);
-                const double p_p1src = 0.0; // TODO 
+                const double p_p1src = 0.0; // FIXME 
                 // corrected update pressure using superpositioned abc + src
                 const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
                     + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
@@ -554,11 +554,39 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 const int kk_p = std::min(kk+1, Ns[2]-1); 
                 const int kk_n = std::max(kk-1, 0      ); 
                 const int jj_n = jj-1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
+                const REAL p1 = lambda2/(1.+ lambda)*(
                         (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
                         + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
                         + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
                         +2.*pCurr(PCELL_IDX(ii,jj_n,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
+                // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
+                const REAL p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii,jj_n,kk),0);
+
+                
+                REAL p_p1src = 0.0;
+                REAL dbuf; 
+                REAL alpha=-1.0; 
+                for (auto &interface : _boundaryInterfaces)
+                {
+                    if (interface->GetDirection()!=1)
+                        continue; 
+                    const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                    if (hasNeighbour)
+                    {
+                        alpha = interface->GetBlendCoeff(simulationTime); 
+                        p_p1src += dbuf; 
+                    }
+                }
+                COUT_SDUMP(alpha); 
+                const REAL p_blend = ((alpha>=0.0 && alpha<=1.0) ? 
+                                      (1.0 - alpha)*p_p1abc + alpha*p_p1src : p_p1abc);
+                // corrected update pressure using superpositioned abc + src
+                const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
+                    + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
+                               + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
+                               + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0) + p_blend
+                               -6.*pCurr(PCELL_IDX(ii,jj,kk),0));
+                pNext(cell_idx,0) = p2; 
         } 
         else if (btype & ScalarField::BoundaryType::Negative_Y_Boundary)
         {
