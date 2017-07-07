@@ -40,6 +40,7 @@ public:
     bool GetOtherCellPressure(const std::string &solver_a, 
                               const int &cell_a,
                                     REAL &pressure_b) const; 
+    REAL GetBlendCoeff(const REAL &time) const; 
     inline void AddCellPair(std::pair<int,int> &pair)
     {_cellPairs.push_back(std::move(pair));}
     inline auto GetCellPairsCount()
@@ -54,8 +55,6 @@ public:
     {return _simUnitPair.first;}
     inline const auto GetSimUnit_b() const
     {return _simUnitPair.second;}
-    inline REAL GetBlendCoeff(const REAL &time) const
-    {return (time - _blendStartTime)/_blendTotalTime;}
 
     friend
     std::ostream &operator <<(std::ostream &os, 

@@ -4,7 +4,7 @@
 //##############################################################################
 // Global variables
 //##############################################################################
-REAL BoundaryInterface::_blendTotalTime = 0.01;
+REAL BoundaryInterface::_blendTotalTime = 0.0001;
 
 //##############################################################################
 // Function _WhichUnit
@@ -120,6 +120,18 @@ GetOtherCellPressure(const std::string &solver_a,
     }
     return keyExists;
 }
+//##############################################################################
+// Function GetBlendCoeff
+//##############################################################################
+REAL BoundaryInterface::GetBlendCoeff(const REAL &time) const
+{
+    if (time < _blendStartTime)
+        return 0.0; 
+    else if (time > (_blendStartTime + _blendTotalTime))
+        return 1.0; 
+    return (time - _blendStartTime)/_blendTotalTime;
+}
+
 
 //##############################################################################
 //##############################################################################

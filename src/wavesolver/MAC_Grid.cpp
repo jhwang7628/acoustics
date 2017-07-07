@@ -561,7 +561,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                         +2.*pCurr(PCELL_IDX(ii,jj_n,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
                 // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
                 const REAL p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii,jj_n,kk),0);
-
                 
                 REAL p_p1src = 0.0;
                 REAL dbuf; 
