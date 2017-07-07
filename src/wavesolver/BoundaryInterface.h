@@ -24,8 +24,8 @@ private:
 public: 
     BoundaryInterface(ActiveSimUnit_Ptr unit_a,
                       ActiveSimUnit_Ptr unit_b, 
-                      const int &direction,
-                      const REAL &time)
+                      const REAL &time,
+                      const int &direction)
         : _simUnitPair(std::make_pair(unit_a, unit_b)),
           _blendStartTime(time),
           _direction(direction)
@@ -37,6 +37,10 @@ public:
     bool GetOtherCellPressure(const std::string &solver_a, 
                               const int &cell_a,
                                     REAL &pressure_b) const; 
+    inline void AddCellPair(std::pair<int,int> &pair)
+    {_cellPairs.push_back(std::move(pair));}
+    inline auto &GetCellPairs()
+    {return _cellPairs;}
     inline auto GetDirection()
     {return _direction;} 
     inline auto GetSimUnit_a()
@@ -45,6 +49,10 @@ public:
     {return _simUnitPair.second;}
     inline REAL GetBlendCoeff(const REAL &time) const
     {return (time - _blendStartTime)/_blendTotalTime;}
+
+    friend
+    std::ostream &operator <<(std::ostream &os, 
+                              const BoundaryInterface &interface); 
 };
 using BoundaryInterface_Ptr = std::shared_ptr<BoundaryInterface>; 
 #endif

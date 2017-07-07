@@ -87,3 +87,20 @@ GetOtherCellPressure(const std::string &solver_a,
     }
     return keyExists;
 }
+
+//##############################################################################
+//##############################################################################
+std::ostream &operator <<(std::ostream &os, 
+                          const BoundaryInterface &interface)
+{
+    os << "------------------------------------------------------------------\n" 
+       << "Class BoundaryInterface\n" 
+       << "------------------------------------------------------------------\n"
+       << " num cell pairs   : " << interface._cellPairs.size() << "\n"
+       << " direction        : " << interface._direction << "\n"
+       << " blend total time : " << BoundaryInterface::_blendTotalTime << "\n"
+       << " blend start time : " << interface._blendStartTime << "\n"
+       << "------------------------------------------------------------------" 
+       << std::flush; 
+    return os; 
+}

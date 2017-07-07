@@ -238,31 +238,81 @@ CheckSimUnitBoundaries()
             grid_b.GetAllBoundaryCells(dir, -1, bdIndices_b, bdPositions_b); 
         }
 
+        struct ProjCounter
+        {
+            int count = 0; 
+            int otherUnitCellIdx = -1; 
+        };
         const bool a_smaller_than_b = (unit_a->divisions < unit_b->divisions); 
-        std::unordered_map<int,int> counter; 
+        std::unordered_map<int,ProjCounter> counter; 
+        const REAL offset = _simulatorSettings->cellSize;
         if (a_smaller_than_b)
         {
             for (const auto &ind : bdIndices_b)
-                counter[ind] = 1; 
-            // TODO START
+                counter[ind].count = 1; 
             // offset a's boundary to b and see what cell its in
-            for (const auto &pos : bdPositions_a) 
+            for (int ii=0; ii<bdPositions_a.size(); ++ii)
             {
+                const auto &pos = bdPositions_a.at(ii); 
+                Vector3d posProj = pos;
+                posProj[dir] += (a_on_top_of_b ? -1.0 : 1.0)*offset; 
+                const int cellProj = grid_b.InPressureCell(posProj); 
+                if (counter.find(cellProj) != counter.end())
+                {
+                    counter[cellProj].count += 1; 
+                    counter[cellProj].otherUnitCellIdx = bdIndices_a.at(ii);
+                }
+                else 
+                {
+                    counter[cellProj].count = 1; 
+                    counter[cellProj].otherUnitCellIdx = bdIndices_a.at(ii);
+                }
             }
-            // pull the ones with couter = 2 and make neighbour pair
-            // TODO END
+            for (const auto &m : counter) 
+            {
+                assert(m.second.count <= 2); 
+                if (m.second.count == 2) 
+                {
+                    auto cellPair = std::make_pair(
+                        m.second.otherUnitCellIdx, 
+                        m.first); 
+                    interface->AddCellPair(cellPair); 
+                }
+            }
         }
         else
         {
             for (const auto &ind : bdIndices_a)
-                counter[ind] = 1; 
-            // TODO START
+                counter[ind].count = 1; 
             // offset b's boundary to a and see what cell its in
-            for (const auto &pos : bdPositions_b) 
+            for (int ii=0; ii<bdPositions_b.size(); ++ii)
             {
+                const auto &pos = bdPositions_b.at(ii); 
+                Vector3d posProj = pos;
+                posProj[dir] += (a_on_top_of_b ? 1.0 : -1.0)*offset; 
+                const int cellProj = grid_a.InPressureCell(posProj); 
+                if (counter.find(cellProj) != counter.end())
+                {
+                    counter[cellProj].count += 1; 
+                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii); 
+                }
+                else 
+                {
+                    counter[cellProj].count = 1; 
+                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii); 
+                }
             }
-            // pull the ones with couter = 2 and make neighbour pair
-            // TODO END
+            for (const auto &m : counter) 
+            {
+                assert(m.second.count <= 2); 
+                if (m.second.count == 2) 
+                {
+                    auto cellPair = std::make_pair(
+                        m.first,
+                        m.second.otherUnitCellIdx); 
+                    interface->AddCellPair(cellPair); 
+                }
+            }
         }
     }
     return false; 
