@@ -185,8 +185,12 @@ StepWorld()
 bool SimWorld::
 CheckSimUnitBoundaries()
 {
+    // clear all stored interfaces
+    _interfaces.clear(); // stored in SimWorld
+    for (auto &unit : _simUnits) // stored in Mac_Grid
+        unit->simulator->GetGrid().ClearBoundaryInterface(); 
+
     // establish interfaces
-    _interfaces.clear();
     for (auto it_a=_simUnits.begin(); it_a!=_simUnits.end(); ++it_a)
     {
         auto it_b = it_a; 
@@ -315,6 +319,8 @@ CheckSimUnitBoundaries()
                 }
             }
         }
+        grid_a.AddBoundaryInterface(interface); 
+        grid_b.AddBoundaryInterface(interface); 
     }
     return (_interfaces.size() > 0); 
 }

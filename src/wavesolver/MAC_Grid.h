@@ -311,6 +311,9 @@ class MAC_Grid
         // for finite-volume formulation
         FVMetaData _fvMetaData; 
 
+        // boundary interface 
+        std::list<BoundaryInterface_Ptr> _boundaryInterfaces; 
+
     public:
         std::string *grid_id = nullptr; 
 
@@ -463,6 +466,11 @@ class MAC_Grid
         REAL EstimateEnergy(const MATRIX &pCurr, const MATRIX &pLast);
         void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
         void ToFile_GhostCellLinearSystem(const char *filename); 
+
+        inline void ClearBoundaryInterface()
+        {_boundaryInterfaces.clear();}
+        inline void AddBoundaryInterface(BoundaryInterface_Ptr interface)
+        {_boundaryInterfaces.push_back(interface);} 
 
     private:
         // Classifies cells as either a bulk cell, ghost cell, or

@@ -1,3 +1,4 @@
+#include "TYPES.h"
 #include "utils/IO/IO.h" 
 #include "wavesolver/BoundaryInterface.h"
 //##############################################################################

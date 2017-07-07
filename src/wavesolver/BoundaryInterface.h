@@ -39,7 +39,7 @@ public:
                                     REAL &pressure_b) const; 
     inline void AddCellPair(std::pair<int,int> &pair)
     {_cellPairs.push_back(std::move(pair));}
-    inline auto &GetCellPairsCount()
+    inline auto GetCellPairsCount()
     {return _cellPairs.size();}
     inline auto GetDirection()
     {return _direction;} 
