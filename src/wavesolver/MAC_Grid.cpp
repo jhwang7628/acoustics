@@ -577,7 +577,10 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                         p_p1src += dbuf; 
                     }
                 }
-                COUT_SDUMP(alpha); 
+                if (alpha>=0.0) // FIXME debug
+                {
+                    COUT_SDUMP(alpha); 
+                }
                 const REAL p_blend = ((alpha>=0.0 && alpha<=1.0) ? 
                                       (1.0 - alpha)*p_p1abc + alpha*p_p1src : p_p1abc);
                 // corrected update pressure using superpositioned abc + src

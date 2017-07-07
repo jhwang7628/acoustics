@@ -22,6 +22,38 @@ _WhichUnit(const std::string &id) const
 }
 
 //##############################################################################
+// Function Equal
+//##############################################################################
+bool BoundaryInterface::
+Equal(const BoundaryInterface &rhs) const
+{
+    if (_simUnitPair.first && _simUnitPair.second)
+    {
+        // get ids for this
+        const auto &unit_a = _simUnitPair.first; 
+        const auto &unit_b = _simUnitPair.second; 
+        const std::string *id_a = unit_a->simulator->GetSimulatorID(); 
+        const std::string *id_b = unit_b->simulator->GetSimulatorID(); 
+        if (!id_a || !id_b) 
+            return false; 
+
+        // get ids for rhs
+        const auto &unit_a_rhs = rhs.GetSimUnit_a(); 
+        const auto &unit_b_rhs = rhs.GetSimUnit_b(); 
+        const std::string *id_a_rhs = unit_a_rhs->simulator->GetSimulatorID(); 
+        const std::string *id_b_rhs = unit_b_rhs->simulator->GetSimulatorID(); 
+        if (!id_a_rhs || !id_b_rhs) 
+            return false; 
+
+        if ((((*id_a) == (*id_a_rhs) && (*id_b) == (*id_b_rhs)) ||
+             ((*id_a) == (*id_b_rhs) && (*id_b) == (*id_a_rhs))) && 
+            (_direction == rhs.GetDirection()))
+            return true; 
+    }
+    return false; 
+}
+
+//##############################################################################
 // Function GetOtherSolver
 //##############################################################################
 std::string BoundaryInterface:: 

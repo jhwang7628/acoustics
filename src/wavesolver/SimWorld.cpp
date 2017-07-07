@@ -186,7 +186,6 @@ bool SimWorld::
 CheckSimUnitBoundaries()
 {
     // clear all stored interfaces
-    _interfaces.clear(); // stored in SimWorld
     for (auto &unit : _simUnits) // stored in Mac_Grid
         unit->simulator->GetGrid().ClearBoundaryInterface(); 
 
@@ -214,7 +213,12 @@ CheckSimUnitBoundaries()
                           << interfaceDirection << std::endl;
                 auto interface = std::make_shared<BoundaryInterface>(
                         (*it_a), (*it_b), GetWorldTime(), interfaceDirection); 
-                _interfaces.push_back(interface); 
+                bool exist = false; 
+                for (auto &exist_int : _interfaces)
+                    if (exist_int->Equal(*interface))
+                        exist = true; 
+                if (!exist)
+                    _interfaces.push_back(interface); 
             }
         }
     }
@@ -227,9 +231,13 @@ CheckSimUnitBoundaries()
         auto &grid_a = unit_a->simulator->GetGrid(); 
         auto &grid_b = unit_b->simulator->GetGrid(); 
         const int dir = interface->GetDirection(); 
+        grid_a.AddBoundaryInterface(interface); 
+        grid_b.AddBoundaryInterface(interface); 
+        if (interface->initialized)
+            continue; 
+
         const bool a_on_top_of_b = 
             ((unit_a->boxCenter - unit_b->boxCenter)[dir] > 0);
-
         std::vector<int> bdIndices_a, bdIndices_b; 
         std::vector<Vector3d> bdPositions_a, bdPositions_b; 
         if (a_on_top_of_b) // grab pos b and neg a
@@ -319,8 +327,7 @@ CheckSimUnitBoundaries()
                 }
             }
         }
-        grid_a.AddBoundaryInterface(interface); 
-        grid_b.AddBoundaryInterface(interface); 
+        interface->initialized = true; 
     }
     return (_interfaces.size() > 0); 
 }

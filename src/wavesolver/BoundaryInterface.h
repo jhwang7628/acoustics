@@ -22,6 +22,8 @@ private:
     int _WhichUnit(const std::string &id) const; 
 
 public: 
+    bool initialized = false; 
+
     BoundaryInterface(ActiveSimUnit_Ptr unit_a,
                       ActiveSimUnit_Ptr unit_b, 
                       const REAL &time,
@@ -30,6 +32,7 @@ public:
           _blendStartTime(time),
           _direction(direction)
     {}
+    bool Equal(const BoundaryInterface &rhs) const; 
     std::string GetOtherSolver(const std::string &solver_a) const; 
     bool GetOtherCell(const std::string &solver_a, 
                       const int &cell_a,
@@ -41,11 +44,15 @@ public:
     {_cellPairs.push_back(std::move(pair));}
     inline auto GetCellPairsCount()
     {return _cellPairs.size();}
-    inline auto GetDirection()
+    inline auto GetDirection() const
     {return _direction;} 
     inline auto GetSimUnit_a()
     {return _simUnitPair.first;}
     inline auto GetSimUnit_b()
+    {return _simUnitPair.second;}
+    inline const auto GetSimUnit_a() const
+    {return _simUnitPair.first;}
+    inline const auto GetSimUnit_b() const
     {return _simUnitPair.second;}
     inline REAL GetBlendCoeff(const REAL &time) const
     {return (time - _blendStartTime)/_blendTotalTime;}
@@ -54,5 +61,4 @@ public:
     std::ostream &operator <<(std::ostream &os, 
                               const BoundaryInterface &interface); 
 };
-using BoundaryInterface_Ptr = std::shared_ptr<BoundaryInterface>; 
 #endif
