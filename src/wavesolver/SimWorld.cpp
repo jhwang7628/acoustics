@@ -86,7 +86,6 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
         simUnit->simulator->SetSceneObjects(simUnit->objects); 
-        simUnit->simulator->GetGrid().grid_id = simulatorID; 
         auto meshPtr = obj->GetMeshPtr(); 
         const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
@@ -103,6 +102,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
+        simUnit->simulator->GetGrid().grid_id = simulatorID; 
         _simUnits.insert(std::move(simUnit)); 
     }
 
