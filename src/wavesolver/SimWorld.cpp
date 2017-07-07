@@ -86,6 +86,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
         simUnit->simulator->SetSceneObjects(simUnit->objects); 
+        simUnit->simulator->GetGrid().grid_id = simulatorID; 
         auto meshPtr = obj->GetMeshPtr(); 
         const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
@@ -315,7 +316,7 @@ CheckSimUnitBoundaries()
             }
         }
     }
-    return false; 
+    return (_interfaces.size() > 0); 
 }
 
 //##############################################################################

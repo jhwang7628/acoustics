@@ -312,6 +312,8 @@ class MAC_Grid
         FVMetaData _fvMetaData; 
 
     public:
+        std::string *grid_id = nullptr; 
+
         MAC_Grid(){}
         // Provide the size of the domain, finite difference division
         // size, and a signed distance function for the interior boundary
