@@ -830,10 +830,9 @@ Tuple3i PML_WaveSolver::SimBoxMoveControl::Pop()
 
 bool PML_WaveSolver::SimBoxMoveControl::CanMove()
 {
-    if (queue.empty()) // no need to move
+    if (queue.empty()      || 
+        forceFix           || 
+        counter<minInterval) // no need to move or can't move
         return false; 
-    if (counter<minInterval) // not allowed to move
-        return false; 
-    else
-        return true; 
+    return true; 
 }

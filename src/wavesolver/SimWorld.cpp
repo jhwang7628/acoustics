@@ -211,6 +211,9 @@ CheckSimUnitBoundaries()
                         interfaceDirection = ii; 
                 std::cout << "found interface at direction: " 
                           << interfaceDirection << std::endl;
+                std::cout << "locking sim box move\n";
+                (*it_a)->simulator->GetSolver()->SetSimBoxForceFix(true); 
+                (*it_b)->simulator->GetSolver()->SetSimBoxForceFix(true); 
                 auto interface = std::make_shared<BoundaryInterface>(
                         (*it_a), (*it_b), GetWorldTime(), interfaceDirection); 
                 bool exist = false; 

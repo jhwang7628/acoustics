@@ -111,8 +111,9 @@ class PML_WaveSolver : public Solver
         {
             int counter = 0; 
             int minInterval = 0; 
+            bool forceFix = false; 
             std::queue<Tuple3i> queue; 
-            void Push(const Tuple3i &offset){queue.push(offset);}
+            inline void Push(const Tuple3i &offset){queue.push(offset);}
             Tuple3i Pop();            
             bool CanMove(); 
         } _boxMoveControl;
@@ -237,6 +238,8 @@ class PML_WaveSolver : public Solver
         virtual void writeWaveOutput() const;
 
         void MoveSimBox();
+        void SetSimBoxForceFix(const bool &set)
+        {_boxMoveControl.forceFix = set;} 
 
         //// debugging/testing methods ////
         REAL GetMaxCFL();
