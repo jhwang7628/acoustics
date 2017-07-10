@@ -503,143 +503,127 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
 
         const Vector3d cell_position = _pressureField.cellPosition( cell_idx );
         const Tuple3i indices = _pressureField.cellIndex(cell_idx); 
-        const int &ii = indices[0]; 
-        const int &jj = indices[1]; 
-        const int &kk = indices[2]; 
         unsigned char btype = _pressureField.boundaryCellType(cell_idx); 
-        // update boundary cells
-#define PCELL_IDX(i,j,k) _pressureField.cellIndex(i,j,k)
+#define PCELL_IDX(di_,dj_,dk_,ii_,jj_,kk_) _pressureField.cellIndex(di_,dj_,dk_,ii_,jj_,kk_)
+
+        //// update boundary cells
+        // redefine dimension so that the normal is at z-direction (kk)
+        // n: negative to boundary normal
+        // n: negative to boundary normal
+        // p: positive to boundary normal
+        // p: positive to boundary normal
+        // i.e., kk_p is the exterior
+        int di  , dj  , dk  ; 
+        int ii  , jj  , kk  ; 
+        int ii_n, jj_n, kk_n; 
+        int ii_p, jj_p      ; 
+        int interior_dir = 0;
+        // declare temporary pressure stores;
+        REAL p1, p1_abc, p1_src; 
+
+        dk = -1; 
+        // determine dimensions
         if (btype & ScalarField::BoundaryType::Positive_X_Boundary)
         {
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int ii_n = ii-1; 
-                const double p1 = lambda2/(1.+ lambda)*(
-                    (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                    + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                    + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                    +2.*pCurr(PCELL_IDX(ii_n,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-                // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
-                const double p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii_n,jj,kk),0);
-                //const double p_p1src = _objects->EvaluateBoundaryInterface("debug",cell_position);
-                const double p_p1src = 0.0; // FIXME 
-                // corrected update pressure using superpositioned abc + src
-                const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
-                    + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                               + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                               + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0) + (p_p1abc + p_p1src)
-                               -6.*pCurr(PCELL_IDX(ii,jj,kk),0));
-                pNext(cell_idx,0) = p2; 
-                //pNext(cell_idx,0) = p1; 
-        } 
+            dk = 0;
+            interior_dir = -1;
+        }
         else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
         {
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int ii_p = ii+1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii_p,jj,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
+            dk = 0;
+            interior_dir = +1; 
+        }
         else if (btype & ScalarField::BoundaryType::Positive_Y_Boundary)
         {
-                const int ii_p = std::min(ii+1, Ns[0]-1); 
-                const int ii_n = std::max(ii-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int jj_n = jj-1; 
-                const REAL p1 = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii,jj_n,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-                // p_p1abc: predictor using only ABC; p_p1src: add Dirichlet BC source
-                const REAL p_p1abc = (pLast(PCELL_IDX(ii,jj,kk),0) - p1)/lambda + pCurr(PCELL_IDX(ii,jj_n,kk),0);
-                
-                REAL p_p1src = 0.0;
-                REAL dbuf; 
-                REAL alpha=-1.0; 
-                for (auto &interface : _boundaryInterfaces)
-                {
-                    if (interface->GetDirection()!=1)
-                        continue; 
-                    const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
-                    if (hasNeighbour)
-                    {
-                        alpha = interface->GetBlendCoeff(simulationTime); 
-                        p_p1src += dbuf; 
-                    }
-                }
-                if (alpha>=0.0) // FIXME debug
-                {
-                    COUT_SDUMP(alpha); 
-                }
-                const REAL p_blend = ((alpha>=0.0 && alpha<=1.0) ? 
-                                      (1.0 - alpha)*p_p1abc + alpha*p_p1src : p_p1abc);
-                // corrected update pressure using superpositioned abc + src
-                const double p2 = 2.0*pCurr(PCELL_IDX(ii,jj,kk),0) - pLast(PCELL_IDX(ii,jj,kk),0)
-                    + lambda2*(  pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                               + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
-                               + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0) + p_blend
-                               -6.*pCurr(PCELL_IDX(ii,jj,kk),0));
-                pNext(cell_idx,0) = p2; 
-        } 
+            dk = 1;
+            interior_dir = -1;
+        }
         else if (btype & ScalarField::BoundaryType::Negative_Y_Boundary)
         {
-                const int ii_p = std::min(ii+1, Ns[0]-1); 
-                const int ii_n = std::max(ii-1, 0      ); 
-                const int kk_p = std::min(kk+1, Ns[2]-1); 
-                const int kk_n = std::max(kk-1, 0      ); 
-                const int jj_p = jj+1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj  ,kk_p),0) + pCurr(PCELL_IDX(ii  ,jj  ,kk_n),0)
-                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii,jj_p,kk),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
+            dk = 1;
+            interior_dir = +1;
+        }
         else if (btype & ScalarField::BoundaryType::Positive_Z_Boundary)
         {
-                const int ii_p = std::min(ii+1, Ns[0]-1); 
-                const int ii_n = std::max(ii-1, 0      ); 
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_n = kk-1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii,jj,kk_n),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
+            dk = 2; 
+            interior_dir = -1; 
+        }
         else if (btype & ScalarField::BoundaryType::Negative_Z_Boundary)
         {
-                const int ii_p = std::min(ii+1, Ns[0]-1); 
-                const int ii_n = std::max(ii-1, 0      ); 
-                const int jj_p = std::min(jj+1, Ns[1]-1); 
-                const int jj_n = std::max(jj-1, 0      ); 
-                const int kk_p = kk+1; 
-                pNext(cell_idx, 0) = lambda2/(1.+ lambda)*(
-                        (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
-                        + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
-                        + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
-                        +2.*pCurr(PCELL_IDX(ii,jj,kk_p),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
-        } 
-        else 
+            dk = 2; 
+            interior_dir = +1; 
+        }
+
+        const bool is_boundary = (dk>=0); 
+        if (is_boundary)
+        {
+            di = (dk+1) % 3; 
+            dj = (dk+2) % 3; 
+            ii = indices[di]; jj = indices[dj]; kk = indices[dk]; 
+            ii_n = std::max(ii-1,0); ii_p = std::min(ii+1, Ns[di]-1); 
+            jj_n = std::max(jj-1,0); jj_p = std::min(jj+1, Ns[dj]-1); 
+            kk_n = kk+interior_dir; 
+
+            // first, compute a regular pNext using ABC
+            p1 = lambda2/(1.+ lambda)*(
+                    (2./lambda2 - 6.)*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) 
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+                    + 2.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0) 
+                    +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                 );
+            // next, figure out the extra layer
+            p1_abc = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk  ),0) - p1)/lambda 
+                   +  pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk_n),0);
+
+            // fetch for possible contribution through interface (with other sim units)
+            p1_src = 0.0;
+            REAL dbuf; 
+            REAL alpha=-1.0; 
+            for (auto &interface : _boundaryInterfaces)
+            {
+                if (interface->GetDirection()!=dk)
+                    continue; 
+                const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                if (hasNeighbour)
+                {
+                    alpha = interface->GetBlendCoeff(simulationTime); 
+                    p1_src += dbuf; 
+                }
+            }
+            // alpha-blend the neighbour pressure with ABC to smooth out discont.
+            // then do a simple six-point Laplacian computation
+            const REAL p_blend = ((alpha>=0.0 && alpha<=1.0) ? 
+                                  (1.0 - alpha)*p1_abc + alpha*p1_src : p1_abc);
+            pNext(cell_idx,0) = 
+                + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
+                -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                + lambda2*(  
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) 
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0) 
+                    +    p_blend
+                    - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+        }
+        else  // not boundary cells
         {
             // update normal cells
-            pNext(cell_idx, 0) = pCurr(cell_idx, 0) * 2.0 - pLast(cell_idx, 0) + laplacian(cell_idx, 0) * c2_k2; 
+            pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
+                               -     pLast(cell_idx, 0) 
+                               + laplacian(cell_idx, 0) * c2_k2; 
         }
+#undef PCELL_IDX
         // evaluate external sources only happens not in PML
         // Liu Eq (16) f6x term
         if (evaluateExternalSource)
             pNext(cell_idx, 0) += 
-                _objects->EvaluatePressureSources(cell_position, cell_position, simulationTime+0.5*timeStep)*timeStep;
-#undef PCELL_IDX
+                _objects->EvaluatePressureSources(cell_position, 
+                                                  cell_position, 
+                                                  simulationTime+0.5*timeStep)*timeStep;
     }
 }
 

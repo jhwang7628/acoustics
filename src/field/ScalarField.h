@@ -42,6 +42,7 @@ class ScalarField {
         }; 
         enum BoundaryType 
         {
+            Not_Boundary = 0x00,
             Positive_X_Boundary = 0x01,
             Negative_X_Boundary = 0x02, 
             Positive_Y_Boundary = 0x04, 
@@ -81,7 +82,6 @@ class ScalarField {
             Tuple3i index(x,y,z); 
             return cellIndex(index); 
         }
-
         // Returns the x, y and z index for the given flat cell index
         Tuple3i                  cellIndex( int flatIndex ) const;
 
