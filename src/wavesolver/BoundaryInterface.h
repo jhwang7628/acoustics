@@ -41,6 +41,7 @@ public:
                               const int &cell_a,
                                     REAL &pressure_b) const; 
     REAL GetBlendCoeff(const REAL &time) const; 
+    ActiveSimUnit_Ptr GetSimUnit(const std::string &id) const;
     inline void AddCellPair(std::pair<int,int> &pair)
     {_cellPairs.push_back(std::move(pair));}
     inline auto GetCellPairsCount()

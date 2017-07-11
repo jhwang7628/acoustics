@@ -305,6 +305,15 @@ DrawMesh()
                     glColor3f(1.0f, 0.0f, 0.0f); 
                     GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
                 }
+                const auto &bgcMap = unit->simulator->GetGrid().GetBoundaryGhostCells(); 
+                for (const auto &m : bgcMap)
+                {
+                    const auto &cell_idx = m.second->ownerCell; 
+                    MAC_Grid::Cell cell; 
+                    unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
+                    glColor3f(1.0f, 0.0f, 0.0f); 
+                    GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+                }
             }
         }
         glDisable(GL_LIGHTING);

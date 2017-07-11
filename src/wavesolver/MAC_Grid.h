@@ -110,6 +110,7 @@ class MAC_Grid
         }; 
         using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
         using GhostCell_Key  = unsigned long long int; 
+        using BoundaryGhostCell_Key  = std::string; 
         struct GhostCell
         {
             int ownerCell; 
@@ -127,6 +128,20 @@ class MAC_Grid
             }
             inline GhostCell_Key MakeKey() const 
             {return GhostCell::MakeKey(ownerCell, neighbourCell);}
+
+            bool boundary = false; 
+            std::string ownerSolverId; 
+            std::string neighbourSolverId;
+            BoundaryGhostCell_Key MakeKey_Boundary(const std::string &_ownerSolverId, 
+                                                   const std::string &_neighbourSolverId, 
+                                                   const int &ownerCell, 
+                                                   const int &neighbourCell)
+            {
+                ownerSolverId     = _ownerSolverId; 
+                neighbourSolverId = _neighbourSolverId; 
+                return ownerSolverId     + ":" + std::to_string(ownerCell)    + ";"
+                     + neighbourSolverId + ":" + std::to_string(neighbourCell); 
+            }
         };
         using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
 
@@ -268,7 +283,9 @@ class MAC_Grid
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
         std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
         std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
-        using GhostCellType = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
+        std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr> _boundaryGhostCells; 
+        using GhostCellType         = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
+        using BoundaryGhostCellType = std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr>; 
         std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
@@ -430,10 +447,11 @@ class MAC_Grid
         //inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
-        inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
+        inline const bool IsPressureCellBulk(const int &cell_idx) const {return _isBulkCell.at(cell_idx);}
+        inline const bool IsPressureCellSolid(const int &cell_idx) const {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
-        inline const GhostCellType &GetGhostCells(){return _ghostCells;}
-        //inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
+        inline const auto &GetGhostCells(){return _ghostCells;}
+        inline const auto &GetBoundaryGhostCells(){return _boundaryGhostCells;}
         inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 
         void classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose=false); 

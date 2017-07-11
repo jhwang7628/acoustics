@@ -2864,6 +2864,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         _ghostCellsCached.emplace(
                 std::make_pair(m.second->MakeKey(), std::move(m.second->cache))); 
     _ghostCells.clear(); 
+    _boundaryGhostCells.clear(); // boundary ghost cells utilize no cache
 
     // we only have to check bounding box around each objects
     // first get the bounding box
@@ -2895,7 +2896,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 #else
     const int N_max_threads = 1;
 #endif
-    std::vector<GhostCellType> thread_GCMap(N_max_threads); 
+    std::vector<GhostCellType>         thread_GCMap(N_max_threads); 
+    std::vector<BoundaryGhostCellType> thread_BGCMap(N_max_threads); 
     std::vector<IntArray> thread_candidate_cells(N_max_threads); 
     for (auto &tcc : thread_candidate_cells)
         tcc.reserve(numCells/4); 
@@ -2966,15 +2968,59 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                 thread_GCMap.at(thread_idx)[gc->MakeKey()] = std::move(gc); 
             } 
         }
+        // if this cell is boundary, then need to check across interface if existed
+        if (_pressureField.isBoundaryCell(cell_idx))
+        {
+            const Tuple3i nml = _pressureField.boundaryCellNormal(cell_idx); 
+            int otherCell, topology = 0; 
+            for (int dd=0; dd<3; ++dd)
+            {
+                for (auto &interface : _boundaryInterfaces)
+                {
+                    if (interface->GetDirection()!=dd)
+                        continue; 
+                    assert(grid_id); 
+                    const bool hasNeighbour = interface->GetOtherCell(*grid_id, cell_idx, otherCell); 
+                    const auto &otherGrid = interface->GetSimUnit(
+                            interface->GetOtherSolver(*grid_id))->simulator->GetGrid(); 
+                    if (hasNeighbour && otherGrid.IsPressureCellBulk(otherCell))
+                    {
+                        _isGhostCell.at(cell_idx) = true; 
+                        if      (nml[0] == -1) topology = -1; // boundary at x=0
+                        else if (nml[0] ==  1) topology =  1; // boundary at x=l
+                        if      (nml[1] == -1) topology = -2; // boundary at y=0
+                        else if (nml[1] ==  1) topology =  2; // boundary at y=l
+                        if      (nml[2] == -1) topology = -3; // boundary at z=0
+                        else if (nml[2] ==  1) topology =  3; // boundary at z=l
+                        auto gc = MakeGhostCell(cell_idx, otherCell, topology); 
+#ifdef USE_OPENMP
+                        const int thread_idx = omp_get_thread_num(); 
+#else
+                        const int thread_idx = 0; 
+#endif
+                        thread_BGCMap.at(thread_idx)[
+                            gc->MakeKey_Boundary(*grid_id,
+                                                 interface->GetOtherSolver(*grid_id),
+                                                 cell_idx, 
+                                                 otherCell)] = std::move(gc); 
+                    }
+                }
+            }
+        }
     }
     // combine containers for each thread
     using IT_GC = GhostCellType::iterator; 
     using MV_IT = std::move_iterator<IT_GC>;
     for (auto &thread_map : thread_GCMap)
         _ghostCells.insert(MV_IT(thread_map.begin()), MV_IT(thread_map.end())); 
+    using IT_BGC = BoundaryGhostCellType::iterator; 
+    using MV_BIT = std::move_iterator<IT_BGC>;
+    for (auto &thread_map : thread_BGCMap)
+        _boundaryGhostCells.insert(MV_BIT(thread_map.begin()), MV_BIT(thread_map.end())); 
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
+    std::cout << "#boundary_ghost_cells = " << _boundaryGhostCells.size() << std::endl;
 }
 
 //##############################################################################

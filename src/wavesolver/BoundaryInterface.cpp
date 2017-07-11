@@ -22,6 +22,20 @@ _WhichUnit(const std::string &id) const
 }
 
 //##############################################################################
+// Function GetSimUnit
+//##############################################################################
+ActiveSimUnit_Ptr BoundaryInterface::
+GetSimUnit(const std::string &id) const
+{
+    auto unit_a = _simUnitPair.first; 
+    auto unit_b = _simUnitPair.second; 
+    if (*(unit_a->simulator->GetSimulatorID()) == id)
+        return unit_a; 
+    else if (*(unit_b->simulator->GetSimulatorID()) == id) 
+        return unit_b; 
+    return nullptr; 
+}
+//##############################################################################
 // Function Equal
 //##############################################################################
 bool BoundaryInterface::
@@ -115,6 +129,12 @@ GetOtherCellPressure(const std::string &solver_a,
               : _simUnitPair.first ->simulator); 
         const Tuple3i cellIndices = 
             unit_b->GetGrid().pressureField().cellIndex(cell_b); 
+        // TODO START
+        // check if its bulk or ghost cells .. 
+        // also need to modify classify cells routine to take the neighbours into account
+        //
+        //
+        // TODO END
         unit_b->GetSolver()->vertexPressure(cellIndices, vPressure);
         pressure_b = vPressure[0];
     }
