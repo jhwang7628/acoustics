@@ -258,6 +258,23 @@ AnimateObjects(const REAL toTime)
 //##############################################################################
 //##############################################################################
 void FDTD_Objects::
+Join(FDTD_Objects_Ptr &toBeJoined) 
+{
+    auto &to_be_joined_obj_list = toBeJoined->GetRigidSoundObjects(); 
+    auto &to_be_joined_src_list = toBeJoined->GetPressureSources(); 
+    for (auto &m : to_be_joined_obj_list)
+    {
+        _rigidObjects[m.first] = m.second; 
+    }
+    for (auto &p : to_be_joined_src_list)
+    {
+        _pressureSources.push_back(p); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
 TestObjectDistanceField(const size_t &ind)
 {
     _rigidObjects.at(ind)->TestQueryDistance();

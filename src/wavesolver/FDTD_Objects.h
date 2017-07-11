@@ -15,6 +15,8 @@ class SimWorld;
 //##############################################################################
 // Handles a list of objects embedded in the wave solver
 //##############################################################################
+class FDTD_Objects;
+using FDTD_Objects_Ptr = std::shared_ptr<FDTD_Objects>; 
 class FDTD_Objects
 {
     private: 
@@ -63,6 +65,7 @@ class FDTD_Objects
                                 const std::string &fileVelocity,
                                 const std::string &fileAcceleration); 
         void AnimateObjects(const REAL toTime); 
+        void Join(FDTD_Objects_Ptr &toBeJoined); 
 
         //// debug methods ////
         void TestObjectDistanceField(const size_t &ind); 
@@ -73,6 +76,5 @@ class FDTD_Objects
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
     friend SimWorld; 
 };
-using FDTD_Objects_Ptr = std::shared_ptr<FDTD_Objects>; 
 
 #endif 

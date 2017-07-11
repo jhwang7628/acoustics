@@ -220,8 +220,12 @@ CheckSimUnitBoundaries()
                 for (auto &exist_int : _interfaces)
                     if (exist_int->Equal(*interface))
                         exist = true; 
-                if (!exist)
+                if (!exist) // first time discover this interface
+                {
+                    (*it_a)->objects->Join((*it_b)->objects); 
+                    (*it_b)->objects->Join((*it_a)->objects); 
                     _interfaces.push_back(interface); 
+                }
             }
         }
     }
