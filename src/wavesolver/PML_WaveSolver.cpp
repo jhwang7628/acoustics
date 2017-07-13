@@ -582,6 +582,29 @@ void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) co
 #endif
 }
 
+// see header for function parameters
+REAL PML_WaveSolver::vertexPressure(const Tuple3i &index, const int &fromDirection) const
+{
+    const int cell_idx = _grid.pressureFieldVertexIndex(index); 
+    const REAL type = _grid.PressureCellType(cell_idx); 
+    if (type > 0.75) // solid
+    {
+        return 0.0; 
+    }
+    else if (type > 0.0 && type < 0.75) // bulk
+    {
+#ifdef USE_COLLOCATED
+        return _pCollocated[_pCollocatedInd](cell_idx,0); 
+#else
+        return _pFull(cell_idx,0);
+#endif
+    }
+    else // ghost cell
+    {
+    }
+    return 0.0; 
+}
+
 void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const 
 {
     if ( velocity.size() != _N )

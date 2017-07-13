@@ -132,18 +132,27 @@ class MAC_Grid
             bool boundary = false; 
             std::string ownerSolverId; 
             std::string neighbourSolverId;
-            BoundaryGhostCell_Key MakeKey_Boundary(const std::string &_ownerSolverId, 
-                                                   const std::string &_neighbourSolverId, 
-                                                   const int &ownerCell, 
-                                                   const int &neighbourCell)
+            BoundaryInterface_Ptr interface; 
+            static BoundaryGhostCell_Key MakeKey_Boundary(const std::string &oId, 
+                                                          const std::string &nId,
+                                                          const int &oCell, const int &nCell)
             {
-                ownerSolverId     = _ownerSolverId; 
-                neighbourSolverId = _neighbourSolverId; 
-                return ownerSolverId     + ":" + std::to_string(ownerCell)    + ";"
-                     + neighbourSolverId + ":" + std::to_string(neighbourCell); 
+                return (oId < nId ?
+                             oId + ":" + std::to_string(oCell) + ";"
+                           + nId + ":" + std::to_string(nCell)
+                         : 
+                             nId + ":" + std::to_string(nCell) + ";"
+                           + oId + ":" + std::to_string(oCell)
+                       );
+            }
+            BoundaryGhostCell_Key MakeKey_Boundary()
+            {
+                return GhostCell::MakeKey_Boundary(ownerSolverId, neighbourSolverId, 
+                                                   ownerCell, neighbourCell); 
             }
         };
         using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
+        using  GhostCell_Ptr = std::shared_ptr<GhostCell>; 
 
         class GhostCell_Deprecated
         {

@@ -231,9 +231,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            - 2.0*value(cell_idx, 0)); 
 #else
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
-                //laplacian(cell_idx, 0) += (  ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)).at(dim*2))
-                //                           + ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)).at(dim*2+1))
-                //                           - 2.0*value(cell_idx, 0)) / (9.0/16.0); 
                 laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
                                            + _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iNeg))->pressure
                                            - 2.0*value(cell_idx, 0)) / (9.0/16.0); 
@@ -249,7 +246,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                 laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
-            } 
 #endif
             if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
                 bufPos[dim] -= 1; 
@@ -786,15 +782,22 @@ void MAC_Grid::UpdatePMLPressure(MATRIX (&pDirectional)[3], MATRIX &pFull)
 
 void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density)
 {
-    const int N_ghostCells = _ghostCells.size(); 
+    const int N_ghostCells = _ghostCells.size() + _boundaryGhostCells.size(); 
     if (N_ghostCells == 0) return; 
 
     // copy the indices for openmp access
-    std::vector<GhostCell_Key> gcIndices(N_ghostCells); 
+    std::vector<GhostCell_Key>          gcIndices(_ghostCells.size()); 
+    std::vector<BoundaryGhostCell_Key> bgcIndices(_boundaryGhostCells.size()); 
     int count=0; 
     for (auto &m : _ghostCells)
     {
         gcIndices[count] = m.first; 
+        ++count; 
+    }
+    count=0; 
+    for (auto &m : _boundaryGhostCells)
+    {
+        bgcIndices[count] = m.first; 
         ++count; 
     }
 #ifdef USE_OPENMP
@@ -802,8 +805,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
 #endif
     for (int ii=0; ii<N_ghostCells; ++ii)
     {
-        const auto &key = gcIndices.at(ii); 
-        auto &gc = _ghostCells.at(key); 
+        GhostCell_Key key_gc; 
+        BoundaryGhostCell_Key key_bgc; 
+
+        if (ii<_ghostCells.size()) key_gc  =  gcIndices.at(ii); 
+        else                       key_bgc = bgcIndices.at(ii - _ghostCells.size());
+        auto &gc = (ii<_ghostCells.size() ? _ghostCells.at(key_gc) : _boundaryGhostCells.at(key_bgc)); 
         //const int child_pos = _ghostCellChildArrayPositions.at(ghost_cell_idx); 
         const Vector3d &cellPosition = gc->position; 
         int boundaryObject;
@@ -842,7 +849,19 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         // get the box enclosing the image point; 
         IntArray neighbours; 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
-        const REAL p_rasterize = p(gc->neighbourCell, 0); 
+
+        REAL p_rasterize; 
+        if (!gc->boundary)
+        {
+            p_rasterize = p(gc->neighbourCell, 0); 
+        }
+        else 
+        {
+            REAL tmp; 
+            gc->interface->GetOtherCellPressure(*grid_id, gc->ownerCell, tmp);
+            p_rasterize = tmp;
+        }
+
         REAL p_r = std::numeric_limits<REAL>::max(); 
         const auto &boundaryType = object->GetOptionalAttributes().boundaryHandlingType; 
         if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE)
@@ -910,6 +929,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             {
                 p_r = p_rasterize; 
             }
+        }
+        else
+        {
+            throw std::runtime_error("**ERROR** should never happen");
         }
         // after processing, if difference between interpolation and rasterize is over certain threshold, clamp it
         if (abs(p_rasterize) > SMALL_NUM && abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL)
@@ -2967,16 +2990,16 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                         if      (nml[2] == -1) topology = -3; // boundary at z=0
                         else if (nml[2] ==  1) topology =  3; // boundary at z=l
                         auto gc = MakeGhostCell(cell_idx, otherCell, topology); 
+                        gc->boundary = true;
+                        gc->ownerSolverId = *grid_id; 
+                        gc->neighbourSolverId = interface->GetOtherSolver(*grid_id); 
+                        gc->interface = interface; 
 #ifdef USE_OPENMP
                         const int thread_idx = omp_get_thread_num(); 
 #else
                         const int thread_idx = 0; 
 #endif
-                        thread_BGCMap.at(thread_idx)[
-                            gc->MakeKey_Boundary(*grid_id,
-                                                 interface->GetOtherSolver(*grid_id),
-                                                 cell_idx, 
-                                                 otherCell)] = std::move(gc); 
+                        thread_BGCMap.at(thread_idx)[gc->MakeKey_Boundary()] = std::move(gc); 
                     }
                 }
             }

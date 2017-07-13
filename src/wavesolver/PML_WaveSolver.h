@@ -236,6 +236,9 @@ class PML_WaveSolver : public Solver
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
         virtual void vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const;
         virtual void writeWaveOutput() const;
+        // access vertex pressure at given index, if it is a ghost cell, 
+        // then use requestedCell to determine which ghost cell values to grab. 
+        REAL vertexPressure(const Tuple3i &index, const int &requestedCell) const; 
 
         void MoveSimBox();
         void SetSimBoxForceFix(const bool &set)
