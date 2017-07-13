@@ -230,7 +230,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
 #else
-            try {
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
                 //laplacian(cell_idx, 0) += (  ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)).at(dim*2))
                 //                           + ghostCellValue.at(_ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)).at(dim*2+1))
@@ -251,31 +250,6 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0)); 
             } 
-            catch (std::out_of_range &e) { // FIXME debug: remove try-catch
-#pragma omp critical
-                {
-                std::cerr << "\n==========================\n"; 
-                std::cerr << e.what() << std::endl; 
-                std::cerr << cell_idx << " [" << dim << "]: " << buf_iPos << "; " << buf_iNeg << std::endl; 
-                if (_isGhostCell.at(buf_iPos)) {
-                    std::cerr << "--- + ---\n";
-                    std::cerr << buf_iPos << std::endl; 
-                    std::cerr << _ghostCellsInverse.at(buf_iPos) << std::endl;
-                    auto &tmp = _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)); 
-                    std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<int>(std::cout, " ")); 
-                    std::cerr << _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iPos)).at(dim*2  ); 
-                }
-                if (_isGhostCell.at(buf_iNeg)) {
-                    std::cerr << "--- - ---\n";
-                    std::cerr << buf_iNeg << std::endl; 
-                    std::cerr << _ghostCellsInverse.at(buf_iNeg) << std::endl;
-                    auto &tmp = _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)); 
-                    std::copy(tmp.begin(), tmp.end(), std::ostream_iterator<int>(std::cout, " ")); 
-                    std::cerr << _ghostCellsChildren.at(_ghostCellsInverse.at(buf_iNeg)).at(dim*2+1); 
-                }
-                exit(1); 
-                }
-            }
 #endif
             if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
                 bufPos[dim] -= 1; 
