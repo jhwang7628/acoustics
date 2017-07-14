@@ -237,9 +237,27 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
                 ++it; 
             }
         }
-        if (neighbours.size() < 4)
+        if (neighbours.size() < 1) // this shouldn't happen
+        {
             throw std::runtime_error("**ERROR** Interpolation error: cannot construct interpolant");
-        else
+        }
+        else if (neighbours.size() < 4)  // get nearest neighbours if linear MLS not possible
+        {
+            int best = -1;
+            REAL bestDistance = std::numeric_limits<REAL>::max(); 
+            for (auto &nind : neighbours)
+            {
+                const REAL distance = (field.cellPosition(nind) - point).lengthSqr(); 
+                if (distance < bestDistance)
+                {
+                    best = nind; 
+                    bestDistance = distance; 
+                }
+            }
+            assert(best != -1);
+            data(pt_idx, 0) = scalar(best, 0);
+        }
+        else // linear MLS
         {
             const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
             data(pt_idx, 0) = mlsVal(0, 0);
@@ -580,29 +598,6 @@ void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) co
 #else
     MATRIX::copy( pressure.data(), _pFull.data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
 #endif
-}
-
-// see header for function parameters
-REAL PML_WaveSolver::vertexPressure(const Tuple3i &index, const int &fromDirection) const
-{
-    const int cell_idx = _grid.pressureFieldVertexIndex(index); 
-    const REAL type = _grid.PressureCellType(cell_idx); 
-    if (type > 0.75) // solid
-    {
-        return 0.0; 
-    }
-    else if (type > 0.0 && type < 0.75) // bulk
-    {
-#ifdef USE_COLLOCATED
-        return _pCollocated[_pCollocatedInd](cell_idx,0); 
-#else
-        return _pFull(cell_idx,0);
-#endif
-    }
-    else // ghost cell
-    {
-    }
-    return 0.0; 
 }
 
 void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const 
