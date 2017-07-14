@@ -120,23 +120,35 @@ GetOtherCellPressure(const std::string &solver_a,
     const bool keyExists = GetOtherCell(solver_a, cell_a, cell_b); 
     if (keyExists)
     {
-        VECTOR vPressure; 
         auto &unit_a = (_WhichUnit(solver_a) == 0 ? 
                 _simUnitPair.first ->simulator 
               : _simUnitPair.second->simulator); 
         auto &unit_b = (_WhichUnit(solver_a) == 0 ? 
                 _simUnitPair.second->simulator
               : _simUnitPair.first ->simulator); 
+        auto &grid_b = unit_b->GetGrid(); 
         const Tuple3i cellIndices = 
-            unit_b->GetGrid().pressureField().cellIndex(cell_b); 
+            grid_b.pressureField().cellIndex(cell_b); 
         // TODO START
         // check if its bulk or ghost cells .. 
         // also need to modify classify cells routine to take the neighbours into account
         //
         //
         // TODO END
-        unit_b->GetSolver()->vertexPressure(cellIndices, vPressure);
-        pressure_b = vPressure[0];
+        if (grid_b.IsPressureCellBulk(cell_b))
+        {
+            VECTOR vPressure; 
+            unit_b->GetSolver()->vertexPressure(cellIndices, vPressure);
+            pressure_b = vPressure[0];
+        }
+        else if (grid_b.IsPressureCellGhost(cell_b))
+        {
+            grid_b.BoundaryGhostCellPressure(solver_a, cell_a, cell_b, pressure_b); 
+        }
+        else 
+        {
+            pressure_b = 0.0;
+        }
     }
     return keyExists;
 }

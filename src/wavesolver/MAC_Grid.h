@@ -456,6 +456,7 @@ class MAC_Grid
         //inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
+        inline const bool IsPressureCellGhost(const int &cell_idx) const {return _isGhostCell.at(cell_idx);}
         inline const bool IsPressureCellBulk(const int &cell_idx) const {return _isBulkCell.at(cell_idx);}
         inline const bool IsPressureCellSolid(const int &cell_idx) const {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
@@ -484,6 +485,8 @@ class MAC_Grid
         // if sign>0, grab all +dimension face cell indices and positions
         // if sign<0, grab all -dimension ...
         void GetAllBoundaryCells(const int &dimension, const int &sign, std::vector<int> &indices, std::vector<Vector3d> &positions); 
+        // return pressure at cell_b for this solver (solver_b)
+        bool BoundaryGhostCellPressure(const std::string &solver_a, const int &cell_a, const int &cell_b, REAL &pressure_b) const; 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 

@@ -848,6 +848,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
+        neighbours.reserve(8); 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
         REAL p_rasterize; 
@@ -3712,6 +3713,23 @@ void MAC_Grid::GetAllBoundaryCells(const int &dimension, const int &sign, std::v
             indices.at(ind) = pressureFieldVertexIndex(indicesBuf); 
             positions.at(ind) = pressureFieldPosition(indicesBuf); 
         }
+}
+
+bool MAC_Grid::BoundaryGhostCellPressure(const std::string &solver_a, const int &cell_a, const int &cell_b, REAL &pressure_b) const 
+{
+    assert(grid_id); 
+    const auto key = GhostCell::MakeKey_Boundary(solver_a, *grid_id, cell_a, cell_b); 
+    auto it = _boundaryGhostCells.find(key); 
+    if (it == _boundaryGhostCells.end())
+        return false; 
+    const auto &gc = it->second; 
+    assert(gc->boundary); 
+    pressure_b = gc->pressure; 
+
+    // FIXME debug
+    std::cout << "queried boundary ghost cell pressure is : " << pressure_b << std::endl; 
+
+    return true; 
 }
 
 //// debug methods //// 
