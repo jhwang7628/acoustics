@@ -252,28 +252,37 @@ void ScalarField::cell26Neighbours( const int &flatIndex, IntArray &neighbours) 
             }
 }
 
+// Ex: N=6, any dimension, x is cell center:
+//
+// |--x--|--x--|--x--|--x--|--x--|--x--|
+//      o
+// want to find all x's enclosing o, in this case x(0) and x(1)
+// if out of bounds, clamp to boundary (no repeated indices guaranteed by set)
 void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighbours) const 
 {
-
     neighbours.clear(); 
 
     Vector3d diff = position - _bbox.minBound(); 
     diff -= _cellSize/2.0; 
 
-    // compute the lower corner and clamp it to the (boundary - 1) cell
-    const int x = min( max( (int) (diff.x/_cellSize), 1), _divisions[0]-2 ); 
-    const int y = min( max( (int) (diff.y/_cellSize), 1), _divisions[1]-2 ); 
-    const int z = min( max( (int) (diff.z/_cellSize), 1), _divisions[2]-2 ); 
+    const int x0 = min( max( (int) (diff.x/_cellSize), 0), _divisions[0]-1 ); 
+    const int y0 = min( max( (int) (diff.y/_cellSize), 0), _divisions[1]-1 ); 
+    const int z0 = min( max( (int) (diff.z/_cellSize), 0), _divisions[2]-1 ); 
+    const int x1 = (diff.x < 0.0 ? 0 : min(x0+1,_divisions[0]-1)); // if out of bounds, clamp to first
+    const int y1 = (diff.y < 0.0 ? 0 : min(y0+1,_divisions[1]-1)); 
+    const int z1 = (diff.z < 0.0 ? 0 : min(z0+1,_divisions[2]-1)); 
 
-    neighbours.push_back( cellIndex(x+0,y+0,z+0) ); 
-    neighbours.push_back( cellIndex(x+0,y+0,z+1) ); 
-    neighbours.push_back( cellIndex(x+0,y+1,z+0) ); 
-    neighbours.push_back( cellIndex(x+0,y+1,z+1) ); 
-    neighbours.push_back( cellIndex(x+1,y+0,z+0) ); 
-    neighbours.push_back( cellIndex(x+1,y+0,z+1) ); 
-    neighbours.push_back( cellIndex(x+1,y+1,z+0) ); 
-    neighbours.push_back( cellIndex(x+1,y+1,z+1) ); 
+    std::set<int> helper; 
+    helper.insert( cellIndex(x0,y0,z0) ); 
+    helper.insert( cellIndex(x0,y0,z1) ); 
+    helper.insert( cellIndex(x0,y1,z0) ); 
+    helper.insert( cellIndex(x0,y1,z1) ); 
+    helper.insert( cellIndex(x1,y0,z0) ); 
+    helper.insert( cellIndex(x1,y0,z1) ); 
+    helper.insert( cellIndex(x1,y1,z0) ); 
+    helper.insert( cellIndex(x1,y1,z1) ); 
 
+    std::copy(helper.begin(), helper.end(), std::back_inserter(neighbours)); 
 }
 
 void ScalarField::GetIterationBox(const Vector3d &in_minBound, const Vector3d &in_maxBound, RangeIndices &indices)
