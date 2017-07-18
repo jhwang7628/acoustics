@@ -106,6 +106,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
 #endif
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
+        inline void ClearVibrationalSources(){_vibrationalSources.clear();}
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
         void Initialize(const bool &buildFromTetMesh); 

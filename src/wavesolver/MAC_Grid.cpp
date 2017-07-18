@@ -537,10 +537,10 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             // first, compute a regular pNext using ABC
             p1 = lambda2/(1.+ lambda)*(
                     (2./lambda2 - 6.)*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
                     +    pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) 
                     +    pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
+                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
                     + 2.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0) 
                     +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                  );
@@ -565,8 +565,13 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             }
             // alpha-blend the neighbour pressure with ABC to smooth out discont.
             // then do a simple six-point Laplacian computation
-            const REAL p_blend = ((alpha>=0.0 && alpha<=1.0) ? 
-                                  (1.0 - alpha)*p1_abc + alpha*p1_src : p1_abc);
+            REAL p_blend; 
+            if (alpha<0)
+                p_blend = p1_abc; 
+            else if (alpha>=0.0 && alpha<=1.0)
+                p_blend = (1.0 - alpha)*p1_abc + alpha*p1_src; 
+            else 
+                p_blend = p1_src; 
             pNext(cell_idx,0) = 
                 + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
                 -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
@@ -3018,6 +3023,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
+    std::cout << "#boundary_interfaces = " << _boundaryInterfaces.size() << std::endl;
     std::cout << "#boundary_ghost_cells = " << _boundaryGhostCells.size() << std::endl;
 }
 

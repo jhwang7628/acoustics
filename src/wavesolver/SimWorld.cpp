@@ -104,6 +104,10 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
         simUnit->simulator->GetGrid().grid_id = simulatorID; 
         _simUnits.insert(std::move(simUnit)); 
+
+        // FIXME debug
+        if (obj->GetMeshName() == "0")
+            obj->ClearVibrationalSources();
     }
 
     // setup filename for output
@@ -149,8 +153,12 @@ StepWorld()
 {
     bool continueStepping = true; 
     // update simulation
+    std::cout << "================ Step START ================\n";
+    int count=0;
     for (auto &unit : _simUnits)
     {
+        std::cout << "-------- unit " << count 
+                  << " START -------- \n"; 
         continueStepping = (unit->simulator->RunForSteps(1) || continueStepping); 
         // update speakers, interpolate pressure values and write to audio output
         const Vector3Array &spks = unit->UpdateSpeakers();
@@ -166,6 +174,9 @@ StepWorld()
                 ListeningUnit::DelayLineScaling(spk, mic)* fetch(ii,0);
         }
         AudioOutput::instance()->AccumulateBuffer(pressures); 
+        std::cout << "-------- unit " << count 
+                  << " STOP -------- \n"; 
+        count++; 
     }
     AudioOutput::instance()->WriteAndResetBuffer(); 
 
@@ -175,6 +186,7 @@ StepWorld()
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
     UpdateObjectState(_state.time); 
+    std::cout << "================ Step STOP ================\n";
 
     return continueStepping;
 }
