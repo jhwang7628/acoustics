@@ -534,19 +534,33 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             jj_n = std::max(jj-1,0); jj_p = std::min(jj+1, Ns[dj]-1); 
             kk_n = kk+interior_dir; 
 
+            // pressure of the neighbours
+            REAL p_ii_p, p_ii_n, p_jj_p, p_jj_n, p_kk_n; 
+            int neighbour_idx; 
+            neighbour_idx = PCELL_IDX(di,dj,dk,ii_p,jj,kk); 
+            p_ii_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+            neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
+            p_ii_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_p,kk); 
+            p_jj_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_n,kk); 
+            p_jj_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_n); 
+            p_kk_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+
             // first, compute a regular pNext using ABC
             p1 = lambda2/(1.+ lambda)*(
                     (2./lambda2 - 6.)*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) 
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
-                    + 2.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0) 
+                    + p_ii_p + p_ii_n + p_jj_p + p_jj_n + 2.*p_kk_n 
                     +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                  );
             // next, figure out the extra layer
-            p1_abc = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk  ),0) - p1)/lambda 
-                   +  pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk_n),0);
+            p1_abc = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk  ),0) - p1)/lambda + p_kk_n;
 
             // fetch for possible contribution through interface (with other sim units)
             p1_src = 0.0;
@@ -576,12 +590,8 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
                 -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                 + lambda2*(  
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) 
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) 
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
-                    +    pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0) 
-                    +    p_blend
+                    + p_ii_p + p_ii_n + p_jj_p + p_jj_n + p_kk_n
+                    + p_blend
                     - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
         }
         else  // not boundary cells
