@@ -360,3 +360,13 @@ PreviewStepping(const int &previewSpeed) // TODO!
 }
 
 //##############################################################################
+// Function ResetStartTime
+//##############################################################################
+void SimWorld::
+ResetStartTime(const REAL &startTime)
+{
+    for (auto &unit : _simUnits)
+        unit->simulator->ResetStartTime(startTime); 
+}
+
+//##############################################################################

@@ -31,6 +31,8 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _button_generateSlice_y->setText("Generate y-slice");
     _button_generateSlice_z = new QPushButton(this); 
     _button_generateSlice_z->setText("Generate z-slice");
+    _button_clearPressures = new QPushButton(this); 
+    _button_clearPressures->setText("Clear Pressure Field");
     _layout->addWidget(_viewer.get()      , 0, 0, 1, 4);
     _layout->addWidget(  _text_impulseScaling, 1, 0);
     _layout->addWidget(_slider_impulseScaling, 1, 1);
@@ -43,6 +45,7 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _controlPanelLayout->addWidget(_button_generateSlice_x, 0, 0);
     _controlPanelLayout->addWidget(_button_generateSlice_y, 0, 1);
     _controlPanelLayout->addWidget(_button_generateSlice_z, 0, 2);
+    _layout->addWidget(_button_clearPressures, 4, 0);
     setLayout(_layout);
     resize(800, 600);
     // signal-slot stuff
@@ -55,6 +58,9 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
             GenerateSlice(1, _solverSettings->domainCenter[1]);});
     connect(_button_generateSlice_z, &QPushButton::clicked, this, [this]{
             GenerateSlice(2, _solverSettings->domainCenter[2]);});
+    connect(_button_clearPressures, &QPushButton::clicked, this, [this]{
+            ResetSystemTime(false);}); 
+            
 }
 
 //##############################################################################
@@ -70,28 +76,31 @@ FDTD_AcousticSimulator_Widget::
 void FDTD_AcousticSimulator_Widget::
 SliderValueChanged()
 {
-    // FIXME debug
-    //const REAL impulseScaling = (REAL)_slider_impulseScaling->value()*IMP_SLIDER_SCALE; 
-    //const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
-    //_label_impulseScaling->setText(QString("%1").arg(impulseScaling));
-    //_label_simulationTimeline->setText(QString("%1").arg(newTime));
-    //// update viewer
-    //_viewer->_drawImpulseScaling = pow(10., impulseScaling); 
-    //_viewer->_simulator->AnimateObjects(newTime); 
-    //_viewer->updateGL();
+    if (_viewer->animationIsStarted())
+        _viewer->stopAnimation(); 
+    const REAL impulseScaling = (REAL)_slider_impulseScaling->value()*IMP_SLIDER_SCALE; 
+    const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
+    _label_impulseScaling->setText(QString("%1").arg(impulseScaling));
+    _label_simulationTimeline->setText(QString("%1").arg(newTime));
+    // update simworld
+    _viewer->_drawImpulseScaling = pow(10., impulseScaling);
+    _viewer->_simWorld->SetWorldTime(newTime); 
+    _viewer->_simWorld->UpdateObjectState(newTime); 
+    _viewer->updateGL();
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Widget::
-ResetSystemTime()
+ResetSystemTime(const bool &fromSlider)
 {
-    // FIXME debug
-    //const REAL newTime = (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize; 
-    //_viewer->_simulator->ResetStartTime(newTime);
-    //_viewer->SetAllSliceDataReady(false);
-    //_viewer->_currentFrame = 0;
-    //_viewer->updateGL();
+    const REAL newTime = fromSlider ? 
+        (REAL)_slider_simulationTimeline->value()*_solverSettings->timeStepSize
+      : _viewer->_simWorld->GetWorldTime(); 
+    _viewer->_simWorld->ResetStartTime(newTime);
+    _viewer->SetAllSliceDataReady(false);
+    _viewer->_currentFrame = 0;
+    _viewer->updateGL();
 }
 
 //##############################################################################
