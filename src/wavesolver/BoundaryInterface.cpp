@@ -129,12 +129,6 @@ GetOtherCellPressure(const std::string &solver_a,
         auto &grid_b = unit_b->GetGrid(); 
         const Tuple3i cellIndices = 
             grid_b.pressureField().cellIndex(cell_b); 
-        // TODO START
-        // check if its bulk or ghost cells .. 
-        // also need to modify classify cells routine to take the neighbours into account
-        //
-        //
-        // TODO END
         if (grid_b.IsPressureCellBulk(cell_b))
         {
             VECTOR vPressure; 
