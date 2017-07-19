@@ -602,6 +602,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                + laplacian(cell_idx, 0) * c2_k2; 
         }
 #undef PCELL_IDX
+
         // evaluate external sources only happens not in PML
         // Liu Eq (16) f6x term
         if (evaluateExternalSource)
