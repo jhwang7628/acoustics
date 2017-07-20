@@ -370,3 +370,16 @@ ResetStartTime(const REAL &startTime)
 }
 
 //##############################################################################
+// Function ClearAllSources
+//##############################################################################
+void SimWorld::
+ClearAllSources()
+{
+    // pressure source
+    _objectCollections->GetPressureSources().clear(); 
+    // object sources
+    auto &objects = _objectCollections->GetRigidSoundObjects(); 
+    for (auto &obj : objects)
+        obj.second->ClearVibrationalSources(); 
+}
+//##############################################################################

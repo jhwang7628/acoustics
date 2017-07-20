@@ -77,6 +77,7 @@ public:
     bool CheckSimUnitBoundaries(); 
     void PreviewStepping(const int &previewSpeed);
     void ResetStartTime(const REAL &startTime); 
+    void ClearAllSources(); 
 };
 using SimWorld_UPtr = std::unique_ptr<SimWorld>; 
 

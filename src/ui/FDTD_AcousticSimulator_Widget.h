@@ -39,11 +39,13 @@ class FDTD_AcousticSimulator_Widget : public QWidget
         QPushButton *_button_generateSlice_y;
         QPushButton *_button_generateSlice_z;
         QPushButton *_button_clearPressures; 
+        QPushButton *_button_clearSources; 
 
     private slots: 
         void SliderValueChanged(); 
         void ResetSystemTime(const bool &fromSlider = true);
         void GenerateSlice(const int &dim, const REAL &offset);
+        void ClearSources(); 
 };
 
 #endif

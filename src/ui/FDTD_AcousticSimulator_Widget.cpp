@@ -33,6 +33,8 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _button_generateSlice_z->setText("Generate z-slice");
     _button_clearPressures = new QPushButton(this); 
     _button_clearPressures->setText("Clear Pressure Field");
+    _button_clearSources = new QPushButton(this); 
+    _button_clearSources->setText("Clear All Sources");
     _layout->addWidget(_viewer.get()      , 0, 0, 1, 4);
     _layout->addWidget(  _text_impulseScaling, 1, 0);
     _layout->addWidget(_slider_impulseScaling, 1, 1);
@@ -46,6 +48,7 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     _controlPanelLayout->addWidget(_button_generateSlice_y, 0, 1);
     _controlPanelLayout->addWidget(_button_generateSlice_z, 0, 2);
     _layout->addWidget(_button_clearPressures, 4, 0);
+    _layout->addWidget(_button_clearSources  , 4, 1);
     setLayout(_layout);
     resize(800, 600);
     // signal-slot stuff
@@ -60,6 +63,8 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
             GenerateSlice(2, _solverSettings->domainCenter[2]);});
     connect(_button_clearPressures, &QPushButton::clicked, this, [this]{
             ResetSystemTime(false);}); 
+    connect(_button_clearSources, &QPushButton::clicked, this, [this]{
+            ClearSources();}); 
             
 }
 
@@ -99,7 +104,6 @@ ResetSystemTime(const bool &fromSlider)
       : _viewer->_simWorld->GetWorldTime(); 
     _viewer->_simWorld->ResetStartTime(newTime);
     _viewer->SetAllSliceDataReady(false);
-    _viewer->_currentFrame = 0;
     _viewer->updateGL();
 }
 
@@ -110,4 +114,12 @@ GenerateSlice(const int &dim, const REAL &offset)
 {
     _viewer->AddSlice(dim, offset);
     _viewer->updateGL();
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator_Widget::
+ClearSources()
+{
+    _viewer->_simWorld->ClearAllSources(); 
 }
