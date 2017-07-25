@@ -2,8 +2,10 @@
 
 cd $HOME
 mkdir code
-mkdir /hdd1/data
-ln -s /hdd1/data $HOME/data
+sudo mkdir /hdd1/$USER
+sudo chown -R $USER /hdd1/$USER
+mkdir /hdd1/$USER/data
+ln -s /hdd1/$USER/data $HOME/data
 sudo apt-get install git -y
 
 cd code
