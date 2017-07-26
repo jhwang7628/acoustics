@@ -12,11 +12,13 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
     _omega = sqrt(omegaSquared);
     _timeStepSize = timeStepSize; 
 
-    const REAL xi = material->xi(_omega); 
+    REAL xi = material->xi(_omega); 
     if (xi > 1 || xi < 0) 
     {
         std::cout << "xi = " << xi << std::endl;
-        throw std::runtime_error("**ERROR** xi is out of range [0,1]. check material parameters");
+        //throw std::runtime_error("**ERROR** xi is out of range [0,1]. check material parameters");
+        std::cerr << "**WARNING** xi is out of range [0,1]. Clamping it. check material parameters" << std::endl;;
+        xi = std::min(1.0, std::max(xi, 0.0)); 
     }
 
     const REAL omega_di = material->omega_di(_omega); 
