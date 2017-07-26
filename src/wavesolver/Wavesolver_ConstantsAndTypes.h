@@ -36,6 +36,7 @@ class PML_WaveSolver_Settings;
 #define USE_ADF // use adaptive distance field
 #define USE_COLLOCATED
 //#define USE_FV
+//#define USE_MERGE_SIM_BOXES // TODO this does not work well, instability grows
            
 //##############################################################################
 // Typedefs 
@@ -65,7 +66,7 @@ const double sqrt_2 = sqrt(2.0);
 const double DISTANCE_TOLERANCE = 0;
 const double GAUSSIAN_CHECK_BOUND = 3.0; // for pressure sources only check within
 const double AABB_CHECK_TOLERANCE_SCALE = 1.1; // scaling factor applied when checking AABB inside
-const double MODE_SHAPE_CUTOFF_FREQ = 10000.0;
+const double MODE_SHAPE_CUTOFF_FREQ = 22000.0;
 const double GHOST_CELL_ENTRY_THRESHOLD = 1E-7; 
 const double IMPULSE_VEL_THRESHOLD = 0.05;
 const double INTERPOLATION_DIFF_TOL = 20.0;

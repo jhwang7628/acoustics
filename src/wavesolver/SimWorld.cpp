@@ -105,9 +105,9 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->GetGrid().grid_id = simulatorID; 
         _simUnits.insert(std::move(simUnit)); 
 
-        // FIXME debug
-        if (obj->GetMeshName() == "0")
-            obj->ClearVibrationalSources();
+        //// FIXME debug
+        //if (obj->GetMeshName() == "0")
+        //    obj->ClearVibrationalSources();
     }
 
     // setup filename for output
@@ -236,7 +236,9 @@ CheckSimUnitBoundaries()
                 {
                     (*it_a)->objects->Join((*it_b)->objects); 
                     (*it_b)->objects->Join((*it_a)->objects); 
+#ifdef USE_MERGE_SIM_BOXES
                     _interfaces.push_back(interface); 
+#endif
                 }
             }
         }
