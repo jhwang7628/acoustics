@@ -10,7 +10,7 @@ if len(sys.argv) < 3:
     sys.exit()
 
 ## User defined settings
-installPath = '/home/jui-hsien/code/acoustics';
+installPath = '/home/antequ/code/acoustics';
 binPath = '%s/build_release/bin' %(installPath)
 redirect = '/dev/stdout'
 
