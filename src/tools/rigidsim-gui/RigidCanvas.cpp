@@ -25,8 +25,10 @@ void RigidCanvas::init()
 
 void RigidCanvas::draw()
 {
+#ifndef NO_DRAW
     if ( pdemo_ ) pdemo_->draw();
     draw_ground();
+#endif
 }
 
 void RigidCanvas::draw_ground() const

@@ -63,6 +63,8 @@ option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER        "Compiles Kirchhoff integral solve
 #   We should eventually go through and resolve all of these diffs
 add_definitions(-DDIFF_DEFINE)
 add_definitions(-DCGAL_INTERSECTION_VERSION=1)
+## FIXME hack
+add_definitions(-DNO_DRAW)
 
 #===================================================================
 ## Compiler
