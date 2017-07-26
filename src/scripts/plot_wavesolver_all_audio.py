@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import sys
+import sys,os
 import matplotlib.pyplot as plt
 from wavesolver_results import *
+import scipy
 
 if len(sys.argv) != 2: 
-    print '**Usage: %s <folder>' %sys.argv[0]
+    print '**Usage: %s <data_folder>' %sys.argv[0]
     sys.exit()
 
 ##
@@ -20,5 +21,3 @@ plt.figure()
 for ii in range(N_points): 
     plt.plot(all_data[:,ii])
 plt.show()
-    
-
