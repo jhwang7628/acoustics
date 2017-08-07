@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cassert>
 #include <modal_model/ModalODESolver.h> 
+#include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 
 //##############################################################################
 //##############################################################################
@@ -20,6 +21,13 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
         std::cerr << "**WARNING** xi is out of range [0,1]. Clamping it. check material parameters" << std::endl;;
         xi = std::min(1.0, std::max(xi, 0.0)); 
     }
+#ifdef NO_INTERNAL_DAMPING
+    std::cout << "here\n";
+    xi = 0.0;
+#endif
+
+    // FIXME 
+    COUT_SDUMP(xi);
 
     const REAL omega_di = material->omega_di(_omega); 
     _epsilon = exp(-xi * _omega * timeStepSize); 
@@ -30,7 +38,7 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
     _epsilon_squared = pow(_epsilon, 2); 
     _coeff_Q_i = 2.0/(3.0*_omega*omega_di)
                * (_epsilon*cos(_theta+_gamma) - _epsilon_squared*cos(2.0*_theta+_gamma))
-               * _material->inverseDensity; 
+               * _material->inverseDensity;  // FIXME check if this should be here
     _initialized = true; 
 }
 
