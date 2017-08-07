@@ -25,21 +25,20 @@ _SetBoundaryConditions()
     for (auto &m : objects)
     {
         RigidSoundObjectPtr objectPtr = m.second; 
-        //RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
         // add modal vibrational source
-        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
         //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
         //objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
-        const REAL omega = 2.0*M_PI*4000.0;
-        const REAL phase = 0.0;
-        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        //const REAL omega = 2.0*M_PI*4000.0;
+        //const REAL phase = 0.0;
+        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        ////VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
     }

@@ -26,7 +26,7 @@ class SimWorld
 {
     struct State
     {
-        REAL time = 0.26; 
+        REAL time = 0.0; 
     } _state; 
 
     // 
