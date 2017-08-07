@@ -1,6 +1,7 @@
 #!/usr/bin/env python 
 import numpy as np
 from binary_io import *
+import glob
 ################################################################################
 ## Class Wavesolver_Results
 ################################################################################
@@ -17,7 +18,11 @@ class Wavesolver_Results:
     def Read_Listening_Position(self): 
         if (self.folder is None): 
             return
-        filename = '%s/%s_0_listening_position.dat' %(self.folder, self.prefix)
+        pattern = '%s/%s_*_listening_position.dat' %(self.folder, self.prefix)
+        files = glob.glob(pattern)
+        if not files: 
+            raise Exception
+        filename = files[0]
         self.listening_points = readMatrixXdBinary(filename,1)
         self.num_listening_points = self.listening_points.shape[0]
     def Read_All_Audio(self): 
