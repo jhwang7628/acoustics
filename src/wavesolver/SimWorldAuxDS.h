@@ -33,6 +33,10 @@ struct ActiveSimUnit
     REAL                       upperRadiusBound; 
     Vector3d                   boxCenter; 
     bool                       boxCenterChanged = false; 
+    BoundingBox                unitBBox; 
+
+    // ids
+    std::string               *unitID; 
 
     // helper
     Vector3Array &UpdateSpeakers(); 

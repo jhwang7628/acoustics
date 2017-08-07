@@ -96,18 +96,39 @@ Build(ImpulseResponseParser_Ptr &parser)
                 )*2 + 8;
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
-        simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
+        //simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         simUnit->divisions = divs; 
         simUnit->boxCenter = SimWorld::rasterizer.rasterize(rastCentroid_w); 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
-        simUnit->simulator->GetGrid().grid_id = simulatorID; 
-        _simUnits.insert(std::move(simUnit)); 
+        simUnit->unitBBox = simUnitBox; 
+        simUnit->unitID = simulatorID; 
+        //simUnit->simulator->GetGrid().grid_id = simulatorID; 
+
+        // make sure this object is not inside some other unit
+        bool createUnit = true; 
+        for (auto &existedU : _simUnits)
+        {
+            if (existedU->unitBBox.isInside(meshCentroid_w))
+            {
+                createUnit = false; 
+                existedU->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
+                break; 
+            }
+        }
+        if (createUnit)
+            _simUnits.insert(std::move(simUnit)); 
 
         //// FIXME debug
         //if (obj->GetMeshName() == "0")
         //    obj->ClearVibrationalSources();
+    }
+
+    for (auto &u : _simUnits)
+    {
+        u->simulator->InitializeSolver(u->unitBBox, _simulatorSettings); 
+        u->simulator->GetGrid().grid_id = u->unitID; 
     }
 
     // setup filename for output
