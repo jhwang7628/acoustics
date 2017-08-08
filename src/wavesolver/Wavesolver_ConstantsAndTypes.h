@@ -35,7 +35,7 @@ class PML_WaveSolver_Settings;
 //##############################################################################
 #define USE_ADF // use adaptive distance field
 #define USE_COLLOCATED
-#define NO_INTERNAL_DAMPING
+//#define NO_INTERNAL_DAMPING
 //#define USE_FV
 //#define USE_MERGE_SIM_BOXES // TODO this does not work well, instability grows
            
