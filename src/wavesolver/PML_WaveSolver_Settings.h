@@ -18,6 +18,7 @@ struct PML_WaveSolver_Settings
     REAL    timeEnd; 
     REAL    timeStepSize; 
     int     timeSavePerStep; 
+    int     numberTimeSteps = -1; 
     Vector3d domainCenter;  
 
     // IO settings

@@ -216,7 +216,8 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->cellSize           = queryRequiredReal(solverNode, "cellsize"); 
     settings->cellDivisions      = queryRequiredInt (solverNode, "gridresolution"); 
     settings->timeEnd            = queryRequiredReal(solverNode, "stop_time"); 
-    settings->timeSavePerStep    = queryRequiredInt (solverNode, "substeps"); 
+    settings->timeSavePerStep    = queryOptionalInt (solverNode, "substeps", "-1"); 
+    settings->numberTimeSteps    = queryRequiredInt (solverNode, "number_of_timesteps"); 
     const REAL timeStepFrequency= queryRequiredReal(solverNode, "timestepfrequency"); 
     settings->timeStepSize = 1.0/timeStepFrequency; 
     const REAL domainCenter_x    = queryOptionalReal(solverNode, "domain_center_x", 0.0); 
