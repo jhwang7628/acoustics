@@ -98,7 +98,7 @@ Build(ImpulseResponseParser_Ptr &parser)
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         //simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         simUnit->divisions = divs; 
-        simUnit->boxCenter = SimWorld::rasterizer.rasterize(rastCentroid_w); 
+        simUnit->boxCenter = rastCentroid_w; 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
