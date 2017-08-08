@@ -42,17 +42,20 @@ results.Set_Folder(data_dir)
 all_data = results.Read_All_Audio()
 N_points = all_data.shape[1]
 N_steps  = all_data.shape[0] 
+sampfreq = Parse(parser, 'general', 'sampfreq', 'i')
 
 if Parse(parser, 'general', 'plot', 'b'):
     print '\n------ PLOTTING ------'
+    xaxis_frame = Parse(parser, 'plot', 'xaxis_frame', 'b')
     plt.figure()
     for ii in range(N_points): 
-        plt.plot(all_data[:,ii])
+        if xaxis_frame: t = np.array(range(len(all_data[:,ii])))
+        else:           t = np.array(range(len(all_data[:,ii])))/float(sampfreq)
+        plt.plot(t, all_data[:,ii])
     plt.show()
 
 if Parse(parser, 'general', 'write_wav', 'b'):
     print '\n------ WRITING WAV FILES ------'
-    sampfreq = Parse(parser, 'general', 'sampfreq', 'i')
     wavfreq  = Parse(parser, 'wav'    , 'wavfreq' , 'i')
     prefix   = Parse(parser, 'wav'    , 'prefix'  , 's')
     rateRatio = float(sampfreq) / float(wavfreq)
