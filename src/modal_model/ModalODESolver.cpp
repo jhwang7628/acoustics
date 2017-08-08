@@ -22,13 +22,8 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
         xi = std::min(1.0, std::max(xi, 0.0)); 
     }
 #ifdef NO_INTERNAL_DAMPING
-    std::cout << "here\n";
     xi = 0.0;
 #endif
-
-    // FIXME 
-    COUT_SDUMP(xi);
-
     const REAL omega_di = material->omega_di(_omega); 
     _epsilon = exp(-xi * _omega * timeStepSize); 
     _theta = omega_di * timeStepSize; 
