@@ -108,7 +108,7 @@ if __name__ == '__main__':
         # plotting
         colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
         lw = 2.0
-        ls = '-o'
+        ls = '-'
         fig = plt.figure(figsize=[10, 10])
         if len(sys.argv) == 5: 
             plot_index = int(sys.argv[4]) 
