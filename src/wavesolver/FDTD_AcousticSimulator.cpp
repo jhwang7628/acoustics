@@ -28,10 +28,11 @@ _SetBoundaryConditions()
         VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
         objectPtr->AddVibrationalSource(sourcePtr); 
 
+#ifdef ACC_NOISE_SOURCE
         // add acceleration noise source
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
         objectPtr->AddVibrationalSource(anSourcePtr);
-
+#endif
         // add debug harmonic source
         //const REAL omega = 2.0*M_PI*500.0;
         //const REAL phase = 0.0;
