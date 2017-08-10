@@ -33,7 +33,7 @@ Initialize(ModalMaterialPtr &material, const REAL &omegaSquared, const REAL &tim
     _epsilon_squared = pow(_epsilon, 2); 
     _coeff_Q_i = 2.0/(3.0*_omega*omega_di)
                * (_epsilon*cos(_theta+_gamma) - _epsilon_squared*cos(2.0*_theta+_gamma))
-               * _material->inverseDensity;  // FIXME check if this should be here
+               * _material->inverseDensity;  // see "modal_analysis.pdf" for this scaling
     _initialized = true; 
 }
 
