@@ -92,8 +92,7 @@ GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSp
 {
     // surface mesh vertex id
     const Vector3d &force = record.impactVector; 
-    const int &vertexID = record.appliedVertex; // FIXME debug
-
+    const int &vertexID = record.appliedVertex;
     if (vertexID >= ModalAnalysisObject::N_vertices())
         throw std::runtime_error("**ERROR** vertexID "+std::to_string(vertexID)+" out of bounds. Total #vertices = "+std::to_string(ModalAnalysisObject::N_vertices())); 
     const int startIndex = vertexID*3; 
@@ -175,6 +174,7 @@ AdvanceModalODESolvers(const int &N_steps)
             GetForceInModalSpace(impactRecords.at(rec_idx), forceBuffer); 
             forceTimestep += forceBuffer; 
         }
+        //forceTimestep.setOnes(); //FIXME debug set U^T f = [1,1,...1]
         _timer_substep_advanceODE[1].Pause(); 
 
         // step the system using force computed
@@ -201,12 +201,14 @@ AdvanceModalODESolvers(const int &N_steps)
 void FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q)
 {
+    if (mode >=1)
     {
         const int N_rows = N_steps; 
         const int N_cols = _mesh->num_vertices(); 
         of_displacement.write((char*)&N_rows, sizeof(int)); 
         of_displacement.write((char*)&N_cols, sizeof(int)); 
     }
+    if (mode == 0 || mode == 2)
     {
         const int N_rows = N_steps; 
         const int N_cols = N_Modes(); 

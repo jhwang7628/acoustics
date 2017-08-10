@@ -68,10 +68,12 @@ class FDTD_Objects
         void Join(FDTD_Objects_Ptr &toBeJoined); 
 
         //// debug methods ////
+        std::ofstream *of_q; 
         void TestObjectDistanceField(const size_t &ind); 
         void PrintAllSources(std::ostream &os); 
         void WriteFailedReflections(const std::string &file);
         void ClearFailedReflections();
+        void DebugWriteModalQ(const int steps, const std::string &filename);
 
     friend std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects);
     friend SimWorld; 

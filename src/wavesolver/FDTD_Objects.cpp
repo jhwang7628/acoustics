@@ -320,6 +320,26 @@ ClearFailedReflections()
 
 //##############################################################################
 //##############################################################################
+void FDTD_Objects::
+DebugWriteModalQ(const int steps, const std::string &filename)
+{
+    std::ofstream tmp("tmp.dat", std::ostream::out | std::ostream::binary);
+    if (!of_q) 
+    {
+        of_q = new std::ofstream(filename.c_str(), 
+                                 std::ostream::out | std::ostream::binary); 
+    }
+    for (auto &object : _rigidObjects)
+    {
+        if (object.second->IsModalObject())
+            object.second->AdvanceModalODESolvers(steps, 0, tmp, *of_q); 
+    }
+    tmp.close();
+    of_q->close();
+}
+
+//##############################################################################
+//##############################################################################
 std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects) 
 {
     os << "--------------------------------------------------------------------------------\n" 

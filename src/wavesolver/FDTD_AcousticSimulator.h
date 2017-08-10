@@ -113,6 +113,7 @@ class FDTD_AcousticSimulator
         bool SetFieldCenter(const Vector3d &center);  
 
         //// debug method //// 
+        std::ofstream *of_q; // FIXME debug
         void TestAllComponents(); 
         void TestMoveObjects(); 
         void TestAnimateObjects(const int &N_steps); 

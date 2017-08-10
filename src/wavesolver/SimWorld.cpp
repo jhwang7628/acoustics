@@ -124,6 +124,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         //if (obj->GetMeshName() == "0")
         //    obj->ClearVibrationalSources();
     }
+    _objectCollections->DebugWriteModalQ(100000, "of_q.dat");// FIXME debug
 
     for (auto &u : _simUnits)
     {
