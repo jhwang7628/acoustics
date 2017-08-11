@@ -389,12 +389,11 @@ DrawBox()
     const auto bboxs = _simWorld->GetSolverBBoxs(); 
     for (const auto &p : bboxs)
     {
-        //Vector3d minBound, maxBound; 
-        //_simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
         auto &unit = p.first; 
-        auto newBoxCenter = SimWorld::rasterizer.rasterize(p.second.center()); 
+        auto newBoxCenter = SimWorld::rasterizer.rasterize(
+                unit->unitCenter);  
         auto oldBoxCenter = SimWorld::rasterizer.rasterize(
-                unit->BoundingBoxCenter()); 
+                unit->BoundingBoxCenter());
         if (!newBoxCenter.equals(oldBoxCenter))
         {
             unit->boxCenterChanged = true;

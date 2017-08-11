@@ -42,7 +42,8 @@ UpdateSpeakers()
     {
         const auto &mic = ListeningUnit::microphones.at(ii); 
         auto &spk = listen->speakers.at(ii); 
-        spk = boxCenter + (mic - boxCenter)*(lowerRadiusBound-0.5*cellSize); 
+        spk = BoundingBoxCenter() 
+            + (mic - BoundingBoxCenter())*(lowerRadiusBound-0.5*cellSize); 
     }
     return listen->speakers; 
 }
@@ -72,6 +73,7 @@ Build(ImpulseResponseParser_Ptr &parser)
     }
 
     // TEST: assign a box to each object
+    std::map<ActiveSimUnit_Ptr, BoundingBox> candidateUnit; 
     for (auto &m : _objectCollections->_rigidObjects)
     {
         auto &obj = m.second; 
@@ -86,6 +88,8 @@ Build(ImpulseResponseParser_Ptr &parser)
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
         simUnit->simulator->SetSceneObjects(simUnit->objects); 
+        simUnit->simulator->SetOwner(simUnit); 
+        
         auto meshPtr = obj->GetMeshPtr(); 
         const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
@@ -98,38 +102,38 @@ Build(ImpulseResponseParser_Ptr &parser)
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         //simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         simUnit->divisions = divs; 
-        simUnit->boxCenter = rastCentroid_w; 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
-        simUnit->unitBBox = simUnitBox; 
         simUnit->unitID = simulatorID; 
         //simUnit->simulator->GetGrid().grid_id = simulatorID; 
 
-        // make sure this object is not inside some other unit
+        // make sure this object is not inside some other existed unit
         bool createUnit = true; 
-        for (auto &existedU : _simUnits)
+        for (auto &pair : candidateUnit)
         {
-            if (existedU->unitBBox.isInside(meshCentroid_w))
+            if (pair.second.isInside(meshCentroid_w))
             {
                 createUnit = false; 
-                existedU->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
+                pair.first->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
                 break; 
             }
         }
         if (createUnit)
+        {
+            candidateUnit[simUnit] = simUnitBox; 
             _simUnits.insert(std::move(simUnit)); 
-
+        }
         //// FIXME debug
         //if (obj->GetMeshName() == "0")
         //    obj->ClearVibrationalSources();
     }
-    _objectCollections->DebugWriteModalQ(100000, "of_q.dat");// FIXME debug
 
-    for (auto &u : _simUnits)
+    for (auto &pair : candidateUnit)
     {
-        u->simulator->InitializeSolver(u->unitBBox, _simulatorSettings); 
-        u->simulator->GetGrid().grid_id = u->unitID; 
+        pair.first->simulator->InitializeSolver(pair.second, _simulatorSettings); 
+        pair.first->simulator->GetGrid().grid_id = pair.first->unitID; 
+        COUT_SDUMP(pair.first->BoundingBoxCenter()); 
     }
 
     // setup filename for output
@@ -164,6 +168,7 @@ UpdateObjectState(const REAL &time)
         }
         newCenter /= (REAL)objects.size(); 
         unit->simulator->SetFieldCenter(newCenter); 
+        unit->unitCenter = newCenter; 
     }
 }
 
@@ -231,7 +236,7 @@ CheckSimUnitBoundaries()
         for (; it_b!=_simUnits.end(); ++it_b)
         {
             const Vector3d centerDiff = 
-                (*it_a)->boxCenter - (*it_b)->boxCenter; 
+                (*it_a)->BoundingBoxCenter() - (*it_b)->BoundingBoxCenter(); 
             const REAL maxDiff = std::max(
                     std::max(std::abs(centerDiff[0]), std::abs(centerDiff[1])),
                     std::abs(centerDiff[2])); 
@@ -280,7 +285,8 @@ CheckSimUnitBoundaries()
             continue; 
 
         const bool a_on_top_of_b = 
-            ((unit_a->boxCenter - unit_b->boxCenter)[dir] > 0);
+            ((unit_a->BoundingBoxCenter() 
+             -unit_b->BoundingBoxCenter())[dir] > 0);
         std::vector<int> bdIndices_a, bdIndices_b; 
         std::vector<Vector3d> bdPositions_a, bdPositions_b; 
         if (a_on_top_of_b) // grab pos b and neg a

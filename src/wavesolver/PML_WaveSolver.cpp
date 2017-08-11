@@ -631,11 +631,9 @@ void PML_WaveSolver::MoveSimBox()
 
     auto &field = GetGrid().pressureField(); 
     field.MoveCenter(offset); 
-    // TODO need to get rid of these if using collocated scheme START
     _grid.velocityField(0).MoveCenter(offset);
     _grid.velocityField(1).MoveCenter(offset); 
     _grid.velocityField(2).MoveCenter(offset); 
-    // TODO need to get rid of these if using collocated scheme END
     _grid.initFieldRasterized(_waveSolverSettings->useMesh); 
     _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, 
                                _v, _waveSolverSettings->useMesh, true); 

@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
+#include <wavesolver/SimWorldAuxDS.h>
 #include <geometry/BoundingBox.h>
 #include <utils/IO/IO.h>
 #include <macros.h>
@@ -26,12 +27,12 @@ _SetBoundaryConditions()
     {
         RigidSoundObjectPtr objectPtr = m.second; 
         // add modal vibrational source
-        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        //objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
-        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(anSourcePtr);
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source
         //const REAL omega = 2.0*M_PI*1500.0;
@@ -374,7 +375,6 @@ InitializeSolver(const BoundingBox &solverBox,
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetBoundaryConditions();
     _SetPressureSources();
-    _simBox.continuousCenter = solverBox.center(); 
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
@@ -587,16 +587,16 @@ SetFieldCenter(const Vector3d &center)
 {
     auto &field = GetGrid().pressureField(); 
     Tuple3i offset; 
+    const Vector3d nowCenter = _owner->BoundingBoxCenter(); 
     for (int d=0; d<3; ++d)
     {
-        offset[d] = (int)((center[d] - _simBox.continuousCenter[d])
+        offset[d] = (int)((center[d] - nowCenter[d])
             /_acousticSolverSettings->cellSize); 
     }
     const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
     if (l1 > 0) 
     {
         _acousticSolver->ScheduleMoveBox(offset); 
-        _simBox.continuousCenter = center; 
         return true; 
     }
     return false; 

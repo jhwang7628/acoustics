@@ -50,15 +50,15 @@ public:
         Vector3d worldCenter = Vector3d(0,0,0); 
         inline Tuple3i rasterize(const Vector3d &pos)
         {
-            return Tuple3i((int)((pos[0]-worldCenter[0])/cellSize), 
-                           (int)((pos[1]-worldCenter[1])/cellSize),
-                           (int)((pos[2]-worldCenter[2])/cellSize));
+            return Tuple3i((int)floor((pos[0]-worldCenter[0])/cellSize), 
+                           (int)floor((pos[1]-worldCenter[1])/cellSize),
+                           (int)floor((pos[2]-worldCenter[2])/cellSize));
         }
         inline Vector3d cellCenter(const Tuple3i &indices)
         {
-            return Vector3d(((REAL)indices[0]-0.5)*cellSize,
-                            ((REAL)indices[1]-0.5)*cellSize,
-                            ((REAL)indices[2]-0.5)*cellSize) + worldCenter; 
+            return Vector3d(((REAL)indices[0]+0.5)*cellSize,
+                            ((REAL)indices[1]+0.5)*cellSize,
+                            ((REAL)indices[2]+0.5)*cellSize) + worldCenter; 
         }
     };
     static WorldRasterizer rasterizer; 

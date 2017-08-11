@@ -4,6 +4,7 @@
 #include "wavesolver/PML_WaveSolver_Settings.h" 
 #include "wavesolver/FDTD_AcousticSimulator.h" 
 #include "wavesolver/FDTD_Objects.h"
+#include "geometry/BoundingBox.h"
 //##############################################################################
 // Struct ListeningUnit
 //##############################################################################
@@ -28,18 +29,21 @@ struct ActiveSimUnit
     ListeningUnit_UPtr         listen; 
 
     // topology
-    int                        divisions; 
-    REAL                       lowerRadiusBound; 
-    REAL                       upperRadiusBound; 
-    Vector3d                   boxCenter; 
-    bool                       boxCenterChanged = false; 
-    BoundingBox                unitBBox; 
+    int      divisions; 
+    REAL     lowerRadiusBound; 
+    REAL     upperRadiusBound; 
+    Vector3d unitCenter; // might not be the pressure field center
+    bool     boxCenterChanged = false; 
 
     // ids
     std::string               *unitID; 
 
     // helper
     Vector3Array &UpdateSpeakers(); 
+    const BoundingBox GetBoundingBox()
+    {return simulator->GetSolver()->GetSolverBBox();}
+    const Vector3d BoundingBoxCenter()
+    {return GetBoundingBox().center();}
 }; 
 using ActiveSimUnit_UPtr = std::unique_ptr<ActiveSimUnit>; 
 using ActiveSimUnit_Ptr = std::shared_ptr<ActiveSimUnit>; 

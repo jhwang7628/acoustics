@@ -14,12 +14,9 @@
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 
 //#############################################################################
-// Sturct SimBox
+// Forward Declaration
 //#############################################################################
-struct SimBox
-{
-    Vector3d continuousCenter;
-};
+struct ActiveSimUnit; 
 
 //##############################################################################
 // A managing class to coordinate wavesolver, rigid body simulator, parser, 
@@ -38,7 +35,7 @@ class FDTD_AcousticSimulator
         std::shared_ptr<PML_WaveSolver_Settings>    _acousticSolverSettings; 
         std::shared_ptr<FDTD_Objects>               _sceneObjects; 
         std::shared_ptr<FDTD_RigidObject_Animator>  _sceneObjectsAnimator; 
-        SimBox                                      _simBox;
+        std::shared_ptr<ActiveSimUnit>              _owner; // owner sim unit
 
         // state representation
         bool                    _canInitializeSolver; 
@@ -93,6 +90,7 @@ class FDTD_AcousticSimulator
         inline MAC_Grid &GetGrid(){return _acousticSolver->GetGrid();}
         inline REAL GetSimulationTime(){return _simulationTime;}
         inline std::string *GetSimulatorID(){return _simulatorID;}
+        inline void SetOwner(std::shared_ptr<ActiveSimUnit> owner){_owner = owner;}
 
         // parse, instance grid and solver, read mesh 
         void InitializeSolver(); // wrapper
@@ -113,7 +111,6 @@ class FDTD_AcousticSimulator
         bool SetFieldCenter(const Vector3d &center);  
 
         //// debug method //// 
-        std::ofstream *of_q; // FIXME debug
         void TestAllComponents(); 
         void TestMoveObjects(); 
         void TestAnimateObjects(const int &N_steps); 
