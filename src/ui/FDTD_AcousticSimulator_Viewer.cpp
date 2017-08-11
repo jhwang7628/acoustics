@@ -317,6 +317,29 @@ DrawMesh()
             }
         }
         glDisable(GL_LIGHTING);
+
+        // draw bounding box only 
+        if (_wireframe == 4)
+        {
+            // this draws bounding box in world space
+            const REAL maxValue = std::numeric_limits<REAL>::max(); 
+            const REAL minValue = std::numeric_limits<REAL>::lowest(); 
+            Point3d low(maxValue, maxValue, maxValue); 
+            Point3d  up(minValue, minValue, minValue); 
+            for (const auto &v : vertices)
+            {
+                const Vector3<REAL> vv = object->ObjectToWorldPoint(v); 
+                low.x = min(low.x, vv.x); 
+                low.y = min(low.y, vv.y); 
+                low.z = min(low.z, vv.z); 
+                 up.x = max( up.x, vv.x); 
+                 up.y = max( up.y, vv.y); 
+                 up.z = max( up.z, vv.z); 
+            }
+            const auto &color = _objectColors.at(obj_idx); 
+            glColor3f(color.x, color.y, color.z); 
+            GL_Wrapper::DrawWireBox(&(low.x), &(up.x)); 
+        }
     }
 }
 
@@ -370,11 +393,11 @@ DrawBox()
         //_simulator->GetSolver()->GetSolverDomain(minBound, maxBound);
         auto &unit = p.first; 
         auto newBoxCenter = SimWorld::rasterizer.rasterize(p.second.center()); 
-        auto oldBoxCenter = SimWorld::rasterizer.rasterize(unit->boxCenter); 
+        auto oldBoxCenter = SimWorld::rasterizer.rasterize(
+                unit->BoundingBoxCenter()); 
         if (!newBoxCenter.equals(oldBoxCenter))
         {
             unit->boxCenterChanged = true;
-            unit->boxCenter = p.second.center(); 
         }
         const Vector3d &minBound = p.second.minBound(); 
         const Vector3d &maxBound = p.second.maxBound(); 
@@ -386,6 +409,18 @@ DrawBox()
             GL_Wrapper::DrawWireBox(&(_sceneBox->minBound()[0]), 
                                     &(_sceneBox->maxBound()[0])); 
         }
+
+        // draw field center
+        glEnable(GL_LIGHTING);
+        glPushMatrix();
+        const auto &center = unit->BoundingBoxCenter();
+        glTranslatef(center.x, 
+                     center.y, 
+                     center.z); 
+        glColor3f(0.9f, 0.9f, 0.1f);
+        GL_Wrapper::DrawSphere(8E-4, 30, 30); 
+        glPopMatrix(); 
+        glDisable(GL_LIGHTING);
     }
 }
 
@@ -721,7 +756,7 @@ keyPressEvent(QKeyEvent *e)
     bool optionsChanged = false;
     bool handled = true; 
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
-        _wireframe = (_wireframe+1)%5; 
+        _wireframe = (_wireframe+1)%6; 
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
@@ -1064,7 +1099,7 @@ AddSlice(const int &dim, const REAL &offset)
     const auto &simUnits = _simWorld->GetActiveSimUnits(); 
     for (const auto &unit : simUnits)
     {
-        const BoundingBox &bbox = unit->simulator->GetSolver()->GetSolverBBox(); 
+        const BoundingBox &bbox = unit->GetBoundingBox(); 
         if (offset>bbox.axismax(dim) && offset<bbox.axismin(dim))
             continue; // this plane not intersecting the box
         Slice slice; 
