@@ -758,6 +758,10 @@ keyPressEvent(QKeyEvent *e)
         _wireframe = (_wireframe+1)%6; 
         optionsChanged = true;
     }
+    if ((e->key() == Qt::Key_W) && (modifiers == Qt::ControlModifier)) {
+        _meshDataPointer = (_meshDataPointer+1)%2; 
+        optionsChanged = true;
+    }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
         std::cout << "Input slice division: " << std::flush; 
         PRE_CIN_CLEAR;
