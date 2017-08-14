@@ -107,11 +107,15 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         readers.at(o_idx).LoadImpulses(o_idx, object, objects); 
         REAL impulseRangeStart, impulseRangeStop; 
         object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop); 
+#ifdef DEBUG_PRINT
+        std::cout << static_cast<ModalAnalysisObject>(*(object.get())) << std::endl; 
         std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
                   << " Number of impulses: " << object->N_Impulses() << "\n"
                   << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
                   << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
                   << "\n";
+        object->PrintAllImpulses(); 
+#endif
     }
 
     // parse and build rigid objects. In the implementation, I still use the class
