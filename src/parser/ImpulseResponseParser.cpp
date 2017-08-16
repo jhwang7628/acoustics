@@ -1,6 +1,9 @@
 #include <wavesolver/GaussianPressureSource.h>
 #include <parser/ImpulseResponseParser.h> 
 #include <io/ImpulseSeriesReader.h>
+#include <wavesolver/VibrationalSource.h> 
+#include <wavesolver/ModalVibrationalSource.h> 
+#include <wavesolver/AccelerationNoiseVibrationalSource.h> 
 #include <wavesolver/WaterVibrationalSource.h> 
 #include <modal_model/SparseModalEncoder.h>
 
@@ -96,6 +99,23 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
         object->FDTD_RigidSoundObject::Initialize(); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
+
+        // get source and attach to objects
+        const bool has_modal_source     = queryRequiredBool(rigidSoundObjectNode, "has_modal_source"    ); 
+        const bool has_acc_noise_source = queryRequiredBool(rigidSoundObjectNode, "has_acc_noise_source"); 
+        if (has_modal_source)
+        {
+            std::cout << "has modal source\n";
+            VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(object)); 
+            object->AddVibrationalSource(sourcePtr); 
+        }
+        if (has_acc_noise_source)
+        {
+            std::cout << "has acc noise source\n";
+            VibrationalSourcePtr sourcePtr(new AccelerationNoiseVibrationalSource(object)); 
+            object->AddVibrationalSource(sourcePtr); 
+        }
+
         objects->AddObject(std::stoi(meshName),object); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
     }

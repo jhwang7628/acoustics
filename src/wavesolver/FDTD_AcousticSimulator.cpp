@@ -20,15 +20,15 @@ _ParseSolverSettings()
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-_SetBoundaryConditions()
+_SetBoundaryConditions() // NOTE: decrecated, not called anymore
 {
     auto &objects = _sceneObjects->GetRigidSoundObjects(); 
     for (auto &m : objects)
     {
         RigidSoundObjectPtr objectPtr = m.second; 
         // add modal vibrational source
-        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(sourcePtr); 
 
         // add acceleration noise source
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
@@ -373,7 +373,7 @@ InitializeSolver(const BoundingBox &solverBox,
     // initialize solver and set various things
     _SetListeningPoints(); 
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
-    _SetBoundaryConditions();
+    //_SetBoundaryConditions();
     _SetPressureSources();
 
     REAL startTime = 0.0; 
