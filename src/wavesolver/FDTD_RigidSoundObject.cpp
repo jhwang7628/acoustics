@@ -466,7 +466,8 @@ EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Ve
     const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E; 
 
-    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2)
+        * CONTACT_TIMESCALE_SCALE; 
 }
 
 //##############################################################################
@@ -491,7 +492,8 @@ EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b,
     const REAL one_over_E = material_a->one_minus_nu2_over_E 
                           + material_b->one_minus_nu2_over_E; 
 
-    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2) 
+        * CONTACT_TIMESCALE_SCALE; 
 }
 
 //##############################################################################

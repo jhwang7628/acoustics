@@ -87,6 +87,9 @@ const int GHOST_CELL_JACOBI_MAX_ITERATION = 200;
 const REAL KD_NEAREST_TOLERANCE = 0.;
 const REAL TRI_NORMAL_PUSH_DIST = 0.0005;
 
+// debug
+const REAL CONTACT_TIMESCALE_SCALE = 1.;
+
 //##############################################################################
 // Enum
 //##############################################################################
