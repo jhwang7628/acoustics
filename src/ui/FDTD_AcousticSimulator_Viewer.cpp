@@ -296,15 +296,41 @@ DrawMesh()
             const auto &simUnits = _simWorld->GetActiveSimUnits();
             for (const auto &unit : simUnits)
             {
-                const auto &gcMap = unit->simulator->GetGrid().GetGhostCells(); 
+                auto &grid = unit->simulator->GetGrid(); 
+                const auto &gcMap = grid.GetGhostCells(); 
+                glBegin(GL_QUADS); 
                 for (const auto &m : gcMap)
                 {
-                    const auto &cell_idx = m.second->ownerCell; 
-                    MAC_Grid::Cell cell; 
-                    unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
-                    glColor3f(1.0f, 0.0f, 0.0f); 
-                    GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+                    const int &cell_idx = m.second->ownerCell; 
+                    const int &nmldir = abs(m.second->topology) - 1; // 0:x; 1:y; 2:z
+                    const Vector3d position = (grid.pressureFieldPosition(m.second->ownerCell)
+                                              +grid.pressureFieldPosition(m.second->neighbourCell))/2.0; 
+                    Vector3d lowerCorner = position;
+                    Vector3d upperCorner = position; 
+                    lowerCorner[(nmldir+1)%3] -= 0.5*_solverSettings->cellSize; 
+                    lowerCorner[(nmldir+2)%3] -= 0.5*_solverSettings->cellSize; 
+                    upperCorner[(nmldir+1)%3] += 0.5*_solverSettings->cellSize; 
+                    upperCorner[(nmldir+2)%3] += 0.5*_solverSettings->cellSize; 
+                    Vector3d nml(0,0,0);
+                    nml[nmldir] = (m.second->topology > 0 ? 1.0 : -1.0); 
+                    Tuple3f color(1.,0.,0.);
+                    if (_sliceColorMap)
+                        color = _sliceColorMap->get_interpolated_color(m.second->pressure);
+                    glNormal3f(nml[0],nml[1],nml[2]);
+                    glColor3f(color[0],color[1],color[2]); 
+                    Vector3d lu = lowerCorner; lu[(nmldir+1)%3] = upperCorner[(nmldir+1)%3];
+                    Vector3d ul = lowerCorner; ul[(nmldir+2)%3] = upperCorner[(nmldir+2)%3];
+                    glVertex3f(lowerCorner[0],lowerCorner[1],lowerCorner[2]); 
+                    glVertex3f(lu[0],lu[1],lu[2]); 
+                    glVertex3f(upperCorner[0],upperCorner[1],upperCorner[2]); 
+                    glVertex3f(ul[0],ul[1],ul[2]); 
+                    //const auto &cell_idx = m.second->ownerCell; 
+                    //MAC_Grid::Cell cell; 
+                    //unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
+                    //glColor3f(1.0f, 0.0f, 0.0f); 
+                    //GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
                 }
+                glEnd();
                 const auto &bgcMap = unit->simulator->GetGrid().GetBoundaryGhostCells(); 
                 for (const auto &m : bgcMap)
                 {
@@ -694,6 +720,7 @@ DrawDebugCin()
    
     const REAL arrowScale = 1;
     // debug arrows
+    glBegin(GL_LINES);
     for (size_t arr_idx=0; arr_idx<_arrowCin.size(); ++arr_idx)
     {
         glLineWidth(5.0f);
@@ -703,20 +730,20 @@ DrawDebugCin()
         const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x*arrowScale; 
         const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y*arrowScale; 
         const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z*arrowScale; 
-        glBegin(GL_LINES);
-        glColor3f(0.0f, 0.0f, 1.0f); 
+        glColor3f(1.0f, 1.0f, 0.0f); 
         glVertex3f(start_x, start_y, start_z); 
         glVertex3f(stop_x, stop_y, stop_z); 
-        glEnd();
 
-        glEnable(GL_LIGHTING);
-        glPushMatrix();
-        glTranslatef(start_x, start_y, start_z); 
-        glColor3f(1.0f, 1.0f, 0.0f); 
-        GL_Wrapper::DrawSphere(2.5E-4, 10, 10);
-        glPopMatrix();
-        glDisable(GL_LIGHTING);
+        // end spheres
+        //glEnable(GL_LIGHTING);
+        //glPushMatrix();
+        //glTranslatef(start_x, start_y, start_z); 
+        //glColor3f(1.0f, 1.0f, 0.0f); 
+        //GL_Wrapper::DrawSphere(2.5E-4, 10, 10);
+        //glPopMatrix();
+        //glDisable(GL_LIGHTING);
     }
+    glEnd();
 }
 
 //##############################################################################
