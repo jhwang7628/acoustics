@@ -44,7 +44,7 @@ UpdateSpeakers()
         auto &spk = listen->speakers.at(ii); 
         spk = BoundingBoxCenter() 
             + (mic - BoundingBoxCenter())*(lowerRadiusBound-0.5*cellSize
-                   - simulator->GetSolverSettings()->PML_width*cellSize); 
+                   - simulator->GetSolverSettings()->PML_width*cellSize*std::sqrt(3.0)); 
     }
     return listen->speakers; 
 }

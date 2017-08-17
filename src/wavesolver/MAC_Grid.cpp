@@ -953,7 +953,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         }
         // after processing, if difference between interpolation and rasterize is over certain threshold, clamp it
         if (abs(p_rasterize) > SMALL_NUM && abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL)
+        {
             p_r = p_rasterize; 
+        }
         gc->pressure = p_r + weightedPressure; 
     }
 }
