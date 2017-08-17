@@ -760,7 +760,7 @@ void PML_WaveSolver::stepCollocated()
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    //_grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
+    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
     _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, _pLaplacian); 
     _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, _pLaplacian); 
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
