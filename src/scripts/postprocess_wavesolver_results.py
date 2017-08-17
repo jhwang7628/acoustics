@@ -2,7 +2,7 @@
 import sys,os
 import matplotlib.pyplot as plt
 from wavesolver_results import *
-from ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser,NoOptionError
 import scipy
 from scipy import signal
 
@@ -47,11 +47,23 @@ sampfreq = Parse(parser, 'general', 'sampfreq', 'i')
 if Parse(parser, 'general', 'plot', 'b'):
     print '\n------ PLOTTING ------'
     xaxis_frame = Parse(parser, 'plot', 'xaxis_frame', 'b')
+    try: xmax = Parse(parser, 'plot', 'xmax', 'f')
+    except NoOptionError: xmax = None
     plt.figure()
     for ii in range(N_points): 
         if xaxis_frame: t = np.array(range(len(all_data[:,ii])))
         else:           t = np.array(range(len(all_data[:,ii])))/float(sampfreq)
-        plt.plot(t, all_data[:,ii])
+        y = all_data[:,ii]
+        if xmax is not None: 
+            cut = -1
+            for ii in range(len(t)): 
+                if t[ii] > xmax: 
+                    cut = ii
+                    break
+            if cut >= 0: 
+                t = t[:cut]
+                y = y[:cut]
+        plt.plot(t, y)
     plt.show()
 
 if Parse(parser, 'general', 'write_wav', 'b'):
