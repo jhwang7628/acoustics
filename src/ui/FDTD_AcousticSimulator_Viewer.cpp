@@ -524,6 +524,20 @@ DrawListeningPoints()
         GL_Wrapper::DrawSphere(1E-2, 30, 30); 
         glPopMatrix(); 
     }
+    auto units = _simWorld->GetActiveSimUnits(); 
+    for (const auto &unit : units)
+    {
+        const auto &spks = unit->listen->speakers; 
+        for (const auto &spk : spks)
+        {
+            glPushMatrix();
+            glTranslatef(spk.x, spk.y, spk.z); 
+            glColor3f(0.9f, 0.1f, 0.9f);
+            GL_Wrapper::DrawSphere(2E-4, 10, 10); 
+            glPopMatrix(); 
+        }
+    }
+
     glDisable(GL_LIGHTING);
 }
 
