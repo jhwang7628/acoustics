@@ -30,9 +30,6 @@ GetSolverBBoxs()
 Vector3Array &ActiveSimUnit::
 UpdateSpeakers()
 {
-    if (!listen)
-        return listen->speakers; 
-
     // straight line connecting boxcenter and speaker
     const int N_mic = ListeningUnit::microphones.size(); 
     const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
@@ -42,9 +39,12 @@ UpdateSpeakers()
     {
         const auto &mic = ListeningUnit::microphones.at(ii); 
         auto &spk = listen->speakers.at(ii); 
-        spk = BoundingBoxCenter() 
-            + (mic - BoundingBoxCenter())*(lowerRadiusBound-0.5*cellSize
-                   - simulator->GetSolverSettings()->PML_width*cellSize*std::sqrt(3.0)); 
+        Vector3d v = mic - BoundingBoxCenter(); 
+        v.normalize();
+        const REAL r = lowerRadiusBound 
+                     - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
+        v *= r; 
+        spk = BoundingBoxCenter() + v; 
     }
     return listen->speakers; 
 }
