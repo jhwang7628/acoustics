@@ -1,6 +1,7 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <utils/IO/IO.h>
 #include <macros.h>
+#define ACC_NOISE_SOURCE
 
 //##############################################################################
 //##############################################################################
