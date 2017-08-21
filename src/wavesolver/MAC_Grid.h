@@ -116,6 +116,7 @@ class MAC_Grid
             int ownerCell; 
             int neighbourCell; 
             int topology;
+            int type; 
             Vector3d position; 
             REAL pressure; 
             GhostCell_Cache_UPtr cache; 
@@ -476,7 +477,7 @@ class MAC_Grid
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
-        std::unique_ptr<GhostCell> MakeGhostCell(const int cell, const int neighbour, const int topology); 
+        std::unique_ptr<GhostCell> MakeGhostCell(const int cell, const int neighbour, const int topology, const int ghostcellType); 
         int InPressureCell(const Vector3d &position); 
         void RemoveOldPML(const BoundingBox &sceneBox); 
         void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 

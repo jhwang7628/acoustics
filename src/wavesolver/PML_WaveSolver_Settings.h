@@ -52,6 +52,12 @@ struct PML_WaveSolver_Settings
 
     // additional options
     bool validateUsingFBem; 
+    enum BoundaryHandling
+    {
+        RASTERIZE = 0,
+        PIECEWISE_CONSTANT = 1, 
+        LINEAR_MLS = 2, 
+    } boundaryHandlingType;
 };
 using PML_WaveSolver_Settings_Ptr = std::shared_ptr<PML_WaveSolver_Settings>; 
 

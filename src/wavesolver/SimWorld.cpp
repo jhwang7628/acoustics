@@ -85,6 +85,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         std::string *simulatorID = new std::string(std::to_string(m.first));
         simUnit->objects = std::make_shared<FDTD_Objects>(); 
         simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);  
+        simUnit->objects->AddConstraints(_objectCollections);
         simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 

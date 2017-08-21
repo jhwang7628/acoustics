@@ -829,38 +829,52 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         auto &gc = (ii<_ghostCells.size() ? _ghostCells.at(key_gc) : _boundaryGhostCells.at(key_bgc)); 
         //const int child_pos = _ghostCellChildArrayPositions.at(ghost_cell_idx); 
         const Vector3d &cellPosition = gc->position; 
-        int boundaryObject;
-        REAL distance; 
-        _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
-
+        bool occupiedByObject = (gc->type == 0); 
+            
         // find reflection point, normal etc
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
-        int closestTriangle;
-        auto object = _objects->GetPtr(boundaryObject); 
-        if (   gc->cache 
-            && gc->cache->tid.objectID == boundaryObject)
+        REAL distance; 
+        REAL weightedPressure; 
+        if (occupiedByObject)
         {
-            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
-                                                             distance, gc->cache->tid.triangleID); 
-            gc->cache->tid.triangleID = closestTriangle; 
-        } 
+            int boundaryObject;
+            _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
+            int closestTriangle;
+            auto object = _objects->GetPtr(boundaryObject); 
+            if (   gc->cache 
+                && gc->cache->tid.objectID == boundaryObject)
+            {
+                closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
+                                                                 distance, gc->cache->tid.triangleID); 
+                gc->cache->tid.triangleID = closestTriangle; 
+            } 
+            else 
+            {
+                closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
+                                                                 distance); 
+                if (!gc->cache) 
+                    gc->cache = std::make_unique<GhostCell_Cache>(); 
+                gc->cache->tid.objectID = boundaryObject;
+                gc->cache->tid.triangleID = closestTriangle; 
+            }
+            const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
+            const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
+            REAL bcPressure = 0; 
+            for (int ii=0; ii<3; ++ii)
+                bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
+            bcPressure /= 3.0; 
+            const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
+            weightedPressure = bcPressure * weights; 
+        }
         else 
         {
-            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
-                                                             distance); 
-            if (!gc->cache) 
-                gc->cache = std::make_unique<GhostCell_Cache>(); 
-            gc->cache->tid.objectID = boundaryObject;
-            gc->cache->tid.triangleID = closestTriangle; 
+            FDTD_PlaneConstraint_Ptr constraint; 
+            _objects->LowestConstraintDistance(cellPosition, distance, constraint);  // distance is unsigned
+            assert(constraint); 
+            erectedNormal = constraint->Normal(); 
+            imagePoint = cellPosition + erectedNormal*2.0*distance; 
+            weightedPressure = 0.0;
         }
-        const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
-        const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
-        REAL bcPressure = 0; 
-        for (int ii=0; ii<3; ++ii)
-            bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
-        bcPressure /= 3.0; 
-        const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
-        const REAL weightedPressure = bcPressure * weights; 
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
@@ -880,12 +894,12 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         }
 
         REAL p_r = std::numeric_limits<REAL>::max(); 
-        const auto &boundaryType = object->GetOptionalAttributes().boundaryHandlingType; 
-        if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE)
+        const auto &boundaryType = _waveSolverSettings->boundaryHandlingType; 
+        if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE)
         {
             p_r = p_rasterize; 
         }
-        else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT)
+        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
         {
             for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
             {
@@ -914,7 +928,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 p_r = p_rasterize;
             }
         }
-        else if (boundaryType == FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS)
+        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS)
         {
             T_MLS mls; 
             MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
@@ -2885,9 +2899,10 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     // we only have to check bounding box around each objects
     // first get the bounding box
     const int N = _objects->N(); 
-    std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     auto &objects = _objects->GetRigidSoundObjects(); 
     int count = 0;
+#if 0
+    std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     for (auto &m : objects)
     {
         const FDTD_MovableObject::BoundingBox &unionBBox = m.second->GetUnionBBox();
@@ -2896,15 +2911,25 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         _pressureField.GetIterationBox(minBound, maxBound, bbox_rast[count]); 
         ++ count; 
     } 
+#else 
+    std::vector<ScalarField::RangeIndices> bbox_rast(1); 
+    _pressureField.GetIterationBox(PressureBoundingBox().minBound(), 
+                                   PressureBoundingBox().maxBound(), 
+                                   bbox_rast[0]); 
+#endif
     // helper lambdas
-    auto isFluid = [&,this](const Vector3d &pos){
-        return _objects->OccupyByObject(pos)<0
+    auto isFluid = [&,this](const Vector3d &pos, int &type){
+        const bool isfluid = !(_objects->OccupyByConstraint(pos))
+            && _objects->OccupyByObject(pos)<0
             && _objects->OccupyByObject(pos+Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(pos-Vector3d(1.,0.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(pos+Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(pos-Vector3d(0.,1.,0.)*0.25*_waveSolverSettings->cellSize)<0 
             && _objects->OccupyByObject(pos+Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0 
-            && _objects->OccupyByObject(pos-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;};
+            && _objects->OccupyByObject(pos-Vector3d(0.,0.,1.)*0.25*_waveSolverSettings->cellSize)<0;
+        if      (!isfluid &&   _objects->OccupyByConstraint(pos))  type = 1;
+        else if (!isfluid && !(_objects->OccupyByConstraint(pos))) type = 0;
+        return isfluid;};
 
     // initialize threading containers
 #ifdef USE_OPENMP
@@ -2934,7 +2959,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             const int cell_idx = _pressureField.cellIndex(cellIndices); 
             if (_classified.at(cell_idx)) continue;
             const Vector3d pos = _pressureField.cellPosition(cell_idx);
-            if (!isFluid(pos))
+            int type; 
+            if (!isFluid(pos, type))
             {
                 _isBulkCell.at(cell_idx) = false; 
 #ifdef USE_OPENMP
@@ -2975,7 +3001,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             if (_isBulkCell.at(ns))
             {
                 _isGhostCell.at(cell_idx) = true; 
-                auto gc = MakeGhostCell(cell_idx, ns, to); 
+                int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
+                auto gc = MakeGhostCell(cell_idx, ns, to, gctype); 
 #ifdef USE_OPENMP
                 const int thread_idx = omp_get_thread_num(); 
 #else
@@ -3002,13 +3029,15 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                     if (hasNeighbour && otherGrid.IsPressureCellBulk(otherCell))
                     {
                         _isGhostCell.at(cell_idx) = true; 
+
                         if      (nml[0] == -1) topology = -1; // boundary at x=0
                         else if (nml[0] ==  1) topology =  1; // boundary at x=l
                         if      (nml[1] == -1) topology = -2; // boundary at y=0
                         else if (nml[1] ==  1) topology =  2; // boundary at y=l
                         if      (nml[2] == -1) topology = -3; // boundary at z=0
                         else if (nml[2] ==  1) topology =  3; // boundary at z=l
-                        auto gc = MakeGhostCell(cell_idx, otherCell, topology); 
+                        int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
+                        auto gc = MakeGhostCell(cell_idx, otherCell, topology, gctype); 
                         gc->boundary = true;
                         gc->ownerSolverId = *grid_id; 
                         gc->neighbourSolverId = interface->GetOtherSolver(*grid_id); 
@@ -3461,15 +3490,17 @@ void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &
 //  @param neighbour neighbour index
 //  @param topology topology of the neighbour to this cell, returned value by
 //                  ScalarField::cellNeighbours(int, IntArray, IntArray)
+//  @param gctype 0: ghost cell for objects, 1: for constraint
 //##############################################################################
 std::unique_ptr<MAC_Grid::GhostCell> MAC_Grid::
 MakeGhostCell(const int cell, const int neighbour, 
-              const int topology)
+              const int topology, const int gctype)
 {
     auto gc = std::make_unique<GhostCell>(); 
     gc->ownerCell = cell; 
     gc->neighbourCell = neighbour; 
     gc->topology = topology; 
+    gc->type = gctype; 
     gc->pressure = 0.0; 
     gc->position = _pressureField.cellPosition(cell); 
     const int dim = abs(topology)-1; 

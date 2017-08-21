@@ -6,6 +6,7 @@
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/PressureSource.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h>
+#include <wavesolver/FDTD_PlaneConstraint.h>
 
 //##############################################################################
 // Forward declaration
@@ -20,13 +21,15 @@ using FDTD_Objects_Ptr = std::shared_ptr<FDTD_Objects>;
 class FDTD_Objects
 {
     private: 
-        std::unordered_map<int, RigidSoundObjectPtr> _rigidObjects; 
-        std::vector<PressureSourcePtr>               _pressureSources; 
-        FDTD_RigidObject_Animator_Ptr                _objectAnimator; 
+        std::unordered_map<std::string, FDTD_PlaneConstraint_Ptr> _constraints; 
+        std::unordered_map<int, RigidSoundObjectPtr>              _rigidObjects; 
+        std::vector<PressureSourcePtr>                            _pressureSources; 
+        FDTD_RigidObject_Animator_Ptr                             _objectAnimator; 
 
     public: 
         inline int N() const {return _rigidObjects.size();} 
         inline int N_sources() const {return _pressureSources.size();}
+        inline int N_constraints() const {return _constraints.size();}
         inline FDTD_RigidSoundObject &Get(const int &ind){return *(_rigidObjects.at(ind));} 
         inline RigidSoundObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
         inline PressureSourcePtr &GetPressureSourcePtr(const int &ind){return _pressureSources.at(ind);} 
@@ -35,6 +38,8 @@ class FDTD_Objects
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
         inline const auto &GetRigidSoundObjects() const {return _rigidObjects;}
         inline auto &GetRigidSoundObjects(){return _rigidObjects;}
+        inline auto &GetConstraint(const std::string &id){return _constraints;}
+        inline auto &GetConstraints(){return _constraints;}
         inline bool HasModalObject() const 
         {
             bool has=false; 
@@ -45,13 +50,18 @@ class FDTD_Objects
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
         void AddObject(const int &objectName, RigidSoundObjectPtr &object); 
+        int AddConstraint(const std::string &id, FDTD_PlaneConstraint_Ptr &constraint); 
+        int AddConstraints(FDTD_Objects_Ptr &rhs); 
         // return index of the object that occupies the position, -1 if none. 
         // in the case where multiple objects are occupying that position (due
         // to numerical errors), return the first in the vector
         int OccupyByObject(const Vector3d &positionWorld); 
+        bool OccupyByConstraint(const Vector3d &pos); 
+        bool OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint); 
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
         REAL LowestObjectDistance(const Vector3d &positionWorld); 
-        void LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 
+        bool LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 
+        bool LowestConstraintDistance(const Vector3d &positionWorld, REAL &unsignedDistance, FDTD_PlaneConstraint_Ptr &constraint); 
         void ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal); 
         void AddVibrationalSourceToObject(const int &objectIndex, VibrationalSourcePtr &sourcePtr);
         void AddPressureSource(PressureSourcePtr &sourcePtr); 

@@ -42,6 +42,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/AudioOutput.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.h
     ${CMAKE_CURRENT_SOURCE_DIR}/BoundaryInterface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_PlaneConstraint.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_PlaneConstraint.cpp
 
     CACHE FILE "Wave solver sources")
 

@@ -13,6 +13,25 @@ AddObject(const int &objectName, RigidSoundObjectPtr &object)
 //##############################################################################
 //##############################################################################
 int FDTD_Objects::
+AddConstraint(const std::string &id, FDTD_PlaneConstraint_Ptr &constraint)
+{
+    _constraints[id] = constraint; 
+    return _constraints.size();
+}
+
+//##############################################################################
+//##############################################################################
+int FDTD_Objects::
+AddConstraints(FDTD_Objects_Ptr &rhs)
+{
+    auto &c = rhs->GetConstraints(); 
+    _constraints.insert(c.begin(), c.end()); 
+    return _constraints.size();
+}
+
+//##############################################################################
+//##############################################################################
+int FDTD_Objects::
 OccupyByObject(const Vector3d &positionWorld) 
 {
     const int N_objects = N(); 
@@ -23,6 +42,29 @@ OccupyByObject(const Vector3d &positionWorld)
             return m.first; 
     }
     return -1;
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+OccupyByConstraint(const Vector3d &pos)
+{
+    FDTD_PlaneConstraint_Ptr ptr;
+    return OccupyByConstraint(pos, ptr);
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint)
+{
+    for (const auto &p : _constraints)
+        if (p.second->Inside(pos))
+        {
+            constraint = p.second; 
+            return true;
+        }
+    return false; 
 }
 
 //##############################################################################
@@ -50,10 +92,11 @@ LowestObjectDistance(const Vector3d &positionWorld)
 // Note: this might fail if positionWorld is too far from the region where sdf
 // is defined. 
 //##############################################################################
-void FDTD_Objects::
+bool FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
 {
     REAL queriedDistance; 
+    bool found = false; 
     distance = std::numeric_limits<REAL>::max(); 
     objectID = std::numeric_limits<int>::max(); 
     for (const auto &m : _rigidObjects) 
@@ -63,8 +106,33 @@ LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectI
         {
             distance = queriedDistance; 
             objectID = m.first;
+            found = true; 
         }
     } 
+    return found; 
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+LowestConstraintDistance(const Vector3d &position, REAL &unsignedDistance,
+                         FDTD_PlaneConstraint_Ptr &constraint)
+{
+    REAL d; 
+    bool found = false; 
+    unsignedDistance = std::numeric_limits<REAL>::max(); 
+    constraint.reset(); 
+    for (const auto &m : _constraints) 
+    {
+        d = m.second->UnsignedDistanceToPlane(position); 
+        if (d < unsignedDistance)
+        {
+            unsignedDistance = d; 
+            constraint = m.second;
+            found = true; 
+        }
+    } 
+    return found; 
 }
 
 //##############################################################################

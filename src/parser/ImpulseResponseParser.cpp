@@ -5,6 +5,7 @@
 #include <wavesolver/ModalVibrationalSource.h> 
 #include <wavesolver/AccelerationNoiseVibrationalSource.h> 
 #include <wavesolver/WaterVibrationalSource.h> 
+#include <wavesolver/FDTD_PlaneConstraint.h>
 #include <modal_model/SparseModalEncoder.h>
 
 //##############################################################################
@@ -59,15 +60,6 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(rigidSoundObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidSoundObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        const std::string boundaryHandling = queryOptionalAttr(rigidSoundObjectNode, "boundary_handling", "piecewise_constant");
-        if (boundaryHandling.compare("piecewise_constant")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
-        else if (boundaryHandling.compare("rasterize")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
-        else if (boundaryHandling.compare("linear_mls")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
-        else
-            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = true;
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
@@ -161,15 +153,6 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        const std::string boundaryHandling = queryOptionalAttr(rigidObjectNode, "boundary_handling", "piecewise_constant");
-        if (boundaryHandling.compare("piecewise_constant")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
-        else if (boundaryHandling.compare("rasterize")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
-        else if (boundaryHandling.compare("linear_mls")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
-        else
-            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = false; 
         RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
@@ -211,6 +194,25 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->AddVibrationalSource(sourcePtr); 
         objects->AddObject(std::stoi(meshName), object); 
         waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
+    }
+
+    // build constraints
+    const std::string name("constraint"); 
+    TiXmlElement *node;
+    try {
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, inputRoot, name.c_str()); 
+    } catch (const std::runtime_error &error) {
+        std::cout << "No constraint found\n";
+    }
+    while (node != NULL)
+    {
+        const std::string id = queryOptionalAttr(node, "id", std::to_string(objects->N_constraints()));
+        const int direction = queryOptionalInt(node, "direction", "1"); 
+        const int sign = queryOptionalInt(node, "sign", "1"); 
+        const REAL height = queryOptionalReal(node, "height", 0.0);
+        auto constraint = std::make_shared<FDTD_PlaneConstraint>(direction, sign, height); 
+        objects->AddConstraint(id, constraint); 
+        node = node->NextSiblingElement(name.c_str());
     }
 }
 
@@ -265,6 +267,15 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->boundaryConditionPreset = (queryOptionalInt(solverNode, "boundary_condition_preset", "0")); 
     settings->fastForwardToEarliestImpact = (queryOptionalInt(solverNode, "fast_forward_to_earliest_impact", "0")==1) ? true : false; 
     settings->fastForwardToEventTime  = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0); 
+    const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling", "rasterize");
+    if (boundaryHandling.compare("piecewise_constant")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT;
+    else if (boundaryHandling.compare("rasterize")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE;
+    else if (boundaryHandling.compare("linear_mls")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS;
+    else
+        throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
     // set sources 
     //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
