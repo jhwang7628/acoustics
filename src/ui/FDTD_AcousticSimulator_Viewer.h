@@ -104,6 +104,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawHashedCells();
         inline void ResetSliceColormap(){_sliceColorMap->set_interpolation_range(_sliceColorMapRange.x, _sliceColorMapRange.y);}
 
+        void updateGL() {update();}
+
     protected: 
         virtual void draw(); 
         virtual void drawWithNames(); 

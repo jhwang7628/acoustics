@@ -81,7 +81,7 @@ if ( USE_DEBUG )
 else ( USE_DEBUG )
     MESSAGE(STATUS "Using release mode")
     set(CMAKE_BUILD_TYPE Release)
-    add_definitions(-Wall)
+    #add_definitions(-Wall)
     add_definitions(-Wno-unused-result -Wno-sign-compare -Wno-unused-variable -Wno-unused-local-typedefs)
 endif ( USE_DEBUG )
 

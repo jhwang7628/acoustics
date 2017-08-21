@@ -38,6 +38,8 @@ class ModalViewer : public QGLViewer
         void DrawImpulses();
         void UpdateVertexValues(); 
 
+        void updateGL() {update();}
+
     protected: 
         virtual void draw(); 
         virtual void drawWithNames(); 

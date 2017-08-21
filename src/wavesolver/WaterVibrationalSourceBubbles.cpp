@@ -194,6 +194,23 @@ updateOscillators(REAL time)
     using namespace MathUtils;
     using namespace Eigen;
 
+    // Temp debugging
+    using namespace std;
+    static bool first = true;
+    static vector<ofstream> oscOutputs;
+
+    if (first)
+    {
+        for (int i = 0; i < _oscillators.size(); ++i)
+        {
+            ostringstream os;
+            os << "oscillator_" << i << ".txt";
+            oscOutputs.emplace_back(os.str().c_str());
+        }
+
+        first = false;
+    }
+
     RK4<Vector2d> integrator;
     typedef BubbleOscillator<Vector2d> DS;
 
@@ -220,7 +237,9 @@ updateOscillators(REAL time)
                                           _dt,
                                           bubOsc);
 
-            osc.m_lastVals(2) = osc.m_state(1);
+            osc.m_lastVals.col(2) = osc.m_state;
+
+            oscOutputs[i] << osc.m_state(1) << endl;
         }
 
         while (osc.m_currentTime < time)
@@ -230,9 +249,11 @@ updateOscillators(REAL time)
                                           _dt,
                                           bubOsc);
 
-            osc.m_lastVals(0) = osc.m_lastVals(1);
-            osc.m_lastVals(1) = osc.m_lastVals(2);
-            osc.m_lastVals(2) = osc.m_state(1);
+            oscOutputs[i] << osc.m_state(1) << endl;
+
+            osc.m_lastVals.col(0) = osc.m_lastVals.col(1);
+            osc.m_lastVals.col(1) = osc.m_lastVals.col(2);
+            osc.m_lastVals.col(2) = osc.m_state;
 
             osc.m_currentTime += _dt;
         }
@@ -729,6 +750,9 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
                     osc.m_endTime = curBub->m_endTime + extendTime;
                     curBub = NULL;
 
+                    // TODO: tmp debugging
+                    if (freqs.size() == 0 || freqs.at(0) > 700 * 2 * M_PI) goodRadiiSeq = false;
+
                     // Check to filter out bad low freq bubble in pouringGlass17
                     //if (freqs.size() >= 1 && osc.m_startTime >= .97 && osc.m_startTime < 1.05 &&
                         //freqs.at(0) <= 500 * 2 * M_PI)
@@ -758,6 +782,21 @@ computeVelocities(REAL time)
 {
     using namespace std;
     using namespace Eigen;
+
+    static bool first = true;
+    static vector<ofstream> oscOutputs;
+
+    if (first)
+    {
+        for (int i = 0; i < _oscillators.size(); ++i)
+        {
+            ostringstream os;
+            os << "velValues_" << i << ".txt";
+            oscOutputs.emplace_back(os.str().c_str());
+        }
+
+        first = false;
+    }
 
     bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
 
@@ -828,6 +867,8 @@ computeVelocities(REAL time)
 
         int bubbleNumber2 = iter->second;
 
+        oscOutputs[i] << time << " " << bubbleNumber1 << " " << bubbleNumber2 << endl;
+
         //if (!existT1)
         //{
         //    bubbleNumber1 = bubbleNumber2;
@@ -836,6 +877,32 @@ computeVelocities(REAL time)
         //{
         //    bubbleNumber2 = bubbleNumber1;
         //}
+
+        // DEBUGGING
+        bool useFirstOnly = true;
+        struct DebugData
+        {
+            std::shared_ptr<PointKDTree> tree;
+            SurfaceVelocityData vel;
+            int bubNum;
+            Mesh localM;
+        };
+
+        if (useFirstOnly)
+        {
+            // Use the first velocity without any interpolation
+            if (!osc.debugData)
+            {
+                DebugData * ddata = new DebugData();
+                ddata->tree = tree1;
+                ddata->vel = vel1;
+                ddata->bubNum = bubbleNumber1;
+                ddata->localM = localM1;
+
+                osc.debugData = static_cast<void*>(ddata);
+            }
+        }
+        // DEBUGGING
 
         for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
@@ -899,6 +966,29 @@ computeVelocities(REAL time)
                 exit(1);
             }
 
+            if (useFirstOnly)
+            {
+                DebugData *ddata = static_cast<DebugData*>(osc.debugData);
+
+
+                ddata->tree->find_nearest(p,
+                                          5,
+                                          closest1);
+
+                val1 = _mls.lookup(p,
+                                   ddata->localM.m_surfTriCenters,
+                                   ddata->vel.at(ddata->bubNum),
+                                   -1,
+                                   NULL,
+                                   &closest1);
+
+                val2 = val1;
+            }
+
+            // DEBUGGING, set surface velocity to constant 1 for now
+            val1.setConstant(1);
+            val2.setConstant(1);
+
             // Now interpolate
             double pct = (localT1 - _t1) / (_t2 - _t1);
             //if (pct < 0 || pct > 1)
@@ -908,15 +998,15 @@ computeVelocities(REAL time)
             //}
             if (pct < 0)
             {
-                _velT1(j) += osc.m_lastVals(0) * val1(0);
+                _velT1(j) += osc.m_lastVals.col(0)(0) * val1(0);
             }
             else if (pct > 1)
             {
-                _velT1(j) += osc.m_lastVals(0) * val2(0);
+                _velT1(j) += osc.m_lastVals.col(0)(0) * val2(0);
             }
             else
             {
-                _velT1(j) += osc.m_lastVals(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
+                _velT1(j) += osc.m_lastVals.col(0)(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
             }
 
             pct = (localT2 - _t1) / (_t2 - _t1);
@@ -927,15 +1017,15 @@ computeVelocities(REAL time)
             //}
             if (pct < 0)
             {
-                _velT2(j) += osc.m_lastVals(2) * val1(0);
+                _velT2(j) += osc.m_lastVals.col(2)(0) * val1(0);
             }
             else if (pct > 1)
             {
-                _velT2(j) += osc.m_lastVals(2) * val2(0);
+                _velT2(j) += osc.m_lastVals.col(2)(0) * val2(0);
             }
             else
             {
-                _velT2(j) += osc.m_lastVals(2) * ( pct * val2(0) + (1 - pct) * val1(0) );
+                _velT2(j) += osc.m_lastVals.col(2)(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
             }
         }
 	}

@@ -28,11 +28,14 @@ public:
     std::map<double, int> m_trackedBubbleNumbers;
 
     double m_currentTime;
-    Eigen::Vector3d m_lastVals;
+    Eigen::Matrix<double, 2, 3> m_lastVals;
     Eigen::Vector2d m_state;
 
+    void *debugData;
+
     Oscillator()
-        : m_currentTime(-1)
+        : m_currentTime(-1),
+          debugData(0)
     {
         m_lastVals.setZero();
         m_state.setZero();
