@@ -200,10 +200,8 @@ DrawImpulses()
     const int N_frames = _rigidSoundObject->N_Impulses(); 
     _currentImpulseFrame = _currentFrame % N_frames; 
     // get impulse from object
-    const REAL timeStart = CurrentTime(); 
-    const REAL timeStop  = timeStart + _timeStepSize; 
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
-    _rigidSoundObject->GetForces(timeStart, timeStop, impactRecords); 
+    _rigidSoundObject->GetForces(CurrentTime(), impactRecords); 
     if (impactRecords.size() > 0) 
     {
         const int N_impacts = impactRecords.size(); 

@@ -160,9 +160,7 @@ AdvanceModalODESolvers(const int &N_steps)
         std::vector<ImpactRecord> impactRecords; 
         Eigen::VectorXd forceTimestep, forceBuffer; 
         _timer_substep_advanceODE[0].Start(); 
-        const REAL tsTimeStart = _time; 
-        const REAL tsTimeStop  = _time + _ODEStepSize; 
-        GetForces(tsTimeStart, tsTimeStop, impactRecords); 
+        GetForces(_time, impactRecords); 
         _timer_substep_advanceODE[0].Pause(); 
 
         _timer_substep_advanceODE[1].Start(); 

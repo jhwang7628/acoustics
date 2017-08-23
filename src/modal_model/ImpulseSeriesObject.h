@@ -25,8 +25,9 @@ class ImpulseSeriesObject
             Vector3d impactVector; 
             Vector3d impactPosition; // in object space
             REAL timestamp; 
-            REAL supportLength = 0.0; 
+            REAL supportLength = 0.0;  // tau
             REAL contactSpeed = 0.0; 
+            REAL gamma;                // gamma = pi * norm(J) / (2 tau)
             int appliedVertex;
         }; 
 
@@ -58,7 +59,7 @@ class ImpulseSeriesObject
         void GetImpulse(const int &index, REAL &timestamp, int &vertex, Vector3d &impulse); 
         void GetImpulse(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
         void GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &records); 
-        void GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records); 
+        void GetForces(const REAL &time, std::vector<ImpactRecord> &records); 
         void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
         void Filter(); 
 
