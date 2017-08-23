@@ -906,7 +906,7 @@ computeVelocities(REAL time)
 
         for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
-            if (_m->m_triType[_m->m_surfToFull[j]] != Mesh::FLUID_AIR)
+            if (_m->m_triType.at(_m->m_surfTris.at(j)) != Mesh::FLUID_AIR)
             {
                 continue;
             }
@@ -914,6 +914,14 @@ computeVelocities(REAL time)
             // Now interpolate to correct times
             MLSVal val1, val2;
             MLSPoint p = _m->m_surfTriCenters[j];
+
+            // DEBUGGING
+            if (p(1) < 0.047 || p(1) > 0.056)
+            {
+                std::cout << "bad surf position: " << p.transpose() << std::endl;
+                std::cout << "time: " << time << std::endl;
+                exit(1);
+            }
 
             tree1->find_nearest(p,
                                 5,
@@ -1049,15 +1057,69 @@ projectToSurface()
 
         int nearestTri = _kd->find_nearest(ep);
 
-        if (_m->m_triType.at(_m->m_surfToFull.at(nearestTri)) == Mesh::FLUID_AIR)
+        if (_m->m_triType.at(_m->m_surfTris.at(nearestTri)) == Mesh::FLUID_AIR)
         {
-            //int index = _m->m_fullToSurf.at(nearestTri);
             int index = nearestTri;
             if (std::fabs(_accel(index)) > std::fabs(_projectedAccel(i)))
             {
                 _projectedAccel(i) = _accel(index);
             }
+
+            //Vector3<double> boxN = _surfaceMesh->triangle_normal(i).normalized();
+            //Eigen::Vector3d surfN = _m->triangleNormal(_m->m_surfTris.at(nearestTri));
+
+            //Eigen::Vector3d boxNe;
+            //boxNe << boxN.x, boxN.y, boxN.z;
+
+            //if (surfN.dot(boxNe) < 0.7)
+            //{
+            //    std::cout << "surfN: " << surfN.transpose() << std::endl;
+            //    std::cout << "boxN: " << boxNe.transpose() << std::endl;
+            //    std::cout << "nearestTri: " << nearestTri << std::endl;
+
+            //    Tuple3ui tri = _surfaceMesh->triangles().at(i);
+            //    Point3<double> v1= _surfaceMesh->vertices().at(tri.x);
+            //    std::cout << "v1: " << v1.x << " " << v1.y << " " << v1.z << std::endl;
+            //    Point3<double> v2= _surfaceMesh->vertices().at(tri.y);
+            //    std::cout << "v2: " << v2.x << " " << v2.y << " " << v2.z << std::endl;
+            //    Point3<double> v3= _surfaceMesh->vertices().at(tri.z);
+            //    std::cout << "v3: " << v3.x << " " << v3.y << " " << v3.z << std::endl;
+
+            //    Vector3<double> n = ((v2 - v1).crossProduct(v3-v1)).normalized();
+            //    std::cout << "n: " << n.x << " " << n.y << " " << n.z << std::endl;
+            //}
         }
     }
+
+    // DEBUGGING, write to file
+    //using namespace std;
+    //ofstream of("surfAccel.ply");
+
+    //of << "ply" << endl;
+    //of << "format ascii 1.0" << endl;
+    //of << "element vertex " << _surfaceMesh->num_vertices() << endl;
+    //of << "property float x" << endl;
+    //of << "property float y" << endl;
+    //of << "property float z" << endl;
+    //of << "element face " << _surfaceMesh->num_triangles() << endl;
+    //of << "property list uchar uint vertex_index" << endl;
+    //of << "property float accel" << endl;
+    //of << "end_header" << endl;
+
+    //for (int i = 0; i < _surfaceMesh->num_vertices(); ++i)
+    //{
+    //    of << _surfaceMesh->vertex(i).x << " "
+    //       << _surfaceMesh->vertex(i).y << " "
+    //       << _surfaceMesh->vertex(i).z << endl;
+    //}
+
+    //for (int i = 0; i < _surfaceMesh->num_triangles(); ++i)
+    //{
+    //    of << "3 "
+    //       << _surfaceMesh->triangles()[i].x << " "
+    //       << _surfaceMesh->triangles()[i].y << " "
+    //       << _surfaceMesh->triangles()[i].z << " "
+    //       << _projectedAccel(i) << endl;
+    //}
 }
 

@@ -24,8 +24,18 @@ public:
     std::vector<int> m_surfTris; // list of surface triangles (where the velocity solution data is)
     std::vector<Eigen::Vector3d> m_surfTriCenters;
     std::map<int, int> m_fullToSurf;
-    std::map<int, int> m_surfToFull;
-    std::map<int, int> m_fluidToFull;
+    //std::map<int, int> m_surfToFull;
+    std::map<int, int> m_fluidToSurf;
+
+    Eigen::Vector3d
+    triangleNormal(unsigned int tid) const
+    {
+        const Eigen::Vector3d& v1 = m_vertices.at(m_triangles.at(tid)[0]);
+        const Eigen::Vector3d& v2 = m_vertices.at(m_triangles.at(tid)[1]);
+        const Eigen::Vector3d& v3 = m_vertices.at(m_triangles.at(tid)[2]);
+
+        return ((v2-v1).cross(v3 - v1)).normalized();
+    }
 
     void
 	loadGmsh(const std::string &fileName)
@@ -81,7 +91,11 @@ public:
             in >> ignore >> ignore >> ignore;
             in >> type >> index >> v1 >> v2 >> v3;
 
-            m_triangles[i] << v1 - 1, v2 - 1, v3 - 1;
+            v1 -= 1;
+            v2 -= 1;
+            v3 -= 1;
+
+            m_triangles[i] << v1, v2, v3;
             m_triType[i] = type;
 
             // TODO: confirm whether solution data is full mesh
@@ -93,11 +107,12 @@ public:
                 m_surfTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
 
                 m_fullToSurf[i] = m_surfTris.size() - 1;
-                m_surfToFull[m_surfTris.size() - 1] = i;
+                //m_surfToFull[m_surfTris.size() - 1] = i;
 
                 if (type == FLUID_AIR)
                 {
-                    m_fluidToFull[fluidCounter] = i;
+                    //m_fluidToFull[fluidCounter] = i;
+                    m_fluidToSurf[fluidCounter] = m_surfTris.size() - 1;
                     ++fluidCounter;
                 }
             }

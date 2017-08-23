@@ -10,7 +10,7 @@
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
 #include <wavesolver/FDTD_RigidSoundObject.h>
 #include <wavesolver/FDTD_Objects.h>
-#include <modal_model/KirchhoffIntegralSolver.h> 
+#include <modal_model/KirchhoffIntegralSolver.h>
 #include <utils/GL_Wrapper.h>
 #include <config.h>
 #include <iostream>
@@ -68,8 +68,8 @@ init()
     init_gl();
 
     // determine if this program is run remotely
-    char *vDISPLAY = getenv("DISPLAY"); 
-    if (strcmp(vDISPLAY, ":0") != 0) 
+    char *vDISPLAY = getenv("DISPLAY");
+    if (strcmp(vDISPLAY, ":0") != 0)
     {
         _remoteConnection = true;
         std::cout << "Remote connection detected.\n";
@@ -120,9 +120,9 @@ init_gl()
 void FDTD_AcousticSimulator_Viewer::
 draw()
 {
-    DrawMesh(); 
+    DrawMesh();
     DrawImpulses();
-    DrawSelection(); 
+    DrawSelection();
     DrawDebugCin();
     if (_sliceWireframe.count() != 0)
         DrawSlices(_sliceDataPointer); 
@@ -134,15 +134,15 @@ draw()
     if (!_remoteConnection)
     {
         glColor3f(1.0, 1.0, 1.0);
-        drawText(10, height()-20, _message); 
-        drawText(10, height()-40, _messageColormap); 
+        drawText(10, height()-20, _message);
+        drawText(10, height()-40, _messageColormap);
     }
 
     glLineWidth(3.0f);
     if (_drawBoxLis)
     {
         DrawListeningPoints();
-        DrawBox(); 
+        DrawBox();
     }
 }
 
@@ -151,21 +151,21 @@ draw()
 void FDTD_AcousticSimulator_Viewer::
 drawWithNames()
 {
-    const REAL ballSize = _solverSettings->cellSize/1.9; 
-    // draw cell centroid near the slices 
+    const REAL ballSize = _solverSettings->cellSize/1.9;
+    // draw cell centroid near the slices
     for (auto &slice : _sliceCin)
     {
         const REAL offset = slice.origin[slice.dim]; 
         slice.intersectingUnit->simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, slice.cells); 
         for (const auto &cell : slice.cells) 
         {
-            const Vector3d &vertex = cell.centroidPosition; 
-            glPushMatrix(); 
-            glTranslatef(vertex.x, vertex.y, vertex.z); 
-            glPushName(cell.index); 
+            const Vector3d &vertex = cell.centroidPosition;
+            glPushMatrix();
+            glTranslatef(vertex.x, vertex.y, vertex.z);
+            glPushName(cell.index);
             GL_Wrapper::DrawSphere(ballSize, 3, 3);
-            glPopName(); 
-            glPopMatrix(); 
+            glPopName();
+            glPopMatrix();
         }
     }
 }
@@ -183,113 +183,136 @@ DrawMesh()
         // draw rigid sound object mesh
         auto &object = rigidObjects.at(obj_idx); 
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
-        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-        const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
+        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices();
+        const std::vector<Tuple3ui>       &triangles = meshPtr->triangles();
         const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
-        const int N_triangles = triangles.size(); 
-        const int N_vertices = vertices.size(); 
+        const int N_triangles = triangles.size();
+        const int N_vertices = vertices.size();
         const REAL offsetEpsilon = 1E-5;
 
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
         {
-            glLineWidth(1.0f); 
-            glBegin(GL_LINES); 
-            glColor3f(0.6f, 0.6f, 0.6f); 
-            for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
+            glLineWidth(1.0f);
+            glBegin(GL_LINES);
+            glColor3f(0.6f, 0.6f, 0.6f);
+            for (int t_idx=0; t_idx<N_triangles; ++t_idx)
             {
-                const Tuple3ui &triangle = triangles.at(t_idx); 
-                Point3<REAL> x = vertices.at(triangle.x); 
-                Point3<REAL> y = vertices.at(triangle.y); 
-                Point3<REAL> z = vertices.at(triangle.z); 
-                const Vector3<REAL> &normal_x = normals.at(triangle.x); 
-                const Vector3<REAL> &normal_y = normals.at(triangle.y); 
-                const Vector3<REAL> &normal_z = normals.at(triangle.z); 
-                x = x + normal_x.normalized() * offsetEpsilon; 
-                y = y + normal_y.normalized() * offsetEpsilon; 
-                z = z + normal_z.normalized() * offsetEpsilon; 
-                x = object->ObjectToWorldPoint(x); 
-                y = object->ObjectToWorldPoint(y); 
-                z = object->ObjectToWorldPoint(z); 
-                glVertex3f(x.x, x.y, x.z); 
-                glVertex3f(y.x, y.y, y.z); 
+                const Tuple3ui &triangle = triangles.at(t_idx);
+                Point3<REAL> x = vertices.at(triangle.x);
+                Point3<REAL> y = vertices.at(triangle.y);
+                Point3<REAL> z = vertices.at(triangle.z);
+                const Vector3<REAL> &normal_x = normals.at(triangle.x);
+                const Vector3<REAL> &normal_y = normals.at(triangle.y);
+                const Vector3<REAL> &normal_z = normals.at(triangle.z);
+                x = x + normal_x.normalized() * offsetEpsilon;
+                y = y + normal_y.normalized() * offsetEpsilon;
+                z = z + normal_z.normalized() * offsetEpsilon;
+                x = object->ObjectToWorldPoint(x);
+                y = object->ObjectToWorldPoint(y);
+                z = object->ObjectToWorldPoint(z);
+                glVertex3f(x.x, x.y, x.z);
+                glVertex3f(y.x, y.y, y.z);
 
-                glVertex3f(y.x, y.y, y.z); 
-                glVertex3f(z.x, z.y, z.z); 
+                glVertex3f(y.x, y.y, y.z);
+                glVertex3f(z.x, z.y, z.z);
 
-                glVertex3f(z.x, z.y, z.z); 
-                glVertex3f(x.x, x.y, x.z); 
+                glVertex3f(z.x, z.y, z.z);
+                glVertex3f(x.x, x.y, x.z);
             }
-            glEnd(); 
+            glEnd();
         }
 
-        // get curvatures 
+        // get curvatures
         const std::vector<REAL> *meanCurvatures = (_meshDataPointer==1 ? meshPtr->mean_curvatures() : nullptr);
-        std::shared_ptr<ColorMap> curvatureColorMap; 
-        if (meanCurvatures) 
+        std::shared_ptr<ColorMap> curvatureColorMap;
+        if (meanCurvatures)
         {
             curvatureColorMap = std::make_shared<JetColorMap>();
-            REAL maxCurvature = std::numeric_limits<REAL>::min(); 
-            REAL minCurvature = std::numeric_limits<REAL>::max(); 
+            REAL maxCurvature = std::numeric_limits<REAL>::min();
+            REAL minCurvature = std::numeric_limits<REAL>::max();
             for (int v_idx=0; v_idx<N_vertices; ++v_idx)
             {
-                maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
-                minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
+                maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx));
+                minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx));
             }
-            curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature); 
+            curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature);
         }
 
         // draw triangles
         glEnable(GL_LIGHTING);
         if (_wireframe == 0 || _wireframe == 2)
         {
-            glBegin(GL_TRIANGLES); 
-            const auto &color = _objectColors.at(obj_idx); 
-            glColor3f(color.x, color.y, color.z); 
-            for (int t_idx=0; t_idx<N_triangles; ++t_idx) 
+            double maxAccel = 0;
+
+            glBegin(GL_TRIANGLES);
+            const auto &color = _objectColors.at(obj_idx);
+            glColor3f(color.x, color.y, color.z);
+            for (int t_idx=0; t_idx<N_triangles; ++t_idx)
             {
-                const Tuple3ui &triangle = triangles.at(t_idx); 
-                Point3<REAL> x = vertices.at(triangle.x); 
-                Point3<REAL> y = vertices.at(triangle.y); 
-                Point3<REAL> z = vertices.at(triangle.z); 
-                Vector3<REAL> nx = normals.at(triangle.x); 
-                Vector3<REAL> ny = normals.at(triangle.y); 
-                Vector3<REAL> nz = normals.at(triangle.z); 
-                x = object->ObjectToWorldPoint(x); 
-                y = object->ObjectToWorldPoint(y); 
-                z = object->ObjectToWorldPoint(z); 
-                nx = object->ObjectToWorldVector(nx); 
-                ny = object->ObjectToWorldVector(ny); 
-                nz = object->ObjectToWorldVector(nz); 
+                const Tuple3ui &triangle = triangles.at(t_idx);
+                Point3<REAL> x = vertices.at(triangle.x);
+                Point3<REAL> y = vertices.at(triangle.y);
+                Point3<REAL> z = vertices.at(triangle.z);
+                Vector3<REAL> nx = normals.at(triangle.x);
+                Vector3<REAL> ny = normals.at(triangle.y);
+                Vector3<REAL> nz = normals.at(triangle.z);
+                x = object->ObjectToWorldPoint(x);
+                y = object->ObjectToWorldPoint(y);
+                z = object->ObjectToWorldPoint(z);
+                nx = object->ObjectToWorldVector(nx);
+                ny = object->ObjectToWorldVector(ny);
+                nz = object->ObjectToWorldVector(nz);
                 if (_meshDataPointer == 0)
                 {
-                    glNormal3f(nx.x, nx.y, nx.z); 
-                    glVertex3f(x.x, x.y, x.z); 
-                    glNormal3f(ny.x, ny.y, ny.z); 
-                    glVertex3f(y.x, y.y, y.z); 
-                    glNormal3f(nz.x, nz.y, nz.z); 
-                    glVertex3f(z.x, z.y, z.z); 
+                    glNormal3f(nx.x, nx.y, nx.z);
+                    glVertex3f(x.x, x.y, x.z);
+                    glNormal3f(ny.x, ny.y, ny.z);
+                    glVertex3f(y.x, y.y, y.z);
+                    glNormal3f(nz.x, nz.y, nz.z);
+                    glVertex3f(z.x, z.y, z.z);
                 }
-                else
+                else if (_meshDataPointer == 1)
                 {
                     const REAL xCurvature = meanCurvatures->at(triangle.x);
                     const REAL yCurvature = meanCurvatures->at(triangle.y);
                     const REAL zCurvature = meanCurvatures->at(triangle.z);
-                    const Tuple3f cx = curvatureColorMap->get_interpolated_color(xCurvature); 
-                    const Tuple3f cy = curvatureColorMap->get_interpolated_color(yCurvature); 
-                    const Tuple3f cz = curvatureColorMap->get_interpolated_color(zCurvature); 
-                    glNormal3f(nx.x, nx.y, nx.z); 
+                    const Tuple3f cx = curvatureColorMap->get_interpolated_color(xCurvature);
+                    const Tuple3f cy = curvatureColorMap->get_interpolated_color(yCurvature);
+                    const Tuple3f cz = curvatureColorMap->get_interpolated_color(zCurvature);
+                    glNormal3f(nx.x, nx.y, nx.z);
                     glColor3f(cx.x, cx.y, cx.z);
-                    glVertex3f(x.x, x.y, x.z); 
-                    glNormal3f(ny.x, ny.y, ny.z); 
+                    glVertex3f(x.x, x.y, x.z);
+                    glNormal3f(ny.x, ny.y, ny.z);
                     glColor3f(cy.x, cy.y, cy.z);
-                    glVertex3f(y.x, y.y, y.z); 
-                    glNormal3f(nz.x, nz.y, nz.z); 
+                    glVertex3f(y.x, y.y, y.z);
+                    glNormal3f(nz.x, nz.y, nz.z);
                     glColor3f(cz.x, cz.y, cz.z);
-                    glVertex3f(z.x, z.y, z.z); 
+                    glVertex3f(z.x, z.y, z.z);
+                }
+                else // surface acceleration
+                {
+                    double accel = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simulator->GetSimulationTime(), -1);
+
+                    if (std::fabs(accel) > maxAccel)
+                    {
+                        maxAccel = std::fabs(accel);
+                    }
+
+                    glNormal3f(nx.x, nx.y, nx.z);
+                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glVertex3f(x.x, x.y, x.z);
+                    glNormal3f(ny.x, ny.y, ny.z);
+                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glVertex3f(y.x, y.y, y.z);
+                    glNormal3f(nz.x, nz.y, nz.z);
+                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glVertex3f(z.x, z.y, z.z);
                 }
             }
-            glEnd(); 
+            glEnd();
+
+            std::cout << "maxAccel: " << maxAccel << std::endl;
         }
 
         // draw rasterized cells
@@ -392,21 +415,21 @@ DrawImpulses()
         {
             if (imp.supportLength < SMALL_NUM)
                 continue;
-            const auto &color = _objectColors.at(obj_idx); 
-            Point3<REAL> vertexEnd   = vertices.at(imp.appliedVertex); 
+            const auto &color = _objectColors.at(obj_idx);
+            Point3<REAL> vertexEnd   = vertices.at(imp.appliedVertex);
             Point3<REAL> vertexBegin = vertexEnd - imp.impactVector * _drawImpulseScaling;
-            vertexEnd = object->ObjectToWorldPoint(vertexEnd); 
-            vertexBegin = object->ObjectToWorldPoint(vertexBegin); 
-            glLineWidth(3.0f); 
-            glBegin(GL_LINES); 
-            glColor3f(color.x, color.y, color.z); 
-            glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z); 
-            glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-            glEnd(); 
+            vertexEnd = object->ObjectToWorldPoint(vertexEnd);
+            vertexBegin = object->ObjectToWorldPoint(vertexBegin);
+            glLineWidth(3.0f);
+            glBegin(GL_LINES);
+            glColor3f(color.x, color.y, color.z);
+            glVertex3f(vertexBegin.x, vertexBegin.y, vertexBegin.z);
+            glVertex3f(vertexEnd.x, vertexEnd.y, vertexEnd.z);
+            glEnd();
             glPushMatrix();
-            glTranslatef(vertexEnd.x, vertexEnd.y, vertexEnd.z); 
-            GL_Wrapper::DrawSphere(0.5E-3, 10, 10); 
-            glPopMatrix(); 
+            glTranslatef(vertexEnd.x, vertexEnd.y, vertexEnd.z);
+            GL_Wrapper::DrawSphere(0.5E-3, 10, 10);
+            glPopMatrix();
         }
     }
 }
@@ -516,15 +539,15 @@ DrawGround()
 void FDTD_AcousticSimulator_Viewer::
 DrawListeningPoints()
 {
-    const auto &settings = _solverSettings; 
-    const auto &points = settings->listeningPoints; 
-    const int N_points = points.size(); 
+    const auto &settings = _solverSettings;
+    const auto &points = settings->listeningPoints;
+    const int N_points = points.size();
     glEnable(GL_LIGHTING);
     for (int pt_idx=0; pt_idx<N_points; ++pt_idx)
     {
-        const Vector3d &vertex = points.at(pt_idx); 
+        const Vector3d &vertex = points.at(pt_idx);
         glPushMatrix();
-        glTranslatef(vertex.x, vertex.y, vertex.z); 
+        glTranslatef(vertex.x, vertex.y, vertex.z);
         glColor3f(0.9f, 0.1f, 0.1f);
         GL_Wrapper::DrawSphere(1E-2, 30, 30); 
         glPopMatrix(); 
@@ -567,24 +590,24 @@ DrawSelection()
                 const auto &object = simulator->GetSceneObjects()->GetPtr(it->objectID);
                 const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 
                 const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(it->triangleID);
-                const Vector3f &color = _objectColors.at(it->objectID); 
-                Point3<REAL> x = vertices.at(triangle.x); 
-                Point3<REAL> y = vertices.at(triangle.y); 
-                Point3<REAL> z = vertices.at(triangle.z); 
-                x = object->ObjectToWorldPoint(x); 
-                y = object->ObjectToWorldPoint(y); 
-                z = object->ObjectToWorldPoint(z); 
-                glColor3f(color.x, color.y, color.z); 
-                glBegin(GL_TRIANGLES); 
-                glVertex3f(x.x, x.y, x.z); 
-                glVertex3f(y.x, y.y, y.z); 
-                glVertex3f(z.x, z.y, z.z); 
-                glEnd(); 
-                glPushMatrix(); 
-                glTranslatef(it->centroid.x, it->centroid.y, it->centroid.z); 
-                glColor3f(0.2f, 0.2f, 0.2f); 
+                const Vector3f &color = _objectColors.at(it->objectID);
+                Point3<REAL> x = vertices.at(triangle.x);
+                Point3<REAL> y = vertices.at(triangle.y);
+                Point3<REAL> z = vertices.at(triangle.z);
+                x = object->ObjectToWorldPoint(x);
+                y = object->ObjectToWorldPoint(y);
+                z = object->ObjectToWorldPoint(z);
+                glColor3f(color.x, color.y, color.z);
+                glBegin(GL_TRIANGLES);
+                glVertex3f(x.x, x.y, x.z);
+                glVertex3f(y.x, y.y, y.z);
+                glVertex3f(z.x, z.y, z.z);
+                glEnd();
+                glPushMatrix();
+                glTranslatef(it->centroid.x, it->centroid.y, it->centroid.z);
+                glColor3f(0.2f, 0.2f, 0.2f);
                 GL_Wrapper::DrawSphere(3E-4, 6, 6);
-                glPopMatrix(); 
+                glPopMatrix();
             }
         }
 
@@ -598,15 +621,15 @@ DrawSelection()
             //for (Iterator_BS sp=gc->boundarySamples.begin(); sp!=gc->boundarySamples.end(); ++sp)
             for (Iterator_VS sp=gc->volumeSamples.begin(); sp!=gc->volumeSamples.end(); ++sp)
             {
-                const Vector3d &pos = sp->position; 
-                glPushMatrix(); 
-                glTranslatef(pos.x, pos.y, pos.z); 
+                const Vector3d &pos = sp->position;
+                glPushMatrix();
+                glTranslatef(pos.x, pos.y, pos.z);
                 if (sp->isBulk)
-                    glColor3f(0.0f, 1.0f, 0.0f); 
+                    glColor3f(0.0f, 1.0f, 0.0f);
                 else
-                    glColor3f(0.2f, 0.2f, 0.2f); 
+                    glColor3f(0.2f, 0.2f, 0.2f);
                 GL_Wrapper::DrawSphere(1E-4, 5, 5);
-                glPopMatrix(); 
+                glPopMatrix();
             }
         }
 #endif
@@ -664,15 +687,15 @@ DrawSlices(const int &dataPointer)
         if (_sliceWireframe[0])
         {
             glLineWidth(1.0f);
-            glColor3f(0.4f, 0.4f, 0.4f); 
-            const int N_gridLines = slice.gridLines.size()/2; 
+            glColor3f(0.4f, 0.4f, 0.4f);
+            const int N_gridLines = slice.gridLines.size()/2;
             for (int l_idx=0; l_idx<N_gridLines; ++l_idx)
             {
                 glBegin(GL_LINES);
-                const Vector3d &vertex_0 = slice.gridLines.at(l_idx*2); 
-                const Vector3d &vertex_1 = slice.gridLines.at(l_idx*2+1); 
-                glVertex3f(vertex_0.x, vertex_0.y, vertex_0.z); 
-                glVertex3f(vertex_1.x, vertex_1.y, vertex_1.z); 
+                const Vector3d &vertex_0 = slice.gridLines.at(l_idx*2);
+                const Vector3d &vertex_1 = slice.gridLines.at(l_idx*2+1);
+                glVertex3f(vertex_0.x, vertex_0.y, vertex_0.z);
+                glVertex3f(vertex_1.x, vertex_1.y, vertex_1.z);
                 glEnd();
             }
         }
@@ -722,18 +745,18 @@ DrawDebugCin()
     // debug sphere
     for (size_t sph_idx=0; sph_idx<_sphereCin.size(); ++sph_idx)
     {
-        const auto &sphere = _sphereCin.at(sph_idx); 
-        const REAL &x = sphere.origin.x; 
-        const REAL &y = sphere.origin.y; 
-        const REAL &z = sphere.origin.z; 
+        const auto &sphere = _sphereCin.at(sph_idx);
+        const REAL &x = sphere.origin.x;
+        const REAL &y = sphere.origin.y;
+        const REAL &z = sphere.origin.z;
         glPushMatrix();
-        glTranslatef(x, y, z); 
-        glColor3f(0.0f, 1.0f, 0.0f); 
+        glTranslatef(x, y, z);
+        glColor3f(0.0f, 1.0f, 0.0f);
         GL_Wrapper::DrawSphere(5E-4 * sphere.scale, 10, 10);
         glPopMatrix();
     }
     glDisable(GL_LIGHTING);
-   
+
     const REAL arrowScale = 1;
     // debug arrows
     glBegin(GL_LINES);
@@ -794,9 +817,9 @@ animate()
 void FDTD_AcousticSimulator_Viewer::
 keyPressEvent(QKeyEvent *e)
 {
-    const Qt::KeyboardModifiers modifiers = e->modifiers(); 
+    const Qt::KeyboardModifiers modifiers = e->modifiers();
     bool optionsChanged = false;
-    bool handled = true; 
+    bool handled = true;
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
         _wireframe = (_wireframe+1)%6; 
         optionsChanged = true;
@@ -806,9 +829,9 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
-        std::cout << "Input slice division: " << std::flush; 
+        std::cout << "Input slice division: " << std::flush;
         PRE_CIN_CLEAR;
-        std::cin >> _sliceDivision; 
+        std::cin >> _sliceDivision;
         POST_CIN_CLEAR;
     }
     if ((e->key() == Qt::Key_H) && (modifiers == Qt::ShiftModifier)) {
@@ -817,35 +840,35 @@ keyPressEvent(QKeyEvent *e)
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ShiftModifier)) {
         if (_sliceWireframe.count() == _sliceWireframe.size())
-            _sliceWireframe.reset(); 
+            _sliceWireframe.reset();
         else
             _sliceWireframe = std::bitset<2>(_sliceWireframe.to_ulong()+1);
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
-        _drawBoxLis = !_drawBoxLis; 
+        _drawBoxLis = !_drawBoxLis;
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
         if (!animationIsStarted())
-            DrawOneFrameForward(); 
+            DrawOneFrameForward();
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::NoButton)) {
             Sphere sphere;
-            std::cout << "Sphere <x, y, z, scale>: " << std::flush; 
-            PRE_CIN_CLEAR; 
-            std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale; 
+            std::cout << "Sphere <x, y, z, scale>: " << std::flush;
+            PRE_CIN_CLEAR;
+            std::cin >> sphere.origin.x >> sphere.origin.y >> sphere.origin.z >> sphere.scale;
             POST_CIN_CLEAR;
-            _sphereCin.push_back(sphere); 
+            _sphereCin.push_back(sphere);
     }
     else if ((e->key() == Qt::Key_T) && (modifiers == Qt::NoButton)) {
       if (camera()->type() == Camera::ORTHOGRAPHIC){
         camera()->setType(Camera::PERSPECTIVE);
-        std::cout << "camera: perspective\n"; 
+        std::cout << "camera: perspective\n";
       }
       else {
         camera()->setType(Camera::ORTHOGRAPHIC);
-        std::cout << "camera: orthographic\n"; 
+        std::cout << "camera: orthographic\n";
       }
     }
     else if ((e->key() == Qt::Key_G) && (modifiers == Qt::NoButton)) {
@@ -872,41 +895,41 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "takeSnapshots: " << std::boolalpha << _takeSnapshots << std::endl;
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ShiftModifier)) {
-        std::string filename; 
-        std::cout << "Enter filename for saving all slices data: " << std::flush; 
+        std::string filename;
+        std::cout << "Enter filename for saving all slices data: " << std::flush;
         PRE_CIN_CLEAR;
-        std::cin >> filename; 
+        std::cin >> filename;
         POST_CIN_CLEAR;
-        std::ofstream of(filename.c_str()); 
-        if (of) 
+        std::ofstream of(filename.c_str());
+        if (of)
         {
-            std::cout << " Writing all slice data to file: " << filename << "\n"; 
-            const int N_slices = _sliceCin.size(); 
-            of << std::setprecision(16); 
-            of << "# <number slices> <_sliceDataPointer>\n"; 
-            of << N_slices << " " << _sliceDataPointer << "\n"; 
+            std::cout << " Writing all slice data to file: " << filename << "\n";
+            const int N_slices = _sliceCin.size();
+            of << std::setprecision(16);
+            of << "# <number slices> <_sliceDataPointer>\n";
+            of << N_slices << " " << _sliceDataPointer << "\n";
             for (int s_idx=0; s_idx<N_slices; ++s_idx)
             {
-                auto &slice = _sliceCin.at(s_idx); 
+                auto &slice = _sliceCin.at(s_idx);
                 auto &data = slice.data;
-                auto &samples = slice.samples; 
-                const int N_probes = data.rows(); 
-                const int N_dimension = data.cols(); 
-                of << "# <slice index> <number of data probes on slice> <data dimension per probe> \n"; 
-                of << s_idx << " " << N_probes << " " << N_dimension << "\n"; 
-                of << "# <position_x> <position_y> <position_z> <data_1> <data_2> ... <data_dim>\n"; 
+                auto &samples = slice.samples;
+                const int N_probes = data.rows();
+                const int N_dimension = data.cols();
+                of << "# <slice index> <number of data probes on slice> <data dimension per probe> \n";
+                of << s_idx << " " << N_probes << " " << N_dimension << "\n";
+                of << "# <position_x> <position_y> <position_z> <data_1> <data_2> ... <data_dim>\n";
                 for (int p_idx=0; p_idx<N_probes; ++p_idx)
                 {
-                    auto &vertex = samples.at(p_idx); 
+                    auto &vertex = samples.at(p_idx);
                     of << vertex.x << " " << vertex.y << " " << vertex.z << " ";
                     for (int d_idx=0; d_idx<N_dimension; ++d_idx)
                     {
                         of << data(p_idx, d_idx) << " ";
                     }
-                    of << std::endl; 
+                    of << std::endl;
                 }
             }
-            of.close(); 
+            of.close();
             std::cout << " Write complete." << std::endl;
         }
     }
@@ -919,154 +942,154 @@ keyPressEvent(QKeyEvent *e)
             ->PrintAllVelocity("allVelocityFDTD.txt", 0);
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ShiftModifier)) {
-        // write to disk 
-        std::string filename; 
-        std::cout << "Debug: failed reflection arrow filename: " << std::flush; 
+        // write to disk
+        std::string filename;
+        std::cout << "Debug: failed reflection arrow filename: " << std::flush;
         PRE_CIN_CLEAR;
-        std::cin >> filename; 
+        std::cin >> filename;
         POST_CIN_CLEAR;
-        Push_Back_ReflectionArrows(filename); 
+        Push_Back_ReflectionArrows(filename);
     }
     else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ControlModifier)) {
-        PRE_CIN_CLEAR; 
-        _fixedSliceColorMapRange = !_fixedSliceColorMapRange; 
-        if (_fixedSliceColorMapRange) 
+        PRE_CIN_CLEAR;
+        _fixedSliceColorMapRange = !_fixedSliceColorMapRange;
+        if (_fixedSliceColorMapRange)
         {
-            REAL cMin, cMax; 
-            std::cout << "Input colormap range <cmin> <cmax>: " << std::flush; 
+            REAL cMin, cMax;
+            std::cout << "Input colormap range <cmin> <cmax>: " << std::flush;
             while (std::cin >> cMin >> cMax)
             {
                 if (cMin < cMax)
-                    break; 
-                std::cout << "Invalid range. Input colormap range <cmin> <cmax>: " << std::flush; 
+                    break;
+                std::cout << "Invalid range. Input colormap range <cmin> <cmax>: " << std::flush;
             }
-            _sliceColorMapRange.x = cMin; 
-            _sliceColorMapRange.y = cMax;  
+            _sliceColorMapRange.x = cMin;
+            _sliceColorMapRange.y = cMax;
         }
-        ResetSliceColormap(); 
+        ResetSliceColormap();
         POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ControlModifier)) {
-        std::string filename; 
-        std::cout << "To-draw arrow filename: " << std::flush; 
+        std::string filename;
+        std::cout << "To-draw arrow filename: " << std::flush;
         PRE_CIN_CLEAR;
-        std::cin >> filename; 
+        std::cin >> filename;
         POST_CIN_CLEAR;
-        std::ifstream inFile(filename.c_str()); 
-        Vector3f x, n; 
+        std::ifstream inFile(filename.c_str());
+        Vector3f x, n;
         while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
         {
-            Arrow arrow; 
-            arrow.start = x; 
-            arrow.normal = n; 
-            _arrowCin.push_back(arrow); 
+            Arrow arrow;
+            arrow.start = x;
+            arrow.normal = n;
+            _arrowCin.push_back(arrow);
         }
         std::cout << " " << _arrowCin.size() << " arrows read and ready to draw.\n" << std::flush;
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ControlModifier)) {
-        _sliceCin.clear(); 
+        _sliceCin.clear();
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::AltModifier)) {
         PRE_CIN_CLEAR;
-        std::string filename; 
-        std::cout << "To-draw sphere filename: " << std::flush; 
-        std::cin >> filename; 
-        REAL scale; 
-        std::cout << "To-draw sphere scale: " << std::flush; 
-        std::cin >> scale; 
-        std::ifstream inFile(filename.c_str()); 
+        std::string filename;
+        std::cout << "To-draw sphere filename: " << std::flush;
+        std::cin >> filename;
+        REAL scale;
+        std::cout << "To-draw sphere scale: " << std::flush;
+        std::cin >> scale;
+        std::ifstream inFile(filename.c_str());
         Sphere sphere;
         Vector3f &x = sphere.origin;
         while(inFile >> x.x >> x.y >> x.z)
         {
-            sphere.scale = scale; 
-            _sphereCin.push_back(sphere); 
+            sphere.scale = scale;
+            _sphereCin.push_back(sphere);
         }
         std::cout << " " << _sphereCin.size() << " spheres read and ready to draw.\n" << std::flush;
         POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_N) && (modifiers == Qt::NoButton)) {
             PRE_CIN_CLEAR;
-            Vector3f x, n; 
-            std::cout << "Arrow start location <x, y, z>: " << std::flush; 
-            std::cin >> x.x >> x.y >> x.z; 
-            std::cout << "Arrow normal <x, y, z>: " << std::flush; 
-            std::cin >> n.x >> n.y >> n.z; 
-            Arrow arrow; 
-            arrow.start = x; 
-            arrow.normal = n; 
-            _arrowCin.push_back(arrow); 
+            Vector3f x, n;
+            std::cout << "Arrow start location <x, y, z>: " << std::flush;
+            std::cin >> x.x >> x.y >> x.z;
+            std::cout << "Arrow normal <x, y, z>: " << std::flush;
+            std::cin >> n.x >> n.y >> n.z;
+            Arrow arrow;
+            arrow.start = x;
+            arrow.normal = n;
+            _arrowCin.push_back(arrow);
             POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_M) && (modifiers == Qt::NoButton)) {
         PRE_CIN_CLEAR;
-        std::string filename; 
-        std::cout << "Read debug arrow files: " << std::flush; 
-        std::cin >> filename; 
-        std::ifstream inFile(filename.c_str()); 
+        std::string filename;
+        std::cout << "Read debug arrow files: " << std::flush;
+        std::cin >> filename;
+        std::ifstream inFile(filename.c_str());
         if (inFile)
         {
-            Vector3f x, n; 
+            Vector3f x, n;
             while (inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
             {
-                Arrow arrow; 
-                arrow.start = x; 
-                arrow.normal = n; 
-                _arrowCin.push_back(arrow); 
+                Arrow arrow;
+                arrow.start = x;
+                arrow.normal = n;
+                _arrowCin.push_back(arrow);
             }
         }
         POST_CIN_CLEAR;
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::NoButton)) {
-        int dim; 
-        Vector3d origin; 
+        int dim;
+        Vector3d origin;
         PRE_CIN_CLEAR;
-        std::cout << "Slice dim: " << std::flush; 
+        std::cout << "Slice dim: " << std::flush;
         std::cin >> dim;
-        std::cout << "Slice origin: " << std::flush; 
-        std::cin >> origin.x >> origin.y >> origin.z; 
-        POST_CIN_CLEAR; 
+        std::cout << "Slice origin: " << std::flush;
+        std::cin >> origin.x >> origin.y >> origin.z;
+        POST_CIN_CLEAR;
         AddSlice(dim, origin[dim]);
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ShiftModifier)) {
-        _sliceDataPointer = (_sliceDataPointer + 1)%8; 
+        _sliceDataPointer = (_sliceDataPointer + 1)%8;
         optionsChanged = true;
-        SetAllSliceDataReady(false); 
+        SetAllSliceDataReady(false);
     }
     else if ((e->key() == Qt::Key_Y) && (modifiers == Qt::ControlModifier)) {
-        _sliceDataPointer = std::max<int>(_sliceDataPointer - 1, 0); 
+        _sliceDataPointer = std::max<int>(_sliceDataPointer - 1, 0);
         optionsChanged = true;
-        SetAllSliceDataReady(false); 
+        SetAllSliceDataReady(false);
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
-            _sphereCin.clear(); 
+            _sphereCin.clear();
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
-            _arrowCin.clear(); 
+            _arrowCin.clear();
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ControlModifier)) {
-        PRE_CIN_CLEAR; 
-        std::string inputFile, outputFile; 
+        PRE_CIN_CLEAR;
+        std::string inputFile, outputFile;
         std::cout << "FBem input file: " << std::flush;
-        std::cin >> inputFile; 
+        std::cin >> inputFile;
         std::cout << "FBem output file: " << std::flush;
-        std::cin >> outputFile; 
+        std::cin >> outputFile;
         std::cout << std::endl;
 
-        REAL frequency; 
+        REAL frequency;
         std::cout << "Frequency for this mode (Hz): " << std::flush;
-        std::cin >> frequency; 
+        std::cin >> frequency;
         std::cout << std::endl;
-        POST_CIN_CLEAR; 
+        POST_CIN_CLEAR;
 
-        _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
+        _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency);
 
         // always points to the latest mode
-        _bemModePointer = _bemSolver->N_Modes()-1;  
-        SetAllSliceDataReady(false); 
+        _bemModePointer = _bemSolver->N_Modes()-1;
+        SetAllSliceDataReady(false);
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::NoButton)) {
-        DrawOneFrameForward(); 
+        DrawOneFrameForward();
     }
     else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
         MoveSceneCenter(0, _solverSettings->cellSize*0.9); 
@@ -1081,17 +1104,17 @@ keyPressEvent(QKeyEvent *e)
         MoveSceneCenter(2, -_solverSettings->cellSize*0.9); 
     }
     else {
-        handled = false; 
+        handled = false;
     }
 
     // still enable the default qglviewer event handling but this function has
     // priority
     if (!handled)
         QGLViewer::keyPressEvent(e);
-    if (optionsChanged) 
+    if (optionsChanged)
     {
         PrintDrawOptions();
-        PrintFrameInfo(); 
+        PrintFrameInfo();
     }
     updateGL();
 }
@@ -1111,7 +1134,7 @@ helpString() const
 void FDTD_AcousticSimulator_Viewer::
 postSelection(const QPoint &point)
 {
-    if (selectedName() != -1) 
+    if (selectedName() != -1)
     {
         const int cell_idx = selectedName(); 
         bool found; 
@@ -1135,7 +1158,7 @@ postSelection(const QPoint &point)
     }
     else
     {
-        _listenedCell.index = -1; // reset 
+        _listenedCell.index = -1; // reset
     }
 }
 
@@ -1156,10 +1179,10 @@ InitializeBEMSolver()
     std::cout << " Set BEM solution corresponding mesh to " << _simWorld->GetSceneObjects()->GetMeshName(bemMeshID) << std::endl;
 
     const REAL frequency = 1020.01;
-    const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt"); 
-    const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt"); 
-    _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency); 
-    _bemModePointer = _bemSolver->N_Modes()-1;  
+    const std::string inputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/input-0_0.txt");
+    const std::string outputFile("/home/jui-hsien/code/acoustics/work/plate_drop_long/fastbem/ret-0_0.txt");
+    _bemSolver->AddFBemSolution(inputFile, outputFile, 2.0*M_PI*frequency);
+    _bemModePointer = _bemSolver->N_Modes()-1;
 }
 
 //##############################################################################
@@ -1213,11 +1236,11 @@ ConstructSliceSamples(Slice &slice)
     for (int dim_0_idx=0; dim_0_idx<divisions[dim_0]; ++dim_0_idx)
         for (int dim_1_idx=0; dim_1_idx<divisions[dim_1]; ++dim_1_idx)
         {
-            Vector3d sample; 
-            sample(dim) = origin(dim); 
-            sample(dim_0) = slice.minBound[dim_0] + cellSize*(REAL)dim_0_idx; 
-            sample(dim_1) = slice.minBound[dim_1] + cellSize*(REAL)dim_1_idx; 
-            samples.push_back(sample); 
+            Vector3d sample;
+            sample(dim) = origin(dim);
+            sample(dim_0) = slice.minBound[dim_0] + cellSize*(REAL)dim_0_idx;
+            sample(dim_1) = slice.minBound[dim_1] + cellSize*(REAL)dim_1_idx;
+            samples.push_back(sample);
         }
 
     // horizontal grid lines
@@ -1227,31 +1250,31 @@ ConstructSliceSamples(Slice &slice)
     const REAL yStop =  slice.maxBound[dim_1] + 0.5*cellSize; 
     for (int dim_0_idx=0; dim_0_idx<divisions[dim_0]+1; ++dim_0_idx)
     {
-        Vector3d start; 
-        Vector3d stop; 
-        start(dim) = origin(dim); 
-        stop(dim) = origin(dim); 
+        Vector3d start;
+        Vector3d stop;
+        start(dim) = origin(dim);
+        stop(dim) = origin(dim);
         start(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
         stop(dim_0) = xStart + cellSize*(REAL)dim_0_idx;
-        start(dim_1) = yStart; 
-        stop(dim_1) = yStop; 
-        gridLines.push_back(start); 
-        gridLines.push_back(stop); 
+        start(dim_1) = yStart;
+        stop(dim_1) = yStop;
+        gridLines.push_back(start);
+        gridLines.push_back(stop);
     }
 
     // vertical grid lines
     for (int dim_1_idx=0; dim_1_idx<divisions[dim_1]+1; ++dim_1_idx)
     {
-        Vector3d start; 
-        Vector3d stop; 
-        start(dim) = origin(dim); 
-        stop(dim) = origin(dim); 
-        start(dim_0) = xStart; 
-        stop(dim_0) = xStop; 
+        Vector3d start;
+        Vector3d stop;
+        start(dim) = origin(dim);
+        stop(dim) = origin(dim);
+        start(dim_0) = xStart;
+        stop(dim_0) = xStop;
         start(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
         stop(dim_1) = yStart + cellSize*(REAL)dim_1_idx;
-        gridLines.push_back(start); 
-        gridLines.push_back(stop); 
+        gridLines.push_back(start);
+        gridLines.push_back(stop);
     }
 
     // make colormap for this slice.
@@ -1265,12 +1288,12 @@ ConstructSliceSamples(Slice &slice)
 void FDTD_AcousticSimulator_Viewer::
 ComputeAndCacheSliceData(const int &dataPointer)
 {
-    bool updateColormap = false; 
+    bool updateColormap = false;
     const int N_slices = _sliceCin.size();
-    REAL maxCoeffSlices = std::numeric_limits<REAL>::min(); 
-    REAL minCoeffSlices = std::numeric_limits<REAL>::max(); 
+    REAL maxCoeffSlices = std::numeric_limits<REAL>::min();
+    REAL minCoeffSlices = std::numeric_limits<REAL>::max();
     // first fetch all data and compute min, max
-    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
+    for (int s_idx=0; s_idx<N_slices; ++s_idx)
     {
         auto &slice = _sliceCin.at(s_idx); 
         auto &unit = slice.intersectingUnit; 
@@ -1281,8 +1304,8 @@ ComputeAndCacheSliceData(const int &dataPointer)
             unit->boxCenterChanged = false; // reset
         }
         if (slice.dataReady)
-            continue; 
-        Eigen::MatrixXd &data = slice.data; 
+            continue;
+        Eigen::MatrixXd &data = slice.data;
         data.setZero();
         auto simulator = slice.intersectingUnit->simulator; 
         if (dataPointer == 0)
@@ -1320,17 +1343,17 @@ ComputeAndCacheSliceData(const int &dataPointer)
         } 
         else if (dataPointer == 8 || dataPointer == 9) 
         {
-            const int N_samples = slice.samples.size(); 
+            const int N_samples = slice.samples.size();
             data.resize(N_samples, 1);
             int count = 0;
             for (int d_idx=0; d_idx<N_samples; ++d_idx)
             {
-                if (dataPointer == 8) 
+                if (dataPointer == 8)
                 {
                     const std::complex<REAL> transferValue = _bemSolver->Solve(_bemModePointer, slice.samples.at(d_idx));
                     data(d_idx, 0) = std::abs(transferValue);
                 }
-                else if (dataPointer == 9) 
+                else if (dataPointer == 9)
                 {
                     // if distance > threashold, computes transfer residual
                     REAL transferResidual; 
@@ -1338,42 +1361,42 @@ ComputeAndCacheSliceData(const int &dataPointer)
                     if (distance > 0.005)
                         _bemSolver->TestSolver(_bemModePointer, _bemSolver->GetMode_k(_bemModePointer), slice.samples.at(d_idx), transferResidual);
                     else
-                        transferResidual = 0.0; 
+                        transferResidual = 0.0;
                     data(d_idx, 0) = transferResidual;
                 }
-                count ++; 
+                count ++;
                 std::cout << "\r" << (REAL)count / (REAL)N_samples * 100.0 << "\% completed" << std::flush;
             }
             std::cout << std::endl;
         }
-        else 
+        else
         {
             throw std::runtime_error("**ERROR** dataPointer out of range");
         }
 
-        maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff()); 
-        minCoeffSlices = min(minCoeffSlices, data.minCoeff()); 
-        updateColormap = true; 
+        maxCoeffSlices = max(maxCoeffSlices, data.maxCoeff());
+        minCoeffSlices = min(minCoeffSlices, data.minCoeff());
+        updateColormap = true;
         slice.dataReady = true;
     }
 
     if (updateColormap && !_fixedSliceColorMapRange)
     {
         minCoeffSlices = (minCoeffSlices==maxCoeffSlices ?  maxCoeffSlices-EPS : minCoeffSlices);
-        if (dataPointer == 1) 
+        if (dataPointer == 1)
         {
-            _sliceColorMap->set_interpolation_range(-1.0, 1.0); 
-            _sliceColorMapRange.x = -1; 
-            _sliceColorMapRange.y =  1; 
+            _sliceColorMap->set_interpolation_range(-1.0, 1.0);
+            _sliceColorMapRange.x = -1;
+            _sliceColorMapRange.y =  1;
         }
         else
         {
-            _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices); 
-            _sliceColorMapRange.x = minCoeffSlices; 
-            _sliceColorMapRange.y = maxCoeffSlices; 
+            _sliceColorMap->set_interpolation_range(minCoeffSlices, maxCoeffSlices);
+            _sliceColorMapRange.x = minCoeffSlices;
+            _sliceColorMapRange.y = maxCoeffSlices;
         }
     }
-    _messageColormap = "Colormap range = [" + QString::number(_sliceColorMapRange.x) + ", " + QString::number(_sliceColorMapRange.y) + "]"; 
+    _messageColormap = "Colormap range = [" + QString::number(_sliceColorMapRange.x) + ", " + QString::number(_sliceColorMapRange.y) + "]";
 }
 
 //##############################################################################
@@ -1392,9 +1415,9 @@ DrawOneFrameForward()
         }
 #if DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL > 0
         if (_currentFrame % DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL == 0)
-            Push_Back_ReflectionArrows("a"); 
+            Push_Back_ReflectionArrows("a");
 #endif
-        SetAllSliceDataReady(false); 
+        SetAllSliceDataReady(false);
     }
     else
     {
@@ -1404,7 +1427,7 @@ DrawOneFrameForward()
     if (_takeSnapshots)
         saveSnapshot(true, true);
     PrintFrameInfo();
-    updateGL(); 
+    updateGL();
 }
 
 //##############################################################################
@@ -1418,7 +1441,7 @@ RestoreDefaultDrawOptions()
     _drawBoxLis = true; 
     _drawGround = (_remoteConnection ? 0 : 2); 
     _drawHashedCells = false;
-    _sliceDataPointer = 0; 
+    _sliceDataPointer = 0;
 }
 
 //##############################################################################
@@ -1435,7 +1458,7 @@ PrintDrawOptions()
               << " Draw hashed cells        : " << _drawHashedCells << "\n"
               << " Draw slice wireframe only: " << _sliceWireframe.to_ulong() << "\n"
               << " Draw slice data pointer  : " << _sliceDataPointer << "\n"
-              << "\n"; 
+              << "\n";
     std::cout << std::flush;
 }
 
@@ -1444,13 +1467,13 @@ PrintDrawOptions()
 void FDTD_AcousticSimulator_Viewer::
 PrintFrameInfo()
 {
-    const int N_dataType = 10; 
-    static const QString dataString[] = {"p_full", "cell_id", "v_x", "v_y", "v_z", "p_x", "p_y", "p_z", "freq_transfer", "freq_transfer_residual"}; 
+    const int N_dataType = 10;
+    static const QString dataString[] = {"p_full", "cell_id", "v_x", "v_y", "v_z", "p_x", "p_y", "p_z", "freq_transfer", "freq_transfer_residual"};
     int p=0;
     for (; p<N_dataType; ++p)
         if (p == _sliceDataPointer)
-            break; 
-    //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame)); 
+            break;
+    //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame));
     _message = QString("");
     _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
     _message += "Current Time: " + QString::number(_simWorld->GetWorldTime()) + "; "; 
@@ -1469,15 +1492,15 @@ Push_Back_ReflectionArrows(const std::string &filename)
     // push all arrows to debug draw
     for (int obj_idx=0; obj_idx<N; ++obj_idx)
     {
-        const std::string objFilename = filename + sceneObjects->GetMeshName(obj_idx); 
-        std::ifstream inFile(objFilename.c_str()); 
-        Vector3f x, n; 
+        const std::string objFilename = filename + sceneObjects->GetMeshName(obj_idx);
+        std::ifstream inFile(objFilename.c_str());
+        Vector3f x, n;
         while(inFile >> x.x >> x.y >> x.z >> n.x >> n.y >> n.z)
         {
-            Arrow arrow; 
-            arrow.start = x; 
-            arrow.normal = n; 
-            _arrowCin.push_back(arrow); 
+            Arrow arrow;
+            arrow.start = x;
+            arrow.normal = n;
+            _arrowCin.push_back(arrow);
         }
     }
 }

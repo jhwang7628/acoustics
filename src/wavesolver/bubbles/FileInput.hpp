@@ -201,7 +201,7 @@ loadSurfaceDatFile(const std::vector<BubbleInputInfo> &bubInfo,
             val.imag(c);
 
             // Convert from pressure gradient to velocity here
-            curOutput.at(mesh.m_fluidToFull.at(j)) << std::abs((val / factor));
+            curOutput.at(mesh.m_fluidToSurf.at(j)) << std::abs((val / factor));
         }
 
         //double maxVal = 0;
