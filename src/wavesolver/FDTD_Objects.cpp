@@ -24,7 +24,7 @@ OccupyByObject(const Vector3d &positionWorld)
     const int N_objects = N(); 
     for (int ii=0; ii<N_objects; ii++) 
     {
-        const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
+        const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z);
         if (distance < DISTANCE_TOLERANCE) 
             return ii; 
     }
@@ -42,11 +42,11 @@ ObjectDistance(const int &objectIndex, const Vector3d &positionWorld)
 //##############################################################################
 //##############################################################################
 REAL FDTD_Objects::
-LowestObjectDistance(const Vector3d &positionWorld) 
+LowestObjectDistance(const Vector3d &positionWorld)
 {
     REAL distance = std::numeric_limits<REAL>::max(); 
     for (int ii=0; ii<N(); ++ii) 
-        distance = std::min<REAL>(distance, _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z)); 
+        distance = std::min<REAL>(distance, _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z));
     return distance; 
 }
 
@@ -60,12 +60,12 @@ void FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
 {
     REAL queriedDistance; 
-    distance = std::numeric_limits<REAL>::max(); 
+    distance = std::numeric_limits<REAL>::max();
     objectID = std::numeric_limits<int>::max(); 
     const int N_objects = N(); 
     for (int ii=0; ii<N_objects; ++ii) 
     {
-        queriedDistance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
+        queriedDistance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z);
         if (queriedDistance < distance)
         {
             distance = queriedDistance; 
