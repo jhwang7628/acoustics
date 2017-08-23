@@ -581,6 +581,7 @@ AnimateObjects(const REAL newTime)
             if (object->Animated())
             {
                 _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, newSimulationTime, newCOM, quaternion); 
+                quaternion.normalize();
                 object->SetRigidBodyTransform(newCOM, quaternion);
             }
         }
