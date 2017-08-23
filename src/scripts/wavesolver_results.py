@@ -19,7 +19,7 @@ class Wavesolver_Results:
         print 'Reading listening position'
         if (self.folder is None): 
             return
-        pattern = '%s/%s_listening_position.dat' %(self.folder, self.prefix)
+        pattern = '%s/%s_*_listening_position.dat' %(self.folder, self.prefix)
         files = glob.glob(pattern)
         if not files: 
             raise Exception

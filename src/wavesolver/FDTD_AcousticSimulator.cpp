@@ -27,11 +27,11 @@ _SetBoundaryConditions() // NOTE: decrecated, not called anymore
     {
         RigidSoundObjectPtr objectPtr = m.second; 
         // add modal vibrational source
-        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr));
+        objectPtr->AddVibrationalSource(sourcePtr);
 
         // add acceleration noise source
-        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr));
         objectPtr->AddVibrationalSource(anSourcePtr);
 
         // add debug harmonic source

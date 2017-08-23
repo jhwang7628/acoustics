@@ -317,7 +317,8 @@ AnimateObjects(const REAL toTime)
         const auto &object = m.second;
         if (object->Animated())
         {
-            _objectAnimator->GetRigidObjectTransform(m.first, toTime, newCOM, quaternion); 
+            _objectAnimator->GetRigidObjectTransform(m.first, toTime, newCOM, quaternion);
+            quaternion.normalize();
             object->SetRigidBodyTransform(newCOM, quaternion);
         }
     }
