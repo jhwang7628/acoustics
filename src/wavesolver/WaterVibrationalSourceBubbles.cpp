@@ -915,14 +915,6 @@ computeVelocities(REAL time)
             MLSVal val1, val2;
             MLSPoint p = _m->m_surfTriCenters[j];
 
-            // DEBUGGING
-            if (p(1) < 0.047 || p(1) > 0.056)
-            {
-                std::cout << "bad surf position: " << p.transpose() << std::endl;
-                std::cout << "time: " << time << std::endl;
-                exit(1);
-            }
-
             tree1->find_nearest(p,
                                 5,
                                 closest1);
