@@ -203,7 +203,7 @@ DrawImpulses()
     const REAL timeStart = CurrentTime(); 
     const REAL timeStop  = timeStart + _timeStepSize; 
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
-    _rigidSoundObject->GetForces(timeStart, timeStop, impactRecords); 
+    _rigidSoundObject->GetForces(CurrentTime(), impactRecords);
     if (impactRecords.size() > 0) 
     {
         const int N_impacts = impactRecords.size(); 

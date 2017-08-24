@@ -1,5 +1,6 @@
 #include <modal_model/ImpulseSeriesObject.h> 
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
+#include <wavesolver/AccelerationNoiseVibrationalSource.h>
 //##############################################################################
 //
 //##############################################################################
@@ -100,16 +101,30 @@ GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &record
 }
 
 //##############################################################################
-// This function gets all forces (scaled impulses) that have timestamps 
-// [timeStart, timeStop]
+// This function returns a vector of forces that is nonzero at time 'time' using
+// Hertz contact model.
+//
+// Using Hertz model, we can spread out a given impulse and the force profile is
+// assumed to be f(t) = gamma*S(t;t_0,tau)*J_hat, where
+//   J_hat is the normalized impulse J
+//   gamma = pi norm(J)/(2 tau) is the scaling factor so that
+//                              norm(\int_0^{\infty} f(t)dt              )
+//                            =      \int_0^{\infty} gamma*S(t;t_0,tau)dt
+//                            = norm(J)
+//   S(t; t_0, tau) is a half sine that has support in [t_0, t_0+tau]
 //##############################################################################
 void ImpulseSeriesObject::
-GetForces(const REAL &timeStart, const REAL &timeStop, std::vector<ImpactRecord> &records)
+GetForces(const REAL &time, std::vector<ImpactRecord> &records)
 {
-    GetImpulse(timeStart, timeStop, records); 
+    GetImpulseWithinSupport(time, records);
     const int N = records.size();
     for (int frame_idx=0; frame_idx<N; ++frame_idx) 
-        records.at(frame_idx).impactVector /= records.at(frame_idx).supportLength; 
+    {
+        auto &r = records.at(frame_idx);
+        const REAL j = r.impactVector.length();
+        r.impactVector = (r.impactVector/j) *
+                r.gamma * AccelerationNoiseVibrationalSource::ComputeS(r, time);
+    }
 }
 
 //##############################################################################
