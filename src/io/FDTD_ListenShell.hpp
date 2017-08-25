@@ -24,12 +24,14 @@ public:
                      const Vector3<T> &neworigin, 
                      const T newradius)
     {
+        _r = newradius; 
+        _origin = neworigin; 
         _points = rhs->_points; 
         for (auto &p : _points)
             p = ((p - rhs->_origin)/rhs->_r*newradius) + neworigin; 
         _normls = rhs->_normls; 
         for (auto &n : _normls)
-            n *= pow((newradius/_r),2);
+            n *= pow((newradius/rhs->_r),2);
     }
     inline int N(){return _points.size();}
     inline std::vector<Vector3<T>> &Points(){return _points;} 
