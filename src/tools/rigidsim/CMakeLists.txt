@@ -13,24 +13,28 @@ if ( BUILD_RIGIDSIM )
         add_executable(rigidsim
             RigidSimDrop.cpp
             ${RIGID_SRC} 		  ${RIGID_IO_SRC}
-            ${MODAL_MODEL_SRC}
             ${LOGGING_SRC}        
             ${DEFORMABLE_SRC}     ${LINEARALGEBRA_SRC}
             ${GENERIC_SRC}        ${IO_SRC}
             ${SNDGEN_SRC}
             ${RIGID_PARSER_SRC}
             )
+#        target_include_directories(rigidsim
+#            PUBLIC ${Boost_INCLUDE_DIR}
+#            )
 
         target_link_libraries(rigidsim
                               ${LibConfig_LIBRARY}   ${BLAS_LAPACK_LIBS}
                               ${MKL_LIBRARY})
 
         set_target_properties(rigidsim PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+
 endif ( BUILD_RIGIDSIM )
 
 # =============================================================================
 #   Builds a rigid-body solver GUI
 # =============================================================================
+if( 0 )
 if ( BUILD_RIGIDSIM_GUI )
     # ===================
     # Dependencies
@@ -75,42 +79,42 @@ if ( BUILD_RIGIDSIM_GUI )
 
         set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-        add_executable(rigidsim-gui
+        add_executable(rigidsim-gui-old
         	${RIGID_SIM_GUI_APP_SRCS}
             ${GENERIC_SRC}                  ${DEFORMABLE_SRC}
 			${IO_SRC}                       ${RIGID_SRC}
 			${LOGGING_SRC}                  ${LINEARALGEBRA_SRC}
             ${RIGID_IO_SRC}
-            ${MODAL_MODEL_SRC}
             ${SNDGEN_SRC}
             ${RIGID_PARSER_SRC}
             )
 
-        target_include_directories(rigidsim-gui
+        target_include_directories(rigidsim-gui-old
             PUBLIC ${GLUT_INCLUDE_DIR}
             PUBLIC ${OPENGL_INCLUDE_DIR}
             PUBLIC ${QGLViewer_INCLUDE_DIR}
             PUBLIC ${Boost_INCLUDE_DIR}
             )
 
-        target_link_libraries(rigidsim-gui
+        target_link_libraries(rigidsim-gui-old
             ${GLUT_LIBRARIES}       ${QT_LIBRARIES}         
             ${QGLViewer_LIBRARY}	${OPENGL_LIBRARIES}
             ${LibConfig_LIBRARY}	${BLAS_LAPACK_LIBS}
             ${MKL_LIBRARY}
             )
 
-        set_target_properties(rigidsim-gui PROPERTIES AUTOMOC TRUE)
-        set_target_properties(rigidsim-gui PROPERTIES AUTOMOC_MOC_OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
-        set_target_properties(rigidsim-gui PROPERTIES AUTOUIC TRUE)
-        set_target_properties(rigidsim-gui PROPERTIES AUTORCC TRUE)
+        set_target_properties(rigidsim-gui-old PROPERTIES AUTOMOC TRUE)
+        set_target_properties(rigidsim-gui-old PROPERTIES AUTOMOC_MOC_OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+        set_target_properties(rigidsim-gui-old PROPERTIES AUTOUIC TRUE)
+        set_target_properties(rigidsim-gui-old PROPERTIES AUTORCC TRUE)
 
         if(USE_QT5)
-            qt5_use_modules(rigidsim-gui Xml OpenGL)
+            qt5_use_modules(rigidsim-gui-old Xml OpenGL)
         endif(USE_QT5)
 
-        set_target_properties(rigidsim-gui PROPERTIES LINK_FLAGS ${LINK_FLAGS})
+        set_target_properties(rigidsim-gui-old PROPERTIES LINK_FLAGS ${LINK_FLAGS})
 endif ( BUILD_RIGIDSIM_GUI ) 
+
 
 # =============================================================================
 #   Also build a simple "replayer" that we can use to make quick OpenGL renderings
@@ -163,7 +167,6 @@ if ( BUILD_RIGIDSIM_GUI )
 			${IO_SRC}                       ${RIGID_SRC}
 			${LOGGING_SRC}                  ${LINEARALGEBRA_SRC}
             ${RIGID_IO_SRC}
-            ${MODAL_MODEL_SRC}
             ${SNDGEN_SRC}
             ${RIGID_PARSER_SRC}
             )
@@ -192,7 +195,7 @@ if ( BUILD_RIGIDSIM_GUI )
 
         set_target_properties(replayer PROPERTIES LINK_FLAGS ${LINK_FLAGS})
 endif ( BUILD_RIGIDSIM_GUI ) 
-
+endif ( 0 )
 
 # # =============================================================================
 # #   Builds a rigid-body solver
