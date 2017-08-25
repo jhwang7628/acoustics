@@ -1,6 +1,7 @@
 #ifndef SIM_WORLD_AUX_DS_H
 #define SIM_WORLD_AUX_DS_H
 #include "config.h" 
+#include "io/FDTD_ListenShell.hpp"
 #include "wavesolver/PML_WaveSolver_Settings.h" 
 #include "wavesolver/FDTD_AcousticSimulator.h" 
 #include "wavesolver/FDTD_Objects.h"
@@ -10,9 +11,16 @@
 //##############################################################################
 struct ListeningUnit
 {
+    enum MODE{DELAY_LINE=0, SHELL=1} mode = SHELL;
     // speaker/mics
     Vector3Array        speakers; 
     static Vector3Array microphones;
+
+    // audio output
+    static std::shared_ptr<FDTD_ListenShell<REAL>> refShell;
+           std::shared_ptr<FDTD_ListenShell<REAL>> outShell; 
+           std::shared_ptr<FDTD_ListenShell<REAL>> innShell; 
+
     static REAL DelayLineScaling(const Vector3d &spk, const Vector3d &mic)
     {return 1./(spk-mic).length();}
 }; 

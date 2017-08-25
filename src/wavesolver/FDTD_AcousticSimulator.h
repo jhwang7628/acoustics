@@ -2,6 +2,7 @@
 #define FDTD_ACOUSTIC_SIMULATOR_H 
 
 #include <string> 
+#include <io/FDTD_ListenShell.hpp>
 #include <parser/ImpulseResponseParser.h> 
 #include <geometry/BoundingBox.h> 
 #include <wavesolver/PML_WaveSolver.h> 
@@ -36,6 +37,7 @@ class FDTD_AcousticSimulator
         std::shared_ptr<FDTD_Objects>               _sceneObjects; 
         std::shared_ptr<FDTD_RigidObject_Animator>  _sceneObjectsAnimator; 
         std::shared_ptr<ActiveSimUnit>              _owner; // owner sim unit
+        std::shared_ptr<FDTD_ListenShell<REAL>>     _listenShell; 
 
         // state representation
         bool                    _canInitializeSolver; 

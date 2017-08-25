@@ -15,25 +15,32 @@ if not os.path.isfile(out_config):
     sys.exit()
 
 ##
-def Parse(parser, section, tag, val_type = 's'): 
-    if val_type == 'i': 
+def ReqParse(parser, section, tag, val_type = 's'): 
+    if val_type == 'i':   # int
         tmp = parser.getint(section, tag)
-    elif val_type == 'f':
+    elif val_type == 'f': # float
         tmp = parser.getfloat(section, tag)
-    elif val_type == 'b':
+    elif val_type == 'b': # boolean
         tmp = parser.getboolean(section, tag)
-    elif val_type == 's':
+    elif val_type == 's': # string
         tmp = parser.get(section, tag)
+    elif val_type == 'li': # list of int (comma separated)
+        tmp = map(int, parser.get(section, tag).split(','))
     else: 
         raise TypeError
     print 'Parsing \'%s\' in \'%s\': ' %(tag, section), tmp
     return tmp
+
+def OptParse(parser, section, tag, val_type = 's', val_default = None): 
+    try: val = ReqParse(parser, section, tag, val_type)
+    except NoOptionError: val = val_default
+    return val
 ##
 parser = SafeConfigParser()
 parser.read(out_config)
 
-data_dir = Parse(parser, 'general', 'data_dir', 's')
-out_dir = Parse(parser, 'general', 'out_dir', 's')
+data_dir = ReqParse(parser, 'general', 'data_dir', 's')
+out_dir = ReqParse(parser, 'general', 'out_dir', 's')
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 ##
@@ -42,15 +49,17 @@ results.Set_Folder(data_dir)
 all_data = results.Read_All_Audio()
 N_points = all_data.shape[1]
 N_steps  = all_data.shape[0] 
-sampfreq = Parse(parser, 'general', 'sampfreq', 'i')
+sampfreq = ReqParse(parser, 'general', 'sampfreq', 'i')
 
-if Parse(parser, 'general', 'plot', 'b'):
+if ReqParse(parser, 'general', 'plot', 'b'):
     print '\n------ PLOTTING ------'
-    xaxis_frame = Parse(parser, 'plot', 'xaxis_frame', 'b')
-    try: xmax = Parse(parser, 'plot', 'xmax', 'f')
-    except NoOptionError: xmax = None
+    xaxis_frame = ReqParse(parser, 'plot', 'xaxis_frame', 'b')
+    xmax        = OptParse(parser, 'plot', 'xmax'       , 'f')
+    plot_points = OptParse(parser, 'plot', 'plot_points', 'li')
     plt.figure()
-    for ii in range(N_points): 
+    if (plot_points is None): ii_range = range(N_points)
+    else                    : ii_range = plot_points
+    for ii in plot_points: 
         if xaxis_frame: t = np.array(range(len(all_data[:,ii])))
         else:           t = np.array(range(len(all_data[:,ii])))/float(sampfreq)
         y = all_data[:,ii]
@@ -66,10 +75,10 @@ if Parse(parser, 'general', 'plot', 'b'):
         plt.plot(t, y)
     plt.show()
 
-if Parse(parser, 'general', 'write_wav', 'b'):
+if ReqParse(parser, 'general', 'write_wav', 'b'):
     print '\n------ WRITING WAV FILES ------'
-    wavfreq  = Parse(parser, 'wav'    , 'wavfreq' , 'i')
-    prefix   = Parse(parser, 'wav'    , 'prefix'  , 's')
+    wavfreq  = ReqParse(parser, 'wav'    , 'wavfreq' , 'i')
+    prefix   = ReqParse(parser, 'wav'    , 'prefix'  , 's')
     rateRatio = float(sampfreq) / float(wavfreq)
     for ii in range(N_points): 
         print 'point %u' %(ii)

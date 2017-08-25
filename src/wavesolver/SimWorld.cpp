@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <Eigen/Dense>
 #include "macros.h"
+#include "io/FDTD_ListenShell.hpp"
 #include "geometry/BoundingBox.h" 
 #include "wavesolver/SimWorld.h"
 
@@ -9,6 +10,7 @@
 //##############################################################################
 SimWorld::WorldRasterizer SimWorld::rasterizer; 
 Vector3Array ListeningUnit::microphones; 
+std::shared_ptr<FDTD_ListenShell<REAL>> ListeningUnit::refShell;
 
 //##############################################################################
 // Function GetSolverBBoxs
@@ -31,20 +33,36 @@ Vector3Array &ActiveSimUnit::
 UpdateSpeakers()
 {
     // straight line connecting boxcenter and speaker
-    const int N_mic = ListeningUnit::microphones.size(); 
-    const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
-    if (listen->speakers.size() != N_mic)
-        listen->speakers.resize(N_mic); 
-    for (int ii=0; ii<N_mic; ++ii)
+    if (listen->mode == ListeningUnit::MODE::DELAY_LINE)
     {
-        const auto &mic = ListeningUnit::microphones.at(ii); 
-        auto &spk = listen->speakers.at(ii); 
-        Vector3d v = mic - BoundingBoxCenter(); 
-        v.normalize();
-        const REAL r = lowerRadiusBound 
-                     - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
-        v *= r; 
-        spk = BoundingBoxCenter() + v; 
+        const int N_mic = ListeningUnit::microphones.size(); 
+        const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
+        if (listen->speakers.size() != N_mic)
+            listen->speakers.resize(N_mic); 
+        for (int ii=0; ii<N_mic; ++ii)
+        {
+            const auto &mic = ListeningUnit::microphones.at(ii); 
+            auto &spk = listen->speakers.at(ii); 
+
+                Vector3d v = mic - BoundingBoxCenter(); 
+                v.normalize();
+                const REAL r = lowerRadiusBound 
+                             - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
+                v *= r; 
+                spk = BoundingBoxCenter() + v; 
+        }
+    }
+    else if (listen->mode == ListeningUnit::MODE::SHELL)
+    {
+        const int N1 = listen->outShell->N(); 
+        const int N2 = listen->innShell->N(); 
+        if (listen->speakers.size() != (N1+N2))
+            listen->speakers.resize((N1+N2)); 
+        auto &outPoints = listen->outShell->Points(); 
+        auto &innPoints = listen->innShell->Points(); 
+        auto it = std::copy(outPoints.begin(), outPoints.end(), listen->speakers.begin()); 
+        it = std::copy(innPoints.begin(), innPoints.end(), it); 
+        assert(it == listen->speakers.end()); 
     }
     return listen->speakers; 
 }
@@ -102,13 +120,11 @@ Build(ImpulseResponseParser_Ptr &parser)
                 )*2 + 8 + (int)(_simulatorSettings->PML_width);
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
-        //simUnit->simulator->InitializeSolver(simUnitBox, _simulatorSettings); 
         simUnit->divisions = divs; 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
         simUnit->unitID = simulatorID; 
-        //simUnit->simulator->GetGrid().grid_id = simulatorID; 
 
         // make sure this object is not inside some other existed unit
         bool createUnit = true; 
@@ -126,25 +142,28 @@ Build(ImpulseResponseParser_Ptr &parser)
             candidateUnit[simUnit] = simUnitBox; 
             _simUnits.insert(std::move(simUnit)); 
         }
-        //// FIXME debug
-        //if (obj->GetMeshName() == "0")
-        //    obj->ClearVibrationalSources();
     }
 
+    // initialize solver
     for (auto &pair : candidateUnit)
     {
         pair.first->simulator->InitializeSolver(pair.second, _simulatorSettings); 
         pair.first->simulator->GetGrid().grid_id = pair.first->unitID; 
-        COUT_SDUMP(pair.first->BoundingBoxCenter()); 
     }
+    
+    // build listening shell
 
     // setup filename for output
     char buffer[512];
     const std::string filename("all_audio.dat"); 
     snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
              filename.c_str()); 
+    const int N_listen = (*_simUnits.begin())->listen->mode == ListeningUnit::SHELL ?
+        (*_simUnits.begin())->listen->outShell->N() + 
+        (*_simUnits.begin())->listen->innShell->N() :
+        _simulatorSettings->listeningPoints.size(); 
     ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
-    AudioOutput::instance()->SetBufferSize(ListeningUnit::microphones.size()); 
+    AudioOutput::instance()->SetBufferSize(N_listen); 
     AudioOutput::instance()->OpenStream(std::string(buffer)); 
 }
 
@@ -197,10 +216,17 @@ StepWorld()
         // scale the pressure, NOTE: ignoring the phase for now
         for (int ii=0; ii<spks.size(); ++ii)
         {
-            const auto &mic = ListeningUnit::microphones.at(ii); 
             const auto &spk = spks.at(ii); 
-            pressures.at(ii) = 
-                ListeningUnit::DelayLineScaling(spk, mic)* fetch(ii,0);
+            if (unit->listen->mode == ListeningUnit::DELAY_LINE)
+            {
+                const auto &mic = ListeningUnit::microphones.at(ii); 
+                pressures.at(ii) = 
+                    ListeningUnit::DelayLineScaling(spk, mic)* fetch(ii,0);
+            }
+            else if (unit->listen->mode == ListeningUnit::SHELL)
+            {
+                pressures.at(ii) = fetch(ii,0);
+            }
         }
         AudioOutput::instance()->AccumulateBuffer(pressures); 
         std::cout << "-------- unit " << count 

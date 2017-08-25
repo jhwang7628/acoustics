@@ -26,8 +26,8 @@ class Wavesolver_Results:
         filename = files[0]
         self.listening_points = readMatrixXdBinary(filename,1)
         self.num_listening_points = self.listening_points.shape[0]
+        print ' %d points is read\n' %(self.num_listening_points)
     def Read_All_Audio(self): 
-        print 'Reading all_audio.dat'
         if (self.folder is None): 
             return
         if (self.listening_points is None): 
@@ -38,10 +38,19 @@ class Wavesolver_Results:
         else: 
             print '**WARNING** File %s does not exist' %(filename)
             return None
+        print 'Reading all_audio.dat'
         with open(filename, 'rb') as stream: 
             num_steps = int(np.floor(filesizebytes/8/self.num_listening_points))
-            all_data = np.zeros((num_steps, self.num_listening_points))
-            for row in range(num_steps): 
-                buf = stream.read(8*self.num_listening_points)
-                all_data[row,:] = struct.unpack('d'*self.num_listening_points, buf)
+            print '  reading %d steps' %(num_steps)
+            N = self.num_listening_points*num_steps
+            print 'step 0'
+            buf = stream.read(8*N)
+            print 'step 1'
+            all_data = np.array(struct.unpack('d'*N, buf))
+            print 'step 2'
+            all_data = all_data.reshape((num_steps, self.num_listening_points))
+            print all_data
+            # for row in range(num_steps): 
+            #     buf = stream.read(8*self.num_listening_points)
+            #     all_data[row,:] = struct.unpack('d'*self.num_listening_points, buf)
         return all_data

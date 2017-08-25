@@ -300,6 +300,20 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->fileAcceleration = queryRequiredAttr(rigidsimDataNode, "file_acceleration"); 
     }
 
+    // parse listening shell config
+    TiXmlElement *listNode; 
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_shell"); 
+        if (listNode)
+        {
+            settings->useShell = true; 
+            settings->refShellFile = queryRequiredAttr(listNode, "reference_shell_file"); 
+            settings->spacing      = queryRequiredReal(listNode, "finite_difference_spacing"); 
+        }
+    }
+    catch (const std::runtime_error &e) { }
+
     // parse and construct modal encoder
     bool hasEncoderDefined; 
     GET_FIRST_CHILD_ELEMENT_FLAG(encoderNode, root, "modal_encoder", hasEncoderDefined); 
@@ -360,9 +374,9 @@ GetListeningPoints(Vector3Array &listeningPoints)
     TiXmlElement *root, *listNode, *node;
     TiXmlDocument *document = &_document;
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_point_list"); 
     try
     {
+        GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_point_list"); 
         GET_FIRST_CHILD_ELEMENT_GUARD(node, listNode, "listening_point"); 
         while (node) 
         {

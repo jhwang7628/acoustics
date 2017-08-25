@@ -28,6 +28,11 @@ struct PML_WaveSolver_Settings
     REAL PML_width; 
     REAL PML_strength;
 
+    // listening shells 
+    bool useShell = false; 
+    std::string refShellFile; 
+    REAL spacing; 
+
     // Optional settings, mostly switches
     int  boundaryConditionPreset; // 0: no wall. 1: wall on +x, +y, +z, 2: wall on all but +z
     bool useMesh; 

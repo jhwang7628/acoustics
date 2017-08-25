@@ -1,5 +1,6 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
 #include <wavesolver/SimWorldAuxDS.h>
+#include <io/FDTD_ListenShell.hpp>
 #include <geometry/BoundingBox.h>
 #include <utils/IO/IO.h>
 #include <macros.h>
@@ -60,17 +61,40 @@ _SetPressureSources()
 void FDTD_AcousticSimulator::
 _SetListeningPoints()
 {
-    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
-    _parser->GetListeningPoints(listeningPoints); 
-    if (listeningPoints.size() == 0) 
+    Vector3Array &listeningPoints = (_owner ? 
+            _owner->listen->speakers :
+            _acousticSolverSettings->listeningPoints); 
+    if (_owner)
     {
-        _acousticSolverSettings->listening = false; 
+        if (_acousticSolverSettings->useShell)
+        {
+            ListeningUnit::refShell = FDTD_ListenShell<REAL>::Build(_acousticSolverSettings->refShellFile); 
+            if (_owner->listen->mode == ListeningUnit::MODE::SHELL)
+            {
+                const REAL r_out = _owner->GetBoundingBox().minlength()/2.0 
+                                 - (_acousticSolverSettings->PML_width+1)*_acousticSolverSettings->cellSize; 
+                const REAL r_inn = r_out - _acousticSolverSettings->spacing; 
+                assert(r_out>0. && r_inn>0.);
+                _owner->listen->outShell = 
+                    std::make_shared<FDTD_ListenShell<REAL>>(
+                            ListeningUnit::refShell.get(), 
+                            _owner->BoundingBoxCenter(), 
+                            r_out); 
+                _owner->listen->innShell = 
+                    std::make_shared<FDTD_ListenShell<REAL>>(
+                            ListeningUnit::refShell.get(), 
+                            _owner->BoundingBoxCenter(), 
+                            r_inn); 
+            }
+        }
+        _owner->UpdateSpeakers();
     }
     else 
     {
-        _acousticSolverSettings->listening = true; 
-        _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat"); 
+        _parser->GetListeningPoints(listeningPoints); 
     }
+
+    _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat"); 
 }
 
 //##############################################################################
@@ -167,8 +191,11 @@ _SaveVelocityCellPositions(const std::string &filename, const int &dim)
 void FDTD_AcousticSimulator::
 _SaveListeningPositions(const std::string &filename)
 {
-    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+    Vector3Array &listeningPoints = (_owner ? 
+            _owner->listen->speakers : 
+            _acousticSolverSettings->listeningPoints); 
     const int N = listeningPoints.size(); 
+    if (N==0) return;
     Eigen::MatrixXd listeningPoints_eigen(N, 3); 
     for (int ii=0; ii<N; ii++) 
     {
@@ -247,9 +274,11 @@ _SaveVelocityTimestep(const std::string &filename, const int &dim)
 void FDTD_AcousticSimulator::
 _SaveListeningData(const std::string &filename)
 {
-    if (_acousticSolverSettings->listening)
+    Vector3Array &listeningPoints = (_owner ?
+            _owner->listen->speakers :
+            _acousticSolverSettings->listeningPoints); 
+    if (listeningPoints.size()>0)
     {
-        Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
         Eigen::MatrixXd data; 
         _acousticSolver->FetchPressureData(listeningPoints, data); 
         try 
@@ -371,8 +400,8 @@ InitializeSolver(const BoundingBox &solverBox,
     if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
 
     // initialize solver and set various things
-    _SetListeningPoints(); 
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
+    _SetListeningPoints(); 
     //_SetBoundaryConditions();
     _SetPressureSources();
 
@@ -492,18 +521,19 @@ PostStepping(const REAL &odeTime)
         std::ostringstream oss; 
         oss << std::setw(8) << std::setfill('0') << timeIndex; 
         const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
-        _SaveListeningData(filenameProbe);
-        if (settings->writePressureFieldToDisk)
-        {
-            const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
-            _SavePressureTimestep(filenameField); 
-            // uncomment if want to store velocities
-            //for (int dim=0; dim<3; ++dim) 
-            //{
-            //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-            //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-            //}
-        }
+        // uncomment if want to write file for each step
+        //_SaveListeningData(filenameProbe);
+        //if (settings->writePressureFieldToDisk)
+        //{
+        //    const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
+        //    _SavePressureTimestep(filenameField); 
+        //    // uncomment if want to store velocities
+        //    //for (int dim=0; dim<3; ++dim) 
+        //    //{
+        //    //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+        //    //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+        //    //}
+        //}
     }
 
     //// update modal vectors for the next time step
@@ -562,8 +592,7 @@ SaveSolverConfig()
         const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim)+"_vertex_position.dat"); 
         _SaveVelocityCellPositions(velocityVertexPosition_s, dim); 
     }
-    if (_acousticSolverSettings->listening)
-        _SaveListeningPositions(listeningPosition_s); 
+    _SaveListeningPositions(listeningPosition_s); 
 
     _SaveModalFrequencies(modalFrequencies_s); 
 }
