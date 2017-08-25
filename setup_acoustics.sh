@@ -106,3 +106,46 @@ echo "export SCRIPTS=\$HOME/code/acoustics/src/scripts" >> ~/.bashrc
 export SCRIPTS=$HOME/code/acoustics/src/scripts
 echo "export PATH=\$PATH:\$SCRIPTS" >> ~/.bashrc
 export PATH=$PATH:$SCRIPTS
+
+#Mitsuba
+#https://www.mitsuba-renderer.org/releases/current/documentation.pdf
+read -p 'Press [Enter] key to continue to Mitsuba installation...'
+pushd $HOME/installers
+sudo apt-get install build-essential scons mercurial qt4-dev-tools libpng12-dev libjpeg-dev libilmbase-dev libxerces-c-dev libboost-all-dev libopenexr-dev libglewmx-dev libxxf86vm-dev libpcrecpp0v5 libeigen3-dev libfftw3-dev
+mkdir mitsuba
+cd mitsuba
+# these don't work on 16.04
+#wget http://www.mitsuba-renderer.org/releases/current/trusty/collada-dom-dev_2.4.0-1_amd64.deb
+#wget http://www.mitsuba-renderer.org/releases/current/trusty/collada-dom_2.4.0-1_amd64.deb
+#wget http://www.mitsuba-renderer.org/releases/current/trusty/mitsuba-dev_0.5.0-1_amd64.deb
+#wget http://www.mitsuba-renderer.org/releases/current/trusty/mitsuba_0.5.0-1_amd64.deb
+
+#sudo dpkg --install collada-dom_*.deb
+#sudo dpkg --install mitsuba*.deb
+
+#following these instead: 
+# https://cgcvtutorials.wordpress.com/2017/05/31/install-mitsuba-on-linux-16-04/
+
+wget https://www.mitsuba-renderer.org/repos/mitsuba/archive/tip.zip
+
+unzip tip.zip
+mkdir $HOME/installed
+
+mv mitsuba-af602c6fd98a $HOME/installed/
+cd $HOME/installed/mitsuba-af602c6fd98a/
+
+cp build/config-linux-gcc.py config.py
+
+sudo apt-get install scons qt4-dev-tools libboost-all-dev libglewmx-dev libpcrecpp0v5
+
+echo "Please follow the instructions in https://cgcvtutorials.wordpress.com/2017/05/31/install-mitsuba-on-linux-16-04/"
+echo "and fix src/bsdfs/irawan.h as well as include/mitsuba/core/autodiff.h."
+read -p "Press [Enter] when done"
+scons –j 36
+
+echo "loadmitsuba() {" >> ~/.bashrc
+echo "  . ~/installed/mitsuba-af602c6fd98a/setpath.sh" >> ~/.bashrc
+echo "}" >> ~/.bashrc
+
+
+
