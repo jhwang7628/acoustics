@@ -1,5 +1,6 @@
 #ifndef FDTD_LISTENSHELL_HPP
 #define FDTD_LISTENSHELL_HPP
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -34,7 +35,24 @@ public:
             n *= pow((newradius/rhs->_r),2);
     }
     inline int N(){return _points.size();}
+    inline T Radius(){return _r;}
     inline std::vector<Vector3<T>> &Points(){return _points;} 
+    void WriteToFile(std::ostream &os) const
+    {
+        os << "START" << std::endl;
+        os << _points.size() << " " << _normls.size() << std::endl;
+        os << std::setprecision(16); 
+        os << std::fixed;
+        for (const auto &p : _points)
+            os << p.x << " " << p.y << " " << p.z << std::endl; 
+        for (const auto &n : _normls)
+            os << n.x << " " << n.y << " " << n.z << std::endl; 
+        os << "ORIGIN" << std::endl; 
+        os << _origin.x << " " << _origin.y << " " << _origin.z << std::endl; 
+        os << "RADIUS" << std::endl; 
+        os << _r << std::endl; 
+        os << "END" << std::endl;
+    }
 };
 
 //##############################################################################

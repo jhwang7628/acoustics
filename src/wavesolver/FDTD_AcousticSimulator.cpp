@@ -211,6 +211,24 @@ _SaveListeningPositions(const std::string &filename)
     catch (const std::runtime_error &e)
     { 
     }
+
+    if (_owner && _acousticSolverSettings->useShell &&
+        _owner->listen->mode == ListeningUnit::MODE::SHELL)
+    {
+        std::string file_shell;
+        file_shell = _CompositeFilename("out_shell_config.txt"); 
+        {
+            std::ofstream ofs(file_shell.c_str()); 
+            _owner->listen->outShell->WriteToFile(ofs); 
+            ofs.close(); 
+        }
+        file_shell = _CompositeFilename("inn_shell_config.txt");
+        {
+            std::ofstream ofs(file_shell.c_str()); 
+            _owner->listen->innShell->WriteToFile(ofs); 
+            ofs.close(); 
+        }
+    }
 }
 
 //##############################################################################
