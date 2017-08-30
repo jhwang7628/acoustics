@@ -11,7 +11,7 @@
 //##############################################################################
 struct ListeningUnit
 {
-    enum MODE{DELAY_LINE=0, SHELL=1} mode = SHELL;
+    enum MODE{DELAY_LINE=0, SHELL=1} mode = DELAY_LINE;
     // speaker/mics
     Vector3Array        speakers; 
     static Vector3Array microphones;
