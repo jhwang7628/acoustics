@@ -59,7 +59,7 @@ if ReqParse(parser, 'general', 'plot', 'b'):
     plt.figure()
     if (plot_points is None): ii_range = range(N_points)
     else                    : ii_range = plot_points
-    for ii in plot_points: 
+    for ii in ii_range: 
         if xaxis_frame: t = np.array(range(len(all_data[:,ii])))
         else:           t = np.array(range(len(all_data[:,ii])))/float(sampfreq)
         y = all_data[:,ii]
