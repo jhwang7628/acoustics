@@ -37,6 +37,7 @@ public:
     inline int N(){return _points.size();}
     inline T Radius(){return _r;}
     inline std::vector<Vector3<T>> &Points(){return _points;} 
+    inline std::vector<Vector3<T>> &Normls(){return _normls;}
     void WriteToFile(std::ostream &os) const
     {
         os << "START" << std::endl;
