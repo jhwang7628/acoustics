@@ -74,7 +74,8 @@ class PML_WaveSolver : public Solver
         MATRIX                   _pThisTimestep;      // for restarting
         MATRIX                   _vThisTimestep[ 3 ]; // for restarting
 
-        MATRIX                   _pLaplacian; 
+        MATRIX                   _pLaplacian[2]; 
+        int                      _pLaplacianInd;  // point to new
         MATRIX                   _pCollocated[3]; // rotating buffer for pressure: [old, current, new]
         int                      _pCollocatedInd; // point to new
 

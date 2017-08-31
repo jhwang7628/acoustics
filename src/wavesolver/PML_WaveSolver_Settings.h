@@ -33,6 +33,12 @@ struct PML_WaveSolver_Settings
     std::string refShellFile; 
     REAL spacing; 
 
+    // damping due to viscosity of air
+    // see paper: computing room acoustics with CUDA - 3D FDTD schemes with boundary losses and viscosity
+    // alpha = 0.0 results in lossless media
+    bool useAirViscosity = false;
+    REAL alpha;
+
     // Optional settings, mostly switches
     int  boundaryConditionPreset; // 0: no wall. 1: wall on +x, +y, +z, 2: wall on all but +z
     bool useMesh; 

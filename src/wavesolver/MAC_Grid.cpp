@@ -436,11 +436,13 @@ void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MA
     }
 }
 
-void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &laplacian)
+void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &currLaplacian, MATRIX &pastLaplacian)
 {
     const REAL &timeStep = _waveSolverSettings->timeStepSize; 
     const REAL one_over_dx = 1.0/_waveSolverSettings->cellSize; 
     const REAL c2_k2 = pow(_waveSolverSettings->soundSpeed*timeStep, 2); 
+    const REAL c_alp = _waveSolverSettings->soundSpeed*_waveSolverSettings->alpha; 
+    const REAL kcalp = c_alp*timeStep; 
     const REAL lambda = _waveSolverSettings->soundSpeed*_waveSolverSettings->timeStepSize/_waveSolverSettings->cellSize; 
     const REAL lambda2 = pow(lambda,2); 
     const int N_cells = _pressureField.numCells(); 
@@ -596,10 +598,15 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         }
         else  // not boundary cells
         {
-            // update normal cells
-            pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
-                               -     pLast(cell_idx, 0) 
-                               + laplacian(cell_idx, 0) * c2_k2; 
+            // update normal cell
+            if (_waveSolverSettings->useAirViscosity && _pressureCellHasValidHistory.at(cell_idx))
+                pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
+                                   - (1.0 + kcalp*pastLaplacian(cell_idx,0)) * pLast(cell_idx, 0) 
+                                   + currLaplacian(cell_idx, 0) * (c2_k2+c_alp); 
+            else
+                pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
+                                   -     pLast(cell_idx, 0) 
+                                   + currLaplacian(cell_idx, 0) * c2_k2; 
         }
 #undef PCELL_IDX
 
