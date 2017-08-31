@@ -144,6 +144,31 @@ Build(ImpulseResponseParser_Ptr &parser)
         }
     }
 
+    // in case there is no geometry, use the default one in xml
+    if (candidateUnit.size()==0)
+    {
+        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
+        std::string *simulatorID = new std::string("0");
+        simUnit->objects = std::make_shared<FDTD_Objects>(); 
+        simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
+        simUnit->simulator->SetParser(parser); 
+        simUnit->simulator->SetSolverSettings(_simulatorSettings); 
+        simUnit->simulator->SetSceneObjects(simUnit->objects); 
+        simUnit->simulator->SetOwner(simUnit); 
+
+        const BoundingBox simUnitBox(
+                _simulatorSettings->cellSize, 
+                _simulatorSettings->cellDivisions, 
+                _simulatorSettings->domainCenter); 
+        simUnit->divisions = _simulatorSettings->cellDivisions; 
+        simUnit->listen = std::make_unique<ListeningUnit>(); 
+        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
+        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
+        simUnit->unitID = simulatorID; 
+        candidateUnit[simUnit] = simUnitBox; 
+        _simUnits.insert(std::move(simUnit)); 
+    }
+
     // initialize solver
     for (auto &pair : candidateUnit)
     {
@@ -178,6 +203,7 @@ UpdateObjectState(const REAL &time)
     for (auto &unit : _simUnits)
     {
         const auto &objects = unit->objects->GetRigidSoundObjects(); 
+        if (objects.size() == 0) continue; 
         Vector3d newCenter(0.,0.,0.); 
         for (const auto &objpair : objects) 
         {
@@ -187,7 +213,7 @@ UpdateObjectState(const REAL &time)
             const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
             newCenter += meshCentroid_w; 
         }
-        newCenter /= (REAL)objects.size(); 
+        newCenter /= (REAL)objects.size();
         unit->simulator->SetFieldCenter(newCenter); 
         unit->unitCenter = newCenter; 
     }
