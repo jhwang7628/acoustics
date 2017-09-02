@@ -61,32 +61,26 @@ _SetPressureSources()
 void FDTD_AcousticSimulator::
 _SetListeningPoints()
 {
-    Vector3Array &listeningPoints = (_owner ? 
+    Vector3Array &listeningPoints = (_acousticSolverSettings->useShell ? 
             _owner->listen->speakers :
             _acousticSolverSettings->listeningPoints); 
-    if (_owner)
+    if (_acousticSolverSettings->useShell && _owner)
     {
-        if (_acousticSolverSettings->useShell)
-        {
-            ListeningUnit::refShell = FDTD_ListenShell<REAL>::Build(_acousticSolverSettings->refShellFile); 
-            if (_owner->listen->mode == ListeningUnit::MODE::SHELL)
-            {
-                const REAL r_out = _owner->GetBoundingBox().minlength()/2.0 
-                                 - (_acousticSolverSettings->PML_width+1)*_acousticSolverSettings->cellSize; 
-                const REAL r_inn = r_out - _acousticSolverSettings->spacing; 
-                assert(r_out>0. && r_inn>0.);
-                _owner->listen->outShell = 
-                    std::make_shared<FDTD_ListenShell<REAL>>(
-                            ListeningUnit::refShell.get(), 
-                            _owner->BoundingBoxCenter(), 
-                            r_out); 
-                _owner->listen->innShell = 
-                    std::make_shared<FDTD_ListenShell<REAL>>(
-                            ListeningUnit::refShell.get(), 
-                            _owner->BoundingBoxCenter(), 
-                            r_inn); 
-            }
-        }
+        ListeningUnit::refShell = FDTD_ListenShell<REAL>::Build(_acousticSolverSettings->refShellFile); 
+        const REAL r_out = _owner->GetBoundingBox().minlength()/2.0 
+                         - (_acousticSolverSettings->PML_width+1)*_acousticSolverSettings->cellSize; 
+        const REAL r_inn = r_out - _acousticSolverSettings->spacing; 
+        assert(r_out>0. && r_inn>0.);
+        _owner->listen->outShell = 
+            std::make_shared<FDTD_ListenShell<REAL>>(
+                    ListeningUnit::refShell.get(), 
+                    _owner->BoundingBoxCenter(), 
+                    r_out); 
+        _owner->listen->innShell = 
+            std::make_shared<FDTD_ListenShell<REAL>>(
+                    ListeningUnit::refShell.get(), 
+                    _owner->BoundingBoxCenter(), 
+                    r_inn); 
         _owner->UpdateSpeakers();
     }
     else 
@@ -191,8 +185,8 @@ _SaveVelocityCellPositions(const std::string &filename, const int &dim)
 void FDTD_AcousticSimulator::
 _SaveListeningPositions(const std::string &filename)
 {
-    Vector3Array &listeningPoints = (_owner ? 
-            _owner->listen->speakers : 
+    Vector3Array &listeningPoints = (_acousticSolverSettings->useShell ? 
+            _owner->listen->speakers :
             _acousticSolverSettings->listeningPoints); 
     const int N = listeningPoints.size(); 
     if (N==0) return;

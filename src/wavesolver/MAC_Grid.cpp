@@ -436,7 +436,7 @@ void MAC_Grid::PML_velocityUpdateCollocated(const REAL &simulationTime, const MA
     }
 }
 
-void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &currLaplacian, MATRIX &pastLaplacian)
+void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&pDirectional)[3], MATRIX &pLast, MATRIX &pCurr, MATRIX &pNext, MATRIX &currLaplacian, MATRIX &lastLaplacian)
 {
     const REAL &timeStep = _waveSolverSettings->timeStepSize; 
     const REAL one_over_dx = 1.0/_waveSolverSettings->cellSize; 
@@ -601,8 +601,9 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             // update normal cell
             if (_waveSolverSettings->useAirViscosity && _pressureCellHasValidHistory.at(cell_idx))
                 pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
-                                   - (1.0 + kcalp*pastLaplacian(cell_idx,0)) * pLast(cell_idx, 0) 
-                                   + currLaplacian(cell_idx, 0) * (c2_k2+c_alp); 
+                                   -     pLast(cell_idx, 0) 
+                                   - lastLaplacian(cell_idx, 0) *  kcalp
+                                   + currLaplacian(cell_idx, 0) * (c2_k2+kcalp); 
             else
                 pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
                                    -     pLast(cell_idx, 0) 
@@ -2908,7 +2909,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     const int N = _objects->N(); 
     auto &objects = _objects->GetRigidSoundObjects(); 
     int count = 0;
-#if 0
+#if 1 // faster 
     std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     for (auto &m : objects)
     {
@@ -3072,8 +3073,6 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     // any member in the map is not being identified at the current step, 
     // therefore we should remove all of them (including null ptrs)
     _ghostCellsCached.clear();
-    std::cout << "#boundary_interfaces = " << _boundaryInterfaces.size() << std::endl;
-    std::cout << "#boundary_ghost_cells = " << _boundaryGhostCells.size() << std::endl;
 }
 
 //##############################################################################
