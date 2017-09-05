@@ -3,13 +3,15 @@
 import sys
 import os
 
+from get_paths import *
+
 ################################################################################
 ## set this block for the current run
 ################################################################################
 ## required
 # fs and install paths
 objName = 'big_plane';
-installPath = '/home/jui-hsien/code/acoustics'
+installPath = projectPath()
 binPath = '%s/build_release/bin' %(installPath)
 
 ## run parameters

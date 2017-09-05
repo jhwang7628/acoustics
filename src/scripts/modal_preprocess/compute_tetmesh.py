@@ -2,6 +2,8 @@
 import sys
 import os
 
+from get_paths import *
+
 ################################################################################
 # This code create tet mesh from obj, the parameters work well for 'plate' model
 ################################################################################
@@ -10,7 +12,7 @@ if len(sys.argv) < 3:
     sys.exit()
 
 ## User defined settings
-installPath = '/home/antequ/code/acoustics';
+installPath = projectPath();
 binPath = '%s/build_release/bin' %(installPath)
 redirect = '/dev/stdout'
 

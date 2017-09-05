@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from get_paths import *
 
 def SplitObjects(fileLines): 
     objectLinePos = []
@@ -97,7 +98,7 @@ if __name__ == '__main__':
     if len(sys.argv) == 3:
         absPath = sys.argv[2]
     else: 
-        absPath = '/home/jui-hsien/code/acoustics/work/pool_cooler'
+        absPath = projectPath() + '/work/pool_cooler'
 
     filename = sys.argv[1]
     fileLines = open(filename).readlines()
