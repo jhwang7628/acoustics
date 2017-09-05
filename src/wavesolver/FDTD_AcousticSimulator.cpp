@@ -2,6 +2,7 @@
 #include <utils/IO/IO.h>
 #include <macros.h>
 #define ACC_NOISE_SOURCE
+#define MODAL_SOURCE
 
 //##############################################################################
 //##############################################################################
@@ -25,10 +26,11 @@ _SetBoundaryConditions()
     for (int index=0; index<N_objects; ++index)
     {
         RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+#ifdef MODAL_SOURCE
         // add modal vibrational source
         VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
         objectPtr->AddVibrationalSource(sourcePtr); 
-
+#endif
 #ifdef ACC_NOISE_SOURCE
         // add acceleration noise source
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
