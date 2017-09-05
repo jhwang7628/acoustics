@@ -200,6 +200,7 @@ class MAC_Grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
         BoolArray                _isPMLCell;
+        BoolArray                _isOneCellCavity;
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
@@ -284,7 +285,7 @@ class MAC_Grid
         void setPMLBoundaryWidth( REAL width, REAL strength );
 
         void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
-        void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const; 
+        void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) /* const */; 
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
