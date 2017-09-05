@@ -32,3 +32,9 @@ src/scripts/rendering/old
 src/scripts/db_gdrive/index.html
 src/scripts/db_gdrive/client_secret.json
 src/scripts/db_gdrive/downloaded
+
+src/tools/diff\.txt
+
+*.autosave
+
+CMakeLists\.txt\.user

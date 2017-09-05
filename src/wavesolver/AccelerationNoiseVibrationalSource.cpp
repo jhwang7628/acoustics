@@ -69,6 +69,11 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         acceleration += alpha.crossProduct(r); 
     }
     const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
+//#define PRINT_ACC_VALS
+#ifdef PRINT_ACC_VALS
+    if (!(std::abs(a_n) <= SMALL_NUM ) )
+        std::cout << a_n << "\n";
+#endif
     return a_n;
 }
 

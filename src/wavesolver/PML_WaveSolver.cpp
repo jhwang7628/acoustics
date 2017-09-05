@@ -645,26 +645,86 @@ void PML_WaveSolver::stepCollocated()
 #else
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
+//#define STOP_RC_AFTER_TIME
+#ifdef STOP_RC_AFTER_TIME
+#define TIME_TO_STOP_RC (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+            if (_currentTime <= TIME_TO_STOP_RC)
+            {
+#endif
     _cellClassifyTimer.start(); 
+//#define STOP_CCDF_AFTER_TIME
+#ifdef STOP_CCDF_AFTER_TIME
+#define TIME_TO_STOP_CCDF (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+        if (_currentTime <= TIME_TO_STOP_CCDF)
+#endif
     _grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-    //_grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+#ifdef STOP_CCDF_AFTER_TIME
+        else
+    _grid.classifyCellsDynamic(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
+#endif
     _cellClassifyTimer.pause(); 
     _freshCellTimer.start(); 
     _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
     _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
     _freshCellTimer.pause(); 
+#ifdef STOP_RC_AFTER_TIME
+            }
+#endif
     _ghostCellTimer.start(); 
     //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
+//#define STOP_PUGC_AFTER_TIME
+#ifdef STOP_PUGC_AFTER_TIME
+#define TIME_TO_STOP_PUGC (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+        if (_currentTime <= TIME_TO_STOP_PUGC)
+#endif
     _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
     _ghostCellTimer.pause(); 
 
+//#define STOP_DIV_AFTER_TIME
+#ifdef STOP_DIV_AFTER_TIME
+#define TIME_TO_STOP_DIV (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+            if (_currentTime <= TIME_TO_STOP_DIV)
+            {
+#endif
     // Use the new velocity to update pressure
     _divergenceTimer.start();
+//#define STOP_VEL_AFTER_TIME
+#ifdef STOP_VEL_AFTER_TIME
+#define TIME_TO_STOP_VEL (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+            if (_currentTime <= TIME_TO_STOP_VEL)
+#endif
     _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
+//#define STOP_PLGC_AFTER_TIME
+#ifdef STOP_PLGC_AFTER_TIME
+#define TIME_TO_STOP_PLGC (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+#define TIME_TO_REENABLE_PLGC (0.61184)
+            if (_currentTime <= TIME_TO_STOP_PLGC || _currentTime >= TIME_TO_REENABLE_PLGC)
+#endif
     _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, _pLaplacian); 
+//#define STOP_PRES_AFTER_TIME
+#ifdef STOP_PRES_AFTER_TIME
+#define TIME_TO_STOP_PRES (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+#define TIME_TO_REENABLE_PRES (0.61189)
+            if (_currentTime <= TIME_TO_STOP_PRES || _currentTime >= TIME_TO_REENABLE_PRES)
+#endif
     _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, _pLaplacian); 
     _pCollocatedInd = (_pCollocatedInd + 1)%3; 
     _divergenceTimer.pause();
+#ifdef STOP_DIV_AFTER_TIME
+            }
+#endif
+//#define START_PUGC_AFTER_TIME
+#ifdef START_PUGC_AFTER_TIME
+#define TIME_TO_START_PUGC (0.61180) //(0.61110) to stop impulse, (0.61180) to debug the divergence. try 0.61140 next.
+    if (_currentTime > TIME_TO_START_PUGC)
+    {
+    _ghostCellTimer.start();
+    //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density);
+
+    _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density);
+    _ghostCellTimer.pause();
+    }
+#endif
 #endif
     //std::cout << "frobenius pressure = " << ComputeFrobeniusPressure() << std::endl;
     //std::cout << "total energy = " << _grid.EstimateEnergy(pCurr, pLast) << std::endl;
