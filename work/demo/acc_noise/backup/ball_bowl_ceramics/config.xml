@@ -1,0 +1,244 @@
+<?xml version="1.0" ?>
+<impulse_response>
+    <material_list>
+        <modal_material
+            alpha = "5" 
+            beta = "3.0E-8" 
+            density = "7850" 
+            poisson_ratio = "0.29"
+            youngs_modulus= "2E11"
+            /> 
+        <modal_material
+            alpha = "6." 
+            beta = "1.0E-7" 
+            density = "2700" 
+            poisson_ratio = "0.19"
+            youngs_modulus= "7.2E10"
+            /> 
+    </material_list>
+    <scene> 
+            <object_rigidsim_data
+                file_displacement="displace.bin"
+                file_velocity="velocity.bin"
+                file_acceleration="acceleration.bin"
+                />
+            <!-- dice -->
+            <rigid_sound_object 
+                working_directory="/home/jui-hsien/data/models/balls"
+                object_prefix="ball_d2cm"  
+                id="0" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                use_rasterized_boundary="1"
+                material_id="0"
+                impulse_file="modalImpulses.txt"
+                impulse_rigidsim_config_file="rbd-config.cfg"
+                mode_file="/home/jui-hsien/data/models/balls/ball_d2cm.modes"
+                modal_ODE_step_frequency="396070"
+                /> 
+            <rigid_sound_object 
+                working_directory="/home/antequ/data/models/bowl_clean_ceramics"
+                object_prefix="bowl"  
+                id="1" 
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                use_rasterized_boundary="1"
+                material_id="1"
+                impulse_file="modalImpulses.txt"
+                impulse_rigidsim_config_file="rbd-config.cfg"
+                mode_file="/home/antequ/data/models/bowl_clean_ceramics/bowl.modes"
+                modal_ODE_step_frequency="396070"
+                /> 
+    </scene> 
+    <solver
+        sound_speed="343.0"
+        density="1.184" 
+        cellsize="0.002" 
+        gridresolution="100"
+        domain_center_x="0"
+        domain_center_y="0.07"
+        domain_center_z="0"
+        stop_time="1.0"
+        substeps="1"
+        number_of_timesteps="400000"
+        timestepfrequency="396070"
+        output_pattern="data_modal/test_%s"
+        PML_width="0"
+        PML_strength="1000000.0" 
+        use_mesh="1"
+        use_ghost_cell="1"
+        boundary_condition_preset="0"
+        write_pressure_field_to_disk="0"
+        fast_forward_to_earliest_impact="0"
+        fast_forward_to_event_time="0.3121"
+
+        validate_using_fbem="0"
+        /> 
+    <pressure_source> 
+    </pressure_source> 
+    <listening_point_list>
+       <listening_point x="0.000000" y="0.70000" z="0.75000"/>
+    <!--     <listening_point x="0.000000" y="0.133325" z="-0.040187"/>
+         <listening_point x="0.075000" y="0.070000" z="0.000000"/>
+         <listening_point x="0.040187" y="0.133325" z="0.000000"/>
+         <listening_point x="0.5" y="0.5" z="0.010000"/>
+        <listening_point x="0.000000" y="0.070000" z="0.075000"/>
+   
+     <listening_point x="0.000000" y="0.079400" z="0.074409"/>
+        <listening_point x="0.000000" y="0.088652" z="0.072644"/>
+        <listening_point x="0.000000" y="0.097609" z="0.069733"/>
+        <listening_point x="0.000000" y="0.106132" z="0.065723"/>
+        <listening_point x="0.000000" y="0.114084" z="0.060676"/>
+        <listening_point x="0.000000" y="0.121341" z="0.054673"/>
+        <listening_point x="0.000000" y="0.127788" z="0.047807"/>
+        <listening_point x="0.000000" y="0.133325" z="0.040187"/>
+        <listening_point x="0.000000" y="0.137862" z="0.031933"/>
+        <listening_point x="0.000000" y="0.141329" z="0.023176"/>
+        <listening_point x="0.000000" y="0.143672" z="0.014054"/>
+        <listening_point x="0.000000" y="0.144852" z="0.004709"/>
+        <listening_point x="0.000000" y="0.144852" z="-0.004709"/>
+        <listening_point x="0.000000" y="0.143672" z="-0.014054"/>
+        <listening_point x="0.000000" y="0.141329" z="-0.023176"/>
+        <listening_point x="0.000000" y="0.137862" z="-0.031933"/>
+        <listening_point x="0.000000" y="0.133325" z="-0.040187"/>
+        <listening_point x="0.000000" y="0.127788" z="-0.047807"/>
+        <listening_point x="0.000000" y="0.121341" z="-0.054673"/>
+        <listening_point x="0.000000" y="0.114084" z="-0.060676"/>
+        <listening_point x="0.000000" y="0.106132" z="-0.065723"/>
+        <listening_point x="0.000000" y="0.097609" z="-0.069733"/>
+        <listening_point x="0.000000" y="0.088652" z="-0.072644"/>
+        <listening_point x="0.000000" y="0.079400" z="-0.074409"/>
+        <listening_point x="0.000000" y="0.070000" z="-0.075000"/>
+        <listening_point x="0.000000" y="0.060600" z="-0.074409"/>
+        <listening_point x="0.000000" y="0.051348" z="-0.072644"/>
+        <listening_point x="0.000000" y="0.042391" z="-0.069733"/>
+        <listening_point x="0.000000" y="0.033868" z="-0.065723"/>
+        <listening_point x="0.000000" y="0.025916" z="-0.060676"/>
+        <listening_point x="0.000000" y="0.018659" z="-0.054673"/>
+        <listening_point x="0.000000" y="0.012212" z="-0.047807"/>
+        <listening_point x="0.000000" y="0.006675" z="-0.040187"/>
+        <listening_point x="0.000000" y="0.002138" z="-0.031933"/>
+        <listening_point x="0.000000" y="-0.001329" z="-0.023176"/>
+        <listening_point x="0.000000" y="-0.003672" z="-0.014054"/>
+        <listening_point x="0.000000" y="-0.004852" z="-0.004709"/>
+        <listening_point x="0.000000" y="-0.004852" z="0.004709"/>
+        <listening_point x="0.000000" y="-0.003672" z="0.014054"/>
+        <listening_point x="0.000000" y="-0.001329" z="0.023176"/>
+        <listening_point x="0.000000" y="0.002138" z="0.031933"/>
+        <listening_point x="0.000000" y="0.006675" z="0.040187"/>
+        <listening_point x="0.000000" y="0.012212" z="0.047807"/>
+        <listening_point x="0.000000" y="0.018659" z="0.054673"/>
+        <listening_point x="0.000000" y="0.025916" z="0.060676"/>
+        <listening_point x="0.000000" y="0.033868" z="0.065723"/>
+        <listening_point x="0.000000" y="0.042391" z="0.069733"/>
+        <listening_point x="0.000000" y="0.051348" z="0.072644"/>
+        <listening_point x="0.000000" y="0.060600" z="0.074409"/>
+        <listening_point x="0.075000" y="0.070000" z="0.000000"/>
+        <listening_point x="0.074409" y="0.070000" z="0.009400"/>
+        <listening_point x="0.072644" y="0.070000" z="0.018652"/>
+        <listening_point x="0.069733" y="0.070000" z="0.027609"/>
+        <listening_point x="0.065723" y="0.070000" z="0.036132"/>
+        <listening_point x="0.060676" y="0.070000" z="0.044084"/>
+        <listening_point x="0.054673" y="0.070000" z="0.051341"/>
+        <listening_point x="0.047807" y="0.070000" z="0.057788"/>
+        <listening_point x="0.040187" y="0.070000" z="0.063325"/>
+        <listening_point x="0.031933" y="0.070000" z="0.067862"/>
+        <listening_point x="0.023176" y="0.070000" z="0.071329"/>
+        <listening_point x="0.014054" y="0.070000" z="0.073672"/>
+        <listening_point x="0.004709" y="0.070000" z="0.074852"/>
+        <listening_point x="-0.004709" y="0.070000" z="0.074852"/>
+        <listening_point x="-0.014054" y="0.070000" z="0.073672"/>
+        <listening_point x="-0.023176" y="0.070000" z="0.071329"/>
+        <listening_point x="-0.031933" y="0.070000" z="0.067862"/>
+        <listening_point x="-0.040187" y="0.070000" z="0.063325"/>
+        <listening_point x="-0.047807" y="0.070000" z="0.057788"/>
+        <listening_point x="-0.054673" y="0.070000" z="0.051341"/>
+        <listening_point x="-0.060676" y="0.070000" z="0.044084"/>
+        <listening_point x="-0.065723" y="0.070000" z="0.036132"/>
+        <listening_point x="-0.069733" y="0.070000" z="0.027609"/>
+        <listening_point x="-0.072644" y="0.070000" z="0.018652"/>
+        <listening_point x="-0.074409" y="0.070000" z="0.009400"/>
+        <listening_point x="-0.075000" y="0.070000" z="-0.000000"/>
+        <listening_point x="-0.074409" y="0.070000" z="-0.009400"/>
+        <listening_point x="-0.072644" y="0.070000" z="-0.018652"/>
+        <listening_point x="-0.069733" y="0.070000" z="-0.027609"/>
+        <listening_point x="-0.065723" y="0.070000" z="-0.036132"/>
+        <listening_point x="-0.060676" y="0.070000" z="-0.044084"/>
+        <listening_point x="-0.054673" y="0.070000" z="-0.051341"/>
+        <listening_point x="-0.047807" y="0.070000" z="-0.057788"/>
+        <listening_point x="-0.040187" y="0.070000" z="-0.063325"/>
+        <listening_point x="-0.031933" y="0.070000" z="-0.067862"/>
+        <listening_point x="-0.023176" y="0.070000" z="-0.071329"/>
+        <listening_point x="-0.014054" y="0.070000" z="-0.073672"/>
+        <listening_point x="-0.004709" y="0.070000" z="-0.074852"/>
+        <listening_point x="0.004709" y="0.070000" z="-0.074852"/>
+        <listening_point x="0.014054" y="0.070000" z="-0.073672"/>
+        <listening_point x="0.023176" y="0.070000" z="-0.071329"/>
+        <listening_point x="0.031933" y="0.070000" z="-0.067862"/>
+        <listening_point x="0.040187" y="0.070000" z="-0.063325"/>
+        <listening_point x="0.047807" y="0.070000" z="-0.057788"/>
+        <listening_point x="0.054673" y="0.070000" z="-0.051341"/>
+        <listening_point x="0.060676" y="0.070000" z="-0.044084"/>
+        <listening_point x="0.065723" y="0.070000" z="-0.036132"/>
+        <listening_point x="0.069733" y="0.070000" z="-0.027609"/>
+        <listening_point x="0.072644" y="0.070000" z="-0.018652"/>
+        <listening_point x="0.074409" y="0.070000" z="-0.009400"/>
+        <listening_point x="0.075000" y="0.070000" z="0.000000"/>
+        <listening_point x="0.074409" y="0.079400" z="0.000000"/>
+        <listening_point x="0.072644" y="0.088652" z="0.000000"/>
+        <listening_point x="0.069733" y="0.097609" z="0.000000"/>
+        <listening_point x="0.065723" y="0.106132" z="0.000000"/>
+        <listening_point x="0.060676" y="0.114084" z="0.000000"/>
+        <listening_point x="0.054673" y="0.121341" z="0.000000"/>
+        <listening_point x="0.047807" y="0.127788" z="0.000000"/>
+        <listening_point x="0.040187" y="0.133325" z="0.000000"/>
+        <listening_point x="0.031933" y="0.137862" z="0.000000"/>
+        <listening_point x="0.023176" y="0.141329" z="0.000000"/>
+        <listening_point x="0.014054" y="0.143672" z="0.000000"/>
+        <listening_point x="0.004709" y="0.144852" z="0.000000"/>
+        <listening_point x="-0.004709" y="0.144852" z="0.000000"/>
+        <listening_point x="-0.014054" y="0.143672" z="0.000000"/>
+        <listening_point x="-0.023176" y="0.141329" z="0.000000"/>
+        <listening_point x="-0.031933" y="0.137862" z="0.000000"/>
+        <listening_point x="-0.040187" y="0.133325" z="0.000000"/>
+        <listening_point x="-0.047807" y="0.127788" z="0.000000"/>
+        <listening_point x="-0.054673" y="0.121341" z="0.000000"/>
+        <listening_point x="-0.060676" y="0.114084" z="0.000000"/>
+        <listening_point x="-0.065723" y="0.106132" z="0.000000"/>
+        <listening_point x="-0.069733" y="0.097609" z="0.000000"/>
+        <listening_point x="-0.072644" y="0.088652" z="0.000000"/>
+        <listening_point x="-0.074409" y="0.079400" z="0.000000"/>
+        <listening_point x="-0.075000" y="0.070000" z="0.000000"/>
+        <listening_point x="-0.074409" y="0.060600" z="0.000000"/>
+        <listening_point x="-0.072644" y="0.051348" z="0.000000"/>
+        <listening_point x="-0.069733" y="0.042391" z="0.000000"/>
+        <listening_point x="-0.065723" y="0.033868" z="0.000000"/>
+        <listening_point x="-0.060676" y="0.025916" z="0.000000"/>
+        <listening_point x="-0.054673" y="0.018659" z="0.000000"/>
+        <listening_point x="-0.047807" y="0.012212" z="0.000000"/>
+        <listening_point x="-0.040187" y="0.006675" z="0.000000"/>
+        <listening_point x="-0.031933" y="0.002138" z="0.000000"/>
+        <listening_point x="-0.023176" y="-0.001329" z="0.000000"/>
+        <listening_point x="-0.014054" y="-0.003672" z="0.000000"/>
+        <listening_point x="-0.004709" y="-0.004852" z="0.000000"/>
+        <listening_point x="0.004709" y="-0.004852" z="0.000000"/>
+        <listening_point x="0.014054" y="-0.003672" z="0.000000"/>
+        <listening_point x="0.023176" y="-0.001329" z="0.000000"/>
+        <listening_point x="0.031933" y="0.002138" z="0.000000"/>
+        <listening_point x="0.040187" y="0.006675" z="0.000000"/>
+        <listening_point x="0.047807" y="0.012212" z="0.000000"/>
+        <listening_point x="0.054673" y="0.018659" z="0.000000"/>
+        <listening_point x="0.060676" y="0.025916" z="0.000000"/>
+        <listening_point x="0.065723" y="0.033868" z="0.000000"/>
+        <listening_point x="0.069733" y="0.042391" z="0.000000"/>
+        <listening_point x="0.072644" y="0.051348" z="0.000000"/>
+        <listening_point x="0.074409" y="0.060600" z="0.000000"/> -->
+    </listening_point_list> 
+
+</impulse_response>
