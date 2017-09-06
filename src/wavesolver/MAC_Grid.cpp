@@ -481,8 +481,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         //// update boundary cells
         // redefine dimension so that the normal is at z-direction (kk)
         // n: negative to boundary normal
-        // n: negative to boundary normal
-        // p: positive to boundary normal
         // p: positive to boundary normal
         // i.e., kk_p is the exterior
         int di  , dj  , dk  ; 
@@ -2884,7 +2882,7 @@ try{
 // Function classifyCells_FAST
 //   This function classify cells. 
 //   NOTE: Only works for collocated scheme + non-pml impl. 
-//##############################################################################
+//#############################################################################
 void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 {
     // set history valid for interpolation
@@ -2893,7 +2891,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
               _pressureCellHasValidHistory.begin()); 
 
     // set default field values
-    std::fill(_isBulkCell.begin() , _isBulkCell.end() , true ); 
+    std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
 
@@ -2911,14 +2909,42 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     int count = 0;
 #if 1 // faster 
     std::vector<ScalarField::RangeIndices> bbox_rast(N); 
+    const auto &constraints = _objects->GetConstraints(); 
     for (auto &m : objects)
     {
         const FDTD_MovableObject::BoundingBox &unionBBox = m.second->GetUnionBBox();
-        const Vector3d maxBound = unionBBox.maxBound; 
-        const Vector3d minBound = unionBBox.minBound; 
+        Vector3d maxBound = unionBBox.maxBound; 
+        Vector3d minBound = unionBBox.minBound; 
+        // exclude volumes covered by all the constraints (where sdf is negative)
+        for (const auto &c : constraints) 
+        {
+            const auto &plane = c.second; 
+            const int nmlDir = plane->NormalDirection(); 
+            const int nmlSgn = plane->NormalSign(); 
+            if (nmlSgn > 0) minBound[nmlDir] = std::max(minBound[nmlDir], plane->Height()); 
+            else            maxBound[nmlDir] = std::min(maxBound[nmlDir], plane->Height()); 
+        }
         _pressureField.GetIterationBox(minBound, maxBound, bbox_rast[count]); 
         ++ count; 
     } 
+    // added a layer around constraint so that ghost cells can be detected
+    const REAL NEG_INF = std::numeric_limits<REAL>::lowest(); 
+    const REAL POS_INF = std::numeric_limits<REAL>::max(); 
+    for (const auto &c : constraints)
+    {
+        const auto &plane = c.second; 
+        const int nmlDir = plane->NormalDirection(); 
+        const int nmlSgn = plane->NormalSign(); 
+        Vector3d minBound(NEG_INF, NEG_INF, NEG_INF);
+        Vector3d maxBound(POS_INF, POS_INF, POS_INF);
+        if (nmlSgn > 0)
+            maxBound[nmlDir] = plane->Height(); 
+        else
+            minBound[nmlDir] = plane->Height(); 
+        ScalarField::RangeIndices plane_box; 
+        _pressureField.GetIterationBox(minBound, maxBound, plane_box); 
+        bbox_rast.push_back(plane_box); 
+    }
 #else 
     std::vector<ScalarField::RangeIndices> bbox_rast(1); 
     _pressureField.GetIterationBox(PressureBoundingBox().minBound(), 
@@ -2995,20 +3021,20 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     for (int ii=0; ii<candidate_cells.size(); ++ii)
     {
         const int cell_idx = candidate_cells.at(ii);
-        _isBulkCell.at(cell_idx) = false; 
         pCollocated[0](cell_idx,0) = 0.0; // set all pressure data to zero
         pCollocated[1](cell_idx,0) = 0.0;
         pCollocated[2](cell_idx,0) = 0.0;
         IntArray neighbours, topology; 
         neighbours.reserve(6); topology.reserve(6); 
         _pressureField.cellNeighbours(cell_idx, neighbours, topology); 
+        int is_ghost = false; 
         for (int ii=0; ii<neighbours.size(); ++ii)
         {
             const int ns = neighbours.at(ii); 
             const int to = topology.at(ii); 
             if (_isBulkCell.at(ns))
             {
-                _isGhostCell.at(cell_idx) = true; 
+                is_ghost = true; 
                 int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
                 auto gc = MakeGhostCell(cell_idx, ns, to, gctype); 
 #ifdef USE_OPENMP
@@ -3019,6 +3045,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                 thread_GCMap.at(thread_idx)[gc->MakeKey()] = std::move(gc); 
             } 
         }
+        _isGhostCell.at(cell_idx) = is_ghost; 
         // if this cell is boundary, then need to check across interface if existed
         if (_pressureField.isBoundaryCell(cell_idx))
         {

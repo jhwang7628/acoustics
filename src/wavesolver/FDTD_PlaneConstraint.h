@@ -22,6 +22,12 @@ class FDTD_PlaneConstraint
               _normalSign(sign),
               _height(h)
         {}
+        inline REAL Height() const
+        {return _height;}
+        inline int NormalDirection() const
+        {return _normalDirection;}
+        inline int NormalSign() const
+        {return _normalSign;}
         inline Vector3d Normal() const
         {Vector3d nml(0,0,0); nml[_normalDirection]=_normalSign; return nml;}
         inline REAL SignedDistanceToPlane(const Vector3d &pos) const
