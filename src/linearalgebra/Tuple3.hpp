@@ -304,6 +304,16 @@ class Tuple3
             return x * x + y * y + z * z;
         }
 
+        inline Tuple3<T> abs() const
+        {
+            return Tuple3<T>(std::abs(x), std::abs(y), std::abs(z));
+        }
+
+        inline T sum() const
+        {
+            return x+y+z; 
+        }
+
         void clamp(const Tuple3<T>& minV, const Tuple3<T>& maxV)
         {
             x = x <= minV.x ? minV.x : (x > maxV.x ? maxV.x : x);
