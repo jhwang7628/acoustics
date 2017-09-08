@@ -475,124 +475,248 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
 
         const Vector3d cell_position = _pressureField.cellPosition( cell_idx );
         const Tuple3i indices = _pressureField.cellIndex(cell_idx); 
-        unsigned char btype = _pressureField.boundaryCellType(cell_idx); 
+        const Tuple3i nml     = _pressureField.boundaryCellNormal(cell_idx); 
 #define PCELL_IDX(di_,dj_,dk_,ii_,jj_,kk_) _pressureField.cellIndex(di_,dj_,dk_,ii_,jj_,kk_)
+        const int btype = nml.abs().sum(); 
+        const bool is_boundary = (btype > 0); 
 
-        //// update boundary cells
-        // redefine dimension so that the normal is at z-direction (kk)
-        // n: negative to boundary normal
-        // p: positive to boundary normal
-        // i.e., kk_p is the exterior
-        int di  , dj  , dk  ; 
-        int ii  , jj  , kk  ; 
-        int ii_n, jj_n, kk_n; 
-        int ii_p, jj_p      ; 
-        int interior_dir = 0;
-        // declare temporary pressure stores;
-        REAL p1, p1_abc, p1_src; 
-
-        dk = -1; 
-        // determine dimensions
-        if (btype & ScalarField::BoundaryType::Positive_X_Boundary)
-        {
-            dk = 0;
-            interior_dir = -1;
-        }
-        else if (btype & ScalarField::BoundaryType::Negative_X_Boundary)
-        {
-            dk = 0;
-            interior_dir = +1; 
-        }
-        else if (btype & ScalarField::BoundaryType::Positive_Y_Boundary)
-        {
-            dk = 1;
-            interior_dir = -1;
-        }
-        else if (btype & ScalarField::BoundaryType::Negative_Y_Boundary)
-        {
-            dk = 1;
-            interior_dir = +1;
-        }
-        else if (btype & ScalarField::BoundaryType::Positive_Z_Boundary)
-        {
-            dk = 2; 
-            interior_dir = -1; 
-        }
-        else if (btype & ScalarField::BoundaryType::Negative_Z_Boundary)
-        {
-            dk = 2; 
-            interior_dir = +1; 
-        }
-
-        const bool is_boundary = (dk>=0); 
         if (is_boundary)
         {
-            di = (dk+1) % 3; 
-            dj = (dk+2) % 3; 
-            ii = indices[di]; jj = indices[dj]; kk = indices[dk]; 
-            ii_n = std::max(ii-1,0); ii_p = std::min(ii+1, Ns[di]-1); 
-            jj_n = std::max(jj-1,0); jj_p = std::min(jj+1, Ns[dj]-1); 
-            kk_n = kk+interior_dir; 
-
-            // pressure of the neighbours
-            REAL p_ii_p, p_ii_n, p_jj_p, p_jj_n, p_kk_n; 
-            int neighbour_idx; 
-            neighbour_idx = PCELL_IDX(di,dj,dk,ii_p,jj,kk); 
-            p_ii_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
-                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
-            neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
-            p_ii_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
-                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
-            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_p,kk); 
-            p_jj_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
-                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
-            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_n,kk); 
-            p_jj_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
-                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
-            neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_n); 
-            p_kk_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
-                                                       : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
-
-            // first, compute a regular pNext using ABC
-            p1 = lambda2/(1.+ lambda)*(
-                    (2./lambda2 - 6.)*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
-                    + p_ii_p + p_ii_n + p_jj_p + p_jj_n + 2.*p_kk_n 
-                    +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
-                 );
-            // next, figure out the extra layer
-            p1_abc = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk  ),0) - p1)/lambda + p_kk_n;
-
-            // fetch for possible contribution through interface (with other sim units)
-            p1_src = 0.0;
-            REAL dbuf; 
-            REAL alpha=-1.0; 
-            for (auto &interface : _boundaryInterfaces)
+            // redefine dimension so that the normal is at x-direction (ii)
+            // n: negative to boundary normal
+            // p: positive to boundary normal
+            // i.e., ii_p is the exterior
+            int di=0, dj=0, dk=0; 
+            int ii  , jj  , kk  ; 
+            int ii_n, jj_n, kk_n; 
+            int       jj_p, kk_p; 
+            REAL p_ii_p, p_ii_n, p_jj_p, p_jj_n, p_kk_p, p_kk_n, p1; 
+            if (btype == 1) // face
             {
-                if (interface->GetDirection()!=dk)
-                    continue; 
-                const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
-                if (hasNeighbour)
+                for (di=0; di<3; ++di)
+                    if (nml[di]!=0) break; 
+                dj = (di+1)%3; 
+                dk = (di+2)%3; 
+                ii = indices[di]; jj = indices[dj]; kk = indices[dk];
+                ii_n = ii - nml[di]; 
+                jj_n = std::max(jj-1,0); jj_p = std::min(jj+1, Ns[dj]-1); 
+                kk_n = std::max(kk-1,0); kk_p = std::min(kk+1, Ns[dk]-1); 
+                // pressure of the neighbours
+                int neighbour_idx; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
+                p_ii_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_p,kk); 
+                p_jj_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_n,kk); 
+                p_jj_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_p); 
+                p_kk_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_n); 
+                p_kk_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+
+                // first, compute a regular pNext using ABC
+                p1 = (2./lambda2 - 6.)     *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + (lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + 2.*p_ii_n + p_jj_p + p_jj_n + p_kk_p + p_kk_n;
+                p1 *= (lambda2/(1. + lambda)); 
+                p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+
+                // fetch for possible contribution through interface (with other sim units)
+                REAL p1_src = 0.0;
+                REAL dbuf; 
+                REAL alpha=-1.0; 
+                for (auto &interface : _boundaryInterfaces)
                 {
-                    alpha = interface->GetBlendCoeff(simulationTime); 
-                    p1_src += dbuf; 
+                    if (interface->GetDirection()!=di)
+                        continue; 
+                    const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                    if (hasNeighbour)
+                    {
+                        alpha = interface->GetBlendCoeff(simulationTime); 
+                        p1_src += dbuf; 
+                    }
                 }
+                // alpha-blend the neighbour pressure with ABC to smooth out discont.
+                // then do a simple six-point Laplacian computation
+                REAL p_blend; 
+                if      (alpha<0)                  p_blend = p_ii_p; 
+                else if (alpha>=0.0 && alpha<=1.0) p_blend = (1.0 - alpha)*p_ii_p + alpha*p1_src; 
+                else                               p_blend = p1_src; 
+                pNext(cell_idx,0) = 
+                    + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
+                    -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                    + lambda2*(  
+                        + p_ii_n + p_jj_p + p_jj_n + p_kk_p + p_kk_n
+                        + p_blend
+                        - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
             }
-            // alpha-blend the neighbour pressure with ABC to smooth out discont.
-            // then do a simple six-point Laplacian computation
-            REAL p_blend; 
-            if (alpha<0)
-                p_blend = p1_abc; 
-            else if (alpha>=0.0 && alpha<=1.0)
-                p_blend = (1.0 - alpha)*p1_abc + alpha*p1_src; 
+            else if (btype == 2) // edge
+            {
+                for (di=0; di<3; ++di) if (nml[di]!=0) break;
+                for (dj=di+1; dj<3; ++dj) if (nml[dj]!=0) break; 
+                if (dj!=di+1) dk = (di+1)%3; 
+                else          dk = (di+2)%3; 
+                ii = indices[di]; jj = indices[dj]; kk = indices[dk];
+                ii_n = ii - nml[di]; 
+                jj_n = jj - nml[dj]; 
+                kk_n = std::max(kk-1,0); kk_p = std::min(kk+1, Ns[dk]-1); 
+                // pressure of the neighbours
+                int neighbour_idx; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
+                p_ii_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_n,kk); 
+                p_jj_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_p); 
+                p_kk_p = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_n); 
+                p_kk_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+
+                // first, compute a regular pNext using ABC
+                p1 = (2./lambda2 - 6. )        *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + (2.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + 2.*p_ii_n + 2.*p_jj_n + p_kk_p + p_kk_n;
+                p1 *= (lambda2/(1. + 2.*lambda)); 
+                p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+                p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+
+                // fetch for possible contribution through interface (with other sim units)
+                REAL p1_src = 0.0, p2_src = 0.0; 
+                REAL dbuf; 
+                REAL alpha1=-1.0, alpha2=-1.0; 
+                for (auto &interface : _boundaryInterfaces)
+                {
+                    if (interface->GetDirection()==di)
+                    {
+                        const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                        if (hasNeighbour)
+                        {
+                            alpha1 = interface->GetBlendCoeff(simulationTime); 
+                            p1_src += dbuf; 
+                        }
+                    }
+                    else if (interface->GetDirection()==dj)
+                    {
+                        const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                        if (hasNeighbour)
+                        {
+                            alpha2 = interface->GetBlendCoeff(simulationTime); 
+                            p2_src += dbuf; 
+                        }
+                    }
+                }
+                // alpha-blend the neighbour pressure with ABC to smooth out discont.
+                // then do a simple six-point Laplacian computation
+                REAL p1_blend, p2_blend; 
+                if      (alpha1<0)                   p1_blend = p_ii_p; 
+                else if (alpha1>=0.0 && alpha1<=1.0) p1_blend = (1.0 - alpha1)*p_ii_p + alpha1*p1_src; 
+                else                                 p1_blend = p1_src; 
+                if      (alpha2<0)                   p2_blend = p_jj_p; 
+                else if (alpha2>=0.0 && alpha2<=1.0) p2_blend = (1.0 - alpha2)*p_jj_p + alpha2*p2_src; 
+                else                                 p2_blend = p2_src; 
+                pNext(cell_idx,0) = 
+                    + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
+                    -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                    + lambda2*(  
+                        + p_ii_n  + p_jj_n + p_kk_p + p_kk_n
+                        + p1_blend + p2_blend
+                        - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+            }
+            else if (btype == 3) // corner
+            {
+                di=0; dj=1; dk=2;
+                ii = indices[di]; jj = indices[dj]; kk = indices[dk];
+                ii_n = ii - nml[di]; 
+                jj_n = jj - nml[dj]; 
+                kk_n = kk - nml[dk]; 
+                // pressure of the neighbours
+                int neighbour_idx; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
+                p_ii_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_n,kk); 
+                p_jj_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_n); 
+                p_kk_n = (!_isGhostCell.at(neighbour_idx)) ? pCurr(neighbour_idx,0)
+                                                           : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
+
+                // first, compute a regular pNext using ABC
+                p1 = (2./lambda2 - 6. )        *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + (3.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                   + 2.*p_ii_n + 2.*p_jj_n + 2.*p_kk_n;
+                p1 *= (lambda2/(1. + 3.*lambda)); 
+                p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+                p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+                p_kk_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_kk_n;
+
+                // fetch for possible contribution through interface (with other sim units)
+                REAL p1_src = 0.0, p2_src = 0.0, p3_src = 0.0; 
+                REAL dbuf; 
+                REAL alpha1=-1.0, alpha2=-1.0, alpha3=-1.0; 
+                for (auto &interface : _boundaryInterfaces)
+                {
+                    if (interface->GetDirection()==di)
+                    {
+                        const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                        if (hasNeighbour)
+                        {
+                            alpha1 = interface->GetBlendCoeff(simulationTime); 
+                            p1_src += dbuf; 
+                        }
+                    }
+                    else if (interface->GetDirection()==dj)
+                    {
+                        const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                        if (hasNeighbour)
+                        {
+                            alpha2 = interface->GetBlendCoeff(simulationTime); 
+                            p2_src += dbuf; 
+                        }
+                    }
+                    else if (interface->GetDirection()==dk)
+                    {
+                        const bool hasNeighbour = interface->GetOtherCellPressure(*grid_id, cell_idx, dbuf); 
+                        if (hasNeighbour)
+                        {
+                            alpha3 = interface->GetBlendCoeff(simulationTime); 
+                            p3_src += dbuf; 
+                        }
+                    }
+                }
+                // alpha-blend the neighbour pressure with ABC to smooth out discont.
+                // then do a simple six-point Laplacian computation
+                REAL p1_blend, p2_blend, p3_blend; 
+                if      (alpha1<0)                   p1_blend = p_ii_p; 
+                else if (alpha1>=0.0 && alpha1<=1.0) p1_blend = (1.0 - alpha1)*p_ii_p + alpha1*p1_src; 
+                else                                 p1_blend = p1_src; 
+                if      (alpha2<0)                   p2_blend = p_jj_p; 
+                else if (alpha2>=0.0 && alpha2<=1.0) p2_blend = (1.0 - alpha2)*p_jj_p + alpha2*p2_src; 
+                else                                 p2_blend = p2_src; 
+                if      (alpha3<0)                   p3_blend = p_kk_p; 
+                else if (alpha3>=0.0 && alpha3<=1.0) p3_blend = (1.0 - alpha3)*p_kk_p + alpha3*p3_src; 
+                else                                 p3_blend = p3_src; 
+                pNext(cell_idx,0) = 
+                    + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
+                    -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+                    + lambda2*(  
+                        + p_ii_n  + p_jj_n + p_kk_n
+                        + p1_blend + p2_blend + p3_blend
+                        - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+            }
             else 
-                p_blend = p1_src; 
-            pNext(cell_idx,0) = 
-                + 2.0*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0) 
-                -     pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
-                + lambda2*(  
-                    + p_ii_p + p_ii_n + p_jj_p + p_jj_n + p_kk_n
-                    + p_blend
-                    - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+            {
+                throw std::runtime_error("**ERROR** Cell " + std::to_string(cell_idx) 
+                        + " has more than 3 boundary faces"); 
+            }
         }
         else  // not boundary cells
         {
