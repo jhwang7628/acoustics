@@ -205,10 +205,10 @@ class ScalarField {
             Tuple3i type; 
             if      (indices[0] == 0              ) type[0] = -1; 
             else if (indices[0] == _divisions[0]-1) type[0] = +1; 
-            if      (indices[1] == 0              ) type[0] = -1; 
-            else if (indices[1] == _divisions[1]-1) type[0] = +1; 
-            if      (indices[2] == 0              ) type[0] = -1; 
-            else if (indices[2] == _divisions[2]-1) type[0] = +1; 
+            if      (indices[1] == 0              ) type[1] = -1; 
+            else if (indices[1] == _divisions[1]-1) type[1] = +1; 
+            if      (indices[2] == 0              ) type[2] = -1; 
+            else if (indices[2] == _divisions[2]-1) type[2] = +1; 
             return type; 
         }
 
