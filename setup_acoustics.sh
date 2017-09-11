@@ -15,7 +15,7 @@ git config --global core.editor vim
 git clone https://antequ@bitbucket.org/jw969/acoustics.git
 
 cd acoustics
-git fetch && git checkout antequ
+git fetch && git checkout dev_antequ 
 git submodule init
 git submodule update
 
@@ -90,11 +90,13 @@ sudo apt-get install libeigen3-dev libeigen3-doc -y
 #make acoustics
 pushd
 
+echo "export EIGEN_ROOT=/usr/include/eigen3" >> ~/.bashrc
+export EIGEN_ROOT=/usr/include/eigen3
 mkdir build_release
 cd build_release
 cmake ..
 
-make -j36 rigidsim-gui
+make -j36 rigidsim-gui rigidsim
 make -j36 unit_testing_FDTD_AcousticSimulator
 make -j36 fdtd-acoustic-simulator-viewer
 make -j36 tetviewer
@@ -111,7 +113,7 @@ export PATH=$PATH:$SCRIPTS
 #https://www.mitsuba-renderer.org/releases/current/documentation.pdf
 read -p 'Press [Enter] key to continue to Mitsuba installation...'
 pushd $HOME/installers
-sudo apt-get install build-essential scons mercurial qt4-dev-tools libpng12-dev libjpeg-dev libilmbase-dev libxerces-c-dev libboost-all-dev libopenexr-dev libglewmx-dev libxxf86vm-dev libpcrecpp0v5 libeigen3-dev libfftw3-dev
+sudo apt-get install build-essential scons mercurial qt4-dev-tools libpng12-dev libjpeg-dev libilmbase-dev libxerces-c-dev libboost-all-dev libopenexr-dev libglewmx-dev libxxf86vm-dev libpcrecpp0v5 libeigen3-dev libfftw3-dev -y
 mkdir mitsuba
 cd mitsuba
 # these don't work on 16.04
@@ -128,6 +130,7 @@ cd mitsuba
 
 wget https://www.mitsuba-renderer.org/repos/mitsuba/archive/tip.zip
 
+sudo apt-get install unzip -y
 unzip tip.zip
 mkdir $HOME/installed
 
@@ -136,7 +139,7 @@ cd $HOME/installed/mitsuba-af602c6fd98a/
 
 cp build/config-linux-gcc.py config.py
 
-sudo apt-get install scons qt4-dev-tools libboost-all-dev libglewmx-dev libpcrecpp0v5
+sudo apt-get install scons qt4-dev-tools libboost-all-dev libglewmx-dev libpcrecpp0v5 libxerces-c-dev -y
 
 echo "Please follow the instructions in https://cgcvtutorials.wordpress.com/2017/05/31/install-mitsuba-on-linux-16-04/"
 echo "and fix src/bsdfs/irawan.h as well as include/mitsuba/core/autodiff.h."
