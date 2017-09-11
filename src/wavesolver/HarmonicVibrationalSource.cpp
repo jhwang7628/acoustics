@@ -5,7 +5,9 @@
 REAL HarmonicVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
-    const REAL val = cos(_omega*time + _phase); 
+    if (time<_t0 || time>_t1)
+        return 0.0;
+    const REAL val = sin(_omega*time + _phase); 
     if (_decayRate < 0)
         return val; 
     else
@@ -25,11 +27,7 @@ Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 REAL HarmonicVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    const REAL val = 1./_omega * sin(_omega*time + _phase);
-    if (_decayRate < 0)
-        return val;
-    else 
-        return decayFactor(time) * val;
+    throw std::runtime_error("**ERROR** not implemented"); 
 }
 
 //##############################################################################
