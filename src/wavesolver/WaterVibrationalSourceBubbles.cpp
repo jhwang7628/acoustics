@@ -751,7 +751,7 @@ makeOscillators(const std::map<int, Bubble> &singleBubbles)
                     curBub = NULL;
 
                     // TODO: tmp debugging
-                    if (freqs.size() == 0 || freqs.at(0) > 700 * 2 * M_PI) goodRadiiSeq = false;
+                    //if (freqs.size() == 0 || freqs.at(0) > 700 * 2 * M_PI) goodRadiiSeq = false;
 
                     // Check to filter out bad low freq bubble in pouringGlass17
                     //if (freqs.size() >= 1 && osc.m_startTime >= .97 && osc.m_startTime < 1.05 &&
@@ -820,6 +820,11 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
+        if (i % 100 == 0)
+        {
+            oscOutputs[i].flush();
+        }
+
         bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime > _t1;
         bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime > _t2;
 
@@ -879,7 +884,7 @@ computeVelocities(REAL time)
         //}
 
         // DEBUGGING
-        bool useFirstOnly = true;
+        bool useFirstOnly = false;
         struct DebugData
         {
             std::shared_ptr<PointKDTree> tree;
@@ -941,17 +946,17 @@ computeVelocities(REAL time)
                                    NULL,
                                    &closest2);
 
-                if (std::fabs(val1(0)) > 1e6)
-				{
-					std::cout << "bad val1: " << val1 << std::endl;
-					exit(1);
-				}
+                //if (std::fabs(val1(0)) > 1e6)
+				//{
+				//    std::cout << "bad val1: " << val1 << std::endl;
+				//    exit(1);
+				//}
 
-                if (std::fabs(val2(0)) > 1e6)
-				{
-					std::cout << "bad val2: " << val2 << std::endl;
-					exit(1);
-				}
+                //if (std::fabs(val2(0)) > 1e6)
+				//{
+				//    std::cout << "bad val2: " << val2 << std::endl;
+				//    exit(1);
+				//}
             }
             catch (...)
             {
@@ -986,8 +991,8 @@ computeVelocities(REAL time)
             }
 
             // DEBUGGING, set surface velocity to constant 1 for now
-            val1.setConstant(1);
-            val2.setConstant(1);
+            //val1.setConstant(1);
+            //val2.setConstant(1);
 
             // Now interpolate
             double pct = (localT1 - _t1) / (_t2 - _t1);
@@ -996,17 +1001,29 @@ computeVelocities(REAL time)
             //    std::cout << "localT1: " << localT1 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
             //    throw std::runtime_error("bad pct");
             //}
+
+            double qDot = osc.m_lastVals.col(0)(0);
+            double q = osc.m_lastVals.col(0)(1);
+            double p0 = osc.m_pressure.interp(localT1);
+            double r = osc.m_radii.interp(localT1);
+            double v0 = 4.0/3.0 * M_PI * r*r*r;
+            double pDot = -p0 * std::pow(v0 / (v0 + q), GAMMA) / (v0 + q) * qDot;
+            double w0 = osc.m_frequencies.interp(localT1);
+            double mvp = GAMMA * p0 / v0 / w0 / w0;
+            // m = rho / qdot_0
+            double factor = mvp / RHO_WATER;
+
             if (pct < 0)
             {
-                _velT1(j) += osc.m_lastVals.col(0)(0) * val1(0);
+                _velT1(j) += qDot * val1(0);
             }
             else if (pct > 1)
             {
-                _velT1(j) += osc.m_lastVals.col(0)(0) * val2(0);
+                _velT1(j) += qDot * val2(0);
             }
             else
             {
-                _velT1(j) += osc.m_lastVals.col(0)(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
+                _velT1(j) += qDot * ( pct * val2(0) + (1 - pct) * val1(0) );
             }
 
             pct = (localT2 - _t1) / (_t2 - _t1);
@@ -1015,17 +1032,29 @@ computeVelocities(REAL time)
             //    std::cout << "localT2: " << localT2 << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
             //    throw std::runtime_error("bad pct");
             //}
+
+            qDot = osc.m_lastVals.col(2)(0);
+            q = osc.m_lastVals.col(2)(1);
+            p0 = osc.m_pressure.interp(localT2);
+            r = osc.m_radii.interp(localT2);
+            v0 = 4.0/3.0 * M_PI * r*r*r;
+            pDot = -p0 * std::pow(v0 / (v0 + q), GAMMA) / (v0 + q) * qDot;
+            w0 = osc.m_frequencies.interp(localT2);
+            mvp = GAMMA * p0 / v0 / w0 / w0;
+            // m = rho / qdot_0
+            factor = mvp / RHO_WATER;
+
             if (pct < 0)
             {
-                _velT2(j) += osc.m_lastVals.col(2)(0) * val1(0);
+                _velT2(j) += qDot * val1(0);
             }
             else if (pct > 1)
             {
-                _velT2(j) += osc.m_lastVals.col(2)(0) * val2(0);
+                _velT2(j) += qDot * val2(0);
             }
             else
             {
-                _velT2(j) += osc.m_lastVals.col(2)(0) * ( pct * val2(0) + (1 - pct) * val1(0) );
+                _velT2(j) += qDot * ( pct * val2(0) + (1 - pct) * val1(0) );
             }
         }
 	}
