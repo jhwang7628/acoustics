@@ -1228,7 +1228,8 @@ ConstructSliceSamples(Slice &slice)
 
     // make colormap for this slice.
     if (!_sliceColorMap)
-        _sliceColorMap = std::make_shared<JetColorMap>(); 
+        //_sliceColorMap = std::make_shared<JetColorMap>(); 
+        _sliceColorMap = std::make_shared<DipoleColorMap>(); 
 }
 
 //##############################################################################
