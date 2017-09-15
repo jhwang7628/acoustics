@@ -26,6 +26,9 @@
 #include <omp.h>
 #endif
 
+//#define ENGQUIST_ORDER 1
+#define ENGQUIST_ORDER 2
+
 //##############################################################################
 // Static variable initialize
 //##############################################################################
@@ -445,6 +448,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
     const REAL kcalp = c_alp*timeStep; 
     const REAL lambda = _waveSolverSettings->soundSpeed*_waveSolverSettings->timeStepSize/_waveSolverSettings->cellSize; 
     const REAL lambda2 = pow(lambda,2); 
+    const REAL lambda3 = pow(lambda,3); 
     const int N_cells = _pressureField.numCells(); 
     const int N_pmlCells = _pmlPressureCells.size(); 
     const bool evaluateExternalSource = _objects->HasExternalPressureSources();
@@ -475,7 +479,14 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
 
         const Vector3d cell_position = _pressureField.cellPosition( cell_idx );
         const Tuple3i indices = _pressureField.cellIndex(cell_idx); 
+#if   ENGQUIST_ORDER == 1
         const Tuple3i nml     = _pressureField.boundaryCellNormal(cell_idx); 
+#elif ENGQUIST_ORDER == 2
+        const Tuple3i nml     = _pressureField.boundaryCellNormal(cell_idx, 1); 
+        const Tuple3i nml0    = _pressureField.boundaryCellNormal(cell_idx); 
+        if (nml0.abs().sum()>0) continue; 
+#endif
+
 #define PCELL_IDX(di_,dj_,dk_,ii_,jj_,kk_) _pressureField.cellIndex(di_,dj_,dk_,ii_,jj_,kk_)
         const int btype = nml.abs().sum(); 
         const bool is_boundary = (btype > 0); 
@@ -489,7 +500,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
             int di=0, dj=0, dk=0; 
             int ii  , jj  , kk  ; 
             int ii_n, jj_n, kk_n; 
-            int       jj_p, kk_p; 
+            int ii_p, jj_p, kk_p; 
             REAL p_ii_p, p_ii_n, p_jj_p, p_jj_n, p_kk_p, p_kk_n, p1; 
             if (btype == 1) // face
             {
@@ -520,11 +531,35 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                                            : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
 
                 // first, compute a regular pNext using ABC
+#if   ENGQUIST_ORDER == 1
                 p1 = (2./lambda2 - 6.)     *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + (lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + 2.*p_ii_n + p_jj_p + p_jj_n + p_kk_p + p_kk_n;
                 p1 *= (lambda2/(1. + lambda)); 
                 p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+#elif ENGQUIST_ORDER == 2
+                ii_p = ii + nml[di]; 
+                p1 = (2./lambda2 + 4./lambda - 6. - 4.*lambda) * pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
+                   - (1./lambda2 + 2./lambda                 ) * pLast(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
+                   +                                             pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
+                   -                                             pLast(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+                   + 2.                                        * pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+                   + (lambda + 1.                            ) *(pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0)
+                                                               + pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+                                                               + pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0)
+                                                               + pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0)); 
+                p1 *= (lambda2/(1. + 2.*lambda));
+                p_ii_p = pLast(PCELL_IDX(di,dj,dk,ii_p,jj,kk),0)
+                       + pCurr(PCELL_IDX(di,dj,dk,ii_n,jj,kk),0) 
+                       - pLast(PCELL_IDX(di,dj,dk,ii_n,jj,kk),0) 
+                       - 2./lambda*(p1 + pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
+                       + lambda *  (pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0)
+                                +   pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+                                +   pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0)
+                                +   pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0)
+                                -4.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)); 
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj,kk),0) = p_ii_p;
+#endif
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0;
@@ -581,12 +616,40 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                                            : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
 
                 // first, compute a regular pNext using ABC
+//#if   ENGQUIST_ORDER == 1
                 p1 = (2./lambda2 - 6. )        *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + (2.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + 2.*p_ii_n + 2.*p_jj_n + p_kk_p + p_kk_n;
                 p1 *= (lambda2/(1. + 2.*lambda)); 
                 p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
                 p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+//#elif ENGQUIST_ORDER == 2
+//                ii_p = ii + nml[di]; 
+//                jj_p = jj + nml[dj]; 
+//                p1 = (2. + 6.*lambda - 6.*lambda2 - 2.*lambda3)* pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
+//                   + lambda2                                   *(pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
+//                                                                +pLast(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0))
+//                   + (lambda3 + lambda2 - lambda + 1.         )*(pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+//                                                                +pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0))
+//                   + ((1.+lambda)*lambda2                     )*(pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0)
+//                                                                +pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0));
+//                p1 *= (1./(1.+3.*lambda)); 
+//                p1 += -pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0); 
+//                if (EQUAL_FLOATS(lambda,1.))
+//                    throw std::runtime_error("**WARNING** lambda is too close to 1, this formulation is singular");
+//                REAL p_sp = -(p1 + pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
+//                          - (lambda /4.)*(-   (pLast(PCELL_IDX(di,dj,dk,ii_p,jj,kk  ),0) + pLast(PCELL_IDX(di,dj,dk,ii,jj_p,kk  ),0))
+//                                          -   (pCurr(PCELL_IDX(di,dj,dk,ii_n,jj,kk  ),0) + pCurr(PCELL_IDX(di,dj,dk,ii,jj_n,kk  ),0))
+//                                          +   (pLast(PCELL_IDX(di,dj,dk,ii_n,jj,kk  ),0) + pLast(PCELL_IDX(di,dj,dk,ii,jj_n,kk  ),0)))
+//                          + (lambda2/4.)*(    (pCurr(PCELL_IDX(di,dj,dk,ii_n,jj,kk  ),0) + pCurr(PCELL_IDX(di,dj,dk,ii,jj_n,kk  ),0))
+//                                          +2.*(pCurr(PCELL_IDX(di,dj,dk,ii  ,jj,kk_p),0) + pLast(PCELL_IDX(di,dj,dk,ii,jj  ,kk_n),0))
+//                                          -8.* pCurr(PCELL_IDX(di,dj,dk,ii  ,jj,kk  ),0));
+//                p_sp *= (4./lambda/(1.-lambda));
+//                p_ii_p = p_sp / 2.0; 
+//                p_jj_p = p_sp / 2.0;
+//                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk),0) = p_ii_p;
+//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk),0) = p_jj_p;
+//#endif
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0, p2_src = 0.0; 
@@ -650,6 +713,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                                            : _ghostCells.at(GhostCell::MakeKey(cell_idx,neighbour_idx))->pressure; 
 
                 // first, compute a regular pNext using ABC
+//#if   ENGQUIST_ORDER == 1
                 p1 = (2./lambda2 - 6. )        *pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + (3.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + 2.*p_ii_n + 2.*p_jj_n + 2.*p_kk_n;
@@ -657,6 +721,38 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
                 p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
                 p_kk_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_kk_n;
+//#elif ENGQUIST_ORDER == 2
+//                ii_p = ii + nml[di]; 
+//                jj_p = jj + nml[dj]; 
+//                kk_p = kk + nml[dk]; 
+//                const REAL p_spnm = pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
+//                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0)
+//                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0);
+//                const REAL p_smn0 = pCurr(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+//                                  + pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+//                                  + pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0);
+//                const REAL p_smnm = pLast(PCELL_IDX(di,dj,dk,ii_n,jj  ,kk  ),0)
+//                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj_n,kk  ),0)
+//                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0);
+//                p1 = -(pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
+//                     -(lambda/6.)*(-p_spnm - p_smn0 + p_smnm)
+//                     +(lambda/6.)*( p_smn0 - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)); 
+//                p1 *= 6.*lambda/(1.+4.*lambda); 
+//                p1 += (1.-2.*lambda)/(1.+4.*lambda)*(2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
+//                                                    -   pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+//                if (EQUAL_FLOATS(lambda,0.5))
+//                    throw std::runtime_error("**WARNING** lambda is too close to 0.5, this formulation is singular");
+//                REAL p_sp = -(p1 + pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
+//                          - (lambda /6.)*(-p_spnm - p_smn0 + p_smnm)
+//                          + (lambda2/3.)*( p_smn0 - 6.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0));
+//                p_sp *= (6./lambda/(1.-2.*lambda));
+//                p_ii_p = 1./3.*p_sp; 
+//                p_jj_p = 1./3.*p_sp; 
+//                p_kk_p = 1./3.*p_sp; 
+//                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) = p_ii_p;
+//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) = p_jj_p;
+//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0) = p_kk_p;
+//#endif
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0, p2_src = 0.0, p3_src = 0.0; 
