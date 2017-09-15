@@ -72,6 +72,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         std::vector<Slice>      _sliceCin; 
         REAL                    _drawAbsMax; 
         REAL                    _drawImpulseScaling = 1.; 
+        ActiveSimUnit_Ptr       _listenedUnit; 
         MAC_Grid::Cell          _listenedCell; 
 
         // slice related fields
