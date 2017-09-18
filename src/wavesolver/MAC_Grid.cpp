@@ -510,6 +510,7 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 dk = (di+2)%3; 
                 ii = indices[di]; jj = indices[dj]; kk = indices[dk];
                 ii_n = ii - nml[di]; 
+                ii_p = ii + nml[di]; 
                 jj_n = std::max(jj-1,0); jj_p = std::min(jj+1, Ns[dj]-1); 
                 kk_n = std::max(kk-1,0); kk_p = std::min(kk+1, Ns[dk]-1); 
                 // pressure of the neighbours
@@ -538,7 +539,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 p1 *= (lambda2/(1. + lambda)); 
                 p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
 #elif ENGQUIST_ORDER == 2
-                ii_p = ii + nml[di]; 
                 p1 = (2./lambda2 + 4./lambda - 6. - 4.*lambda) * pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
                    - (1./lambda2 + 2./lambda                 ) * pLast(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
                    +                                             pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
@@ -558,8 +558,8 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                 +   pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0)
                                 +   pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_n),0)
                                 -4.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)); 
-                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj,kk),0) = p_ii_p;
 #endif
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj,kk),0) = p_ii_p;
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0;
@@ -599,6 +599,8 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 ii = indices[di]; jj = indices[dj]; kk = indices[dk];
                 ii_n = ii - nml[di]; 
                 jj_n = jj - nml[dj]; 
+                ii_p = ii + nml[di]; 
+                jj_p = jj + nml[dj]; 
                 kk_n = std::max(kk-1,0); kk_p = std::min(kk+1, Ns[dk]-1); 
                 // pressure of the neighbours
                 int neighbour_idx; 
@@ -624,8 +626,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
                 p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
 //#elif ENGQUIST_ORDER == 2
-//                ii_p = ii + nml[di]; 
-//                jj_p = jj + nml[dj]; 
 //                p1 = (2. + 6.*lambda - 6.*lambda2 - 2.*lambda3)* pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
 //                   + lambda2                                   *(pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
 //                                                                +pLast(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0))
@@ -647,9 +647,10 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
 //                p_sp *= (4./lambda/(1.-lambda));
 //                p_ii_p = p_sp / 2.0; 
 //                p_jj_p = p_sp / 2.0;
-//                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk),0) = p_ii_p;
-//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk),0) = p_jj_p;
 //#endif
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk),0) = p_ii_p;
+                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk),0) = p_jj_p;
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj_p,kk),0) = 0.0;
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0, p2_src = 0.0; 
@@ -700,6 +701,9 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 ii_n = ii - nml[di]; 
                 jj_n = jj - nml[dj]; 
                 kk_n = kk - nml[dk]; 
+                ii_p = ii + nml[di]; 
+                jj_p = jj + nml[dj]; 
+                kk_p = kk + nml[dk]; 
                 // pressure of the neighbours
                 int neighbour_idx; 
                 neighbour_idx = PCELL_IDX(di,dj,dk,ii_n,jj,kk); 
@@ -722,9 +726,6 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                 p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
                 p_kk_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_kk_n;
 //#elif ENGQUIST_ORDER == 2
-//                ii_p = ii + nml[di]; 
-//                jj_p = jj + nml[dj]; 
-//                kk_p = kk + nml[dk]; 
 //                const REAL p_spnm = pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
 //                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0)
 //                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0);
@@ -749,10 +750,11 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
 //                p_ii_p = 1./3.*p_sp; 
 //                p_jj_p = 1./3.*p_sp; 
 //                p_kk_p = 1./3.*p_sp; 
-//                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) = p_ii_p;
-//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) = p_jj_p;
-//                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0) = p_kk_p;
 //#endif
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0) = p_ii_p;
+                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0) = p_jj_p;
+                pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk_p),0) = p_kk_p;
+                pCurr(PCELL_IDX(di,dj,dk,ii_p,jj_p,kk_p),0) = 0.0;
 
                 // fetch for possible contribution through interface (with other sim units)
                 REAL p1_src = 0.0, p2_src = 0.0, p3_src = 0.0; 
@@ -3714,14 +3716,7 @@ void MAC_Grid::CheckClassified()
 // not thread-safe!
 void MAC_Grid::Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3])
 {
-    try{ // FIXME debug
     _ghostCellsChildren.at(_ghostCellsInverse.at(info.ghostCellParent)).at(info.childArrayPosition) = gcIndex; 
-    }
-    catch (std::out_of_range &e) {
-        std::cout << e.what() << __FILE__ << ": " << __LINE__ << std::endl;
-        std::cout << info.ghostCellParent; 
-    }
-
     _ghostCellChildArrayPositions.push_back(info.childArrayPosition); 
     _velocityInterfacialCells[info.dim].push_back(info.cellIndex); // not used in collocated
     _interfacialBoundaryIDs[info.dim].push_back(info.boundaryObject); // not used in collocated
@@ -3983,12 +3978,17 @@ void MAC_Grid::FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX 
         const int &kk   = ind; 
         const int  kk_p = kk+interior_dir; 
 #define PCELL_IDX(_i,_j,_k) field.cellIndex(d1,d2,d0,_i,_j,_k)
+#if ENGQUIST_ORDER == 1
         const double pNext = lambda2/(1.+ lambda)*(
                 (2./lambda2 - 6.)*pCurr(PCELL_IDX(ii,jj,kk),0)
                 + pCurr(PCELL_IDX(ii  ,jj_p,kk  ),0) + pCurr(PCELL_IDX(ii  ,jj_n,kk  ),0)
                 + pCurr(PCELL_IDX(ii_p,jj  ,kk  ),0) + pCurr(PCELL_IDX(ii_n,jj  ,kk  ),0)
                 +2.*pCurr(PCELL_IDX(ii,jj,kk_p),0) +(lambda - 1.0)/lambda2*pLast(PCELL_IDX(ii,jj,kk),0));
         pCurr(cell_idx_off0,0) = pCurr(cell_idx_off2,0) + 1.0/lambda*(pLast(cell_idx_off1,0)-pNext); 
+#else
+        //pCurr(cell_idx_off0,0) = 0.0;
+        pCurr(cell_idx_off0,0) = pCurr(cell_idx_off1,0); 
+#endif
 #undef PCELL_IDX
     }
 }
@@ -4028,9 +4028,6 @@ bool MAC_Grid::BoundaryGhostCellPressure(const std::string &solver_a, const int 
     const auto &gc = it->second; 
     assert(gc->boundary); 
     pressure_b = gc->pressure; 
-
-    // FIXME debug
-    std::cout << "queried boundary ghost cell pressure is : " << pressure_b << std::endl; 
 
     return true; 
 }
