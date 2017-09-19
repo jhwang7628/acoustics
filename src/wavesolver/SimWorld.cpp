@@ -115,7 +115,10 @@ Build(ImpulseResponseParser_Ptr &parser)
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
         const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
-        const int divs = (int)std::ceil(
+        //const int divs = (int)std::ceil(
+        //        meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
+        //        )*2 + 20 + (int)(_simulatorSettings->PML_width);
+        const int divs = (int)std::ceil( 
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
                 )*2 + 8 + (int)(_simulatorSettings->PML_width);
         const BoundingBox simUnitBox(
@@ -266,7 +269,18 @@ StepWorld()
 
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
+#if 1
     UpdateObjectState(_state.time); 
+#else // dipole vibration
+    const REAL omega = 2.0*M_PI*1500.0; 
+    const REAL scale = omega*omega*0.0025;
+    auto objects = _objectCollections->GetRigidSoundObjects(); 
+    for (auto &m : objects)
+    {
+        m.second->ApplyTranslation(0., 0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale);
+        std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+    }
+#endif
     std::cout << "================ Step STOP ================\n";
 
     return continueStepping;

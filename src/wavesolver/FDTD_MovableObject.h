@@ -78,6 +78,11 @@ class FDTD_MovableObject
                 dimension = maxBound - minBound; 
                 centroid = (maxBound + minBound)/2.0; 
             }
+
+            inline Vector3d Center() const 
+            {
+                return (maxBound+minBound)/2.0;
+            }
         };
 
     protected: 

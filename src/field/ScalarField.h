@@ -199,19 +199,6 @@ class ScalarField {
             return type; 
         }
 
-        inline Tuple3i          boundaryCellNormal(int index) const 
-        {
-            const Tuple3i indices = cellIndex(index); 
-            Tuple3i type; 
-            if      (indices[0] == 0              ) type[0] = -1; 
-            else if (indices[0] == _divisions[0]-1) type[0] = +1; 
-            if      (indices[1] == 0              ) type[1] = -1; 
-            else if (indices[1] == _divisions[1]-1) type[1] = +1; 
-            if      (indices[2] == 0              ) type[2] = -1; 
-            else if (indices[2] == _divisions[2]-1) type[2] = +1; 
-            return type; 
-        }
-
         inline Tuple3i          boundaryCellNormal(int index, const int offset) const 
         {
             const Tuple3i indices = cellIndex(index); 
@@ -223,6 +210,11 @@ class ScalarField {
             if      (indices[2] == offset                ) type[2] = -1; 
             else if (indices[2] == _divisions[2]-1-offset) type[2] = +1; 
             return type; 
+        }
+
+        inline Tuple3i          boundaryCellNormal(int index) const 
+        {
+            return boundaryCellNormal(index,0); 
         }
 
         inline Vector3d minBound() const {return cellPosition(0);}

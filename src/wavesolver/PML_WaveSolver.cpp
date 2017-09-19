@@ -454,9 +454,9 @@ void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
 void PML_WaveSolver::FillBoundaryFreshCell(const int &dim, const int &ind)
 {
     MATRIX &pm1 = _pCollocated[(_pCollocatedInd+2)%3]; 
-    MATRIX &p0  = _pCollocated[ _pCollocatedInd     ]; 
+    MATRIX &pm0 = _pCollocated[ _pCollocatedInd     ]; 
     MATRIX &pm2 = _pCollocated[(_pCollocatedInd+1)%3]; 
-    _grid.FillBoundaryFreshCellGrid(dim, ind, p0, pm1); 
+    _grid.FillBoundaryFreshCellGrid(dim, ind, pm0, pm1); 
     _grid.FillBoundaryFreshCellGrid(dim, ind, pm1, pm2); 
 }
 

@@ -41,7 +41,7 @@ _SetBoundaryConditions() // NOTE: decrecated, not called anymore
         const REAL phase = 0.0;
         VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
         //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0)); 
-        std::dynamic_pointer_cast<HarmonicVibrationalSource>(sourcePtr)->SetRange(0., 1./1500.);
+        //std::dynamic_pointer_cast<HarmonicVibrationalSource>(sourcePtr)->SetRange(0., 1./1500.);
         objectPtr->AddVibrationalSource(sourcePtr); 
 
         //objectPtr->TestObjectBoundaryCondition();
@@ -548,19 +548,11 @@ PostStepping(const REAL &odeTime)
         //    //}
         //}
     }
-
-    //// update modal vectors for the next time step
-    //for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-    //    _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
-
     std::cout << "Acoustic simulator time = " << _simulationTime 
               << "; step index= " << _stepIndex 
               << "; Modal ODE time = " << odeTime << std::endl;
     _stepIndex ++;
     _simulationTime += settings->timeStepSize; 
-
-    // move object to new position
-    AnimateObjects(_simulationTime); 
     //TestMoveObjects(); 
       
 #ifdef DEBUG
