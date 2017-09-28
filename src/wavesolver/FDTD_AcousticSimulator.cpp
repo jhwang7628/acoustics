@@ -415,7 +415,7 @@ InitializeSolver(const BoundingBox &solverBox,
     // initialize solver and set various things
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetListeningPoints(); 
-    //_SetBoundaryConditions();
+    _SetBoundaryConditions();
     _SetPressureSources();
 
     REAL startTime = 0.0; 

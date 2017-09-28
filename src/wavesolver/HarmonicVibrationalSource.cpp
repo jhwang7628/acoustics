@@ -7,9 +7,16 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 {
     if (time<_t0 || time>_t1)
         return 0.0;
-    //const REAL scale = _omega*_omega*0.0025;
-    //const REAL val = sin(_omega*time + _phase) *scale*normal[2];
-    const REAL val = sin(_omega*time + _phase);
+    // monopole vibration consistent source
+    //const REAL scale = _omega*_omega*0.00025;
+    //const REAL val = sin(_omega*time + _phase) * scale;
+
+    // dipole vibration consistent source
+    const REAL scale = _omega*_omega*0.00025;
+    const REAL val = sin(_omega*time + _phase) *scale*normal[2];
+      
+    // normal harmonic vibration
+    //const REAL val = sin(_omega*time + _phase);
     if (_decayRate < 0)
         return val; 
     else

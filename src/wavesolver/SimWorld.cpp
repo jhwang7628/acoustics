@@ -115,12 +115,12 @@ Build(ImpulseResponseParser_Ptr &parser)
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
         const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
-        //const int divs = (int)std::ceil(
-        //        meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-        //        )*2 + 20 + (int)(_simulatorSettings->PML_width);
-        const int divs = (int)std::ceil( 
+        const int divs = (int)std::ceil(
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-                )*2 + 8 + (int)(_simulatorSettings->PML_width);
+                )*2 + 20 + (int)(_simulatorSettings->PML_width);
+        //const int divs = (int)std::ceil( 
+        //        meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
+        //        )*2 + 8 + (int)(_simulatorSettings->PML_width);
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, divs, rastCentroid_w); 
         simUnit->divisions = divs; 
@@ -269,15 +269,35 @@ StepWorld()
 
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
-#if 1
+#if 0
     UpdateObjectState(_state.time); 
-#else // dipole vibration
+#else
+    // simple translation
+    //auto objects = _objectCollections->GetRigidSoundObjects(); 
+    //for (auto &m : objects)
+    //{
+    //    m.second->ApplyTranslation(0.0, -2.0E-5, 0.0);
+    //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+    //}
+    // monopole vibration
+    //const REAL omega = 2.0*M_PI*1500.0; 
+    //const REAL r0 = 0.05; 
+    //const REAL dr = 0.00025; 
+    //auto objects = _objectCollections->GetRigidSoundObjects(); 
+    //for (auto &m : objects)
+    //{
+    //    const REAL sdot = -dr*omega/r0*cos(omega*_state.time); 
+    //    std::cout << "scaling = " << 1.0+sdot*_simulatorSettings->timeStepSize << std::endl;
+    //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+    //    m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize); 
+    //}
+    // dipole vibration
     const REAL omega = 2.0*M_PI*1500.0; 
-    const REAL scale = omega*omega*0.0025;
+    const REAL scale = omega*omega*0.00025;
     auto objects = _objectCollections->GetRigidSoundObjects(); 
     for (auto &m : objects)
     {
-        m.second->ApplyTranslation(0., 0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale);
+        //m.second->ApplyTranslation(0., 0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale);
         std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
     }
 #endif
