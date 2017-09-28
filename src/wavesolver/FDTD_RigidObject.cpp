@@ -193,6 +193,15 @@ UpdateBoundingBox()
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::
+ApplyScale(const REAL scale)
+{
+    FDTD_MovableObject::ApplyScale(scale); // scale the transformation
+    _meshScale *= scale; 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidObject::
 ResetUnionBox()
 {
     _bboxWorldUnion2Steps = _bboxWorld;
@@ -210,7 +219,13 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position.eval();
-    return _signedDistanceField->distance(Vector3d(position[0],position[1],position[2])); 
+    const REAL d = _signedDistanceField->distance(
+                     Vector3d(position[0],
+                              position[1],
+                              position[2])
+                   ); 
+
+    return d * _meshScale; 
 }
 
 //##############################################################################

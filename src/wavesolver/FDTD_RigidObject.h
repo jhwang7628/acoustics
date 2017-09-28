@@ -112,6 +112,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         void Initialize(const bool &buildFromTetMesh); 
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 
+        virtual void ApplyScale(const REAL scale); 
         // in-place query for object sdf distance from world x,y,z
         REAL DistanceToMesh(const double &x, const double &y, const double &z); 
         REAL DistanceToMesh(const Vector3d &position); 

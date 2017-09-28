@@ -25,17 +25,20 @@ GetRotationDegree(REAL &angle, Eigen::Vector3d &axis) const
 void FDTD_MovableObject::
 ApplyTranslation(const double &x, const double &y, const double &z)
 {
-    _modelingTransform.translate(Eigen::Vector3d(x,y,z)); 
+    _modelingTransform.pretranslate(Eigen::Vector3d(x,y,z)); 
     _modelingTransformInverse.translate(Eigen::Vector3d(-x,-y,-z)); 
     UpdateBoundingBox(); 
 }
 
 //##############################################################################
+// scaling in the object frame
 //##############################################################################
 void FDTD_MovableObject::
-ApplyRotation(const Quaternion<REAL> &quarternion)
+ApplyScale(const REAL scale)
 {
-    throw std::runtime_error("**ERROR** not implemented yet"); 
+    _modelingTransform.prescale(scale); 
+    _modelingTransformInverse.scale(1./scale); 
+    UpdateBoundingBox();
 }
 
 //##############################################################################
