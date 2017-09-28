@@ -54,3 +54,12 @@ class Wavesolver_Results:
             #     buf = stream.read(8*self.num_listening_points)
             #     all_data[row,:] = struct.unpack('d'*self.num_listening_points, buf)
         return all_data
+
+    @staticmethod
+    def ComputeFFT(dt, y): 
+        N = len(y)
+        x = np.linspace(0.0, float(N)*dt, N)
+        yf = np.fft.fft(y)[:N//2]
+        xf = np.linspace(0.0, 1.0/(2.0*dt), N/2)
+        magyf = np.abs(yf)
+        return xf, magyf
