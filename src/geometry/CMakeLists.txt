@@ -1,5 +1,7 @@
 set(GEOMETRY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/RigidMesh.h                ${CMAKE_CURRENT_SOURCE_DIR}/RigidMesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tribox3.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tribox3.cpp
     CACHE FILE "Geometry sources")
 
 set(GTS_GEOMETRY_SRC
