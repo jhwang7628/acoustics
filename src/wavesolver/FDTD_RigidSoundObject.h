@@ -69,12 +69,10 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         bool _invInertiaTensorCached=false; 
         Matrix3<REAL> _invInertiaTensor; 
 
-        bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
-
     public: 
         // build object
         FDTD_RigidSoundObject()
-            : FDTD_RigidObject(), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ), 
               ModalAnalysisObject(),
               ImpulseSeriesObject()
         {
@@ -82,7 +80,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
 
         // build object with mesh, sdf
         FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
               ModalAnalysisObject(),
               ImpulseSeriesObject(GetMeshPtr())
         {
@@ -90,15 +88,13 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
 
         // build object with mesh, sdf, modes
         FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const std::string &modeFile, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
               ModalAnalysisObject(modeFile),
               ImpulseSeriesObject(GetMeshPtr())
         {
         }
 
-        inline bool Animated(){return _animated;}
         inline bool IsModalObject(){return N_Modes()>0;}
-        inline void SetAnimated(const bool &is){_animated = is;}
         inline Vector3d PremultiplyInvInertiaTensor(const Vector3d &x){return _invInertiaTensor * x;}
 
         void Initialize(); 

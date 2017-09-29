@@ -197,9 +197,31 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
     }
 
-    // build constraints
-    const std::string name("constraint"); 
+    // build shells 
+    std::string name; 
     TiXmlElement *node;
+    name = "shell_object"; 
+    try {
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, inputRoot, name.c_str()); 
+    } catch (const std::runtime_error &error) {
+        std::cout << "No shell objects found\n";
+    }
+    while (node != NULL)
+    {
+        const std::string meshName = std::to_string(meshCount++); 
+        const std::string workingDirectory = queryRequiredAttr(node, "working_directory"); 
+        const std::string objectPrefix = queryRequiredAttr(node, "object_prefix"); 
+        RigidObjectPtr object = std::make_shared<FDTD_ShellObject>(workingDirectory,
+                                                                   -1,
+                                                                   objectPrefix,
+                                                                   solverSettings,
+                                                                   meshName); 
+        objects->AddObject(std::stoi(meshName), object); 
+        node = node->NextSiblingElement(name.c_str());
+    }
+
+    // build constraints
+    name = "constraint"; 
     try {
         GET_FIRST_CHILD_ELEMENT_GUARD(node, inputRoot, name.c_str()); 
     } catch (const std::runtime_error &error) {

@@ -380,6 +380,8 @@ DrawImpulses()
     for (int obj_idx=0; obj_idx<sceneObjects->N(); ++obj_idx)
     {
         const auto &object = sceneObjects->GetPtr(obj_idx); 
+        if (object->Type() != RIGID_SOUND_OBJ)
+            continue;
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
         const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
         std::vector<ImpulseSeriesObject::ImpactRecord> records; 

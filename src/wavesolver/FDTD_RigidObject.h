@@ -76,8 +76,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
         bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
 
     public: 
-        FDTD_RigidObject()
-            : FDTD_MovableObject(RIGID_SOUND_OBJ),
+        FDTD_RigidObject(const ObjectType &type)
+            : FDTD_MovableObject(type),
               _workingDirectory("NOT_IDENTIFIED"),
               _objectPrefix("NOT_IDENTIFIED"),
               _meshScale(1.0), 
@@ -87,14 +87,15 @@ class FDTD_RigidObject : public FDTD_MovableObject
         {
         }
 
-        FDTD_RigidObject(const std::string &workingDirectory, 
+        FDTD_RigidObject(const ObjectType &type,
+                         const std::string &workingDirectory, 
                          const int &resolution, 
                          const std::string &objectPrefix, 
                          const bool &buildFromTetMesh, 
                          const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
                          const std::string &meshName="NOT_IDENTIFIED", 
                          const int &scale=1.0)
-            : FDTD_MovableObject(RIGID_SOUND_OBJ),
+            : FDTD_MovableObject(type),
               _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
               _meshScale(scale), 
@@ -150,6 +151,5 @@ class FDTD_RigidObject : public FDTD_MovableObject
         int FindLowestVertex(const int &dimension, Vector3d &position); 
 };
 //##############################################################################
-
 
 #endif 

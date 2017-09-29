@@ -15,102 +15,121 @@ Initialize(const bool &buildFromTetMesh)
 {
     assert(_parsed); 
 
-    if (buildFromTetMesh)
+    if (_signedDistanceFieldResolution > 0)
     {
-        // first established paths for tet mesh, surface mesh, and correponding sdf
-        const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
-        const std::string geoFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".geo.txt"; 
-        const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
-        _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
-
-        if (!IO::ExistFile(tetMeshFile))
-            throw std::runtime_error("**ERROR** Tet mesh file not exist: " + tetMeshFile); 
-
-        // build/load mesh 
-        std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
-        if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
+        if (buildFromTetMesh)
         {
-            _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
-            //_mesh.reset(new TriangleMesh<REAL>()); 
-            tetMesh->extract_surface(_mesh.get()); 
-            _mesh->generate_normals(); 
-            _mesh->update_vertex_areas(); 
-            _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
-            _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
-            if (_tetMeshIndexToSurfaceMesh->N_surfaceVertices() != _mesh->num_vertices())
-                throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
+            // first established paths for tet mesh, surface mesh, and correponding sdf
+            const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
+            const std::string geoFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".geo.txt"; 
+            const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
+            _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
+    
+            if (!IO::ExistFile(tetMeshFile))
+                throw std::runtime_error("**ERROR** Tet mesh file not exist: " + tetMeshFile); 
+    
+            // build/load mesh 
+            std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
+            if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
+            {
+                _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
+                //_mesh.reset(new TriangleMesh<REAL>()); 
+                tetMesh->extract_surface(_mesh.get()); 
+                _mesh->generate_normals(); 
+                _mesh->update_vertex_areas(); 
+                _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
+                _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
+                if (_tetMeshIndexToSurfaceMesh->N_surfaceVertices() != _mesh->num_vertices())
+                    throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
+                else 
+                    std::cout << " Surface mesh and Tet-Surface mapping built.\n";
+                _volume = tetMesh->total_volume(); // cache volume
+                tetMesh->inertia_tensor(_volumeInertiaTensor, _volumeCenter); 
+                _hasVolume = true;
+            }
             else 
-                std::cout << " Surface mesh and Tet-Surface mapping built.\n";
-            _volume = tetMesh->total_volume(); // cache volume
-            tetMesh->inertia_tensor(_volumeInertiaTensor, _volumeCenter); 
-            _hasVolume = true;
-        }
-        else 
-        {
-            throw std::runtime_error("**ERROR** Cannot read mesh from" + tetMeshFile);
-        }
-
-        // write the surface mesh
-        if (!IO::ExistFile(tetSurfaceMeshFile))
-            MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
-
+            {
+                throw std::runtime_error("**ERROR** Cannot read mesh from" + tetMeshFile);
+            }
+    
+            // write the surface mesh
+            if (!IO::ExistFile(tetSurfaceMeshFile))
+                MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
+    
 #ifndef USE_ADF
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    tetSurfaceMeshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
-                );
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildSignedClosestPointField(
+                        tetSurfaceMeshFile.c_str(), 
+                        _signedDistanceFieldResolution, 
+                        _signedDistanceFieldFilePrefix.c_str()
+                        )
+                    );
 #else
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildAdaptiveDistanceField(
-                    tetSurfaceMeshFile.c_str(),
-                    _signedDistanceFieldFilePrefix.c_str(),
-                    ADF_SUBDIVIDE_RADIUS,
-                    ADF_MAX_OCTREE_LEVELS,
-                    ADF_ERROR_TOLERANCE
-                    )
-                );
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                        tetSurfaceMeshFile.c_str(),
+                        _signedDistanceFieldFilePrefix.c_str(),
+                        ADF_SUBDIVIDE_RADIUS,
+                        ADF_MAX_OCTREE_LEVELS,
+                        ADF_ERROR_TOLERANCE
+                        )
+                    );
 #endif
+        }
+        else // build from surface mesh
+        {
+            // first established paths for tet mesh, surface mesh, and correponding sdf
+            const std::string meshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".obj"; 
+            _signedDistanceFieldFilePrefix = meshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
+    
+            if (!IO::ExistFile(meshFile))
+                throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
+            
+            _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
+            //_mesh.reset(new TriangleMesh<REAL>());
+            if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
+            {
+                _mesh->generate_normals(); 
+            }
+            else
+                throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
+    
+#ifndef USE_ADF
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildSignedClosestPointField(
+                        meshFile.c_str(), 
+                        _signedDistanceFieldResolution, 
+                        _signedDistanceFieldFilePrefix.c_str()
+                        )
+                    );
+#else
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                        meshFile.c_str(),
+                        _signedDistanceFieldFilePrefix.c_str(),
+                        ADF_SUBDIVIDE_RADIUS,
+                        ADF_MAX_OCTREE_LEVELS,
+                        ADF_ERROR_TOLERANCE
+                        )
+                    ); 
+#endif
+        }
     }
-    else // build from surface mesh
+    else  // sdf resolution <= 0
     {
         // first established paths for tet mesh, surface mesh, and correponding sdf
         const std::string meshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".obj"; 
-        _signedDistanceFieldFilePrefix = meshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
-
+        std::cout << "FIXME debug " << meshFile << std::endl;
         if (!IO::ExistFile(meshFile))
             throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
-        
         _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
-        //_mesh.reset(new TriangleMesh<REAL>());
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
         {
             _mesh->generate_normals(); 
         }
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
-
-#ifndef USE_ADF
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    meshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
-                );
-#else
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildAdaptiveDistanceField(
-                    meshFile.c_str(),
-                    _signedDistanceFieldFilePrefix.c_str(),
-                    ADF_SUBDIVIDE_RADIUS,
-                    ADF_MAX_OCTREE_LEVELS,
-                    ADF_ERROR_TOLERANCE
-                    )
-                ); 
-#endif
+    
     }
 
     // compute mesh centroid in object space and cache it 
