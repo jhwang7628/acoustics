@@ -5,7 +5,7 @@
 // note this is not thread safe
 //##############################################################################
 void FDTD_Objects::
-AddObject(const int &objectName, RigidSoundObjectPtr &object)
+AddObject(const int &objectName, RigidObjectPtr &object)
 {
     _rigidObjects[objectName] = object; 
 }
@@ -256,9 +256,14 @@ ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPo
 REAL FDTD_Objects::
 AdvanceAllModalODESolvers(const int &N_steps)
 {
+    REAL t = -1.0;
     for (auto &object : _rigidObjects)
-        object.second->AdvanceModalODESolvers(N_steps); 
-    return (_rigidObjects.size()>0 ? _rigidObjects.begin()->second->GetODESolverTime() : -1);
+        if (object.second->Type() == RIGID_SOUND_OBJ)
+        {
+            t = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)
+                ->AdvanceModalODESolvers(N_steps); 
+        }
+    return t; 
 }
 
 //##############################################################################
@@ -269,8 +274,12 @@ GetEarliestImpactEvent()
     REAL earliestTime = std::numeric_limits<REAL>::max(); 
     for (const auto &object : _rigidObjects)
     {
-        if (object.second->N_Impulses() > 0)
-            earliestTime = min(earliestTime, object.second->GetFirstImpulseTime());
+        if (object.second->Type() == RIGID_SOUND_OBJ)
+        {
+            auto o = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second); 
+            if (o->N_Impulses() > 0)
+                earliestTime = min(earliestTime, o->GetFirstImpulseTime());
+        }
     }
     return earliestTime; 
 }
@@ -283,7 +292,11 @@ SetObjectStates(const REAL time)
 {
     // update modal vectors for the next time step
     for (auto &m : _rigidObjects) 
-        m.second->UpdateQPointers();  // FIXME debug this might cause problems
+        if (m.second->Type() == RIGID_SOUND_OBJ) 
+        {
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)
+                ->UpdateQPointers(); 
+        }
     AnimateObjects(time);
 }
 
@@ -329,7 +342,7 @@ AnimateObjects(const REAL toTime)
 void FDTD_Objects::
 Join(FDTD_Objects_Ptr &toBeJoined) 
 {
-    auto &to_be_joined_obj_list = toBeJoined->GetRigidSoundObjects(); 
+    auto &to_be_joined_obj_list = toBeJoined->GetRigidObjects(); 
     auto &to_be_joined_src_list = toBeJoined->GetPressureSources(); 
     for (auto &m : to_be_joined_obj_list)
     {
@@ -400,8 +413,9 @@ DebugWriteModalQ(const int steps, const std::string &filename)
     }
     for (auto &object : _rigidObjects)
     {
-        if (object.second->IsModalObject())
-            object.second->AdvanceModalODESolvers(steps, 0, tmp, *of_q); 
+        if (object.second->Type() == RIGID_SOUND_OBJ &&
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)->IsModalObject())
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)->AdvanceModalODESolvers(steps, 0, tmp, *of_q); 
     }
     tmp.close();
     of_q->close();

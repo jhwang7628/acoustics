@@ -23,10 +23,10 @@ _ParseSolverSettings()
 void FDTD_AcousticSimulator::
 _SetBoundaryConditions() // NOTE: decrecated, not called anymore
 {
-    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    auto &objects = _sceneObjects->GetRigidObjects(); 
     for (auto &m : objects)
     {
-        RigidSoundObjectPtr objectPtr = m.second; 
+        RigidObjectPtr objectPtr = m.second; 
         // add modal vibrational source
         //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
         //objectPtr->AddVibrationalSource(sourcePtr); 
@@ -333,21 +333,24 @@ _SaveListeningData(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SaveModalFrequencies(const std::string &filename)
 {
-    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    auto &objects = _sceneObjects->GetRigidObjects(); 
     for (const auto &m : objects)
     {
-        const auto &object = m.second; 
-        if (object->IsModalObject())
+        if (m.second->Type() == RIGID_SOUND_OBJ)
         {
-            const std::string objFilename = filename + "_" + object->GetMeshName();
-            std::ofstream of(objFilename.c_str()); 
-            of << setprecision(20);
-            const int N_modes = object->N_Modes(); 
-            for (int m_idx=0; m_idx<N_modes; ++m_idx)
+            const auto &object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second); 
+            if (object->IsModalObject())
             {
-                of << object->GetModeFrequency(m_idx) << "\n";
+                const std::string objFilename = filename + "_" + object->GetMeshName();
+                std::ofstream of(objFilename.c_str()); 
+                of << setprecision(20);
+                const int N_modes = object->N_Modes(); 
+                for (int m_idx=0; m_idx<N_modes; ++m_idx)
+                {
+                    of << object->GetModeFrequency(m_idx) << "\n";
+                }
+                of.close(); 
             }
-            of.close(); 
         }
     }
 }
@@ -415,7 +418,7 @@ InitializeSolver(const BoundingBox &solverBox,
     // initialize solver and set various things
     _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetListeningPoints(); 
-    _SetBoundaryConditions();
+    //_SetBoundaryConditions();
     _SetPressureSources();
 
     REAL startTime = 0.0; 
@@ -440,24 +443,28 @@ ResetStartTime(const REAL &startTime)
     if (_acousticSolverSettings->rigidsimDataRead)
     {
         AnimateObjects(_simulationTime);
-        auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+        auto &objects = _sceneObjects->GetRigidObjects(); 
         for (auto &m : objects) 
-            if (m.second->Animated())
-                m.second->ResetUnionBox();
+            if (m.second->Type() == RIGID_SOUND_OBJ && 
+                std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)->Animated())
+                std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)->ResetUnionBox();
     }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
-    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
+    auto &objects = _sceneObjects->GetRigidObjects(); 
     for (auto &m : objects) 
     {
-        auto &object = m.second;
-        if (object->IsModalObject())
+        if (m.second->Type() == RIGID_SOUND_OBJ)
         {
-            // take one step to update q Vectors. Note that this way all modal odes are one
-            // step further than the solver because we need derivatives along
-            // the way.
-            object->SetODESolverTime(startTime);
-            object->AdvanceModalODESolvers(1); 
-            object->UpdateQPointers(); 
+            auto object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
+            if (object->IsModalObject())
+            {
+                // take one step to update q Vectors. Note that this way all modal odes are one
+                // step further than the solver because we need derivatives along
+                // the way.
+                object->SetODESolverTime(startTime);
+                object->AdvanceModalODESolvers(1); 
+                object->UpdateQPointers(); 
+            }
         }
     }
     _acousticSolver->GetGrid().ResetCellHistory(true);

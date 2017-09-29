@@ -2670,7 +2670,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
     // get all bounding boxes and iteration range
     int N = _objects->N(); 
     std::vector<ScalarField::RangeIndices> indices(N); 
-    auto &objects = _objects->GetRigidSoundObjects(); 
+    auto &objects = _objects->GetRigidObjects(); 
     int bbox_id = 0;
     for (auto &m : objects)
     {
@@ -3127,7 +3127,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     // we only have to check bounding box around each objects
     // first get the bounding box
     const int N = _objects->N(); 
-    auto &objects = _objects->GetRigidSoundObjects(); 
+    auto &objects = _objects->GetRigidObjects(); 
     int count = 0;
 #if 1 // faster 
     std::vector<ScalarField::RangeIndices> bbox_rast(N); 
@@ -3336,7 +3336,7 @@ void MAC_Grid::classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFul
 
     // hash triangles
     _fvMetaData.Clear(); 
-    auto &objects = _objects->GetRigidSoundObjects(); 
+    auto &objects = _objects->GetRigidObjects(); 
     for (auto &m : objects)
     {
         auto &object = m.second; 

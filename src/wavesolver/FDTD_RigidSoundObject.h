@@ -108,8 +108,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
         void GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement);  // only transform the mode quried
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
-        void AdvanceModalODESolvers(const int &N_steps);
-        void AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
+        REAL AdvanceModalODESolvers(const int &N_steps);
+        REAL AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
         const Point3d &CenterOfMass() const {return _volumeCenter;} // volume center = mass center
         REAL Mass() const; 

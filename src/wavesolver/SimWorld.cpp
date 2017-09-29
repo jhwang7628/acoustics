@@ -205,7 +205,7 @@ UpdateObjectState(const REAL &time)
     _objectCollections->SetObjectStates(time); 
     for (auto &unit : _simUnits)
     {
-        const auto &objects = unit->objects->GetRigidSoundObjects(); 
+        const auto &objects = unit->objects->GetRigidObjects(); 
         if (objects.size() == 0) continue; 
         Vector3d newCenter(0.,0.,0.); 
         for (const auto &objpair : objects) 
@@ -269,7 +269,7 @@ StepWorld()
 
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
-#if 0
+#if 1
     UpdateObjectState(_state.time); 
 #else
     // simple translation
@@ -294,7 +294,7 @@ StepWorld()
     // dipole vibration
     const REAL omega = 2.0*M_PI*1500.0; 
     const REAL scale = omega*omega*0.00025;
-    auto objects = _objectCollections->GetRigidSoundObjects(); 
+    auto objects = _objectCollections->GetRigidObjects(); 
     for (auto &m : objects)
     {
         //m.second->ApplyTranslation(0., 0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale);
@@ -496,7 +496,7 @@ ClearAllSources()
     // pressure source
     _objectCollections->GetPressureSources().clear(); 
     // object sources
-    auto &objects = _objectCollections->GetRigidSoundObjects(); 
+    auto &objects = _objectCollections->GetRigidObjects(); 
     for (auto &obj : objects)
         obj.second->ClearVibrationalSources(); 
 }

@@ -73,9 +73,12 @@ class FDTD_RigidObject : public FDTD_MovableObject
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
 
+        bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
+
     public: 
         FDTD_RigidObject()
-            : _workingDirectory("NOT_IDENTIFIED"),
+            : FDTD_MovableObject(RIGID_SOUND_OBJ),
+              _workingDirectory("NOT_IDENTIFIED"),
               _objectPrefix("NOT_IDENTIFIED"),
               _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
@@ -84,8 +87,15 @@ class FDTD_RigidObject : public FDTD_MovableObject
         {
         }
 
-        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : _workingDirectory(workingDirectory), 
+        FDTD_RigidObject(const std::string &workingDirectory, 
+                         const int &resolution, 
+                         const std::string &objectPrefix, 
+                         const bool &buildFromTetMesh, 
+                         const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
+                         const std::string &meshName="NOT_IDENTIFIED", 
+                         const int &scale=1.0)
+            : FDTD_MovableObject(RIGID_SOUND_OBJ),
+              _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
               _meshScale(scale), 
               _meshName(meshName),
@@ -96,6 +106,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
             Initialize(buildFromTetMesh); 
         }
 
+        inline bool Animated(){return _animated;}
+        inline void SetAnimated(const bool &is){_animated = is;}
         inline bool Exist(){return (_mesh!=0);}
         inline std::shared_ptr<TriangleMesh<REAL>> GetMeshPtr(){return _mesh;} 
         inline const std::shared_ptr<TriangleMesh<REAL>> &GetMeshPtr() const {return _mesh;} 
@@ -114,13 +126,13 @@ class FDTD_RigidObject : public FDTD_MovableObject
         virtual void ResetUnionBox(); 
         virtual void ApplyScale(const REAL scale); 
         // in-place query for object sdf distance from world x,y,z
-        REAL DistanceToMesh(const double &x, const double &y, const double &z); 
-        REAL DistanceToMesh(const Vector3d &position); 
+        virtual REAL DistanceToMesh(const double &x, const double &y, const double &z); 
+        virtual REAL DistanceToMesh(const Vector3d &position); 
         // in-place query for object sdf normal from world x,y,z
         // return success or not (could be that query point is outside of bbox,
         // then normal is not defined
-        bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
-        bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
+        virtual bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
+        virtual bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
         REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle=-1); 
         REAL EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 

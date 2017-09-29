@@ -62,7 +62,8 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         attr.isFixed = (queryOptionalReal(rigidSoundObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
 
         const bool buildFromTetMesh = true;
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object_r = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidSoundObjectPtr object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object_r);
         object->SetOptionalAttributes(attr); 
         object->SetAnimated(true);
         // load impulse from file
@@ -108,14 +109,14 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
             object->AddVibrationalSource(sourcePtr); 
         }
 
-        objects->AddObject(std::stoi(meshName),object); 
+        objects->AddObject(std::stoi(meshName), object_r); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
     }
 
     const int N_rigidSoundObject = objects->N(); 
     for (int o_idx=0; o_idx<N_rigidSoundObject; ++o_idx)
     {
-        auto object = objects->GetPtr(o_idx); 
+        auto object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(o_idx)); 
         readers.at(o_idx).LoadImpulses(o_idx, object, objects); 
         REAL impulseRangeStart, impulseRangeStop; 
         object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop); 
@@ -155,10 +156,10 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        objects->AddObject(std::stoi(meshName),object); 
+        objects->AddObject(std::stoi(meshName), object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
 
@@ -188,7 +189,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL decayRadius = queryOptionalReal(waterSurfaceObjectNode, "decay_radius", 5.0); 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSource>(object, inputRecordingFile, decayRadius); 
         object->AddVibrationalSource(sourcePtr); 

@@ -10,6 +10,16 @@
 #include <Eigen/Dense> 
 
 //##############################################################################
+// Enum ObjectType
+//##############################################################################
+enum ObjectType
+{
+    RIGID_SOUND_OBJ = 0, 
+    SHELL_OBJ, 
+    SOURCE
+};
+
+//##############################################################################
 // Objects that can be animated using rigid body simulator. has bounding box to
 // accelerate collision detection etc. 
 //##############################################################################
@@ -85,6 +95,9 @@ class FDTD_MovableObject
             }
         };
 
+    private: 
+        ObjectType _type; 
+
     protected: 
         // bounding box in the work coordinate system
         BoundingBox _bboxWorld; 
@@ -95,13 +108,16 @@ class FDTD_MovableObject
         Affine3     _modelingTransform; 
         Affine3     _modelingTransformInverse; 
 
+
     public: 
-        FDTD_MovableObject()
-            : _modelingTransform(Affine3::Identity()), 
+        FDTD_MovableObject(const ObjectType &type)
+            : _type(type),
+              _modelingTransform(Affine3::Identity()), 
               _modelingTransformInverse(Affine3::Identity())
         {
         }
 
+        inline ObjectType Type() const {return _type;}
         inline const BoundingBox &GetUnionBBox(){return _bboxWorldUnion2Steps;}
         inline const BoundingBox &GetBBox(){return _bboxWorld;}
         inline bool InsideBoundingBox(const double &x, const double &y, const double &z, const double &scale)

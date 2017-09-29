@@ -151,7 +151,7 @@ GetModalDisplacement(Eigen::VectorXd &displacement)
 //  This function does not update timestamp automatically, call
 //  UpdateQPointers() manually.
 //##############################################################################
-void FDTD_RigidSoundObject::
+REAL FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps)
 {
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
@@ -188,6 +188,7 @@ AdvanceModalODESolvers(const int &N_steps)
         if (_modalAccEncoder)
             _modalAccEncoder->Encode(_qDDot_c); 
     }
+    return GetODESolverTime(); 
 }
 
 //##############################################################################
@@ -196,7 +197,7 @@ AdvanceModalODESolvers(const int &N_steps)
 //      = 1: write displacement
 //      = 2: write both
 //##############################################################################
-void FDTD_RigidSoundObject::
+REAL FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q)
 {
     if (mode >=1)
@@ -259,6 +260,7 @@ AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_di
               << "  Get volume u     : " << _timer_substep_q2u[0].Duration()        * scale << " ms\n"
               << "  Map to surface   : " << _timer_substep_q2u[1].Duration()        * scale << " ms\n"
               << " Write data to disk: " << _timer_mainstep[2].Duration()           * scale << " ms\n"; 
+    return GetODESolverTime(); 
 }
 
 //##############################################################################

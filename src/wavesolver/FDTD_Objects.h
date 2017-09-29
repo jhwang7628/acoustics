@@ -22,7 +22,7 @@ class FDTD_Objects
 {
     private: 
         std::unordered_map<std::string, FDTD_PlaneConstraint_Ptr> _constraints; 
-        std::unordered_map<int, RigidSoundObjectPtr>              _rigidObjects; 
+        std::unordered_map<int, RigidObjectPtr>              _rigidObjects; 
         std::vector<PressureSourcePtr>                            _pressureSources; 
         FDTD_RigidObject_Animator_Ptr                             _objectAnimator; 
 
@@ -30,26 +30,27 @@ class FDTD_Objects
         inline int N() const {return _rigidObjects.size();} 
         inline int N_sources() const {return _pressureSources.size();}
         inline int N_constraints() const {return _constraints.size();}
-        inline FDTD_RigidSoundObject &Get(const int &ind){return *(_rigidObjects.at(ind));} 
-        inline RigidSoundObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
+        inline FDTD_RigidObject &Get(const int &ind){return *(_rigidObjects.at(ind));} 
+        inline RigidObjectPtr GetPtr(const int &ind){return _rigidObjects.at(ind);} 
         inline PressureSourcePtr &GetPressureSourcePtr(const int &ind){return _pressureSources.at(ind);} 
         inline std::string GetMeshName(const int &ind) const {return _rigidObjects.at(ind)->GetMeshName();}
         //inline int GetMeshID(const string &meshName) const {return _meshIDMap.at(meshName);}
         inline std::vector<PressureSourcePtr> &GetPressureSources(){return _pressureSources;}
-        inline const auto &GetRigidSoundObjects() const {return _rigidObjects;}
-        inline auto &GetRigidSoundObjects(){return _rigidObjects;}
+        inline const auto &GetRigidObjects() const {return _rigidObjects;}
+        inline auto &GetRigidObjects(){return _rigidObjects;}
         inline auto &GetConstraint(const std::string &id){return _constraints;}
         inline auto &GetConstraints(){return _constraints;}
         inline bool HasModalObject() const 
         {
             bool has=false; 
             for (const auto &m : _rigidObjects) 
-                has = (has || m.second->IsModalObject()); 
+                if (m.second->Type() == RIGID_SOUND_OBJ)
+                    has = (has || std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second) ->IsModalObject()); 
             return has;
         }
         inline bool HasExternalPressureSources(){return _pressureSources.size()>0;}
         // add object if objectName is not in the map
-        void AddObject(const int &objectName, RigidSoundObjectPtr &object); 
+        void AddObject(const int &objectName, RigidObjectPtr &object); 
         int AddConstraint(const std::string &id, FDTD_PlaneConstraint_Ptr &constraint); 
         int AddConstraints(FDTD_Objects_Ptr &rhs); 
         // return index of the object that occupies the position, -1 if none. 

@@ -175,12 +175,12 @@ void FDTD_AcousticSimulator_Viewer::
 DrawMesh()
 {
     const auto &sceneObjects = _simWorld->GetSceneObjects(); 
-    const auto &rigidSoundObjects = sceneObjects->GetRigidSoundObjects();
-    const int N_objects = rigidSoundObjects.size(); 
+    const auto &rigidObjects = sceneObjects->GetRigidObjects();
+    const int N_objects = rigidObjects.size(); 
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
     {
         // draw rigid sound object mesh
-        auto &object = rigidSoundObjects.at(obj_idx); 
+        auto &object = rigidObjects.at(obj_idx); 
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
         const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
         const std::vector<Tuple3ui>       &triangles = meshPtr->triangles(); 
@@ -383,7 +383,8 @@ DrawImpulses()
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
         const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
         std::vector<ImpulseSeriesObject::ImpactRecord> records; 
-        object->GetImpulseWithinSupport(time, records); 
+        std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object)
+            ->GetImpulseWithinSupport(time, records); 
         for (const auto &imp : records) 
         {
             if (imp.supportLength < SMALL_NUM)
@@ -900,7 +901,8 @@ keyPressEvent(QKeyEvent *e)
         std::cout << "Debug: execute some debug function" << std::endl;
         auto &sceneObjects = _simWorld->GetSceneObjects(); 
         const auto &object = sceneObjects->GetPtr(0); 
-        object->PrintAllVelocity("allVelocityFDTD.txt", 0);
+        std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object)
+            ->PrintAllVelocity("allVelocityFDTD.txt", 0);
     }
     else if ((e->key() == Qt::Key_P) && (modifiers == Qt::ShiftModifier)) {
         // write to disk 
