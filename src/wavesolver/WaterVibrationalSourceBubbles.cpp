@@ -148,8 +148,8 @@ step(REAL time)
                                      iter->second.datFile,
                                      _m2);
 
-            _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), false));
-            _fullKd2.reset(new PointKDTree(_m2.m_allTriCenters.data(), _m2.m_allTriCenters.size(), false));
+            _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), true));
+            _fullKd2.reset(new PointKDTree(_m2.m_allTriCenters.data(), _m2.m_allTriCenters.size(), true));
         }
 
         if (_t1 < 0)
@@ -1073,6 +1073,7 @@ projectToSurface()
     for (int i = 0; i < _surfaceMesh->num_triangles(); ++i)
     {
         Point3<REAL> p = _surfaceMesh->triangle_centroid(i);
+        Vector3<REAL> n = _surfaceMesh->triangle_normal(i);
 
         Eigen::Vector3d ep(p.x, p.y, p.z);
 
@@ -1081,9 +1082,12 @@ projectToSurface()
         if (_m->m_triType.at(_m->m_surfTris.at(nearestTri)) == Mesh::FLUID_AIR)
         {
             int index = nearestTri;
+            Eigen::Vector3d projNormal(n.x, n.y, n.z);
+            Eigen::Vector3d dataNormal = _m->triangleNormal(index);
             if (std::fabs(_accel(index)) > std::fabs(_projectedAccel(i)))
             {
-                _projectedAccel(i) = _accel(index);
+                // TODO: are the calls to normalized needed?
+                _projectedAccel(i) = _accel(index) * projNormal.normalized().dot(dataNormal.normalized());
             }
 
             //Vector3<double> boxN = _surfaceMesh->triangle_normal(i).normalized();

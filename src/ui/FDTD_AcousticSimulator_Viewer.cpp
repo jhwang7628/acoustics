@@ -243,7 +243,35 @@ DrawMesh()
         glEnable(GL_LIGHTING);
         if (_wireframe == 0 || _wireframe == 2)
         {
-            double maxAccel = 0;
+            JetColorMap accelColorMap;
+            REAL maxAccel = std::numeric_limits<REAL>::min();
+            REAL minAccel = std::numeric_limits<REAL>::max();
+            std::vector<double> accel(N_triangles);
+
+            for (int t_idx=0; t_idx<N_triangles; ++t_idx)
+            {
+                const Tuple3ui &triangle = triangles.at(t_idx);
+                Point3<REAL> x = vertices.at(triangle.x);
+                Point3<REAL> y = vertices.at(triangle.y);
+                Point3<REAL> z = vertices.at(triangle.z);
+                Vector3<REAL> nx = normals.at(triangle.x);
+                Vector3<REAL> ny = normals.at(triangle.y);
+                Vector3<REAL> nz = normals.at(triangle.z);
+                x = object->ObjectToWorldPoint(x);
+                y = object->ObjectToWorldPoint(y);
+                z = object->ObjectToWorldPoint(z);
+                nx = object->ObjectToWorldVector(nx);
+                ny = object->ObjectToWorldVector(ny);
+                nz = object->ObjectToWorldVector(nz);
+
+                accel[t_idx] = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simulator->GetSimulationTime(), -1);
+
+                maxAccel = std::max<REAL>(maxAccel, accel.at(t_idx));
+                minAccel = std::min<REAL>(minAccel, accel.at(t_idx));
+            }
+            accelColorMap.set_interpolation_range(minAccel, maxAccel);
+
+            std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
 
             glBegin(GL_TRIANGLES);
             const auto &color = _objectColors.at(obj_idx);
@@ -292,27 +320,20 @@ DrawMesh()
                 }
                 else // surface acceleration
                 {
-                    double accel = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simulator->GetSimulationTime(), -1);
-
-                    if (std::fabs(accel) > maxAccel)
-                    {
-                        maxAccel = std::fabs(accel);
-                    }
+                    const Tuple3f c = accelColorMap.get_interpolated_color(accel.at(t_idx));
 
                     glNormal3f(nx.x, nx.y, nx.z);
-                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glColor3f(c.x, c.y, c.z);
                     glVertex3f(x.x, x.y, x.z);
                     glNormal3f(ny.x, ny.y, ny.z);
-                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glColor3f(c.x, c.y, c.z);
                     glVertex3f(y.x, y.y, y.z);
                     glNormal3f(nz.x, nz.y, nz.z);
-                    glColor3f(std::fabs(accel) * 1000, 0, 0);
+                    glColor3f(c.x, c.y, c.z);
                     glVertex3f(z.x, z.y, z.z);
                 }
             }
             glEnd();
-
-            std::cout << "maxAccel: " << maxAccel << std::endl;
         }
 
         // draw rasterized cells
