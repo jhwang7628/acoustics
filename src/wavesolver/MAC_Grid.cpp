@@ -1063,7 +1063,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         REAL weightedPressure; 
-        if (occupiedByObject)
+        if (gc->type == 0)
         {
             int boundaryObject;
             _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
@@ -1094,7 +1094,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
             weightedPressure = bcPressure * weights; 
         }
-        else 
+        else if (gc->type == 1)
         {
             FDTD_PlaneConstraint_Ptr constraint; 
             _objects->LowestConstraintDistance(cellPosition, distance, constraint);  // distance is unsigned
@@ -1102,6 +1102,9 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             erectedNormal = constraint->Normal(); 
             imagePoint = cellPosition + erectedNormal*2.0*distance; 
             weightedPressure = 0.0;
+        }
+        else if (gc->type == 2) // shell
+        {
         }
 
         // get the box enclosing the image point; 
@@ -3193,8 +3196,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 #else
     const int N_max_threads = 1;
 #endif
-    std::vector<GhostCellType>         thread_GCMap(N_max_threads); 
-    std::vector<BoundaryGhostCellType> thread_BGCMap(N_max_threads); 
+    std::vector<GhostCellType>           thread_GCMap(N_max_threads); 
+    std::vector<BoundaryGhostCellType>   thread_BGCMap(N_max_threads); 
+    std::vector<unordered_map<int, int>> thread_GCType(N_max_threads);
     std::vector<IntArray> thread_candidate_cells(N_max_threads); 
     for (auto &tcc : thread_candidate_cells)
         tcc.reserve(numCells/4); 
@@ -3211,19 +3215,34 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         for (int jj=start.y; jj<start.y+range.y; ++jj)
         for (int kk=start.z; kk<start.z+range.z; ++kk)
         {
-            const Tuple3i cellIndices(ii,jj,kk); 
-            const int cell_idx = _pressureField.cellIndex(cellIndices); 
-            if (_classified.at(cell_idx)) continue;
-            const Vector3d pos = _pressureField.cellPosition(cell_idx);
-            int type; 
-            if (!isFluid(pos, type))
-            {
-                _isBulkCell.at(cell_idx) = false; 
 #ifdef USE_OPENMP
                 const int thread_idx = omp_get_thread_num(); 
 #else
                 const int thread_idx = 0; 
 #endif
+            const Tuple3i cellIndices(ii,jj,kk); 
+            const int cell_idx = _pressureField.cellIndex(cellIndices); 
+            if (_classified.at(cell_idx)) continue;
+            const Vector3d pos = _pressureField.cellPosition(cell_idx);
+            int type; 
+            bool isSolid = false; 
+            if (!isFluid(pos, type))
+            {
+                isSolid = true; 
+                thread_GCType.at(thread_idx)[cell_idx] = type;
+            }
+            else if (_objects->TriangleCubeIntersection(
+                       pos, Vector3d(_waveSolverSettings->cellSize/2.0,
+                                     _waveSolverSettings->cellSize/2.0,
+                                     _waveSolverSettings->cellSize/2.0)))
+            {
+                isSolid = true; 
+                thread_GCType.at(thread_idx)[cell_idx] = 2;
+            }
+
+            if (isSolid)
+            {
+                _isBulkCell.at(cell_idx) = false; 
                 thread_candidate_cells.at(thread_idx).push_back(cell_idx); 
             }
             _classified.at(cell_idx) = true; 
@@ -3234,9 +3253,13 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         thread_candidate_cells.at(0).insert(thread_candidate_cells.at(0).end(),
                                             thread_candidate_cells.at(tid).begin(),
                                             thread_candidate_cells.at(tid).end()); 
+    for (int tid=1; tid<N_max_threads; ++tid)
+        thread_GCType.at(0).insert(thread_GCType.at(tid).begin(),
+                                   thread_GCType.at(tid).end()); 
 
     // loop through all non-bulk and find ghost cells
     const IntArray &candidate_cells = thread_candidate_cells.at(0); 
+    const auto     &gcTypes         = thread_GCType.at(0);
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
@@ -3257,8 +3280,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             if (_isBulkCell.at(ns))
             {
                 is_ghost = true; 
-                int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
-                auto gc = MakeGhostCell(cell_idx, ns, to, gctype); 
+                //int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
+                //auto gc = MakeGhostCell(cell_idx, ns, to, gctype); 
+                auto gc = MakeGhostCell(cell_idx, ns, to, gcTypes.at(cell_idx)); 
 #ifdef USE_OPENMP
                 const int thread_idx = omp_get_thread_num(); 
 #else

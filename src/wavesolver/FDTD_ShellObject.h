@@ -26,7 +26,7 @@ public:
     {}
 
     virtual REAL DistanceToMesh(const double &x, const double &y, const double &z)
-    {return std::numeric_limits<REAL>::lowest();}
+    {return std::numeric_limits<REAL>::max();}
     virtual REAL DistanceToMesh(const Vector3d &position)
     {return DistanceToMesh(position.x, position.y, position.z);}
     virtual bool NormalToMesh(const double &x, const double &y, const double &z, 

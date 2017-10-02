@@ -116,7 +116,7 @@ class MAC_Grid
             int ownerCell; 
             int neighbourCell; 
             int topology;
-            int type; 
+            int type;  // 0: bulky, 1: constraint, 2: shell 
             Vector3d position; 
             REAL pressure; 
             GhostCell_Cache_UPtr cache; 

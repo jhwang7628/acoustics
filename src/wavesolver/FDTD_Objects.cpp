@@ -1,4 +1,5 @@
 #include <wavesolver/FDTD_Objects.h> 
+#include <geometry/tribox3.h>
 
 //##############################################################################
 // Handles a list of objects embedded in the wave solver
@@ -38,6 +39,7 @@ OccupyByObject(const Vector3d &positionWorld)
     for (const auto &m : _rigidObjects)
     {
         const double distance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
+        
         if (distance < DISTANCE_TOLERANCE) 
             return m.first; 
     }
@@ -64,6 +66,44 @@ OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint)
             constraint = p.second; 
             return true;
         }
+    return false; 
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+TriangleCubeIntersection(const Vector3d &cubeCenter, 
+                         const Vector3d &cubeHalfSize)
+{
+    float cc[3] = {(float)cubeCenter.x, 
+                   (float)cubeCenter.y,
+                   (float)cubeCenter.z};
+    float cs[3] = {(float)cubeHalfSize.x,
+                   (float)cubeHalfSize.y,
+                   (float)cubeHalfSize.z};
+    float vtxs[3][3]; 
+    // only performs on shell objects to save time
+    for (const auto &m : _rigidObjects)
+    {
+        if (m.second->Type() == SHELL_OBJ)
+        {
+            const auto &mesh = m.second->GetMeshPtr(); 
+            const auto &tris = mesh->triangles(); 
+            const auto &vert = mesh->vertices(); 
+            for (const auto &tri : tris)
+            {
+                for (int ii=0; ii<3; ++ii) // ii-th vertex 
+                {
+                    vtxs[ii][0] = (float)(vert.at(tri[ii]).x);
+                    vtxs[ii][1] = (float)(vert.at(tri[ii]).y);
+                    vtxs[ii][2] = (float)(vert.at(tri[ii]).z);
+                }
+                const int test = triBoxOverlap(cc, cs, vtxs);
+                if (test > 0)
+                    return true; 
+            }
+        }
+    }
     return false; 
 }
 
