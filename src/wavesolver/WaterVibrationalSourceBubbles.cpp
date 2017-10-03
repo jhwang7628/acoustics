@@ -53,6 +53,59 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         closestTriangle = neighbours.at(0);
     }
 
+
+    // DEBUGGING
+#if 0
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+    {
+        Eigen::Vector3d p(position.x, position.y, position.z);
+        Point3<REAL> surfCentroid = _surfaceMesh->triangle_centroid(closestTriangle);
+        Eigen::Vector3d surfP(surfCentroid.x, surfCentroid.y, surfCentroid.z);
+
+        int nearestTri = _kd->find_nearest(p);
+        int nearestVecTri = 0;
+        int nearestPtTri = 0;
+
+        double distVec = std::numeric_limits<double>::infinity();
+        double distPt = std::numeric_limits<double>::infinity();
+
+        Eigen::Vector3d* ptr = _m->m_surfTriCenters.data();
+
+        for (int i = 0; i < _m->m_surfTriCenters.size(); ++i)
+        {
+            double d1 = (p - _m->m_surfTriCenters[i]).norm();
+            if (d1 < distVec)
+            {
+                distVec = d1;
+                nearestVecTri = i;
+            }
+
+            double d2 = (p - ptr[i]).norm();
+            if (d2 < distPt)
+            {
+                distPt = d1;
+                nearestPtTri = i;
+            }
+        }
+
+        if (nearestTri != nearestVecTri || nearestTri != nearestPtTri)
+        {
+            std::cout << "Error with nearest: " << nearestTri << " " << nearestVecTri << " " << nearestPtTri << std::endl;
+
+            std::cout << "p: " << p.transpose() << std::endl
+                      << "kd nearest: " << _m->m_surfTriCenters.at(nearestTri).transpose() << std::endl
+                      << "vec nearest: " << _m->m_surfTriCenters.at(nearestVecTri).transpose() << std::endl
+                      << "pt nearest: " << ptr[nearestPtTri].transpose() << std::endl
+                      << "pt nearest vec indexed: " << _m->m_surfTriCenters.at(nearestPtTri).transpose() << std::endl;
+
+            throw std::runtime_error("bad kd tree lookup");
+        }
+
+    }
+#endif
+
     return _projectedAccel(closestTriangle);
 }
 
