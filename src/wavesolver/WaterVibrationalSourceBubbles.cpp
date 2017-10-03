@@ -9,6 +9,8 @@
 #include "bubbles/FileInput.hpp"
 #include "bubbles/ODEInt.hpp"
 
+//#define DUMP_OSCILLATORS
+
 //##############################################################################
 //##############################################################################
 WaterVibrationalSourceBubbles::
@@ -247,6 +249,7 @@ updateOscillators(REAL time)
     using namespace MathUtils;
     using namespace Eigen;
 
+#ifdef DUMP_OSCILLATORS
     // Temp debugging
     using namespace std;
     static bool first = true;
@@ -263,6 +266,7 @@ updateOscillators(REAL time)
 
         first = false;
     }
+#endif
 
     RK4<Vector2d> integrator;
     typedef BubbleOscillator<Vector2d> DS;
@@ -292,7 +296,9 @@ updateOscillators(REAL time)
 
             osc.m_lastVals.col(2) = osc.m_state;
 
+#ifdef DUMP_OSCILLATORS
             oscOutputs[i] << osc.m_state(1) << endl;
+#endif
         }
 
         while (osc.m_currentTime < time)
@@ -302,7 +308,9 @@ updateOscillators(REAL time)
                                           _dt,
                                           bubOsc);
 
+#ifdef DUMP_OSCILLATORS
             oscOutputs[i] << osc.m_state(1) << endl;
+#endif
 
             osc.m_lastVals.col(0) = osc.m_lastVals.col(1);
             osc.m_lastVals.col(1) = osc.m_lastVals.col(2);
@@ -836,6 +844,7 @@ computeVelocities(REAL time)
     using namespace std;
     using namespace Eigen;
 
+#ifdef DUMP_OSCILLATORS
     static bool first = true;
     static vector<ofstream> oscOutputs;
 
@@ -850,6 +859,7 @@ computeVelocities(REAL time)
 
         first = false;
     }
+#endif
 
     bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
 
@@ -873,10 +883,12 @@ computeVelocities(REAL time)
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
 
+#ifdef DUMP_OSCILLATORS
         if (i % 100 == 0)
         {
             oscOutputs[i].flush();
         }
+#endif
 
         bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime > _t1;
         bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime > _t2;
@@ -925,7 +937,9 @@ computeVelocities(REAL time)
 
         int bubbleNumber2 = iter->second;
 
+#ifdef DUMP_OSCILLATORS
         oscOutputs[i] << time << " " << bubbleNumber1 << " " << bubbleNumber2 << endl;
+#endif
 
         //if (!existT1)
         //{
