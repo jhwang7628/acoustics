@@ -229,7 +229,9 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
         for (IntArray::iterator it=neighbours.begin(); it!=neighbours.end();)
         {
             if (std::isnan(scalar(*it, 0)))
+            {
                 it = neighbours.erase(it); 
+            }
             else
             {
                 const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it)); 

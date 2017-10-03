@@ -39,8 +39,7 @@ OccupyByObject(const Vector3d &positionWorld)
     for (const auto &m : _rigidObjects)
     {
         const double distance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
-        
-        if (distance < DISTANCE_TOLERANCE) 
+        if (distance < DISTANCE_TOLERANCE && m.second->Type() != SHELL_OBJ) 
             return m.first; 
     }
     return -1;
@@ -122,34 +121,34 @@ LowestObjectDistance(const Vector3d &positionWorld)
 {
     REAL distance = std::numeric_limits<REAL>::max(); 
     for (const auto &m : _rigidObjects) 
-        distance = std::min<REAL>(distance, m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z)); 
+    {
+        const REAL d = m.second->DistanceToMesh(positionWorld); 
+        if (fabs(d) < fabs(distance))
+            distance = d; 
+    }
     return distance; 
 }
 
 //##############################################################################
 // Find the closest object with respect to positionWorld
-//
-// Note: this might fail if positionWorld is too far from the region where sdf
-// is defined. 
 //##############################################################################
 bool FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
 {
+    if (_rigidObjects.size() == 0) return false; 
     REAL queriedDistance; 
-    bool found = false; 
     distance = std::numeric_limits<REAL>::max(); 
-    objectID = std::numeric_limits<int>::max(); 
+    objectID = _rigidObjects.begin()->first; 
     for (const auto &m : _rigidObjects) 
     {
-        queriedDistance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
-        if (queriedDistance < distance)
+        queriedDistance = m.second->DistanceToMesh(positionWorld); 
+        if (fabs(queriedDistance) < fabs(distance))
         {
             distance = queriedDistance; 
             objectID = m.first;
-            found = true; 
         }
     } 
-    return found; 
+    return true; 
 }
 
 //##############################################################################

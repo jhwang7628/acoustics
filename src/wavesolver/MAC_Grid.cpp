@@ -1063,10 +1063,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         REAL weightedPressure; 
-        if (gc->type == 0)
+        if (gc->type == 0 || gc->type == 2) // solid or shell objects
         {
             int boundaryObject;
-            _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
+            const bool success = _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
             int closestTriangle;
             auto object = _objects->GetPtr(boundaryObject); 
             if (   gc->cache 
@@ -1085,13 +1085,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 gc->cache->tid.objectID = boundaryObject;
                 gc->cache->tid.triangleID = closestTriangle; 
             }
-            const bool success = (_objects->LowestObjectDistance(imagePoint) >= DISTANCE_TOLERANCE); 
             const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
             REAL bcPressure = 0; 
             for (int ii=0; ii<3; ++ii)
                 bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
             bcPressure /= 3.0; 
-            const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? -2.0*distance : -distance);  // finite-difference weight
+            const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? 
+                    -2.0*fabs(distance) : -fabs(distance));  // finite-difference weight
             weightedPressure = bcPressure * weights; 
         }
         else if (gc->type == 1)
@@ -1102,9 +1102,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             erectedNormal = constraint->Normal(); 
             imagePoint = cellPosition + erectedNormal*2.0*distance; 
             weightedPressure = 0.0;
-        }
-        else if (gc->type == 2) // shell
-        {
         }
 
         // get the box enclosing the image point; 

@@ -23,7 +23,7 @@ class FDTD_Objects
 {
     private: 
         std::unordered_map<std::string, FDTD_PlaneConstraint_Ptr> _constraints; 
-        std::unordered_map<int, RigidObjectPtr>              _rigidObjects; 
+        std::unordered_map<int, RigidObjectPtr>                   _rigidObjects; 
         std::vector<PressureSourcePtr>                            _pressureSources; 
         FDTD_RigidObject_Animator_Ptr                             _objectAnimator; 
 

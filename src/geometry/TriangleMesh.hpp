@@ -832,8 +832,10 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
 
         // to find projection of query point on this plane, first find the time
         // travelled t for the ray emitted from the query point to this plane.
+        // the sign of t tells which side is the point wrt plane
         const T t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
         projectedPointBuffer = queryPoint + triangleNormal * t;
+        const T sgn = (t >= 0.0 ? 1.0 : -1.0);
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
@@ -898,10 +900,10 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
         {
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
-        const T distance = (queryPoint - closestPointBuffer).lengthSqr();
+        const T distance = sgn*(queryPoint - closestPointBuffer).lengthSqr();
 
         // keep closest
-        if (distance < minDistance) 
+        if (fabs(distance) < fabs(minDistance)) 
         {
             minDistance = distance; 
             closestTriangle = t_idx; 
@@ -909,7 +911,7 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
             projectedPoint = projectedPointBuffer; 
         }
     }
-    return sqrt(minDistance); 
+    return (minDistance >= 0.0 ? sqrt(minDistance) : -sqrt(-minDistance)); 
 }
 
 /* 

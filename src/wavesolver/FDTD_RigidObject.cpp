@@ -377,9 +377,9 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 int FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle)
 {
-    assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
 
 #if 0 // use sdf for normal query
+    assert(_signedDistanceField); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
@@ -404,25 +404,25 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     Vector3d projectedPoint; // object space
     if (startFromTriangle<0) 
     {
-      distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
     }
     else
     {
-      distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      // uncomment if want to test between graph-search and kdtree-search results
-      //int graph = closestTriangleIndex; 
-      //const Vector3d bpGraph = boundaryPoint; 
-      //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      //if (graph != closestTriangleIndex) 
-      //{
-      //    std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
-      //    std::cerr << " point       = " << originalPoint << std::endl; 
-      //    std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
-      //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
-      //}
+        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        // uncomment if want to test between graph-search and kdtree-search results
+        //int graph = closestTriangleIndex; 
+        //const Vector3d bpGraph = boundaryPoint; 
+        //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        //if (graph != closestTriangleIndex) 
+        //{
+        //    std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
+        //    std::cerr << " point       = " << originalPoint << std::endl; 
+        //    std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
+        //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
+        //}
     }
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
-    if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
+    if (fabs(distanceTravelled) < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
         std::cerr << "**WARNING** distance smaller than tolerance\n";
         // get closest triangle normal and push manually
