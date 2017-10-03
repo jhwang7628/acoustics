@@ -70,6 +70,10 @@ class FDTD_MovableObject
                         y<(centroid[1]+scaledDimension[1])&&y>(centroid[1]-scaledDimension[1]) &&
                         z<(centroid[2]+scaledDimension[2])&&z>(centroid[2]-scaledDimension[2])); 
             }
+            inline bool Inside(const Vector3d &pos)
+            {
+                return Inside(pos.x, pos.y, pos.z); 
+            }
             inline void Update(const Vector3<double> &minBound_c, const Vector3<double> &maxBound_c)
             {
                 minBound = minBound_c; 
