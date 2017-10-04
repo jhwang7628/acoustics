@@ -174,12 +174,16 @@ step(REAL time)
     if (time >= _t2)
     {
         // Advance
-        _t1 = _t2;
-        _m1 = _m2;
-        _v1 = _v2;
-        _kd1 = _kd2;
-        _fullKd1 = _fullKd2;
-        _b1 = _b2;
+        // Update t1 data if t2 data is valid
+        if (_v2.size() > 0)
+        {
+            _t1 = _t2;
+            _m1 = _m2;
+            _v1 = _v2;
+            _kd1 = _kd2;
+            _fullKd1 = _fullKd2;
+            _b1 = _b2;
+        }
 
         // New t2
         auto iter = _fileInfo.upper_bound(time);
@@ -187,26 +191,34 @@ step(REAL time)
         {
             // Past the last solution data time
             // TODO: is this the best solution?
-            _t2 = 50000;
-            _m2 = _m1;
-            _v2 = _v1;
-            _kd2 = _kd1;
-            _fullKd2 = _fullKd1;
-            _b2 = _b1;
+            //_t2 = 50000;
+            //_m2 = _m1;
+            //_v2 = _v1;
+            //_kd2 = _kd1;
+            //_fullKd2 = _fullKd1;
+            //_b2 = _b1;
         }
         else
         {
             _t2 = iter->first;
             _m2.loadGmsh(iter->second.meshFile);
             _b2 = parseFreqFile(iter->second.freqFile);
-            _v2 = loadSurfaceDatFile(_b2,
-                                     iter->second.datFile,
-                                     _m2);
-
             _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), true));
             _fullKd2.reset(new PointKDTree(_m2.m_allTriCenters.data(), _m2.m_allTriCenters.size(), true));
+
+            try
+            {
+                _v2 = loadSurfaceDatFile(_b2,
+                                         iter->second.datFile,
+                                         _m2);
+            }
+            catch (const std::runtime_error& e)
+            {
+                _v2.clear();
+            }
         }
 
+        // TODO: how to handle this case?
         if (_t1 < 0)
         {
             _t1 = -1;
@@ -888,6 +900,8 @@ computeVelocities(REAL time)
 #endif
 
     bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
+    bool t1Good = _v1.size() > 0;
+    bool t2Good = _v2.size() > 0;
 
     // Interpolate onto the mesh that is closest
     _m = useT1 ? &_m1 : &_m2;
@@ -916,8 +930,8 @@ computeVelocities(REAL time)
         }
 #endif
 
-        bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime > _t1;
-        bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime > _t2;
+        bool existT1 = osc.m_startTime <= _t1 && osc.m_endTime > _t1 && t1Good;
+        bool existT2 = osc.m_startTime <= _t2 && osc.m_endTime > _t2 && t2Good;
 
         if (!existT1 && !existT2) continue;
 
