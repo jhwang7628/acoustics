@@ -21,16 +21,27 @@ using namespace std;
 typedef Eigen::Matrix<double, 1, 1> VelocityValue;
 typedef std::map<int, std::vector<VelocityValue>> SurfaceVelocityData;
 
+std::vector<std::string> badFiles;
+
 void writeVTKFile(double t, const FileNames& files)
 {
     Mesh m;
     m.loadGmsh(files.meshFile);
     std::vector<BubbleInputInfo> b = parseFreqFile(files.freqFile);
 
-    SurfaceVelocityData v = loadSurfaceDatFile(b,
-                                               files.datFile,
-                                               m);
+    SurfaceVelocityData v;
 
+    try
+    {
+        v = loadSurfaceDatFile(b,
+                               files.datFile,
+                               m);
+    }
+    catch (const std::runtime_error& e)
+    {
+        badFiles.push_back(files.datFile);
+        return;
+    }
 
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
     for (auto& p : m.m_vertices)
@@ -106,6 +117,13 @@ int main(int argc, char** argv)
     {
         std::cout << k.second.meshFile << std::endl;
         writeVTKFile(k.first, k.second);
+    }
+
+    std::cout << "Bad files:" << std::endl;
+
+    for (auto &f : badFiles)
+    {
+        std::cout << f << std::endl;
     }
 
     return 0;

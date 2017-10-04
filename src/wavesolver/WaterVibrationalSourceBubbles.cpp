@@ -234,7 +234,33 @@ step(REAL time)
     _curTime = time;
     //_curTime += _dt;
 
+    double maxVel1 = 0;
+    double maxVel2 = 0;
+    for (const auto &v : _v1)
+    {
+        for (int j = 0; j < v.second.size(); ++j)
+        {
+            if (std::fabs(v.second.at(j)(0)) > std::fabs(maxVel1))
+            {
+                maxVel1 = v.second.at(j)(0);
+            }
+        }
+    }
+
+    for (const auto &v : _v2)
+    {
+        for (int j = 0; j < v.second.size(); ++j)
+        {
+            if (std::fabs(v.second.at(j)(0)) > std::fabs(maxVel2))
+            {
+                maxVel2 = v.second.at(j)(0);
+            }
+        }
+    }
+
     std::cout << "Bubbles time: " << _curTime << ", t1: " << _t1 << ", t2: " << _t2 << std::endl;
+    std::cout << "input vel1 size: " << _v1.size() << ", input vel2 size: " << _v2.size() << std::endl;
+    std::cout << "input vel1 max: " << maxVel1 << ", input vel2 max: " << maxVel2 << std::endl;
     std::cout << "vel1 max: " << _velT1.cwiseAbs().maxCoeff() << ", vel2 max: " << _velT2.cwiseAbs().maxCoeff() << std::endl;
     std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << ", accel l2: " << _accel.norm() << std::endl;
     std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
@@ -1156,62 +1182,7 @@ projectToSurface()
                 // TODO: are the calls to normalized needed?
                 _projectedAccel(i) = _accel(index) * projNormal.normalized().dot(dataNormal.normalized());
             }
-
-            //Vector3<double> boxN = _surfaceMesh->triangle_normal(i).normalized();
-            //Eigen::Vector3d surfN = _m->triangleNormal(_m->m_surfTris.at(nearestTri));
-
-            //Eigen::Vector3d boxNe;
-            //boxNe << boxN.x, boxN.y, boxN.z;
-
-            //if (surfN.dot(boxNe) < 0.7)
-            //{
-            //    std::cout << "surfN: " << surfN.transpose() << std::endl;
-            //    std::cout << "boxN: " << boxNe.transpose() << std::endl;
-            //    std::cout << "nearestTri: " << nearestTri << std::endl;
-
-            //    Tuple3ui tri = _surfaceMesh->triangles().at(i);
-            //    Point3<double> v1= _surfaceMesh->vertices().at(tri.x);
-            //    std::cout << "v1: " << v1.x << " " << v1.y << " " << v1.z << std::endl;
-            //    Point3<double> v2= _surfaceMesh->vertices().at(tri.y);
-            //    std::cout << "v2: " << v2.x << " " << v2.y << " " << v2.z << std::endl;
-            //    Point3<double> v3= _surfaceMesh->vertices().at(tri.z);
-            //    std::cout << "v3: " << v3.x << " " << v3.y << " " << v3.z << std::endl;
-
-            //    Vector3<double> n = ((v2 - v1).crossProduct(v3-v1)).normalized();
-            //    std::cout << "n: " << n.x << " " << n.y << " " << n.z << std::endl;
-            //}
         }
     }
-
-    // DEBUGGING, write to file
-    //using namespace std;
-    //ofstream of("surfAccel.ply");
-
-    //of << "ply" << endl;
-    //of << "format ascii 1.0" << endl;
-    //of << "element vertex " << _surfaceMesh->num_vertices() << endl;
-    //of << "property float x" << endl;
-    //of << "property float y" << endl;
-    //of << "property float z" << endl;
-    //of << "element face " << _surfaceMesh->num_triangles() << endl;
-    //of << "property list uchar uint vertex_index" << endl;
-    //of << "property float accel" << endl;
-    //of << "end_header" << endl;
-
-    //for (int i = 0; i < _surfaceMesh->num_vertices(); ++i)
-    //{
-    //    of << _surfaceMesh->vertex(i).x << " "
-    //       << _surfaceMesh->vertex(i).y << " "
-    //       << _surfaceMesh->vertex(i).z << endl;
-    //}
-
-    //for (int i = 0; i < _surfaceMesh->num_triangles(); ++i)
-    //{
-    //    of << "3 "
-    //       << _surfaceMesh->triangles()[i].x << " "
-    //       << _surfaceMesh->triangles()[i].y << " "
-    //       << _surfaceMesh->triangles()[i].z << " "
-    //       << _projectedAccel(i) << endl;
-    //}
 }
 
