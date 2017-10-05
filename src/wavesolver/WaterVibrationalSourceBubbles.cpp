@@ -944,35 +944,42 @@ computeVelocities(REAL time)
         Mesh &localM1 = existT1 ? _m1 : _m2;
         Mesh &localM2 = existT2 ? _m2 : _m1;
 
+        bool deadT1 = false;
+        bool deadT2 = false;
+
         double lookupT = existT1 ? _t1 : _t2;
         auto iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
         if (iter == osc.m_trackedBubbleNumbers.end())
         {
-            cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
-            for (auto b : osc.m_trackedBubbleNumbers)
-            {
-                cout << b.first << " " << b.second << endl;
-            }
+            deadT1 = true;
 
-            throw runtime_error("bad tracked bubble numbers lookup t1");
+            //cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
+            //for (auto b : osc.m_trackedBubbleNumbers)
+            //{
+            //    cout << b.first << " " << b.second << endl;
+            //}
+
+            //throw runtime_error("bad tracked bubble numbers lookup t1");
         }
 
         int bubbleNumber1 = iter->second;
 
         lookupT = existT2 ? _t2 : _t1;
         iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
-        if (existT2 && iter == osc.m_trackedBubbleNumbers.end())
+        if ((existT2 || deadT1) && iter == osc.m_trackedBubbleNumbers.end())
         {
-            cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
-            for (auto b : osc.m_trackedBubbleNumbers)
-            {
-                cout << b.first << " " << b.second << endl;
-            }
+            deadT2 = true;
 
-            cout << "end time: " << osc.m_endTime << endl;
-            cout << "times: " << osc.m_frequencies.getData().col(0) << endl;
+            //cout << "t1: " << _t1 << ", t2: " << _t2 << endl;
+            //for (auto b : osc.m_trackedBubbleNumbers)
+            //{
+            //    cout << b.first << " " << b.second << endl;
+            //}
 
-            throw runtime_error("bad tracked bubble numbers lookup t2");
+            //cout << "end time: " << osc.m_endTime << endl;
+            //cout << "times: " << osc.m_frequencies.getData().col(0) << endl;
+
+            //throw runtime_error("bad tracked bubble numbers lookup t2");
         }
 
         int bubbleNumber2 = iter->second;
@@ -1039,19 +1046,33 @@ computeVelocities(REAL time)
             try
             {
                 // TODO: vel1 has only fluid surface data, surfTriCenters also has rigid triangles
-                val1 = _mls.lookup(p,
-                                   localM1.m_surfTriCenters,
-                                   vel1.at(bubbleNumber1),
-                                   -1,
-                                   NULL,
-                                   &closest1);
+                if (deadT1)
+                {
+                    val1 << 0;
+                }
+                else
+                {
+                    val1 = _mls.lookup(p,
+                                       localM1.m_surfTriCenters,
+                                       vel1.at(bubbleNumber1),
+                                       -1,
+                                       NULL,
+                                       &closest1);
+                }
 
-                val2 = _mls.lookup(p,
-                                   localM2.m_surfTriCenters,
-                                   vel2.at(bubbleNumber2),
-                                   -1,
-                                   NULL,
-                                   &closest2);
+                if (deadT2)
+                {
+                    val2 << 0;
+                }
+                else
+                {
+                    val2 = _mls.lookup(p,
+                                       localM2.m_surfTriCenters,
+                                       vel2.at(bubbleNumber2),
+                                       -1,
+                                       NULL,
+                                       &closest2);
+                }
 
                 //if (std::fabs(val1(0)) > 1e6)
 				//{
@@ -1073,6 +1094,16 @@ computeVelocities(REAL time)
                 for (auto iter = vel1.begin(); iter != vel1.end(); ++iter)
                 {
                     std::cout << iter->first << std::endl;
+                }
+
+                std::cout << "t1: " << _t1 << ", t2: " << _t2 << std::endl;
+                std::cout << "deadT1: " << deadT1 << ", deadT2: " << deadT2 << std::endl;
+                std::cout << "existT1: " << existT1 << ", existT2: " << existT2 << std::endl;
+
+                std::cout << "tracked bub nums: " << std::endl;
+                for (const auto &b : osc.m_trackedBubbleNumbers)
+                {
+                    std::cout << b.first << " " << b.second << std::endl;
                 }
 
                 exit(1);
