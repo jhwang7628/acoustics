@@ -32,6 +32,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
     setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
     setKeyDescription(Qt::Key_G, "Draw ground"); 
+    setKeyDescription(Qt::Key_S, "Set scene radius"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
@@ -850,6 +851,17 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_G) && (modifiers == Qt::NoButton)) {
         _drawGround = (_drawGround + 1)%3; 
         optionsChanged = true;
+    }
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton)) 
+    {
+        std::string line; 
+        std::cout << "Enter new scene radius: " << std::flush; 
+        PRE_CIN_CLEAR;
+        std::getline(std::cin, line); 
+        POST_CIN_CLEAR;
+        const REAL r = std::stod(line);
+        std::cout << "set scene radius to " << r << std::endl; 
+        setSceneRadius(r);
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
     {
