@@ -119,7 +119,7 @@ TryLoad(const std::string &filename)
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
+FindKNearestTrianglesGraph(const int &k_max, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
     const TriangleDistanceComp<T> sorter(this, point); 
     if (maxLevel <= 1)
@@ -132,8 +132,7 @@ FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &max
         NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
         triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
     }
-    if (triangleIndices.size()<k)
-        throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
+    const int k = std::min<int>(k_max, triangleIndices.size());
     std::partial_sort(triangleIndices.begin(), triangleIndices.begin()+k, triangleIndices.end(), sorter); 
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
 }
