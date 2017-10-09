@@ -115,7 +115,7 @@ Build(ImpulseResponseParser_Ptr &parser)
         const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
         const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
                                         SimWorld::rasterizer.rasterize(meshCentroid_w)); 
-        const int divs = (int)std::ceil(
+        const int divs = (int)std::ceil( // FIXME debug
                 meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
                 )*2 + 20 + (int)(_simulatorSettings->PML_width);
         //const int divs = (int)std::ceil( 
@@ -282,8 +282,8 @@ StepWorld()
     // monopole vibration
     //const REAL omega = 2.0*M_PI*1500.0; 
     //const REAL r0 = 0.05; 
-    //const REAL dr = 0.00025; 
-    //auto objects = _objectCollections->GetRigidSoundObjects(); 
+    //const REAL dr = 0.01; 
+    //auto objects = _objectCollections->GetRigidObjects(); 
     //for (auto &m : objects)
     //{
     //    const REAL sdot = -dr*omega/r0*cos(omega*_state.time); 
@@ -293,11 +293,11 @@ StepWorld()
     //}
     // dipole vibration
     const REAL omega = 2.0*M_PI*1500.0; 
-    const REAL scale = omega*omega*0.00025;
+    const REAL scale = omega*omega*0.01;
     auto objects = _objectCollections->GetRigidObjects(); 
     for (auto &m : objects)
     {
-        //m.second->ApplyTranslation(0., 0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale);
+        m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
         std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
     }
 #endif
