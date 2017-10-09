@@ -68,6 +68,7 @@ struct PML_WaveSolver_Settings
         RASTERIZE = 0,
         PIECEWISE_CONSTANT = 1, 
         LINEAR_MLS = 2, 
+        FULLY_COUPLED = 3
     } boundaryHandlingType;
 };
 using PML_WaveSolver_Settings_Ptr = std::shared_ptr<PML_WaveSolver_Settings>; 

@@ -293,6 +293,7 @@ class MAC_Grid
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
         std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
         std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
+        std::unordered_map<int, std::set<GhostCell_Key>>  _ghostCellsTree; 
         std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr> _boundaryGhostCells; 
         using GhostCellType         = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
         using BoundaryGhostCellType = std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr>; 
@@ -570,9 +571,11 @@ class MAC_Grid
         inline void FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal); 
 
         // fill the Vandermonde matrix 
+        inline void FillVandermondeRegularS(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V, const Vector3d &origin, const REAL &h);
         inline void FillVandermondeRegular (const Vector3d &cellPosition, Eigen::VectorXd &V);
         inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
+        inline void FillVandermondeBoundaryS(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V, const Vector3d &origin, const REAL &h);
         void ClearUnusedCache(); 
 
     friend std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid); 

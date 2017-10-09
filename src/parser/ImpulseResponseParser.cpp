@@ -299,6 +299,8 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE;
     else if (boundaryHandling.compare("linear_mls")==0)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS;
+    else if (boundaryHandling.compare("fully_coupled")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED;
     else
         throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
