@@ -404,11 +404,11 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     Vector3d projectedPoint; // object space
     if (startFromTriangle<0) 
     {
-        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint, 100); 
     }
     else
     {
-        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint, 0.99, 100); 
         // uncomment if want to test between graph-search and kdtree-search results
         //int graph = closestTriangleIndex; 
         //const Vector3d bpGraph = boundaryPoint; 
@@ -424,12 +424,11 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
     if (fabs(distanceTravelled) < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
-        std::cerr << "**WARNING** distance smaller than tolerance\n";
         // get closest triangle normal and push manually
         Vector3d t_normal = _mesh->triangle_normal(closestTriangleIndex); 
         t_normal.normalize(); 
-        reflectedPoint = originalPointObject + t_normal * TRI_NORMAL_PUSH_DIST; 
-        distanceTravelled = (TRI_NORMAL_PUSH_DIST/2.0); 
+        reflectedPoint = originalPointObject + t_normal * 2.0*KD_NEAREST_TOLERANCE; 
+        distanceTravelled = -KD_NEAREST_TOLERANCE; 
 
         // transform
         reflectedPoint = ObjectToWorldPoint(reflectedPoint); 
@@ -439,7 +438,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     }
     else
     {
-        const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
+        const bool insideBoundary = (distanceTravelled < 0 ? true : false);
         if (insideBoundary)
         {
             erectedNormal = boundaryPoint - originalPoint; // world space
@@ -450,7 +449,15 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
             erectedNormal =-boundaryPoint + originalPoint; // world space
             reflectedPoint = originalPoint + erectedNormal; 
         }
-        erectedNormal.normalize();  // keep the behavior same as the distance field based query
+        erectedNormal.normalize();
+        // check the normal compared to the triangle normal, they should always be pointing
+        // in the same direction
+        const Vector3d t_normal = ObjectToWorldVector(_mesh->triangle_normal(closestTriangleIndex)); 
+        const REAL sgn = erectedNormal.dotProduct(t_normal)/t_normal.norm(); 
+        if (sgn <= 0.0) 
+        {
+            throw std::runtime_error("**ERROR** triangle normal and erected normal are in the opposite direction."); 
+        }
     }
 
 #endif // if 0
@@ -460,9 +467,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 #pragma omp critical
 #endif
     {
-        //const Vector3d &vertex = closestPoint; 
-        //const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
-        //const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
         // write these special points for debugging purpose 
         _debugArrowStart.push_back(originalPoint); 
         _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
