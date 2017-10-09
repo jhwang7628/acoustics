@@ -835,7 +835,7 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
         // the sign of t tells which side is the point wrt plane
         const T t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
         projectedPointBuffer = queryPoint + triangleNormal * t;
-        const T sgn = (t >= 0.0 ? 1.0 : -1.0);
+        const T sgn = (t >= 0.0 ? -1.0 : 1.0);
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
