@@ -1093,12 +1093,13 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
         REAL weightedPressure, bcPressure = 0.0; 
+        RigidObjectPtr object; 
+        int boundaryObject, closestTriangle;
+        Tuple3ui triangle; 
         if (gc->type == 0 || gc->type == 2) // solid or shell objects
         {
-            int boundaryObject;
             const bool success = _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
-            int closestTriangle;
-            auto object = _objects->GetPtr(boundaryObject); 
+            object = _objects->GetPtr(boundaryObject); 
             if (   gc->cache 
                 && gc->cache->tid.objectID == boundaryObject)
             {
@@ -1115,7 +1116,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 gc->cache->tid.objectID = boundaryObject;
                 gc->cache->tid.triangleID = closestTriangle; 
             }
-            const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
+            triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
             for (int ii=0; ii<3; ++ii)
                 bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
             bcPressure /= 3.0; 
@@ -1157,32 +1158,49 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         }
         else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
         {
-            for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+            if (gc->type == 1)
             {
-                if (!_isBulkCell.at(*it))
-                    it = neighbours.erase(it); 
-                else
-                    ++it; 
+                gc->pressure = p_rasterize; 
             }
-            if (neighbours.size() != 0) // use closest neighbours for piecewise constant approx
+            else
             {
-                std::vector<int>::iterator bestIt; 
-                REAL min_d2 = std::numeric_limits<REAL>::max();
-                for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
-                {
-                    const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
-                    if (d2 < min_d2)
-                    {
-                        bestIt = it; 
-                        min_d2 = d2; 
-                    }
-                }
-                p_r = p(*bestIt, 0);
+                // first get grad(p)=-rho*acceleration
+                const REAL &h = _waveSolverSettings->cellSize; 
+                Vector3d grad_p;
+                for (int ii=0; ii<3; ++ii)
+                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+                grad_p *= (-density/3.0); 
+                const Vector3d cell_n = gc->CellNormal(); 
+                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+                gc->pressure = p_rasterize - h*grad_p_n; 
             }
-            else // in this case, we don't have enough information, set this ghost cell to be its neighbour
-            {
-                p_r = p_rasterize;
-            }
+
+            //for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+            //{
+            //    if (!_isBulkCell.at(*it))
+            //        it = neighbours.erase(it); 
+            //    else
+            //        ++it; 
+            //}
+            //if (neighbours.size() != 0) // use closest neighbours for piecewise constant approx
+            //{
+            //    std::vector<int>::iterator bestIt; 
+            //    REAL min_d2 = std::numeric_limits<REAL>::max();
+            //    for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+            //    {
+            //        const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+            //        if (d2 < min_d2)
+            //        {
+            //            bestIt = it; 
+            //            min_d2 = d2; 
+            //        }
+            //    }
+            //    p_r = p(*bestIt, 0);
+            //}
+            //else // in this case, we don't have enough information, set this ghost cell to be its neighbour
+            //{
+            //    p_r = p_rasterize;
+            //}
         }
         else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS)
         {
@@ -1250,7 +1268,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                 if (n_idx == c_idx) 
                 {
                     FillVandermondeBoundaryS(nn, boundaryPoint, erectedNormal, V, origin, h); 
-                    r(nn) = bcPressure*h/2.0; // scaling due to coordinate transformation
+                    r(nn) = bcPressure*h; // scaling due to coordinate transformation
                     s_i = nn;
                 }
                 else if (!_isGhostCell.at(n_idx))
@@ -1286,6 +1304,34 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             V.transposeInPlace(); 
             w = V.fullPivLu().solve(v); 
 
+            Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
+                    Eigen::ComputeFullU | Eigen::ComputeFullV);
+            double cond = svd.singularValues()(0)
+                        / svd.singularValues()(svd.singularValues().size()-1);
+
+            if (cond>25 && s_i != -1)
+            {
+                const REAL &h = _waveSolverSettings->cellSize; 
+                Vector3d grad_p;
+                for (int ii=0; ii<3; ++ii)
+                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+                grad_p *= (-density/3.0); 
+                const Vector3d cell_n = gc->CellNormal(); 
+                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+                REAL pg = p_rasterize - h*grad_p_n; 
+
+                assert(s_i != -1); 
+                w.setZero(); 
+                r.setZero(); 
+                r(s_i) = -pg; 
+                s_k.clear(); 
+                s_u.clear(); 
+            }
+            else
+            {
+                w = svd.solve(v); 
+            }
+
             {
                 bool print = false; 
                 for (int nn=0; nn<8; ++nn)
@@ -1297,10 +1343,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                if (print)
                {
                    // compute condition number
-                   Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
-                           Eigen::ComputeFullU | Eigen::ComputeFullV);
-                   double cond = svd.singularValues()(0)
-                               / svd.singularValues()(svd.singularValues().size()-1);
 
                    std::cout << std::endl; 
                    std::cout << "gc->position = " << gc->position << std::endl;
@@ -1317,7 +1359,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                              << "w_lu = "     << w.transpose() << std::endl; 
                    Eigen::VectorXd svdw = svd.solve(v);
                    std::cout << "w_svd = "    << svdw.transpose() << std::endl; 
-                   throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
+                   //throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
                }
             }
 
@@ -1343,12 +1385,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         {
             throw std::runtime_error("**ERROR** should never happen");
         }
-        // after processing, if difference between interpolation and rasterize is over certain threshold, clamp it
-        if (abs(p_rasterize) > SMALL_NUM && abs((p_r - p_rasterize)/p_rasterize) > INTERPOLATION_DIFF_TOL)
-        {
-            p_r = p_rasterize; 
-        }
-        gc->pressure = p_r + weightedPressure;
+        if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
+            gc->pressure = p_r + weightedPressure;
     }
     if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED)
         return; 
@@ -1369,6 +1407,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     std::cout << "norm(rhs)        = " << rhsGC.norm()        << std::endl; 
     std::cout << "#iterations      = " << solver.iterations() << std::endl; 
     std::cout << "#estimated error = " << solver.error()      << std::endl; 
+    std::cout << "sol_max ="   << slnGC.maxCoeff() 
+              << "; sol_min =" << slnGC.minCoeff() << std::endl;
     //Eigen::SparseLU<Eigen::SparseMatrix<REAL, Eigen::ColMajor> > solver; 
     //solver.analyzePattern(matGC); 
     //solver.factorize(matGC); 
@@ -1377,9 +1417,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     {
         auto &gc = m.second; 
         gc->pressure = slnGC(mapGC.at(gc->MakeKey()));
-        std::cout << "gc_pos = " << gc->position << "; " << "gc_pressure = " << gc->pressure << std::endl;
     }
-    std::cout << "sol_max =" << slnGC.maxCoeff() << "; sol_min =" << slnGC.minCoeff() << std::endl;
 }
 
 //##############################################################################
@@ -4116,7 +4154,8 @@ void MAC_Grid::FillVandermondeRegularS(const int &row, const Vector3d &cellPosit
 {
     Vector3d np = cellPosition; 
     np -= origin; 
-    np /= (h/2.0); 
+    np /= (h); 
+    np += 0.5;
     FillVandermondeRegular(row, np, V); 
 }
 
@@ -4172,7 +4211,8 @@ void MAC_Grid::FillVandermondeBoundaryS(const int &row, const Vector3d &boundary
 {
     Vector3d np = boundaryPosition; 
     np -= origin; 
-    np /= (h/2.0); 
+    np /= (h); 
+    np += 0.5; 
 
     FillVandermondeBoundary(row, np, boundaryNormal, V); 
 }

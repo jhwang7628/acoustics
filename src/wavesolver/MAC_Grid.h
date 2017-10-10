@@ -151,6 +151,12 @@ class MAC_Grid
                 return GhostCell::MakeKey_Boundary(ownerSolverId, neighbourSolverId, 
                                                    ownerCell, neighbourCell); 
             }
+            Vector3d CellNormal()
+            {
+                Vector3d n; 
+                n[abs(topology)-1] = (topology>0 ? 1.0 : -1.0); 
+                return n;
+            }
         };
         using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
         using  GhostCell_Ptr = std::shared_ptr<GhostCell>; 
