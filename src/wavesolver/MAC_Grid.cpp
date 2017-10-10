@@ -1232,7 +1232,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             std::set<int>               s_k;      // set of known   cells in terms of local idx
             std::map<int,GhostCell_Key> s_u;      // map of unknown cells in terms of local idx
 
-            // FIXME debug START
+            // prepare for the coordinate transformation to
+            // make the interpolation happens in [-1,1]^3
             Vector3d origin(0.,0.,0.); 
             for (int nn=0; nn<8; ++nn)
             {
@@ -1240,25 +1241,20 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             }
             origin /= 8.0;
             const REAL h = _waveSolverSettings->cellSize; 
-            // FIXME debug END
-
 
             const int &c_idx = gc->ownerCell; 
-            //FillVandermondeRegularS(0, imagePoint, v);
             FillVandermondeRegularS(0, imagePoint, v, origin, h);
             for (int nn=0; nn<8; ++nn)
             {
                 const int n_idx = neighbours.at(nn); 
                 if (n_idx == c_idx) 
                 {
-                    //FillVandermondeBoundary(nn, boundaryPoint, erectedNormal, V); 
                     FillVandermondeBoundaryS(nn, boundaryPoint, erectedNormal, V, origin, h); 
-                    r(nn) = bcPressure;  
+                    r(nn) = bcPressure*h/2.0; // scaling due to coordinate transformation
                     s_i = nn;
                 }
                 else if (!_isGhostCell.at(n_idx))
                 {
-                    //FillVandermondeRegular( nn, pressureFieldPosition(n_idx), V); 
                     FillVandermondeRegularS( nn, pressureFieldPosition(n_idx), V, origin, h); 
                     r(nn) = p(n_idx, 0); 
                     s_k.insert(nn); 
@@ -1282,7 +1278,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                             min_key = key; 
                         }
                     }
-                    //FillVandermondeRegular( nn, _ghostCells.at(min_key)->position, V); 
                     FillVandermondeRegularS( nn, _ghostCells.at(min_key)->position, V, origin, h); 
                     s_u[nn] = min_key; 
                 }
@@ -1299,50 +1294,31 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
                         print = true; 
                 }
 #pragma omp critical
-                if (print || gc->ownerCell==798038)
-                {
-                    // compute condition number
-                    Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
-                            Eigen::ComputeFullU | Eigen::ComputeFullV);
-                    double cond = svd.singularValues()(0)
-                                / svd.singularValues()(svd.singularValues().size()-1);
+               if (print)
+               {
+                   // compute condition number
+                   Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
+                           Eigen::ComputeFullU | Eigen::ComputeFullV);
+                   double cond = svd.singularValues()(0)
+                               / svd.singularValues()(svd.singularValues().size()-1);
 
-                    std::cout << std::endl; 
-                    std::cout << "gc->position = " << gc->position << std::endl;
-                    std::cout << "reflected point = " << imagePoint << std::endl; 
-                    std::cout << "boundary point = " << boundaryPoint << std::endl; 
-                    std::cout << "distance = " << distance << std::endl; 
-                    std::cout << "v = "        << v.transpose() << std::endl; 
-                    std::cout << "V = "        << V << std::endl; 
-                    std::cout << "cond(V) = "  << cond << std::endl; 
-                    Eigen::FullPivLU<Eigen::MatrixXd> lu(V);
-                    std::cout << "rank(V) = "  << lu.rank() << std::endl;
-                    std::cout << "max(w) = "   << w.maxCoeff() 
-                              << "; min(w) = " << w.minCoeff()  << "\n"
-                              << "w_lu = "     << w.transpose() << std::endl; 
-                    Eigen::VectorXd svdw = svd.solve(v);
-                    std::cout << "w_svd = "    << svdw.transpose() << std::endl; 
-
-                    for (const auto &m : s_u)
-                    {
-                        V.transposeInPlace();
-                        FillVandermondeRegular(m.first, _pressureField.cellPosition(_ghostCells.at(m.second)->ownerCell), V); 
-                        V.transposeInPlace();
-                    }
-                    if (s_i != -1)
-                    {
-                        V.transposeInPlace();
-                        FillVandermondeRegular(s_i, cellPosition, V);
-                        V.transposeInPlace();
-                    }
-                    Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd2(V,
-                            Eigen::ComputeFullU | Eigen::ComputeFullV);
-                    std::cout << "V = "        << V << std::endl; 
-                    cond = svd2.singularValues()(0)
-                         / svd2.singularValues()(svd2.singularValues().size()-1);
-                    std::cout << "altered cond(V) = "  << cond << std::endl; 
-                    //throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
-                }
+                   std::cout << std::endl; 
+                   std::cout << "gc->position = " << gc->position << std::endl;
+                   std::cout << "reflected point = " << imagePoint << std::endl; 
+                   std::cout << "boundary point = " << boundaryPoint << std::endl; 
+                   std::cout << "distance = " << distance << std::endl; 
+                   std::cout << "v = "        << v.transpose() << std::endl; 
+                   std::cout << "V = "        << V << std::endl; 
+                   std::cout << "cond(V) = "  << cond << std::endl; 
+                   Eigen::FullPivLU<Eigen::MatrixXd> lu(V);
+                   std::cout << "rank(V) = "  << lu.rank() << std::endl;
+                   std::cout << "max(w) = "   << w.maxCoeff() 
+                             << "; min(w) = " << w.minCoeff()  << "\n"
+                             << "w_lu = "     << w.transpose() << std::endl; 
+                   Eigen::VectorXd svdw = svd.solve(v);
+                   std::cout << "w_svd = "    << svdw.transpose() << std::endl; 
+                   throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
+               }
             }
 
             // form linear system 
@@ -4197,6 +4173,7 @@ void MAC_Grid::FillVandermondeBoundaryS(const int &row, const Vector3d &boundary
     Vector3d np = boundaryPosition; 
     np -= origin; 
     np /= (h/2.0); 
+
     FillVandermondeBoundary(row, np, boundaryNormal, V); 
 }
 
