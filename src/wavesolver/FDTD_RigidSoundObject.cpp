@@ -451,6 +451,33 @@ SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const
 }
 
 //##############################################################################
+// This function samples modal acceleration given mesh vertex
+//##############################################################################
+Vector3d FDTD_RigidSoundObject::
+SampleModalAcceleration(const int &vertexID, const REAL &sampleTime)
+{
+    // evaluate sample values
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
+    {
+        if (!_modalAccEncoder)
+            sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c); 
+        else
+            sampledValue = _modalAccEncoder->Decode(vertexID); 
+    }
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+    {
+        sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c_plus); 
+    }
+    else
+    {
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    }
+    const Vector3d n = ObjectToWorldVector(_mesh->normal(vertexID)); 
+    return n*sampledValue; 
+}
+
+//##############################################################################
 // This function estimates the contact time scale for acceleration noises
 // between object a and constraint (such as ground). See Eq (7-8) in ref:
 //  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound

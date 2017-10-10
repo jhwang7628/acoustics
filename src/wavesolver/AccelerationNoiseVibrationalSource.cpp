@@ -50,6 +50,23 @@ ComputeSDot(const ImpulseSeriesObject::ImpactRecord &impulse, const REAL &time)
 REAL AccelerationNoiseVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
+    return Evaluate(0, normal, time);
+}
+
+//##############################################################################
+//##############################################################################
+REAL AccelerationNoiseVibrationalSource::
+Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
+{
+    const Vector3d a = Evaluate(vertexID, time);
+    return a.dotProduct(vertexNormal);
+}
+
+//##############################################################################
+//##############################################################################
+Vector3d AccelerationNoiseVibrationalSource::
+Evaluate(const int &vertexID, const REAL &time)
+{
     std::vector<ImpulseSeriesObject::ImpactRecord> impactRecords; 
     _modalObjectOwner->GetImpulseWithinSupport(time, impactRecords); 
 
@@ -68,16 +85,8 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         const Vector3d alpha = _modalObjectOwner->PremultiplyInvInertiaTensor(r.crossProduct(J)) * (M_PI*S) / (2.0*impulse.supportLength); 
         acceleration += alpha.crossProduct(r); 
     }
-    const REAL a_n = _modalObjectOwner->ObjectToWorldVector(acceleration).dotProduct(normal); 
-    return a_n;
-}
-
-//##############################################################################
-//##############################################################################
-REAL AccelerationNoiseVibrationalSource::
-Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
-{
-    return Evaluate(Vector3d(), vertexNormal, time);
+    const Vector3d a = _modalObjectOwner->ObjectToWorldVector(acceleration); 
+    return a;
 }
 
 //##############################################################################

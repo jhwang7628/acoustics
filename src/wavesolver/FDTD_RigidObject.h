@@ -136,6 +136,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         virtual bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
         REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle=-1); 
         REAL EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
+        Vector3d EvaluateBoundaryAcceleration(const int &vertexID, const REAL &time); 
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
         int ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);

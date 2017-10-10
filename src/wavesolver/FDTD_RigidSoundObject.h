@@ -117,6 +117,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime, const int &hintTriangle); 
         REAL SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &sampleTime); 
+        Vector3d SampleModalAcceleration(const int &vertexID, const REAL &sampleTime); 
 
         REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a); 
         REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a); 
