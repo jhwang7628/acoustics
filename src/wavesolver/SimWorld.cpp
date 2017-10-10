@@ -280,26 +280,26 @@ StepWorld()
     //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
     //}
     // monopole vibration
-    //const REAL omega = 2.0*M_PI*1500.0; 
-    //const REAL r0 = 0.05; 
-    //const REAL dr = 0.01; 
-    //auto objects = _objectCollections->GetRigidObjects(); 
-    //for (auto &m : objects)
-    //{
-    //    const REAL sdot = -dr*omega/r0*cos(omega*_state.time); 
-    //    std::cout << "scaling = " << 1.0+sdot*_simulatorSettings->timeStepSize << std::endl;
-    //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
-    //    m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize); 
-    //}
-    // dipole vibration
     const REAL omega = 2.0*M_PI*1500.0; 
-    const REAL scale = omega*omega*0.01;
+    const REAL r0 = 0.05; 
+    const REAL dr = 0.01; 
     auto objects = _objectCollections->GetRigidObjects(); 
     for (auto &m : objects)
     {
-        m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
+        const REAL sdot = -dr*omega/r0*cos(omega*_state.time); 
+        std::cout << "scaling = " << 1.0+sdot*_simulatorSettings->timeStepSize << std::endl;
         std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+        m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize); 
     }
+    // dipole vibration
+    //const REAL omega = 2.0*M_PI*1500.0; 
+    //const REAL scale = omega*omega*0.01;
+    //auto objects = _objectCollections->GetRigidObjects(); 
+    //for (auto &m : objects)
+    //{
+    //    m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
+    //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+    //}
 #endif
     std::cout << "================ Step STOP ================\n";
 
