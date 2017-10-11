@@ -12,7 +12,10 @@ cmake_minimum_required(VERSION 3.0.2)
 # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
-SET(CMAKE_CXX_FLAGS "-std=c++14")
+# set c++14: https://stackoverflow.com/questions/40795474/qt-5-7-adding-std-gnu11-to-my-compiler-flags-clobbering-std-c14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
