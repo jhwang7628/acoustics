@@ -293,12 +293,8 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->fastForwardToEarliestImpact = (queryOptionalInt(solverNode, "fast_forward_to_earliest_impact", "0")==1) ? true : false; 
     settings->fastForwardToEventTime  = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0); 
     const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling", "rasterize");
-    if (boundaryHandling.compare("piecewise_constant")==0)
-        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT;
-    else if (boundaryHandling.compare("rasterize")==0)
+    if (boundaryHandling.compare("rasterize")==0)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE;
-    else if (boundaryHandling.compare("linear_mls")==0)
-        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS;
     else if (boundaryHandling.compare("fully_coupled")==0)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED;
     else

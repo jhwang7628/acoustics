@@ -269,7 +269,7 @@ StepWorld()
 
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
-#if 0
+#if 1
     UpdateObjectState(_state.time); 
 #else
     // simple translation

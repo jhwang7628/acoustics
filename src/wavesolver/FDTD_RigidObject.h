@@ -32,12 +32,6 @@ class FDTD_RigidObject : public FDTD_MovableObject
         struct OptionalAttributes
         {
             bool isFixed=false; 
-            enum BoundaryHandling
-            {
-                RASTERIZE = 0,
-                PIECEWISE_CONSTANT = 1, 
-                LINEAR_MLS = 2, 
-            } boundaryHandlingType;
         };
 
     protected: 
