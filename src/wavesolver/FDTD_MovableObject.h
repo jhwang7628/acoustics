@@ -16,6 +16,7 @@ enum ObjectType
 {
     RIGID_SOUND_OBJ = 0, 
     SHELL_OBJ, 
+    PLANE,
     SOURCE
 };
 

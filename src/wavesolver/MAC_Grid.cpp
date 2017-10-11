@@ -1085,318 +1085,449 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         if (ii<_ghostCells.size()) key_gc  =  gcIndices.at(ii); 
         else                       key_bgc = bgcIndices.at(ii - _ghostCells.size());
         auto &gc = (ii<_ghostCells.size() ? _ghostCells.at(key_gc) : _boundaryGhostCells.at(key_bgc)); 
-        //const int child_pos = _ghostCellChildArrayPositions.at(ghost_cell_idx); 
         const Vector3d &cellPosition = gc->position; 
-        bool occupiedByObject = (gc->type == 0); 
+
+        // find neighbour pressure as reference
+        REAL p_neig; 
+        if (!gc->boundary) p_neig = p(gc->neighbourCell, 0); 
+        else               gc->interface->GetOtherCellPressure(*grid_id, gc->ownerCell, p_neig);
+
+        // if its plane constraint, its always perfectly reflecting
+        if (gc->type == 1) 
+        {
+            const int row = mapGC.at(key_gc); 
+            threadGCEntries.at(thread_idx).push_back(Triplet(row, row, -1.0)); // A(r,r) = 1.0
+#pragma omp critical
+            rhsGC(row) = -p_neig; 
+            continue; 
+        }
             
-        // find reflection point, normal etc
+        // find the sample object, triangle and reflection point
+        int boundaryObject, closestTriangle;
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
-        REAL weightedPressure, bcPressure = 0.0; 
-        RigidObjectPtr object; 
-        int boundaryObject, closestTriangle;
-        Tuple3ui triangle; 
-        if (gc->type == 0 || gc->type == 2) // solid or shell objects
+        _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
+        auto object = _objects->GetPtr(boundaryObject); 
+        if (   gc->cache 
+            && gc->cache->tid.objectID == boundaryObject)
         {
-            const bool success = _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
-            object = _objects->GetPtr(boundaryObject); 
-            if (   gc->cache 
-                && gc->cache->tid.objectID == boundaryObject)
-            {
-                closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
-                                                                 distance, gc->cache->tid.triangleID); 
-                gc->cache->tid.triangleID = closestTriangle; 
-            } 
-            else 
-            {
-                closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
-                                                                 distance); 
-                if (!gc->cache) 
-                    gc->cache = std::make_unique<GhostCell_Cache>(); 
-                gc->cache->tid.objectID = boundaryObject;
-                gc->cache->tid.triangleID = closestTriangle; 
-            }
-            triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
-            for (int ii=0; ii<3; ++ii)
-                bcPressure += object->EvaluateBoundaryAcceleration(triangle[ii], erectedNormal, simulationTime) * (-density); 
-            bcPressure /= 3.0; 
-            const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? 
-                    -2.0*fabs(distance) : -fabs(distance));  // finite-difference weight
-            weightedPressure = bcPressure * weights; 
-        }
-        else if (gc->type == 1)
+            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
+                                                             distance, gc->cache->tid.triangleID); 
+            gc->cache->tid.triangleID = closestTriangle; 
+        } 
+        else 
         {
-            FDTD_PlaneConstraint_Ptr constraint; 
-            _objects->LowestConstraintDistance(cellPosition, distance, constraint);  // distance is unsigned
-            assert(constraint); 
-            erectedNormal = constraint->Normal(); 
-            imagePoint = cellPosition + erectedNormal*2.0*distance; 
-            weightedPressure = 0.0;
+            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
+                                                             distance); 
+            if (!gc->cache) 
+                gc->cache = std::make_unique<GhostCell_Cache>(); 
+            gc->cache->tid.objectID = boundaryObject;
+            gc->cache->tid.triangleID = closestTriangle; 
         }
+        const Tuple3ui triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
+
+        // sample the acceleration and compute the pressure at ghost cell position if
+        // rasterization is used
+        const REAL &h = _waveSolverSettings->cellSize; 
+        Vector3d grad_p;
+        for (int ii=0; ii<3; ++ii)
+            grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+        grad_p *= (-density/3.0); 
+        const Vector3d cell_n = gc->CellNormal(); 
+        const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+        const REAL pg = p_neig - h*grad_p_n; 
+ 
+        const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ? 
+                -2.0*fabs(distance) : -fabs(distance));
+        REAL weightedPressure = grad_p_n*weights;  // p_r - p_g = grad_n(p) * h
 
         // get the box enclosing the image point; 
         IntArray neighbours; 
         neighbours.reserve(8); 
         _pressureField.enclosingNeighbours(imagePoint, neighbours); 
 
-        REAL p_rasterize; 
-        if (!gc->boundary)
+        // figure out whether high-order boundary is needed
+        // if not, then pressure(this ghost cell) = pg
+        bool high_order = 
+            (neighbours.size() == 8 ) && 
+            (object->Type() != SHELL_OBJ) &&
+            (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED);
+
+        if (!high_order)
         {
-            p_rasterize = p(gc->neighbourCell, 0); 
-        }
-        else 
-        {
-            REAL tmp; 
-            gc->interface->GetOtherCellPressure(*grid_id, gc->ownerCell, tmp);
-            p_rasterize = tmp;
-        }
-
-        REAL p_r = std::numeric_limits<REAL>::max(); 
-        if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE)
-        {
-            p_r = p_rasterize; 
-        }
-        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
-        {
-            if (gc->type == 1)
-            {
-                gc->pressure = p_rasterize; 
-            }
-            else
-            {
-                // first get grad(p)=-rho*acceleration
-                const REAL &h = _waveSolverSettings->cellSize; 
-                Vector3d grad_p;
-                for (int ii=0; ii<3; ++ii)
-                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
-                grad_p *= (-density/3.0); 
-                const Vector3d cell_n = gc->CellNormal(); 
-                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
-                gc->pressure = p_rasterize - h*grad_p_n; 
-            }
-
-            //for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
-            //{
-            //    if (!_isBulkCell.at(*it))
-            //        it = neighbours.erase(it); 
-            //    else
-            //        ++it; 
-            //}
-            //if (neighbours.size() != 0) // use closest neighbours for piecewise constant approx
-            //{
-            //    std::vector<int>::iterator bestIt; 
-            //    REAL min_d2 = std::numeric_limits<REAL>::max();
-            //    for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
-            //    {
-            //        const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
-            //        if (d2 < min_d2)
-            //        {
-            //            bestIt = it; 
-            //            min_d2 = d2; 
-            //        }
-            //    }
-            //    p_r = p(*bestIt, 0);
-            //}
-            //else // in this case, we don't have enough information, set this ghost cell to be its neighbour
-            //{
-            //    p_r = p_rasterize;
-            //}
-        }
-        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS)
-        {
-            T_MLS mls; 
-            MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
-            std::vector<MLSPoint, P_ALLOCATOR> points; 
-            std::vector<MLSVal, V_ALLOCATOR> attributes; 
-            int rm_count = 0;
-            for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
-            {
-                if (!_isBulkCell.at(*it))
-                {
-                    it = neighbours.erase(it); 
-                    rm_count ++; 
-                }
-                else
-                {
-                    const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
-                    MLSVal val; 
-                    val << p(*it, 0);
-                    points.push_back(pt); 
-                    attributes.push_back(val); 
-                    ++it; 
-                }
-            }
-            if (neighbours.size() > 4)
-            {
-                //REAL condNum = 0.;
-                //const MLSVal mlsVal = mls.lookup(evalPt, points, attributes, (REAL)(-1), &condNum); 
-                const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
-                p_r = mlsVal(0, 0);
-            }
-            else // fall back to rasterize
-            {
-                p_r = p_rasterize; 
-            }
-        }
-        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED)
-        {
-            Eigen::MatrixXd V(8,8); // vandermonde matrix
-            Eigen::MatrixXd v(1,8); // eval point
-            Eigen::MatrixXd r(8,1); // rhs
-            Eigen::MatrixXd w(8,1); // weights
-            Eigen::MatrixXd c(8,1); // polynomial coefficients
-
-            int                         s_i = -1; // indicate whether self is involved
-            std::set<int>               s_k;      // set of known   cells in terms of local idx
-            std::map<int,GhostCell_Key> s_u;      // map of unknown cells in terms of local idx
-
-            // prepare for the coordinate transformation to
-            // make the interpolation happens in [-1,1]^3
-            Vector3d origin(0.,0.,0.); 
-            for (int nn=0; nn<8; ++nn)
-            {
-                origin += _pressureField.cellPosition(neighbours.at(nn));
-            }
-            origin /= 8.0;
-            const REAL h = _waveSolverSettings->cellSize; 
-
-            const int &c_idx = gc->ownerCell; 
-            FillVandermondeRegularS(0, imagePoint, v, origin, h);
-            for (int nn=0; nn<8; ++nn)
-            {
-                const int n_idx = neighbours.at(nn); 
-                if (n_idx == c_idx) 
-                {
-                    FillVandermondeBoundaryS(nn, boundaryPoint, erectedNormal, V, origin, h); 
-                    r(nn) = bcPressure*h; // scaling due to coordinate transformation
-                    s_i = nn;
-                }
-                else if (!_isGhostCell.at(n_idx))
-                {
-                    FillVandermondeRegularS( nn, pressureFieldPosition(n_idx), V, origin, h); 
-                    r(nn) = p(n_idx, 0); 
-                    s_k.insert(nn); 
-                }
-                else 
-                {
-                    if (IsPressureCellSolid(n_idx))
-                        throw std::runtime_error("**ERROR** solid!");
-                    // get nearest ghost cells to form interpolator
-                    if (_ghostCellsTree.at(n_idx).size() == 0) 
-                        throw std::runtime_error("**ERROR** ghost cell pressure update failed due to insufficient children");
-                    REAL          min_d2  = std::numeric_limits<REAL>::max(); 
-                    GhostCell_Key min_key; 
-                    for (auto &key : _ghostCellsTree.at(n_idx))
-                    {
-                        auto &gc_n = _ghostCells.at(key); // neighbour ghost cells
-                        const REAL d2 = (gc_n->position - imagePoint).normSqr();
-                        if (d2 < min_d2)
-                        {
-                            min_d2  = d2; 
-                            min_key = key; 
-                        }
-                    }
-                    FillVandermondeRegularS( nn, _ghostCells.at(min_key)->position, V, origin, h); 
-                    s_u[nn] = min_key; 
-                }
-            }
-            v.transposeInPlace(); 
-            V.transposeInPlace(); 
-            w = V.fullPivLu().solve(v); 
-
-            Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
-                    Eigen::ComputeFullU | Eigen::ComputeFullV);
-            double cond = svd.singularValues()(0)
-                        / svd.singularValues()(svd.singularValues().size()-1);
-
-            if (cond>25 && s_i != -1)
-            {
-                const REAL &h = _waveSolverSettings->cellSize; 
-                Vector3d grad_p;
-                for (int ii=0; ii<3; ++ii)
-                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
-                grad_p *= (-density/3.0); 
-                const Vector3d cell_n = gc->CellNormal(); 
-                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
-                REAL pg = p_rasterize - h*grad_p_n; 
-
-                assert(s_i != -1); 
-                w.setZero(); 
-                r.setZero(); 
-                r(s_i) = -pg; 
-                s_k.clear(); 
-                s_u.clear(); 
-            }
-            else
-            {
-                w = svd.solve(v); 
-            }
-
-            {
-                bool print = false; 
-                for (int nn=0; nn<8; ++nn)
-                {
-                    if (!std::isfinite(w(nn)))// || EQUAL_FLOATS(distance, 0.0))
-                        print = true; 
-                }
-#pragma omp critical
-               if (print)
-               {
-                   // compute condition number
-
-                   std::cout << std::endl; 
-                   std::cout << "gc->position = " << gc->position << std::endl;
-                   std::cout << "reflected point = " << imagePoint << std::endl; 
-                   std::cout << "boundary point = " << boundaryPoint << std::endl; 
-                   std::cout << "distance = " << distance << std::endl; 
-                   std::cout << "v = "        << v.transpose() << std::endl; 
-                   std::cout << "V = "        << V << std::endl; 
-                   std::cout << "cond(V) = "  << cond << std::endl; 
-                   Eigen::FullPivLU<Eigen::MatrixXd> lu(V);
-                   std::cout << "rank(V) = "  << lu.rank() << std::endl;
-                   std::cout << "max(w) = "   << w.maxCoeff() 
-                             << "; min(w) = " << w.minCoeff()  << "\n"
-                             << "w_lu = "     << w.transpose() << std::endl; 
-                   Eigen::VectorXd svdw = svd.solve(v);
-                   std::cout << "w_svd = "    << svdw.transpose() << std::endl; 
-                   //throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
-               }
-            }
-
-            // form linear system 
-            REAL rhs = -weightedPressure; 
+            std::cout << "not high order!\n"; // FIXME debug
             const int row = mapGC.at(key_gc); 
-            threadGCEntries.at(thread_idx).push_back(Triplet(row, row, -1.0)); // A(r,r) = -1.0
-            for (const int  &i_k : s_k)
-                rhs -= w(i_k)*r(i_k); 
-            if (s_i != -1)
-                rhs -= w(s_i)*r(s_i); 
-            for (const auto &m_u : s_u)
-            {
-                const int i_k = m_u.first; 
-                const int col = mapGC.at(m_u.second); 
-                threadGCEntries.at(thread_idx).push_back(Triplet(row, col, w(i_k))); 
-            }
+            threadGCEntries.at(thread_idx).push_back(Triplet(row, row, -1.0)); // A(r,r) = 1.0
 #pragma omp critical
-            rhsGC(row) = rhs; 
-            p_r = 0.0;
+            rhsGC(row) = -pg; 
+            continue; 
+        }
+
+        // high-order needed, do complex solve
+        Eigen::MatrixXd V(8,8); // vandermonde matrix
+        Eigen::MatrixXd v(1,8); // eval point
+        Eigen::MatrixXd r(8,1); // rhs
+        Eigen::MatrixXd w(8,1); // weights
+        Eigen::MatrixXd c(8,1); // polynomial coefficients
+
+        int                         s_i = -1; // indicate whether self is involved
+        std::set<int>               s_k;      // set of known   cells in terms of local idx
+        std::map<int,GhostCell_Key> s_u;      // map of unknown cells in terms of local idx
+
+        // prepare for the coordinate transformation to
+        // make the interpolation happens in [-1,1]^3
+        Vector3d origin(0.,0.,0.); 
+        for (int nn=0; nn<8; ++nn)
+            origin += _pressureField.cellPosition(neighbours.at(nn));
+        origin /= 8.0;
+
+        const int &c_idx = gc->ownerCell; 
+        FillVandermondeRegularS(0, imagePoint, v, origin, h);
+        for (int nn=0; nn<8; ++nn)
+        {
+            const int n_idx = neighbours.at(nn); 
+            if (n_idx == c_idx) 
+            {
+                FillVandermondeBoundaryS(nn, boundaryPoint, erectedNormal, V, origin, h); 
+                r(nn) = grad_p_n*h; // scaling due to coordinate transformation
+                s_i = nn;
+            }
+            else if (!_isGhostCell.at(n_idx))
+            {
+                FillVandermondeRegularS( nn, pressureFieldPosition(n_idx), V, origin, h); 
+                r(nn) = p(n_idx, 0); 
+                s_k.insert(nn); 
+            }
+            else 
+            {
+                if (IsPressureCellSolid(n_idx))
+                    throw std::runtime_error("**ERROR** solid!");
+                // get nearest ghost cells to form interpolator
+                if (_ghostCellsTree.at(n_idx).size() == 0) 
+                    throw std::runtime_error("**ERROR** ghost cell pressure update failed due to insufficient children");
+                REAL          min_d2  = std::numeric_limits<REAL>::max(); 
+                GhostCell_Key min_key; 
+                for (auto &key : _ghostCellsTree.at(n_idx))
+                {
+                    auto &gc_n = _ghostCells.at(key); // neighbour ghost cells
+                    const REAL d2 = (gc_n->position - imagePoint).normSqr();
+                    if (d2 < min_d2)
+                    {
+                        min_d2  = d2; 
+                        min_key = key; 
+                    }
+                }
+                FillVandermondeRegularS( nn, _ghostCells.at(min_key)->position, V, origin, h); 
+                s_u[nn] = min_key; 
+            }
+        }
+        v.transposeInPlace(); 
+        V.transposeInPlace(); 
+
+        Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
+                Eigen::ComputeFullU | Eigen::ComputeFullV);
+        const double cond = svd.singularValues()(0)
+            / svd.singularValues()(svd.singularValues().size()-1);
+
+        // if the formed system is not good, fall back 
+        if (cond>CONDN_LIM && s_i != -1)
+        {
+            high_order = false; 
+            const REAL &h = _waveSolverSettings->cellSize; 
+            Vector3d grad_p;
+            for (int ii=0; ii<3; ++ii)
+                grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+            grad_p *= (-density/3.0); 
+            const Vector3d cell_n = gc->CellNormal(); 
+            const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+            REAL pg = p_neig - h*grad_p_n; 
+
+            assert(s_i != -1); 
+            w.setZero(); 
+            r.setZero(); 
+            s_k.clear(); 
+            s_u.clear(); 
+            weightedPressure = -pg;
         }
         else
         {
-            throw std::runtime_error("**ERROR** should never happen");
+            w = svd.solve(v); 
         }
-        if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
-            gc->pressure = p_r + weightedPressure;
+
+        // either way, w should be well-posed now
+        for (int nn=0; nn<8; ++nn)
+            assert(std::isfinite(w(nn)));
+
+        // form linear system 
+        REAL rhs = -weightedPressure; 
+        const int row = mapGC.at(key_gc); 
+        threadGCEntries.at(thread_idx).push_back(Triplet(row, row, -1.0)); // A(r,r) = -1.0
+        for (const int  &i_k : s_k)
+            rhs -= w(i_k)*r(i_k); 
+        if (s_i != -1)
+            rhs -= w(s_i)*r(s_i); 
+        for (const auto &m_u : s_u)
+        {
+            const int i_k = m_u.first; 
+            const int col = mapGC.at(m_u.second); 
+            threadGCEntries.at(thread_idx).push_back(Triplet(row, col, w(i_k))); 
+        }
+#pragma omp critical
+        rhsGC(row) = rhs; 
+
+        // FIXME debug
+        if (!high_order)
+            std::cout << "not high order!\n";
+
+
+
+
+
+
+
+
+//        REAL p_r = std::numeric_limits<REAL>::max(); 
+//        if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE)
+//        {
+//            p_r = p_neig; 
+//        }
+//        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
+//        {
+//            if (gc->type == 1)
+//            {
+//                gc->pressure = p_neig; 
+//            }
+//            else
+//            {
+//                // first get grad(p)=-rho*acceleration
+//                const REAL &h = _waveSolverSettings->cellSize; 
+//                Vector3d grad_p;
+//                for (int ii=0; ii<3; ++ii)
+//                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+//                grad_p *= (-density/3.0); 
+//                const Vector3d cell_n = gc->CellNormal(); 
+//                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+//                gc->pressure = p_neig - h*grad_p_n; 
+//            }
+//
+//            //for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+//            //{
+//            //    if (!_isBulkCell.at(*it))
+//            //        it = neighbours.erase(it); 
+//            //    else
+//            //        ++it; 
+//            //}
+//            //if (neighbours.size() != 0) // use closest neighbours for piecewise constant approx
+//            //{
+//            //    std::vector<int>::iterator bestIt; 
+//            //    REAL min_d2 = std::numeric_limits<REAL>::max();
+//            //    for (std::vector<int>::iterator it=neighbours.begin(); it!=neighbours.end(); ++it)
+//            //    {
+//            //        const REAL d2 = (imagePoint - _pressureField.cellPosition(*it)).normSqr(); 
+//            //        if (d2 < min_d2)
+//            //        {
+//            //            bestIt = it; 
+//            //            min_d2 = d2; 
+//            //        }
+//            //    }
+//            //    p_r = p(*bestIt, 0);
+//            //}
+//            //else // in this case, we don't have enough information, set this ghost cell to be its neighbour
+//            //{
+//            //    p_r = p_rasterize;
+//            //}
+//        }
+//        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::LINEAR_MLS)
+//        {
+//            T_MLS mls; 
+//            MLSPoint evalPt = Conversions::ToEigen(imagePoint); 
+//            std::vector<MLSPoint, P_ALLOCATOR> points; 
+//            std::vector<MLSVal, V_ALLOCATOR> attributes; 
+//            int rm_count = 0;
+//            for (std::vector<int>::iterator it = neighbours.begin(); it != neighbours.end(); ) 
+//            {
+//                if (!_isBulkCell.at(*it))
+//                {
+//                    it = neighbours.erase(it); 
+//                    rm_count ++; 
+//                }
+//                else
+//                {
+//                    const MLSPoint pt = Conversions::ToEigen(_pressureField.cellPosition(*it)); 
+//                    MLSVal val; 
+//                    val << p(*it, 0);
+//                    points.push_back(pt); 
+//                    attributes.push_back(val); 
+//                    ++it; 
+//                }
+//            }
+//            if (neighbours.size() > 4)
+//            {
+//                //REAL condNum = 0.;
+//                //const MLSVal mlsVal = mls.lookup(evalPt, points, attributes, (REAL)(-1), &condNum); 
+//                const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+//                p_r = mlsVal(0, 0);
+//            }
+//            else // fall back to rasterize
+//            {
+//                p_r = p_neig; 
+//            }
+//        }
+//        else if (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED)
+//        {
+//            Eigen::MatrixXd V(8,8); // vandermonde matrix
+//            Eigen::MatrixXd v(1,8); // eval point
+//            Eigen::MatrixXd r(8,1); // rhs
+//            Eigen::MatrixXd w(8,1); // weights
+//            Eigen::MatrixXd c(8,1); // polynomial coefficients
+//
+//            int                         s_i = -1; // indicate whether self is involved
+//            std::set<int>               s_k;      // set of known   cells in terms of local idx
+//            std::map<int,GhostCell_Key> s_u;      // map of unknown cells in terms of local idx
+//
+//            // prepare for the coordinate transformation to
+//            // make the interpolation happens in [-1,1]^3
+//            Vector3d origin(0.,0.,0.); 
+//            for (int nn=0; nn<8; ++nn)
+//            {
+//                origin += _pressureField.cellPosition(neighbours.at(nn));
+//            }
+//            origin /= 8.0;
+//            const REAL h = _waveSolverSettings->cellSize; 
+//
+//            const int &c_idx = gc->ownerCell; 
+//            FillVandermondeRegularS(0, imagePoint, v, origin, h);
+//            for (int nn=0; nn<8; ++nn)
+//            {
+//                const int n_idx = neighbours.at(nn); 
+//                if (n_idx == c_idx) 
+//                {
+//                    FillVandermondeBoundaryS(nn, boundaryPoint, erectedNormal, V, origin, h); 
+//                    r(nn) = bcPressure*h; // scaling due to coordinate transformation
+//                    s_i = nn;
+//                }
+//                else if (!_isGhostCell.at(n_idx))
+//                {
+//                    FillVandermondeRegularS( nn, pressureFieldPosition(n_idx), V, origin, h); 
+//                    r(nn) = p(n_idx, 0); 
+//                    s_k.insert(nn); 
+//                }
+//                else 
+//                {
+//                    if (IsPressureCellSolid(n_idx))
+//                        throw std::runtime_error("**ERROR** solid!");
+//                    // get nearest ghost cells to form interpolator
+//                    if (_ghostCellsTree.at(n_idx).size() == 0) 
+//                        throw std::runtime_error("**ERROR** ghost cell pressure update failed due to insufficient children");
+//                    REAL          min_d2  = std::numeric_limits<REAL>::max(); 
+//                    GhostCell_Key min_key; 
+//                    for (auto &key : _ghostCellsTree.at(n_idx))
+//                    {
+//                        auto &gc_n = _ghostCells.at(key); // neighbour ghost cells
+//                        const REAL d2 = (gc_n->position - imagePoint).normSqr();
+//                        if (d2 < min_d2)
+//                        {
+//                            min_d2  = d2; 
+//                            min_key = key; 
+//                        }
+//                    }
+//                    FillVandermondeRegularS( nn, _ghostCells.at(min_key)->position, V, origin, h); 
+//                    s_u[nn] = min_key; 
+//                }
+//            }
+//            v.transposeInPlace(); 
+//            V.transposeInPlace(); 
+//            w = V.fullPivLu().solve(v); 
+//
+//            Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::FullPivHouseholderQRPreconditioner> svd(V,
+//                    Eigen::ComputeFullU | Eigen::ComputeFullV);
+//            double cond = svd.singularValues()(0)
+//                        / svd.singularValues()(svd.singularValues().size()-1);
+//
+//            if (cond>25 && s_i != -1)
+//            {
+//                const REAL &h = _waveSolverSettings->cellSize; 
+//                Vector3d grad_p;
+//                for (int ii=0; ii<3; ++ii)
+//                    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+//                grad_p *= (-density/3.0); 
+//                const Vector3d cell_n = gc->CellNormal(); 
+//                const REAL grad_p_n = grad_p.dotProduct(cell_n); 
+//                REAL pg = p_neig - h*grad_p_n; 
+//
+//                assert(s_i != -1); 
+//                w.setZero(); 
+//                r.setZero(); 
+//                s_k.clear(); 
+//                s_u.clear(); 
+//                weightedPressure = pg;
+//            }
+//            else
+//            {
+//                w = svd.solve(v); 
+//            }
+//
+//            {
+//                bool print = false; 
+//                for (int nn=0; nn<8; ++nn)
+//                {
+//                    if (!std::isfinite(w(nn)))// || EQUAL_FLOATS(distance, 0.0))
+//                        print = true; 
+//                }
+//#pragma omp critical
+//               if (print)
+//               {
+//                   std::cout << std::endl; 
+//                   std::cout << "gc->position = " << gc->position << std::endl;
+//                   std::cout << "reflected point = " << imagePoint << std::endl; 
+//                   std::cout << "boundary point = " << boundaryPoint << std::endl; 
+//                   std::cout << "distance = " << distance << std::endl; 
+//                   std::cout << "v = "        << v.transpose() << std::endl; 
+//                   std::cout << "V = "        << V << std::endl; 
+//                   std::cout << "cond(V) = "  << cond << std::endl; 
+//                   Eigen::FullPivLU<Eigen::MatrixXd> lu(V);
+//                   std::cout << "rank(V) = "  << lu.rank() << std::endl;
+//                   std::cout << "max(w) = "   << w.maxCoeff() 
+//                             << "; min(w) = " << w.minCoeff()  << "\n"
+//                             << "w_lu = "     << w.transpose() << std::endl; 
+//                   Eigen::VectorXd svdw = svd.solve(v);
+//                   std::cout << "w_svd = "    << svdw.transpose() << std::endl; 
+//                   //throw std::runtime_error("**ERROR** w is infinite (inf or nan). check ghost cell computation");
+//               }
+//            }
+//
+//            // form linear system 
+//            REAL rhs = -weightedPressure; 
+//            const int row = mapGC.at(key_gc); 
+//            threadGCEntries.at(thread_idx).push_back(Triplet(row, row, -1.0)); // A(r,r) = -1.0
+//            for (const int  &i_k : s_k)
+//                rhs -= w(i_k)*r(i_k); 
+//            if (s_i != -1)
+//                rhs -= w(s_i)*r(s_i); 
+//            for (const auto &m_u : s_u)
+//            {
+//                const int i_k = m_u.first; 
+//                const int col = mapGC.at(m_u.second); 
+//                threadGCEntries.at(thread_idx).push_back(Triplet(row, col, w(i_k))); 
+//            }
+//#pragma omp critical
+//            rhsGC(row) = rhs; 
+//            p_r = 0.0;
+//        }
+//        else
+//        {
+//            throw std::runtime_error("**ERROR** should never happen");
+//        }
+//        if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::PIECEWISE_CONSTANT)
+//            gc->pressure = p_r + weightedPressure;
     }
-    if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED)
-        return; 
+//    if (boundaryType != PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED)
+//        return; 
 
     // actually fill the sparse matrix
     entGC.reserve(threadGCEntries.at(0).size()*N_max_threads); 
     for (const auto &v : threadGCEntries) 
-    {
         entGC.insert(entGC.end(), v.begin(), v.end()); 
-    }
     matGC.setFromTriplets(entGC.begin(), entGC.end()); 
     
     // linear solve
