@@ -124,6 +124,19 @@ Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 
 //##############################################################################
 //##############################################################################
+Vector3d WaterVibrationalSourceBubbles::
+Evaluate(const int &vertexID, const REAL &time)
+{
+    Vector3d vertexNormal = _surfaceMesh->normal(vertexID);
+
+    return Evaluate(_surfaceMesh->vertex(vertexID), vertexNormal, time, -1) * vertexNormal;
+
+    //throw std::runtime_error("**ERROR** Cannot sample water vibrational source using vertexID");
+    //return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
 REAL WaterVibrationalSourceBubbles::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
