@@ -293,6 +293,8 @@ void TestWavRead()
 //##############################################################################
 int main(int argc, char ** argv)
 {
+#pragma message("This tool is disabled. Use fdtd-acoustic-simulator-viewer and pass in --nogui flag instead. " __FILE__)
+#if 0
     //TestBoundingBox();
     //TestParseMeshList(); 
     //TestScalarFieldSubindices();
@@ -312,6 +314,7 @@ int main(int argc, char ** argv)
         boost::timer::auto_cpu_timer timer;
         TestAcousticSimulatorRun(xmlName, steps); 
     }
+#endif
 
     return 0;
 }
