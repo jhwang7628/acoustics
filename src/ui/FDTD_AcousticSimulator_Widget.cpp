@@ -56,11 +56,11 @@ FDTD_AcousticSimulator_Widget(std::shared_ptr<FDTD_AcousticSimulator_Viewer> &vi
     connect(_slider_simulationTimeline, SIGNAL(valueChanged(int)), this, SLOT(SliderValueChanged()));
     connect(_button_resetSimulation, SIGNAL(clicked()), this, SLOT(ResetSystemTime()));
     connect(_button_generateSlice_x, &QPushButton::clicked, this, [this]{
-            GenerateSlice(0, _solverSettings->domainCenter[0]);});
+            GenerateSlice(0, 0.0);});
     connect(_button_generateSlice_y, &QPushButton::clicked, this, [this]{
-            GenerateSlice(1, _solverSettings->domainCenter[1]);});
+            GenerateSlice(1, 0.0);});
     connect(_button_generateSlice_z, &QPushButton::clicked, this, [this]{
-            GenerateSlice(2, _solverSettings->domainCenter[2]);});
+            GenerateSlice(2, 0.0);});
     connect(_button_clearPressures, &QPushButton::clicked, this, [this]{
             ResetSystemTime(false);}); 
     connect(_button_clearSources, &QPushButton::clicked, this, [this]{

@@ -3,6 +3,14 @@
 #include <TYPES.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h> 
 
+
+//##############################################################################
+// Forward declaration
+//##############################################################################
+struct Solver_Control_Policy; 
+struct Static_Policy; 
+struct Dynamic_Policy; 
+ 
 //##############################################################################
 // Stores the various settings for class PML_WaveSolver
 //##############################################################################
@@ -14,12 +22,10 @@ struct PML_WaveSolver_Settings
 
     // discretization settings 
     REAL    cellSize; 
-    int     cellDivisions; 
     REAL    timeEnd; 
     REAL    timeStepSize; 
     int     timeSavePerStep; 
     int     numberTimeSteps = -1; 
-    Vector3d domainCenter;  
 
     // IO settings
     std::string     outputPattern; 
@@ -68,7 +74,35 @@ struct PML_WaveSolver_Settings
         RASTERIZE = 0,
         FULLY_COUPLED = 1
     } boundaryHandlingType;
+
+    std::shared_ptr<Solver_Control_Policy> solverControlPolicy; 
 };
 using PML_WaveSolver_Settings_Ptr = std::shared_ptr<PML_WaveSolver_Settings>; 
 
+//##############################################################################
+// Struct Solver_Control_Policy
+//##############################################################################
+struct Solver_Control_Policy
+{
+    std::string type; 
+    virtual ~Solver_Control_Policy(){}
+};
+using Solver_Control_Policy_Ptr = std::shared_ptr<Solver_Control_Policy>;
+
+//##############################################################################
+// Struct Static_Policy
+//##############################################################################
+struct Static_Policy : public Solver_Control_Policy
+{
+    int      cellDivisions; 
+    Vector3d domainCenter; 
+};
+
+//##############################################################################
+// Struct Dynamic_Policy
+//##############################################################################
+struct Dynamic_Policy : public Solver_Control_Policy
+{
+    int padding; 
+};
 #endif

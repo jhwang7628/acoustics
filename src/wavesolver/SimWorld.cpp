@@ -91,68 +91,69 @@ Build(ImpulseResponseParser_Ptr &parser)
         UpdateObjectState(_state.time); 
     }
 
-    // TEST: assign a box to each object
     std::map<ActiveSimUnit_Ptr, BoundingBox> candidateUnit; 
-    for (auto &m : _objectCollections->_rigidObjects)
+    assert(_simulatorSettings->solverControlPolicy);
+    if (_simulatorSettings->solverControlPolicy->type == "dynamic")
     {
-        auto &obj = m.second; 
-        std::cout << "Construct Sim unit for object: " << obj->GetMeshName()
-                  << std::endl; 
-        const auto &bbox = obj->GetBBox(); 
-        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
-        std::string *simulatorID = new std::string(std::to_string(m.first));
-        simUnit->objects = std::make_shared<FDTD_Objects>(); 
-        simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);  
-        simUnit->objects->AddConstraints(_objectCollections);
-        simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
-        simUnit->simulator->SetParser(parser); 
-        simUnit->simulator->SetSolverSettings(_simulatorSettings); 
-        simUnit->simulator->SetSceneObjects(simUnit->objects); 
-        simUnit->simulator->SetOwner(simUnit); 
-        
-        auto meshPtr = obj->GetMeshPtr(); 
-        const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
-        const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
-        const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
-                                        SimWorld::rasterizer.rasterize(meshCentroid_w)); 
-        const int divs = (int)std::ceil( // FIXME debug
-                meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-                )*2 + 80 + (int)(_simulatorSettings->PML_width);
-        //const int divs = (int)std::ceil( 
-        //        meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
-        //        )*2 + 8 + (int)(_simulatorSettings->PML_width);
-        const BoundingBox simUnitBox(
-                _simulatorSettings->cellSize, divs, rastCentroid_w); 
-        simUnit->divisions = divs; 
-        simUnit->listen = std::make_unique<ListeningUnit>(); 
-        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
-        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
-        simUnit->unitID = simulatorID; 
-
-        // make sure this object is not inside some other existed unit
-        bool createUnit = true; 
-        for (auto &pair : candidateUnit)
+        auto policy = std::dynamic_pointer_cast<Dynamic_Policy>(_simulatorSettings->solverControlPolicy); 
+        // assign a box to each object
+        for (auto &m : _objectCollections->_rigidObjects)
         {
-            if (pair.second.isInside(meshCentroid_w))
+            auto &obj = m.second; 
+            std::cout << "Construct Sim unit for object: " << obj->GetMeshName()
+                      << std::endl; 
+            const auto &bbox = obj->GetBBox(); 
+            ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
+            std::string *simulatorID = new std::string(std::to_string(m.first));
+            simUnit->objects = std::make_shared<FDTD_Objects>(); 
+            simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);  
+            simUnit->objects->AddConstraints(_objectCollections);
+            simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
+            simUnit->simulator->SetParser(parser); 
+            simUnit->simulator->SetSolverSettings(_simulatorSettings); 
+            simUnit->simulator->SetSceneObjects(simUnit->objects); 
+            simUnit->simulator->SetOwner(simUnit); 
+            
+            auto meshPtr = obj->GetMeshPtr(); 
+            const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
+            const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
+            const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
+                                            SimWorld::rasterizer.rasterize(meshCentroid_w)); 
+            const int divs = (int)std::ceil(
+                    meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
+                    )*2 + policy->padding + (int)(_simulatorSettings->PML_width);
+            const BoundingBox simUnitBox(
+                    _simulatorSettings->cellSize, divs, rastCentroid_w); 
+            simUnit->divisions = divs; 
+            simUnit->listen = std::make_unique<ListeningUnit>(); 
+            simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
+            simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
+            simUnit->unitID = simulatorID; 
+
+            // make sure this object is not inside some other existed unit
+            bool createUnit = true; 
+            for (auto &pair : candidateUnit)
             {
-                createUnit = false; 
-                pair.first->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
-                break; 
+                if (pair.second.isInside(meshCentroid_w))
+                {
+                    createUnit = false; 
+                    pair.first->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
+                    break; 
+                }
+            }
+            if (createUnit)
+            {
+                candidateUnit[simUnit] = simUnitBox; 
+                _simUnits.insert(std::move(simUnit)); 
             }
         }
-        if (createUnit)
-        {
-            candidateUnit[simUnit] = simUnitBox; 
-            _simUnits.insert(std::move(simUnit)); 
-        }
     }
-
-    // in case there is no geometry, use the default one in xml
-    if (candidateUnit.size()==0)
+    else
     {
+        auto policy = std::dynamic_pointer_cast<Static_Policy>(_simulatorSettings->solverControlPolicy); 
         ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
         std::string *simulatorID = new std::string("0");
-        simUnit->objects = std::make_shared<FDTD_Objects>(); 
+        simUnit->objects = _objectCollections; 
         simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
         simUnit->simulator->SetParser(parser); 
         simUnit->simulator->SetSolverSettings(_simulatorSettings); 
@@ -161,9 +162,9 @@ Build(ImpulseResponseParser_Ptr &parser)
 
         const BoundingBox simUnitBox(
                 _simulatorSettings->cellSize, 
-                _simulatorSettings->cellDivisions, 
-                _simulatorSettings->domainCenter); 
-        simUnit->divisions = _simulatorSettings->cellDivisions; 
+                policy->cellDivisions,
+                policy->domainCenter); 
+        simUnit->divisions = policy->cellDivisions; 
         simUnit->listen = std::make_unique<ListeningUnit>(); 
         simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
         simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
@@ -201,8 +202,13 @@ Build(ImpulseResponseParser_Ptr &parser)
 void SimWorld::
 UpdateObjectState(const REAL &time)
 {
-    // logic for updating bbox and determine whether to move simbox
+    // update objects
     _objectCollections->SetObjectStates(time); 
+
+    if (_simulatorSettings->solverControlPolicy->type == "static")
+        return; 
+
+    // logic for updating bbox and determine whether to move simbox
     for (auto &unit : _simUnits)
     {
         const auto &objects = unit->objects->GetRigidObjects(); 

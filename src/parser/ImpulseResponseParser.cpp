@@ -263,16 +263,11 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
 
     // discretization settings 
     settings->cellSize           = queryRequiredReal(solverNode, "cellsize"); 
-    settings->cellDivisions      = queryRequiredInt (solverNode, "gridresolution"); 
     settings->timeEnd            = queryRequiredReal(solverNode, "stop_time"); 
     settings->timeSavePerStep    = queryOptionalInt (solverNode, "substeps", "-1"); 
     settings->numberTimeSteps    = queryOptionalInt (solverNode, "number_of_timesteps", "0"); 
     const REAL timeStepFrequency= queryRequiredReal(solverNode, "timestepfrequency"); 
     settings->timeStepSize = 1.0/timeStepFrequency; 
-    const REAL domainCenter_x    = queryOptionalReal(solverNode, "domain_center_x", 0.0); 
-    const REAL domainCenter_y    = queryOptionalReal(solverNode, "domain_center_y", 0.0); 
-    const REAL domainCenter_z    = queryOptionalReal(solverNode, "domain_center_z", 0.0); 
-    settings->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
     settings->FV_boundarySubdivision = queryOptionalInt(solverNode, "fv_boundary_subdivision", "5"); 
 
     // IO settings
@@ -345,6 +340,33 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         SparseModalEncoder::useEncoder = true; 
         SparseModalEncoder::rank       = queryRequiredInt(encoderNode, "rank"); 
         SparseModalEncoder::epsilon    = queryRequiredReal(encoderNode, "epsilon"); 
+    }
+
+    // parse solver control policy
+    TiXmlElement *node; 
+    GET_FIRST_CHILD_ELEMENT_GUARD(node, root, "solver_control_policy"); 
+    std::string ptype = queryRequiredAttr(node, "type"); 
+    if (ptype == "dynamic")
+    {
+        settings->solverControlPolicy = std::make_shared<Dynamic_Policy>(); 
+        std::shared_ptr<Dynamic_Policy> p = std::dynamic_pointer_cast<Dynamic_Policy>(settings->solverControlPolicy); 
+        p->padding = queryOptionalInt(node, "padding", "20"); 
+        p->type = "dynamic";
+    }
+    else if (ptype == "static")
+    {
+        settings->solverControlPolicy = std::make_shared<Static_Policy>(); 
+        auto p = std::dynamic_pointer_cast<Static_Policy>(settings->solverControlPolicy); 
+        const REAL domainCenter_x    = queryOptionalReal(node, "domain_center_x", 0.0); 
+        const REAL domainCenter_y    = queryOptionalReal(node, "domain_center_y", 0.0); 
+        const REAL domainCenter_z    = queryOptionalReal(node, "domain_center_z", 0.0); 
+        p->cellDivisions = queryRequiredInt (node, "gridresolution");
+        p->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
+        p->type = "static";
+    }
+    else 
+    {
+        throw std::runtime_error("**ERRORR** solver control policy not understood"); 
     }
 }
 

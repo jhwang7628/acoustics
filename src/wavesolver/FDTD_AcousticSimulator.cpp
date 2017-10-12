@@ -400,9 +400,12 @@ InitializeSolver()
 {
     if (CanInitializeSolver())
         _ParseSolverSettings();
+    auto p = _acousticSolverSettings->solverControlPolicy;  
+    assert( p && p->type == "static"); 
+    auto policy = std::dynamic_pointer_cast<Static_Policy>(p);
     BoundingBox solverBox(_acousticSolverSettings->cellSize, 
-                          _acousticSolverSettings->cellDivisions, 
-                          _acousticSolverSettings->domainCenter); 
+                          policy->cellDivisions, 
+                          policy->domainCenter); 
     InitializeSolver(solverBox, _acousticSolverSettings); 
 }
 
