@@ -253,8 +253,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (bubblesNode != NULL)
     {
-        const int meshID = queryRequiredInt(bubblesNode, "id");
-        const std::string meshName = std::to_string(meshID);
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(bubblesNode, "working_directory");
         const std::string objectPrefix = queryRequiredAttr(bubblesNode, "object_prefix");
         const int sdfResolutionValue = queryRequiredInt(bubblesNode, "fieldresolution");
@@ -264,24 +263,16 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(bubblesNode, "initial_position_z", 0.0);
         const std::string dataDir = queryRequiredAttr(bubblesNode, "data_dir");
         FDTD_RigidObject::OptionalAttributes attr;
-        attr.isFixed = (queryOptionalReal(bubblesNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        const std::string boundaryHandling = queryOptionalAttr(bubblesNode, "boundary_handling", "piecewise_constant");
-        if (boundaryHandling.compare("piecewise_constant")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
-        else if (boundaryHandling.compare("rasterize")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
-        else if (boundaryHandling.compare("linear_mls")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
-        else
-            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
+        //attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
+        attr.isFixed = false; 
 
         const bool buildFromTetMesh = false;
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z);
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir);
         object->AddVibrationalSource(sourcePtr);
-        objects->AddObject(meshName, object);
+        objects->AddObject(std::stoi(meshName), object);
         bubblesNode = bubblesNode->NextSiblingElement(bubblesNodeName.c_str());
     }
 }

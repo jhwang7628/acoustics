@@ -13,6 +13,7 @@ cmake_minimum_required(VERSION 3.0.2)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 # set c++14: https://stackoverflow.com/questions/40795474/qt-5-7-adding-std-gnu11-to-my-compiler-flags-clobbering-std-c14
+#SET(CMAKE_CXX_FLAGS "-std=c++14")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

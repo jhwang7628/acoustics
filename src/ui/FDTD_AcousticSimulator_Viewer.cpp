@@ -264,7 +264,7 @@ DrawMesh()
                 ny = object->ObjectToWorldVector(ny);
                 nz = object->ObjectToWorldVector(nz);
 
-                accel[t_idx] = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simulator->GetSimulationTime(), -1);
+                accel[t_idx] = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simWorld->GetWorldTime(), -1);
 
                 maxAccel = std::max<REAL>(maxAccel, accel.at(t_idx));
                 minAccel = std::min<REAL>(minAccel, accel.at(t_idx));
