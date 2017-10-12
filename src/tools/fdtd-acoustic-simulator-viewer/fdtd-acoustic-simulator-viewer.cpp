@@ -1,5 +1,6 @@
 #include <string>
 #include <memory>
+#include <Eigen/Dense> 
 #include <qapplication.h>
 #include <wavesolver/SimWorld.h>
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
@@ -11,6 +12,8 @@ int TUI_Run(int argc, char **argv, const std::string &xmlFile);
 
 int main(int argc, char** argv)
 {
+    // enable multi-threading with Eigen: https://eigen.tuxfamily.org/dox/TopicMultiThreading.html
+    Eigen::initParallel();
     // 
     std::string xmlFile; 
     uint preview_speed; 
