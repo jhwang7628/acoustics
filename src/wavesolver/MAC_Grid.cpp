@@ -1058,7 +1058,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
     std::unordered_map<GhostCell_Key, int> mapGC; // to index into matrices
     for (const auto &m : _ghostCells)
     {
-        mapGC[m.first] = mapGC.size()-1; 
+        const int entry = mapGC.size(); 
+        mapGC[m.first] = entry; 
     }
     Eigen::SparseMatrix<REAL, Eigen::ColMajor> matGC(N_ghostCells, N_ghostCells); // matrix
     Eigen::Matrix<REAL, Eigen::Dynamic, 1>     rhsGC(N_ghostCells);               // right hand side
@@ -1158,7 +1159,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         {
             const int row = mapGC.at(key_gc); 
             threadGCEntries.at(thread_idx).push_back(Triplet(row, row, 1.0)); 
-#pragma omp critical
             rhsGC(row) = pg; 
             continue; 
         }
@@ -1260,7 +1260,6 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             const int col = mapGC.at(m_u.second); 
             threadGCEntries.at(thread_idx).push_back(Triplet(row, col, w(i_k))); 
         }
-#pragma omp critical
         rhsGC(row) = rhs; 
     }
     // actually fill the sparse matrix

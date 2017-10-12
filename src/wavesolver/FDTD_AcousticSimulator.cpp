@@ -398,8 +398,8 @@ _SaveSimulationSnapshot(const std::string &numbering)
 void FDTD_AcousticSimulator::
 InitializeSolver()
 {
-    if (CanInitializeSolver())
-        _ParseSolverSettings();
+    assert(CanInitializeSolver()); 
+    _ParseSolverSettings();
     auto p = _acousticSolverSettings->solverControlPolicy;  
     assert( p && p->type == "static"); 
     auto policy = std::dynamic_pointer_cast<Static_Policy>(p);
