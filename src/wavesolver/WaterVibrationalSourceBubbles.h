@@ -86,6 +86,8 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time);
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time);
 
+        virtual void UpdateTime(const REAL time);
+
         void Initialize(const std::string &dataDir);
 };
 

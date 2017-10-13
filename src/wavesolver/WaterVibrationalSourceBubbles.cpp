@@ -15,7 +15,7 @@
 //##############################################################################
 WaterVibrationalSourceBubbles::
 WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
-    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr()), _rigidMeshTime(-1)
+    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
 {
     Initialize(dataDir);
 }
@@ -25,14 +25,6 @@ WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
 REAL WaterVibrationalSourceBubbles::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
 {
-    // TODO: make this explicit
-    // step if necessary
-#pragma omp critical
-    while (std::fabs(time - _curTime) > 1e-12)
-    {
-        step(time);
-    }
-
     // transform the sample point to object frame
     //const Eigen::Vector3d samplePointObject_e = _modelingTransformInverse * Eigen::Vector3d(position.x, position.y, position.z);
     //const Vector3d samplePointObject(samplePointObject_e[0], samplePointObject_e[1], samplePointObject_e[2]);
@@ -151,6 +143,18 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
     throw std::runtime_error("**ERROR** not implemented");
 }
 
+void WaterVibrationalSourceBubbles::
+UpdateTime(const REAL time)
+{
+    // step if necessary
+#pragma omp critical
+    while (std::fabs(time - _curTime) > 1e-12)
+    {
+        step(time);
+    }
+
+}
+
 //##############################################################################
 //##############################################################################
 void WaterVibrationalSourceBubbles::
@@ -171,6 +175,7 @@ Initialize(const std::string &dataDir)
     _curTime = -1;
     _t1 = _t2 = -1;
     _dt = 1.0 / 192000.;
+    _rigidMeshTime = -1;
 
     FreqType ft = CAPACITANCE;
     std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubInfo.txt");
@@ -241,6 +246,20 @@ step(REAL time)
             _fullKd1 = _fullKd2;
             _b1 = _b2;
         }
+    }
+
+    bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
+
+    // Interpolate onto the mesh that is closest
+    _m = useT1 ? &_m1 : &_m2;
+    //_kd = useT1 ? _fullKd1 : _fullKd2;
+    _kd = useT1 ? _kd1 : _kd2;
+
+    if ((useT1 ? _t1 : _t2) != _rigidMeshTime)
+    {
+        // Write mesh out
+        // TODO: also get working directory from parser, reinitialize rigid sound obj
+
     }
 
     // Update all oscillators to the correct time (one timestep after this time)
