@@ -45,6 +45,8 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         REAL                _dt;
 
+        double _rigidMeshTime; // Keep track of the current mesh that is used
+
         double _curTime; // current time step
         double _t1, _t2; // surrounding times for surface data
         Mesh _m1, _m2;

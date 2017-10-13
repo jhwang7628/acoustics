@@ -15,7 +15,7 @@
 //##############################################################################
 WaterVibrationalSourceBubbles::
 WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
-    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
+    : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr()), _rigidMeshTime(-1)
 {
     Initialize(dataDir);
 }

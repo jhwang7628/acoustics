@@ -31,6 +31,8 @@ class VibrationalSource : public Source
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time)=0;
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)=0; 
+
+        virtual void UpdateTime(const REAL time) {}; // default does nothing, bubbles object needs this to update the mesh
 };
 
 #endif

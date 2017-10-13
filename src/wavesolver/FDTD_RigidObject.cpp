@@ -169,6 +169,13 @@ Initialize(const bool &buildFromTetMesh)
     UpdateBoundingBox();
 }
 
+void FDTD_RigidObject::
+Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh)
+{
+    _objectPrefix = objPrefix;
+    Initialize(buildFromTetMesh);
+}
+
 //##############################################################################
 // Employ a linear time (in surface element) check to update bounding box
 // union of the last two updates are also computed and stored

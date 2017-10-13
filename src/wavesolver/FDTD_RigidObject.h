@@ -117,6 +117,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
         void Initialize(const bool &buildFromTetMesh); 
+        void Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh);
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 
         virtual void ApplyScale(const REAL scale); 
