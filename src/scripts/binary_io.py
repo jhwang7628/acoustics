@@ -10,9 +10,6 @@ def readVectorBinary(filename):
     N1 = np.fromfile( ifile, dtype=np.int32, count=1 )
     print 'read vector size: (%u)' %(N1)
     tmp = np.fromfile( ifile, dtype=float, count=N1 )
-    print tmp
-    print tmp.shape
-
     return tmp
 
 ################################################################################
