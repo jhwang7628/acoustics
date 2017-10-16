@@ -44,6 +44,9 @@ class ColorMap
         int  color_num() const { return m_num; }
         void set_interpolation_range(double minv, double maxv)
         {
+            // prevent maxv == minv within rounding error
+            if (EQUAL_FLOATS(minv, maxv))
+                maxv = minv + 1E-6; 
             assert(minv < maxv);
             m_min = minv;
             m_max = maxv;
