@@ -14,10 +14,10 @@
 //##############################################################################
 //##############################################################################
 WaterVibrationalSourceBubbles::
-WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir)
+WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir, const std::string &tmpDir)
     : VibrationalSource(owner), _surfaceMesh(owner->GetMeshPtr())
 {
-    Initialize(dataDir);
+    Initialize(dataDir, tmpDir);
 }
 
 //##############################################################################
@@ -152,14 +152,14 @@ UpdateTime(const REAL time)
     {
         step(time);
     }
-
 }
 
 //##############################################################################
 //##############################################################################
 void WaterVibrationalSourceBubbles::
-Initialize(const std::string &dataDir)
+Initialize(const std::string &dataDir, const std::string &tmpDir)
 {
+    _tmpDir = tmpDir;
     std::cout << "Initialize WaterVibrationalSourceBubbles from directory: " << dataDir << std::endl;
     _fileInfo = parseFileNames(dataDir);
 
@@ -181,6 +181,39 @@ Initialize(const std::string &dataDir)
     std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubInfo.txt");
     parseConfigFile(infoFile, ft);
     makeOscillators(_bubbles);
+}
+
+//##############################################################################
+//##############################################################################
+void WaterVibrationalSourceBubbles::
+writeObj(const std::string &fName, const Mesh *m)
+{
+    std::ofstream of(fName.c_str());
+
+    std::map<int, int> vertsToKeep;
+    for (const auto& t : m->m_surfTris)
+    {
+        vertsToKeep[m->m_triangles[t](0)] = -1;
+        vertsToKeep[m->m_triangles[t](1)] = -1;
+        vertsToKeep[m->m_triangles[t](2)] = -1;
+    }
+
+    int counter = 1;
+    for (auto& ve : vertsToKeep)
+    {
+        const auto& v = m->m_vertices.at(ve.first);
+
+        of << "v " << v.transpose() << std::endl;
+        ve.second = counter++;
+    }
+
+    for (const auto& t : m->m_surfTris)
+    {
+        of << "f "
+           << vertsToKeep[m->m_triangles[t](0)] << " "
+           << vertsToKeep[m->m_triangles[t](1)] << " "
+           << vertsToKeep[m->m_triangles[t](2)] << std::endl;
+    }
 }
 
 //##############################################################################
@@ -258,8 +291,16 @@ step(REAL time)
     if ((useT1 ? _t1 : _t2) != _rigidMeshTime)
     {
         // Write mesh out
-        // TODO: also get working directory from parser, reinitialize rigid sound obj
+        std::ostringstream os;
+        os << "tmpMesh-";
+        os << std::setfill('0') << std::setw(9) << std::fixed << std::setprecision(6);
+        os << (useT1 ? _t1 : _t2);
 
+        std::string fName(os.str());
+        writeObj(_tmpDir + std::string("/") + fName + std::string(".obj"), _m);
+        _owner->Reinitialize(fName, false);
+        _surfaceMesh = _owner->GetMeshPtr();
+        _rigidMeshTime = useT1 ? _t1 : _t2;
     }
 
     // Update all oscillators to the correct time (one timestep after this time)

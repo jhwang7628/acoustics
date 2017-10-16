@@ -45,6 +45,8 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         REAL                _dt;
 
+        std::string _tmpDir;
+
         double _rigidMeshTime; // Keep track of the current mesh that is used
 
         double _curTime; // current time step
@@ -77,8 +79,10 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         void projectToSurface();
 
+        void writeObj(const std::string &fName, const Mesh *m);
+
     public:
-        WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir);
+        WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir, const std::string &tmpDirectory);
 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle);
         virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time);
@@ -88,7 +92,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         virtual void UpdateTime(const REAL time);
 
-        void Initialize(const std::string &dataDir);
+        void Initialize(const std::string &dataDir, const std::string &tmpDir);
 };
 
 #endif

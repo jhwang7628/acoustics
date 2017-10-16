@@ -280,7 +280,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z);
-        VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir);
+        VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir, workingDirectory);
         object->AddVibrationalSource(sourcePtr);
         objects->AddObject(std::stoi(meshName), object);
         bubblesNode = bubblesNode->NextSiblingElement(bubblesNodeName.c_str());

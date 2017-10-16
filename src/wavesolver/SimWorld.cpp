@@ -237,6 +237,7 @@ StepWorld()
     bool continueStepping = true; 
     // update simulation
     std::cout << "================ Step START ================\n";
+    _objectCollections->UpdateSourceTimes(_state.time);
     int count=0;
     for (auto &unit : _simUnits)
     {

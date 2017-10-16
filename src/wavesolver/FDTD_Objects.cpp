@@ -353,8 +353,6 @@ SetObjectStates(const REAL time)
             auto ptr = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
 
             ptr->UpdateQPointers();
-
-            ptr->UpdateVibrationalSources(time);
         }
         else if (m.second->Type() == SHELL_OBJ)
         {
@@ -363,6 +361,21 @@ SetObjectStates(const REAL time)
         }
     }
     AnimateObjects(time);
+}
+
+//##############################################################################
+// Function UpdateSourceTimes
+//##############################################################################
+void FDTD_Objects::
+UpdateSourceTimes(const REAL time)
+{
+    // update modal vectors for the next time step
+    for (auto &m : _rigidObjects)
+        if (m.second->Type() == RIGID_SOUND_OBJ)
+        {
+            auto ptr = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
+            ptr->UpdateVibrationalSources(time);
+        }
 }
 
 //##############################################################################
