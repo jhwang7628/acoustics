@@ -6,16 +6,16 @@ from ConfigParser import SafeConfigParser,NoOptionError
 import scipy
 from scipy import signal
 
-if len(sys.argv) != 2: 
+if len(sys.argv) != 2:
     print '**Usage: %s <config_ini_file>' %sys.argv[0]
     sys.exit()
 out_config = sys.argv[1]
-if not os.path.isfile(out_config): 
+if not os.path.isfile(out_config):
     print '**ERROR** Config file %s does not exist' %(out_config)
     sys.exit()
 
 ##
-def ReqParse(parser, section, tag, val_type = 's'): 
+def ReqParse(parser, section, tag, val_type = 's'):
     if val_type == 'i':   # int
         tmp = parser.getint(section, tag)
     elif val_type == 'f': # float
@@ -26,12 +26,12 @@ def ReqParse(parser, section, tag, val_type = 's'):
         tmp = parser.get(section, tag)
     elif val_type == 'li': # list of int (comma separated)
         tmp = map(int, parser.get(section, tag).split(','))
-    else: 
+    else:
         raise TypeError
     print 'Parsing \'%s\' in \'%s\': ' %(tag, section), tmp
     return tmp
 
-def OptParse(parser, section, tag, val_type = 's', val_default = None): 
+def OptParse(parser, section, tag, val_type = 's', val_default = None):
     try: val = ReqParse(parser, section, tag, val_type)
     except NoOptionError: val = val_default
     return val
@@ -48,8 +48,14 @@ results = Wavesolver_Results()
 results.Set_Folder(data_dir)
 all_data = results.Read_All_Audio()
 N_points = all_data.shape[1]
-N_steps  = all_data.shape[0] 
+N_steps  = all_data.shape[0]
 sampfreq = ReqParse(parser, 'general', 'sampfreq', 'i')
+
+padTime = OptParse(parser, 'general', 'pad_time', 'f', 0)
+if padTime > 0:
+    pad_amount = int(round(padTime * sampfreq))
+    all_data = np.pad(all_data, [(pad_amount, 0), (0,0)], 'constant', constant_values=0)
+    N_steps  = all_data.shape[0]
 
 if ReqParse(parser, 'general', 'plot', 'b'):
     print '\n------ PLOTTING ------'
@@ -59,17 +65,17 @@ if ReqParse(parser, 'general', 'plot', 'b'):
     plt.figure()
     if (plot_points is None): ii_range = range(N_points)
     else                    : ii_range = plot_points
-    for ii in ii_range: 
+    for ii in ii_range:
         if xaxis_frame: t = np.array(range(len(all_data[:,ii])))
         else:           t = np.array(range(len(all_data[:,ii])))/float(sampfreq)
         y = all_data[:,ii]
-        if xmax is not None: 
+        if xmax is not None:
             cut = -1
-            for ii in range(len(t)): 
-                if t[ii] > xmax: 
+            for ii in range(len(t)):
+                if t[ii] > xmax:
                     cut = ii
                     break
-            if cut >= 0: 
+            if cut >= 0:
                 t = t[:cut]
                 y = y[:cut]
         plt.plot(t, y)
@@ -80,7 +86,7 @@ if ReqParse(parser, 'general', 'write_wav', 'b'):
     wavfreq  = ReqParse(parser, 'wav'    , 'wavfreq' , 'i')
     prefix   = ReqParse(parser, 'wav'    , 'prefix'  , 's')
     rateRatio = float(sampfreq) / float(wavfreq)
-    for ii in range(N_points): 
+    for ii in range(N_points):
         print 'point %u' %(ii)
         outputdata = signal.resample(all_data[:,ii], int(float(N_steps)/rateRatio))
         normalization = np.absolute(outputdata).max()
