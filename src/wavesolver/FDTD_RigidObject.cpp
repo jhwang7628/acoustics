@@ -188,7 +188,7 @@ UpdateBoundingBox()
     // compute the new one
     if (_mesh)
     {
-        Vector3<REAL> minBound(D_INF, D_INF, D_INF); 
+        Vector3<REAL> minBound( D_INF,  D_INF,  D_INF); 
         Vector3<REAL> maxBound(-D_INF, -D_INF, -D_INF); 
         Eigen::Vector3d pointBuffer; 
         std::vector<Point3<REAL>> &meshVertices = _mesh->vertices(); 
@@ -523,7 +523,6 @@ SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion)
     _modelingTransform.prerotate(rotation);
     _modelingTransform.pretranslate(newCOM_e); 
     _modelingTransformInverse = _modelingTransform.inverse(); 
-    UpdateBoundingBox(); 
 }
 
 //##############################################################################

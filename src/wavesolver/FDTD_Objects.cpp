@@ -38,9 +38,12 @@ OccupyByObject(const Vector3d &positionWorld)
     const int N_objects = N(); 
     for (const auto &m : _rigidObjects)
     {
-        const double distance = m.second->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z); 
-        if (distance < DISTANCE_TOLERANCE && m.second->Type() != SHELL_OBJ) 
-            return m.first; 
+        if (m.second->Type() != SHELL_OBJ)
+        {
+            const double distance = m.second->DistanceToMesh(positionWorld);
+            if (distance < DISTANCE_TOLERANCE) 
+                return m.first; 
+        }
     }
     return -1;
 }
@@ -81,6 +84,7 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
                    (float)cubeHalfSize.y,
                    (float)cubeHalfSize.z};
     float vtxs[3][3]; 
+    Vector3d vtxbuf; 
     // only performs on shell objects to save time
     for (const auto &m : _rigidObjects)
     {
@@ -93,9 +97,10 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
             {
                 for (int ii=0; ii<3; ++ii) // ii-th vertex 
                 {
-                    vtxs[ii][0] = (float)(vert.at(tri[ii]).x);
-                    vtxs[ii][1] = (float)(vert.at(tri[ii]).y);
-                    vtxs[ii][2] = (float)(vert.at(tri[ii]).z);
+                    vtxbuf = m.second->ObjectToWorldPoint(vert.at(tri[ii])); 
+                    vtxs[ii][0] = (float)(vtxbuf.x);
+                    vtxs[ii][1] = (float)(vtxbuf.y);
+                    vtxs[ii][2] = (float)(vtxbuf.z);
                 }
                 const int test = triBoxOverlap(cc, cs, vtxs);
                 if (test > 0)
@@ -360,19 +365,18 @@ InitializeAnimator(const std::string &fileDisplacement,
 void FDTD_Objects::
 AnimateObjects(const REAL toTime)
 {
-    if (!_objectAnimator)
-        return; 
     Point3d newCOM; 
     Quaternion<REAL> quaternion; 
     for (auto &m : _rigidObjects)
     {
         const auto &object = m.second;
-        if (object->Animated())
+        if (object->Animated() && _objectAnimator)
         {
             _objectAnimator->GetRigidObjectTransform(m.first, toTime, newCOM, quaternion);
             quaternion.normalize();
             object->SetRigidBodyTransform(newCOM, quaternion);
         }
+        object->UpdateBoundingBox(); 
     }
 }
 
