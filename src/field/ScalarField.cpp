@@ -308,7 +308,8 @@ void ScalarField::GetIterationBox(const Vector3d &in_minBound, const Vector3d &i
     {
         indices.startIndex[d] = (int)std::floor((minBound[d]-fieldMinBound[d])/_cellSize); 
         indices.endIndex[d]   = (int) std::ceil((maxBound[d]-fieldMinBound[d])/_cellSize);
-        indices.dimensionIteration[d] = indices.endIndex[d] - indices.startIndex[d]; 
+        indices.dimensionIteration[d] = std::max<int>(indices.endIndex[d] - indices.startIndex[d],
+                                                      1); 
     }
 }
 
