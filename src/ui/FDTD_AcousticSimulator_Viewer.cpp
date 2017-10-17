@@ -271,7 +271,7 @@ DrawMesh()
             }
             accelColorMap.set_interpolation_range(minAccel, maxAccel);
 
-            std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
+            //std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
 
             glBegin(GL_TRIANGLES);
             const auto &color = _objectColors.at(obj_idx);
