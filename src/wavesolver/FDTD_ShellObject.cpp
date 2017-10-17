@@ -37,6 +37,14 @@ DistanceToMesh(const Vector3d &position)
 
 //##############################################################################
 // Function ReflectAgainstBoundary
+//   Note: There is no concept of inside/outside for shells. This function 
+//   therefore defines reflection to the same side of the shell. i.e., 
+//   the invariant of the returned value is
+//      (r-o).dot(n)*sign(d) > 0
+//          r: reflectedPoint
+//          o: originalPoint
+//          n: erectedNormal
+//          d: (signed) distanceTravelled
 //##############################################################################
 int FDTD_ShellObject:: 
 ReflectAgainstBoundary(const Vector3d &originalPoint, 
