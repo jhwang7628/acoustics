@@ -34,3 +34,29 @@ DistanceToMesh(const Vector3d &position)
     d = _mesh->ComputeClosestPointOnMesh(p_o, pp, tri_idx, pp);
     return d;
 }
+
+//##############################################################################
+// Function ReflectAgainstBoundary
+//##############################################################################
+int FDTD_ShellObject:: 
+ReflectAgainstBoundary(const Vector3d &originalPoint, 
+                       Vector3d &reflectedPoint, 
+                       Vector3d &boundaryPoint, 
+                       Vector3d &erectedNormal, 
+                       REAL &distanceTravelled, 
+                       const int &startFromTriangle)
+{
+    const int tidx = FDTD_RigidObject::ReflectAgainstBoundary(originalPoint, 
+                                                              reflectedPoint, 
+                                                              boundaryPoint,
+                                                              erectedNormal, 
+                                                              distanceTravelled,
+                                                              startFromTriangle); 
+    // on the other side of the shell, flip reflectedPoint
+    if (distanceTravelled < 0)
+    {
+        erectedNormal *= -1.0; 
+        reflectedPoint = originalPoint + erectedNormal * fabs(distanceTravelled); 
+    }
+    return tidx; 
+}

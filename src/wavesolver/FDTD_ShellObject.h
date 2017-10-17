@@ -37,7 +37,12 @@ public:
     {return false;}
     virtual bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal)
     {return NormalToMesh(position.x, position.y, position.z, queriedNormal);}
-
+    virtual int ReflectAgainstBoundary(const Vector3d &originalPoint, 
+                                       Vector3d &reflectedPoint, 
+                                       Vector3d &boundaryPoint, 
+                                       Vector3d &erectedNormal, 
+                                       REAL &distanceTravelled, 
+                                       const int &startFromTriangle=-1);
     void Initialize(); 
 };
 #endif
