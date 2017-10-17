@@ -97,9 +97,12 @@ FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &t
 #endif
     VlKDForestNeighbor neighbours[k]; 
     vl_kdforest_query(_nnForest.get(), neighbours, k, &point); 
-    triangleIndices.resize(k); 
+    triangleIndices.reserve(k); 
     for (int nn_idx=0; nn_idx<k; ++nn_idx)
-        triangleIndices.at(nn_idx) = neighbours[nn_idx].index; 
+    {
+        if ((int)neighbours[nn_idx].index != -1)
+            triangleIndices.push_back(neighbours[nn_idx].index); 
+    }
     return neighbours[0].distance; 
 }
 
