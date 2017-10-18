@@ -143,15 +143,18 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
     throw std::runtime_error("**ERROR** not implemented");
 }
 
-void WaterVibrationalSourceBubbles::
+bool WaterVibrationalSourceBubbles::
 UpdateTime(const REAL time)
 {
+    bool changed = false;
     // step if necessary
 #pragma omp critical
     while (std::fabs(time - _curTime) > 1e-12)
     {
-        step(time);
+        changed = changed || step(time);
     }
+
+    return changed;
 }
 
 //##############################################################################
@@ -218,9 +221,11 @@ writeObj(const std::string &fName, const Mesh *m)
 
 //##############################################################################
 //##############################################################################
-void WaterVibrationalSourceBubbles::
+bool WaterVibrationalSourceBubbles::
 step(REAL time)
 {
+    bool changed = false;
+
     // First load new solution data if necessary
     if (time >= _t2)
     {
@@ -301,6 +306,8 @@ step(REAL time)
         _owner->Reinitialize(fName, false);
         _surfaceMesh = _owner->GetMeshPtr();
         _rigidMeshTime = useT1 ? _t1 : _t2;
+
+        changed = true;
     }
 
     // Update all oscillators to the correct time (one timestep after this time)
@@ -350,6 +357,8 @@ step(REAL time)
     std::cout << "Accel max: " << _accel.cwiseAbs().maxCoeff() << ", accel l2: " << _accel.norm() << std::endl;
     std::cout << "Projected accel max: " << _projectedAccel.cwiseAbs().maxCoeff() << std::endl;
     std::cout << "Accel inf/nan: " << ! _projectedAccel.array().isFinite().all() << std::endl;
+
+    return changed;
 }
 
 //##############################################################################

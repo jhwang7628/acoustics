@@ -66,7 +66,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         std::map<int, Bubble> _bubbles;
         std::vector<Oscillator> _oscillators;
 
-        void step(REAL time);
+        bool step(REAL time);
         void parseConfigFile(const std::string &, FreqType fType);
         std::pair<int, Bubble> parseBubbleInfo (std::ifstream &in, FreqType fType);
 
@@ -90,7 +90,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time);
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time);
 
-        virtual void UpdateTime(const REAL time);
+        virtual bool UpdateTime(const REAL time);
 
         void Initialize(const std::string &dataDir, const std::string &tmpDir);
 };

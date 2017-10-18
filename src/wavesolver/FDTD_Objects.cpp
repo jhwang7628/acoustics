@@ -366,16 +366,21 @@ SetObjectStates(const REAL time)
 //##############################################################################
 // Function UpdateSourceTimes
 //##############################################################################
-void FDTD_Objects::
+bool FDTD_Objects::
 UpdateSourceTimes(const REAL time)
 {
+    bool changed = false;
     // update modal vectors for the next time step
     for (auto &m : _rigidObjects)
+    {
         if (m.second->Type() == RIGID_SOUND_OBJ)
         {
             auto ptr = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
-            ptr->UpdateVibrationalSources(time);
+            changed = changed || ptr->UpdateVibrationalSources(time);
         }
+    }
+
+    return changed;
 }
 
 //##############################################################################

@@ -3316,9 +3316,15 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         _cellTriangles.resize(numPressureCells()); 
 
     // copy the cache to map and clear ghost cells
-    for (auto &m : _ghostCells)
-        _ghostCellsCached.emplace(
-                std::make_pair(m.second->MakeKey(), std::move(m.second->cache))); 
+    // do not do this if a mesh changed
+    if (!_meshChanged)
+    {
+        for (auto &m : _ghostCells)
+            _ghostCellsCached.emplace(
+                    std::make_pair(m.second->MakeKey(), std::move(m.second->cache))); 
+    }
+    _meshChanged = false;
+
     _ghostCells.clear(); 
     _boundaryGhostCells.clear(); // boundary ghost cells utilize no cache
 

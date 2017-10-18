@@ -107,7 +107,16 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         REAL AdvanceModalODESolvers(const int &N_steps);
         REAL AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
-        void UpdateVibrationalSources(const REAL time) {for (auto& src : _vibrationalSources) {src->UpdateTime(time);}}
+        bool UpdateVibrationalSources(const REAL time)
+        {
+            bool changed = false;
+            for (auto& src : _vibrationalSources)
+            {
+                changed = changed || src->UpdateTime(time);
+            }
+            return changed;
+        }
+
         const Point3d &CenterOfMass() const {return _volumeCenter;} // volume center = mass center
         REAL Mass() const; 
         void InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute=false); 

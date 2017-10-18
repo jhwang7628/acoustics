@@ -237,12 +237,19 @@ StepWorld()
     bool continueStepping = true; 
     // update simulation
     std::cout << "================ Step START ================\n";
-    _objectCollections->UpdateSourceTimes(_state.time);
+    bool changed = _objectCollections->UpdateSourceTimes(_state.time);
+
     int count=0;
     for (auto &unit : _simUnits)
     {
         std::cout << "-------- unit " << count 
                   << " START -------- \n"; 
+        if (changed)
+        {
+            std::cout << "Mesh changed" << std::endl;
+            unit->simulator->GetGrid().setMeshChanged();
+        }
+
         continueStepping = (unit->simulator->RunForSteps(1) || continueStepping); 
         // update speakers, interpolate pressure values and write to audio output
         const Vector3Array &spks = unit->UpdateSpeakers();

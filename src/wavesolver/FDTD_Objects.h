@@ -124,7 +124,7 @@ class FDTD_Objects
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
         REAL GetEarliestImpactEvent();
         void SetObjectStates(const REAL time); 
-        void UpdateSourceTimes(const REAL time); 
+        bool UpdateSourceTimes(const REAL time); 
         void InitializeAnimator(const std::string &fileDisplacement,
                                 const std::string &fileVelocity,
                                 const std::string &fileAcceleration); 

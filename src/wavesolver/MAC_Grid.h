@@ -334,6 +334,8 @@ class MAC_Grid
         // boundary interface 
         std::list<BoundaryInterface_Ptr> _boundaryInterfaces; 
 
+        bool _meshChanged; // Used to store if a mesh has changed. If so, do not use cached ghost cell data.
+
     public:
         std::string *grid_id = nullptr; 
 
@@ -368,6 +370,8 @@ class MAC_Grid
 
         void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
         void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) /* const */; 
+
+        void setMeshChanged() {_meshChanged = true;}
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))
