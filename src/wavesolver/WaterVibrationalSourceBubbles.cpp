@@ -1031,7 +1031,7 @@ computeVelocities(REAL time)
 
         double lookupT = existT1 ? _t1 : _t2;
         auto iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
-        if (iter == osc.m_trackedBubbleNumbers.end())
+        if (iter == osc.m_trackedBubbleNumbers.end() || std::fabs(iter->first - lookupT) > 1e-9)
         {
             deadT1 = true;
 
@@ -1048,7 +1048,7 @@ computeVelocities(REAL time)
 
         lookupT = existT2 ? _t2 : _t1;
         iter = osc.m_trackedBubbleNumbers.lower_bound(lookupT - 1e-15);
-        if ((existT2 || deadT1) && iter == osc.m_trackedBubbleNumbers.end())
+        if ((existT2 || deadT1) && iter == osc.m_trackedBubbleNumbers.end() || std::fabs(iter->first - lookupT) > 1e-9)
         {
             deadT2 = true;
 
@@ -1173,7 +1173,14 @@ computeVelocities(REAL time)
                 std::cout << "time: " << time << ", i: " << i << ", j: " << j << std::endl;
                 std::cout << "num1: " << bubbleNumber1 << ", num2: " << bubbleNumber2 << std::endl;
 
+                std::cout << "vel1:" << std::endl;
+
                 for (auto iter = vel1.begin(); iter != vel1.end(); ++iter)
+                {
+                    std::cout << iter->first << std::endl;
+                }
+                std::cout << "vel2:" << std::endl;
+                for (auto iter = vel2.begin(); iter != vel2.end(); ++iter)
                 {
                     std::cout << iter->first << std::endl;
                 }
@@ -1188,7 +1195,7 @@ computeVelocities(REAL time)
                     std::cout << b.first << " " << b.second << std::endl;
                 }
 
-                exit(1);
+                throw;
             }
 
             if (useFirstOnly)
