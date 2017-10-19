@@ -303,7 +303,7 @@ step(REAL time)
 
         std::string fName(os.str());
         writeObj(_tmpDir + std::string("/") + fName + std::string(".obj"), _m);
-        _owner->Reinitialize(fName, false);
+        _owner->Reinitialize(fName, false, false);
         _surfaceMesh = _owner->GetMeshPtr();
         _rigidMeshTime = useT1 ? _t1 : _t2;
 

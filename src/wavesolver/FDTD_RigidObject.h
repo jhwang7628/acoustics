@@ -88,7 +88,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
                          const bool &buildFromTetMesh, 
                          const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
                          const std::string &meshName="NOT_IDENTIFIED", 
-                         const int &scale=1.0)
+                         const int &scale=1.0,
+                         bool needsCurvature = true)
             : FDTD_MovableObject(type),
               _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
@@ -98,7 +99,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
               _signedDistanceFieldResolution(resolution)
         {
             _parsed = true; 
-            Initialize(buildFromTetMesh); 
+            Initialize(buildFromTetMesh, needsCurvature); 
         }
 
         inline bool Animated(){return _animated;}
@@ -116,8 +117,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
         inline void ClearVibrationalSources(){_vibrationalSources.clear();}
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
-        void Initialize(const bool &buildFromTetMesh); 
-        void Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh);
+        void Initialize(const bool &buildFromTetMesh, bool needsCurvature); 
+        void Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh, bool needsCurvature);
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 
         virtual void ApplyScale(const REAL scale); 

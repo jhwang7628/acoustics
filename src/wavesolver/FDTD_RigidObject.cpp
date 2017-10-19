@@ -11,7 +11,7 @@
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::
-Initialize(const bool &buildFromTetMesh)
+Initialize(const bool &buildFromTetMesh, bool needsCurvature)
 {
     assert(_parsed); 
 
@@ -134,17 +134,21 @@ Initialize(const bool &buildFromTetMesh)
 
     // compute mesh centroid in object space and cache it 
     _meshObjectCentroid = _mesh->ComputeCentroid(); 
-    _mesh->generate_mean_curvatures(); 
 
     // get curvatures info
     const int N_vertices = _mesh->vertices().size(); 
-    const std::vector<REAL> *meanCurvatures = _mesh->mean_curvatures();
     REAL maxCurvature = std::numeric_limits<REAL>::min(); 
     REAL minCurvature = std::numeric_limits<REAL>::max(); 
-    for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+
+    if (needsCurvature)
     {
-        maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
-        minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
+        _mesh->generate_mean_curvatures(); 
+        const std::vector<REAL> *meanCurvatures = _mesh->mean_curvatures();
+        for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+        {
+            maxCurvature = std::max<REAL>(maxCurvature, meanCurvatures->at(v_idx)); 
+            minCurvature = std::min<REAL>(minCurvature, meanCurvatures->at(v_idx)); 
+        }
     }
 
     std::cout << "Read in TriangleMesh: \n"
@@ -170,10 +174,10 @@ Initialize(const bool &buildFromTetMesh)
 }
 
 void FDTD_RigidObject::
-Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh)
+Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh, bool needsCurvature)
 {
     _objectPrefix = objPrefix;
-    Initialize(buildFromTetMesh);
+    Initialize(buildFromTetMesh, needsCurvature);
 }
 
 //##############################################################################

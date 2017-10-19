@@ -79,8 +79,8 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         }
 
         // build object with mesh, sdf
-        FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
+        FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0, bool needsCurvature = true)
+            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale, needsCurvature), 
               ModalAnalysisObject(),
               ImpulseSeriesObject(GetMeshPtr())
         {

@@ -277,7 +277,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         attr.isFixed = false; 
 
         const bool buildFromTetMesh = false;
-        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale, false);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z);
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir, workingDirectory);
