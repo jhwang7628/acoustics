@@ -183,12 +183,21 @@ DrawMesh()
         // draw rigid sound object mesh
         auto &object = rigidObjects.at(obj_idx); 
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
-        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices();
+              std::vector<Point3<REAL> >   vertices  = meshPtr->vertices();
         const std::vector<Tuple3ui>       &triangles = meshPtr->triangles();
         const std::vector<Vector3<REAL> > &normals = meshPtr->normals();  // defined on vertices
         const int N_triangles = triangles.size();
         const int N_vertices = vertices.size();
         const REAL offsetEpsilon = 1E-5;
+
+        // if deformable shell, grab deformed vertex pos as well
+        if (object->Type() == SHELL_OBJ) 
+        {
+            auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+            for (int ii=0; ii<vertices.size(); ++ii)
+                vertices.at(ii) = 
+                    shell_object->GetVertexPos(ii);
+        }
 
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)

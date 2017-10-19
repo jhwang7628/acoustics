@@ -1,6 +1,8 @@
 #ifndef FDTD_SHELLOBJECT_H
 #define FDTD_SHELLOBJECT_H
+#include <queue>
 #include "config.h"
+#include "boost/filesystem.hpp"
 #include "geometry/BoundingBox.h"
 #include "wavesolver/FDTD_RigidObject.h"
 //##############################################################################
@@ -9,13 +11,58 @@
 class FDTD_ShellObject : public FDTD_RigidObject
 {
 private:
-    bool _init = false; 
-    BoundingBox _bbox; 
+    struct _DataStep
+    {
+        static const REAL stepSize; 
+        int               frameID; 
+        REAL              frameTime; 
+        std::vector<REAL> acceleration; // length: N_unconstrained_vertices*3 
+        std::vector<REAL> displacement;
+        std::vector<int>  constrainedVertices; 
+    };
+    using _DataStep_UPtr = std::unique_ptr<_DataStep>; 
+    struct _DataBuffer
+    {
+        static std::queue<boost::filesystem::path> qPrefixes; // to-be-read file prefixes
+        const std::string                          accSuffix = "wsacc"; 
+        const std::string                          disSuffix = "displacement"; 
+        const int                                  bufLen = 10; 
+        unsigned int                               bufValidLen;
+        REAL                                       bufStartTime = -1.0;
+        FDTD_ShellObject                          *owner; 
+        std::vector<_DataStep>                     buf; 
+        REAL                                       lastQueriedTime; 
+        _DataBuffer()
+            : owner(nullptr)
+        {} 
+        _DataBuffer(FDTD_ShellObject *o)
+            : owner(o)
+        {
+            buf.resize(bufLen);
+            bufValidLen = 0;
+        }
+        bool Empty() const {return bufValidLen != 0;}
+        const _DataStep &Data(const int i) const {return buf.at(i);}
+        bool FindData(const REAL time, _DataStep **data); 
+        void ReadNextBuffer(); 
+        void ReadMetaData(); 
+    };
+
+    bool                   _init = false; 
+    std::vector<int>       _o2iMap; // vertex map original->internal
+    std::vector<int>       _i2oMap; // vertex map internal->original
+    std::vector<int>       _constrainedVertices; 
+    std::string            _dataDir;
+    std::string            _vertexMapFile = "vertex_map.txt";
+    mutable _DataStep     *_currentData; // allocated on stack, mere pointer (don't delete)
+    mutable _DataBuffer    _dataBuffer; 
 public:
     FDTD_ShellObject()
-        : FDTD_RigidObject(SHELL_OBJ)
+        : FDTD_RigidObject(SHELL_OBJ),
+          _dataBuffer(this)
     {}
     FDTD_ShellObject(const std::string &workingDirectory,
+                     const std::string &shellDataDirectory,
                      const int &resolution, 
                      const std::string &objectPrefix,
                      const std::shared_ptr<PML_WaveSolver_Settings> &sset,
@@ -26,7 +73,9 @@ public:
                            objectPrefix,
                            false,
                            sset,
-                           meshName)
+                           meshName),
+          _dataDir(shellDataDirectory), 
+          _dataBuffer(this)
     {}
 
     virtual REAL DistanceToMesh(const double &x, const double &y, const double &z)
@@ -43,6 +92,12 @@ public:
                                        Vector3d &erectedNormal, 
                                        REAL &distanceTravelled, 
                                        const int &startFromTriangle=-1);
+    virtual void UpdateBoundingBox(); 
+
     void Initialize(); 
+    void UpdatePosAcc(const REAL time);
+    void GetAllVertexPos(std::vector<Point3d> &allp)const; 
+    Vector3d GetVertexPos(const int v_idx) const; 
+    Vector3d GetVertexAcc(const int v_idx) const; 
 };
 #endif

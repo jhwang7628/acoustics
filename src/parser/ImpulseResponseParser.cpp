@@ -209,10 +209,12 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (node != NULL)
     {
-        const std::string meshName = std::to_string(meshCount++); 
-        const std::string workingDirectory = queryRequiredAttr(node, "working_directory"); 
-        const std::string objectPrefix = queryRequiredAttr(node, "object_prefix"); 
+        const std::string meshName           = std::to_string(meshCount++); 
+        const std::string workingDirectory   = queryRequiredAttr(node, "working_directory"   ); 
+        const std::string objectPrefix       = queryRequiredAttr(node, "object_prefix"       ); 
+        const std::string shellDataDirectory = queryRequiredAttr(node, "shell_data_directory"); 
         RigidObjectPtr object = std::make_shared<FDTD_ShellObject>(workingDirectory,
+                                                                   shellDataDirectory,
                                                                    -1,
                                                                    objectPrefix,
                                                                    solverSettings,

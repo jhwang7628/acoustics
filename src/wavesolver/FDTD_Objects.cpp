@@ -90,14 +90,18 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
     {
         if (m.second->Type() == SHELL_OBJ)
         {
-            const auto &mesh = m.second->GetMeshPtr(); 
+            auto shell_object = 
+                std::dynamic_pointer_cast<FDTD_ShellObject>(m.second);
+            const auto &mesh = shell_object->GetMeshPtr(); 
             const auto &tris = mesh->triangles(); 
-            const auto &vert = mesh->vertices(); 
+            auto vert = mesh->vertices(); 
+            for (int ii=0; ii<mesh->num_vertices(); ++ii)
+                vert.at(ii) = shell_object->GetVertexPos(ii);
             for (const auto &tri : tris)
             {
                 for (int ii=0; ii<3; ++ii) // ii-th vertex 
                 {
-                    vtxbuf = m.second->ObjectToWorldPoint(vert.at(tri[ii])); 
+                    vtxbuf = shell_object->ObjectToWorldPoint(vert.at(tri[ii])); 
                     vtxs[ii][0] = (float)(vtxbuf.x);
                     vtxs[ii][1] = (float)(vtxbuf.y);
                     vtxs[ii][2] = (float)(vtxbuf.z);
@@ -336,11 +340,18 @@ SetObjectStates(const REAL time)
 {
     // update modal vectors for the next time step
     for (auto &m : _rigidObjects) 
+    {
         if (m.second->Type() == RIGID_SOUND_OBJ) 
         {
             std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)
                 ->UpdateQPointers(); 
         }
+        else if (m.second->Type() == SHELL_OBJ)
+        {
+            std::dynamic_pointer_cast<FDTD_ShellObject>(m.second)
+                ->UpdatePosAcc(time);
+        }
+    }
     AnimateObjects(time);
 }
 

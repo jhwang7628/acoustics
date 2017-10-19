@@ -3351,12 +3351,12 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             const Vector3d pos = _pressureField.cellPosition(cell_idx);
             int type; 
             bool isSolid = false; 
-            if (!isFluid(pos, type))
+            if (!isFluid(pos, type)) // for rigid objects
             {
                 isSolid = true; 
                 thread_GCType.at(thread_idx)[cell_idx] = type;
             }
-            else if (_objects->TriangleCubeIntersection(
+            else if (_objects->TriangleCubeIntersection( // for shells
                        pos, Vector3d(_waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0)))
