@@ -192,6 +192,7 @@ void WaterVibrationalSourceBubbles::
 writeObj(const std::string &fName, const Mesh *m)
 {
     std::ofstream of(fName.c_str());
+    of.precision(12);
 
     std::map<int, int> vertsToKeep;
     for (const auto& t : m->m_surfTris)
