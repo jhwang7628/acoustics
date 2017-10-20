@@ -54,7 +54,7 @@ private:
     std::vector<int>       _constrainedVertices; 
     std::string            _dataDir;
     std::string            _vertexMapFile = "vertex_map.txt";
-    mutable _DataStep     *_currentData; // allocated on stack, mere pointer (don't delete)
+    mutable _DataStep     *_currentData = nullptr; // allocated on stack, mere pointer (don't delete)
     mutable _DataBuffer    _dataBuffer; 
 public:
     FDTD_ShellObject()

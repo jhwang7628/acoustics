@@ -3244,6 +3244,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
+    if (_cellTriangles.size() != numPressureCells())
+        _cellTriangles.resize(numPressureCells()); 
 
     // copy the cache to map and clear ghost cells
     for (auto &m : _ghostCells)
@@ -3351,6 +3353,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             const Vector3d pos = _pressureField.cellPosition(cell_idx);
             int type; 
             bool isSolid = false; 
+            std::set<TriangleIdentifier, TIComp> out_tris_shell; 
             if (!isFluid(pos, type)) // for rigid objects
             {
                 isSolid = true; 
@@ -3359,9 +3362,11 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             else if (_objects->TriangleCubeIntersection( // for shells
                        pos, Vector3d(_waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0,
-                                     _waveSolverSettings->cellSize/2.0)))
+                                     _waveSolverSettings->cellSize/2.0),
+                       out_tris_shell))
             {
                 isSolid = true; 
+                _cellTriangles.at(cell_idx) = std::move(out_tris_shell);
                 thread_GCType.at(thread_idx)[cell_idx] = 2;
             }
 
@@ -3373,6 +3378,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             _classified.at(cell_idx) = true; 
         }
     }
+
     // concatenate results from different threads
     for (int tid=1; tid<N_max_threads; ++tid)
         thread_candidate_cells.at(0).insert(thread_candidate_cells.at(0).end(),

@@ -75,7 +75,8 @@ OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint)
 //##############################################################################
 bool FDTD_Objects::
 TriangleCubeIntersection(const Vector3d &cubeCenter, 
-                         const Vector3d &cubeHalfSize)
+                         const Vector3d &cubeHalfSize,
+                         std::set<TriangleIdentifier, TIComp> &outTris)
 {
     float cc[3] = {(float)cubeCenter.x, 
                    (float)cubeCenter.y,
@@ -85,6 +86,7 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
                    (float)cubeHalfSize.z};
     float vtxs[3][3]; 
     Vector3d vtxbuf; 
+    bool result = false; 
     // only performs on shell objects to save time
     for (const auto &m : _rigidObjects)
     {
@@ -97,8 +99,9 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
             auto vert = mesh->vertices(); 
             for (int ii=0; ii<mesh->num_vertices(); ++ii)
                 vert.at(ii) = shell_object->GetVertexPos(ii);
-            for (const auto &tri : tris)
+            for (int tid=0; tid<tris.size(); ++tid)
             {
+                const auto &tri = tris.at(tid); 
                 for (int ii=0; ii<3; ++ii) // ii-th vertex 
                 {
                     vtxbuf = shell_object->ObjectToWorldPoint(vert.at(tri[ii])); 
@@ -108,11 +111,15 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
                 }
                 const int test = triBoxOverlap(cc, cs, vtxs);
                 if (test > 0)
-                    return true; 
+                {
+                    const int oid = std::stoi(shell_object->GetMeshName()); 
+                    outTris.insert(TriangleIdentifier(oid, tid));
+                    result = true; 
+                }
             }
         }
     }
-    return false; 
+    return result; 
 }
 
 //##############################################################################

@@ -15,6 +15,54 @@
 class SimWorld;
 
 //##############################################################################
+// Struct TriangleIdentifier
+//##############################################################################
+struct TriangleIdentifier
+{
+    int objectID; 
+    int triangleID; 
+    bool active;
+    Vector3d centroid; 
+    Vector3d normal;
+    TriangleIdentifier()
+        : objectID(-1), triangleID(-1)
+    {}
+    TriangleIdentifier(const int &o_id, const int &t_id) 
+        : objectID(o_id), triangleID(t_id)
+    {}
+    TriangleIdentifier(const int &o_id, const int &t_id, 
+                       const Vector3d &c, const Vector3d &n)
+        : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
+    {}
+};
+using TriangleIdentifier_UPtr = std::unique_ptr<TriangleIdentifier>; 
+
+//##############################################################################
+// Struct TIComp
+//   Comparator for TriangleIdentifier class
+//##############################################################################
+struct TIComp 
+{
+    bool operator() (const TriangleIdentifier &lhs,
+                     const TriangleIdentifier &rhs)
+    {
+        // Szudzik's function
+        int lhsid, rhsid; 
+        {
+            const unsigned long long _a = std::min(lhs.objectID, lhs.triangleID); 
+            const unsigned long long _b = std::max(lhs.objectID, lhs.triangleID); 
+            lhsid = (_a>=_b ? _a*_a+_a+_b : _a+_b*_b); 
+        }
+        {
+            const unsigned long long _a = std::min(rhs.objectID, rhs.triangleID); 
+            const unsigned long long _b = std::max(rhs.objectID, rhs.triangleID); 
+            rhsid = (_a>=_b ? _a*_a+_a+_b : _a+_b*_b); 
+        }
+        return lhsid < rhsid; 
+    }
+};
+
+//##############################################################################
 // Handles a list of objects embedded in the wave solver
 //##############################################################################
 class FDTD_Objects;
@@ -60,7 +108,9 @@ class FDTD_Objects
         int OccupyByObject(const Vector3d &positionWorld); 
         bool OccupyByConstraint(const Vector3d &pos); 
         bool OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint); 
-        bool TriangleCubeIntersection(const Vector3d &maxCubeBound, const Vector3d &minCubeBound); 
+        bool TriangleCubeIntersection(const Vector3d &maxCubeBound, 
+                                      const Vector3d &minCubeBound, 
+                                      std::set<TriangleIdentifier, TIComp> &outTris); 
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
         REAL LowestObjectDistance(const Vector3d &positionWorld); 
         bool LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 

@@ -615,7 +615,7 @@ DrawSelection()
         const auto search = simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.find(cell_idx); 
         if (search != simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.end())
         {
-            for (std::vector<MAC_Grid::TriangleIdentifier>::const_iterator it=(search->second)->begin(); it!=(search->second)->end(); ++it)
+            for (std::vector<TriangleIdentifier>::const_iterator it=(search->second)->begin(); it!=(search->second)->end(); ++it)
             {
                 const auto &object = simulator->GetSceneObjects()->GetPtr(it->objectID);
                 const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 

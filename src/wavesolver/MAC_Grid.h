@@ -7,6 +7,7 @@
 #define MAC_GRID_H
 
 #include <unordered_map>
+#include <set>
 #include <map>
 #include <distancefield/distanceField.h>
 #include <distancefield/closestPointField.h>
@@ -59,25 +60,6 @@ class MAC_Grid
             Vector3d ghostCellPosition; 
             int ghostCellBoundaryID; 
         }; 
-
-        struct TriangleIdentifier
-        {
-            int objectID; 
-            int triangleID; 
-            bool active;
-            Vector3d centroid; 
-            Vector3d normal;
-            TriangleIdentifier()
-                : objectID(-1), triangleID(-1)
-            {}
-            TriangleIdentifier(const int &o_id, const int &t_id) 
-                : objectID(o_id), triangleID(t_id)
-            {}
-            TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c, const Vector3d &n)
-                : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
-            {}
-        };
-        using TriangleIdentifier_UPtr = std::unique_ptr<TriangleIdentifier>; 
 
         class FVMetaData
         {
@@ -288,12 +270,15 @@ class MAC_Grid
         BoolArray                _isGhostCell;
         BoolArray                _isPMLCell;
 
+        // store all the triangle ids in cell for shells (not doing this
+        // for rigid bodies)
+        std::vector<std::set<TriangleIdentifier, TIComp>> _cellTriangles; 
+
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
         // valid
         BoolArray                _isVelocityBulkCell[ 3 ];
         BoolArray                _isVelocityInterfacialCell[ 3 ];
-
 
         std::vector<PML_PressureCell> _pmlPressureCells; 
         std::vector<PML_VelocityCell> _pmlVelocityCells; 

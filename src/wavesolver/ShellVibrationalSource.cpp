@@ -15,7 +15,7 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time,
 REAL ShellVibrationalSource::
 Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 {
-    const Vector3d acc = Evaluate(vertexId, time); 
+    const Vector3d acc = Evaluate(vertexID, time); 
     return acc.dotProduct(vertexNormal); 
 }
 

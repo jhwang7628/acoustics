@@ -88,8 +88,8 @@ Build(ImpulseResponseParser_Ptr &parser)
         _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement, 
                                                _simulatorSettings->fileVelocity, 
                                                _simulatorSettings->fileAcceleration);
-        UpdateObjectState(_state.time); 
     }
+    UpdateObjectState(_state.time); 
 
     std::map<ActiveSimUnit_Ptr, BoundingBox> candidateUnit; 
     assert(_simulatorSettings->solverControlPolicy);
