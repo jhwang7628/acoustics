@@ -20,6 +20,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShellVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShellVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSourceBubbles.h

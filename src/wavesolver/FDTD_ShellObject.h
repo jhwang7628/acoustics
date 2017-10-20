@@ -100,4 +100,5 @@ public:
     Vector3d GetVertexPos(const int v_idx) const; 
     Vector3d GetVertexAcc(const int v_idx) const; 
 };
+using FDTD_ShellObject_Ptr = std::shared_ptr<FDTD_ShellObject>; 
 #endif
