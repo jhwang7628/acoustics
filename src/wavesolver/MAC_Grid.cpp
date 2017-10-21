@@ -1109,8 +1109,30 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         REAL distance; 
         _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
         auto object = _objects->GetPtr(boundaryObject); 
-        if (   gc->cache 
-            && gc->cache->tid.objectID == boundaryObject)
+        if (object->Type() == SHELL_OBJ)
+        {
+            // shell is deformable, first we collect a list of triangles in the neighbourhood of the 
+            // cell, then use this list to find reflection point.
+            // this effectively skips the kd-tree, since its only built for static object
+            auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+            const int shell_object_id = std::stoi(shell_object->GetMeshName()); 
+            IntArray cell_list;
+            _pressureField.cell26Neighbours(gc->ownerCell, cell_list);
+            cell_list.push_back(gc->ownerCell); 
+            std::set<int> triangles;
+            for (const auto &cell : cell_list)
+                for (const auto tri_id : _cellTriangles.at(cell))
+                    if (tri_id.objectID == shell_object_id)
+                        triangles.insert(tri_id.triangleID); 
+            closestTriangle = shell_object->ReflectAgainstBoundary(cellPosition,
+                                                                   triangles,
+                                                                   imagePoint,
+                                                                   boundaryPoint, 
+                                                                   erectedNormal, 
+                                                                   distance); 
+        }
+        else if (   gc->cache 
+                 && gc->cache->tid.objectID == boundaryObject)
         {
             closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, 
                                                              distance, gc->cache->tid.triangleID); 
@@ -1866,7 +1888,14 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceTravelled; 
         auto object = _objects->GetPtr(objectID); 
-        object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+        if (object->Type() == SHELL_OBJ)
+        {
+            // TODO
+        }
+        else
+        {
+            object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+        }
 
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update

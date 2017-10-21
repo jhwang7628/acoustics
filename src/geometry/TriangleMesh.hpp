@@ -258,7 +258,14 @@ class TriangleMesh
 
         // need FindKNearestTriangles()
         T ComputeClosestPointOnMesh(const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const int &N_neighbours=5) const; 
-        T ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const; 
+        T ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, 
+                                          const std::vector<int> &triangleIndices, 
+                                          Vector3<T> &closestPoint, 
+                                          int &closestTriangle, 
+                                          Vector3<T> &projectedPoint,
+                                          const bool useDeformation = false,
+                                          const std::vector<T> &deformation = std::vector<T>()
+                                          ) const; 
 
     protected:
         double                      m_totArea;
@@ -803,18 +810,39 @@ ComputeCentroid() const
  */
 template <typename T> 
 T TriangleMesh<T>::
-ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const
+ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, 
+                                const std::vector<int> &triangleIndices, 
+                                Vector3<T> &closestPoint, 
+                                int &closestTriangle, 
+                                Vector3<T> &projectedPoint, 
+                                const bool useDeformation,
+                                const std::vector<T> &deformation
+                                ) const
 {
     assert(triangleIndices.size() > 0);
     T minDistance = std::numeric_limits<T>::max(); 
     Vector3<T> closestPointBuffer, projectedPointBuffer;
+    if (useDeformation && deformation.size() != num_vertices()*3)
+        throw std::runtime_error("**ERROR** deformation passed in has wrong dimension");
     for (const int t_idx : triangleIndices)
     {
         // points CCW ordering
         const Tuple3ui &triangle = this->triangle_ids(t_idx); 
-        const Point3<T> &p0 = this->vertex(triangle.x); 
-        const Point3<T> &p1 = this->vertex(triangle.y); 
-        const Point3<T> &p2 = this->vertex(triangle.z); 
+        Point3<T> p0 = this->vertex(triangle.x); 
+        Point3<T> p1 = this->vertex(triangle.y); 
+        Point3<T> p2 = this->vertex(triangle.z); 
+        if (useDeformation)
+        {
+            p0.x += deformation.at(triangle.x*3  );
+            p0.y += deformation.at(triangle.x*3+1);
+            p0.z += deformation.at(triangle.x*3+2);
+            p1.x += deformation.at(triangle.y*3  );
+            p1.y += deformation.at(triangle.y*3+1);
+            p1.z += deformation.at(triangle.y*3+2);
+            p2.x += deformation.at(triangle.z*3  );
+            p2.y += deformation.at(triangle.z*3+1);
+            p2.z += deformation.at(triangle.z*3+2);
+        }
 
         // edges w.r.t p0
         const Vector3<T> e0 = p2 - p0; 

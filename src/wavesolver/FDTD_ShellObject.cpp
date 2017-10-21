@@ -24,14 +24,6 @@ DistanceToMesh(const Vector3d &position)
 
 //##############################################################################
 // Function ReflectAgainstBoundary
-//   Note: There is no concept of inside/outside for shells. This function 
-//   therefore defines reflection to the same side of the shell. i.e., 
-//   the invariant of the returned value is
-//      (r-o).dot(n)*sign(d) > 0
-//          r: reflectedPoint
-//          o: originalPoint
-//          n: erectedNormal
-//          d: (signed) distanceTravelled
 //##############################################################################
 int FDTD_ShellObject:: 
 ReflectAgainstBoundary(const Vector3d &originalPoint, 
@@ -41,19 +33,36 @@ ReflectAgainstBoundary(const Vector3d &originalPoint,
                        REAL &distanceTravelled, 
                        const int &startFromTriangle)
 {
-    const int tidx = FDTD_RigidObject::ReflectAgainstBoundary(originalPoint, 
-                                                              reflectedPoint, 
-                                                              boundaryPoint,
-                                                              erectedNormal, 
-                                                              distanceTravelled,
-                                                              startFromTriangle); 
-    // on the other side of the shell, flip reflectedPoint
-    if (distanceTravelled < 0)
-    {
-        erectedNormal *= -1.0; 
-        reflectedPoint = originalPoint + erectedNormal * fabs(distanceTravelled); 
-    }
-    return tidx; 
+    throw std::runtime_error("**ERROR** Should not call ReflectAgainstBoundary on Shells"); 
+}
+
+//##############################################################################
+// Function ReflectAgainstBoundary
+//##############################################################################
+int FDTD_ShellObject:: 
+ReflectAgainstBoundary(const Vector3d &originalPoint, 
+                       const std::set<int> &triangles,
+                       Vector3d &reflectedPoint, 
+                       Vector3d &boundaryPoint, 
+                       Vector3d &erectedNormal, 
+                       REAL &distance)
+{
+    int closestTriangle;
+    std::vector<REAL> alld; 
+    const bool hasDeformation = GetDisplacements(alld); 
+    std::vector<int> cands; 
+    std::copy(triangles.begin(), triangles.end(), std::back_inserter(cands));
+    Vector3d tmp_pp; 
+    distance = GetMeshPtr()->ComputeClosestPointOnMeshHelper(originalPoint,
+                                                             cands, 
+                                                             boundaryPoint,
+                                                             closestTriangle, 
+                                                             tmp_pp,
+                                                             hasDeformation,
+                                                             alld); 
+    reflectedPoint = boundaryPoint + (originalPoint - boundaryPoint)*2.0; 
+    erectedNormal = (originalPoint - boundaryPoint).normalized();
+    return closestTriangle; 
 }
 
 //##############################################################################
@@ -114,9 +123,26 @@ UpdatePosAcc(const REAL time)
 void FDTD_ShellObject:: 
 GetAllVertexPos(std::vector<Point3d> &allp) const
 {
-    auto vertices = _mesh->vertices(); 
-    for (int ii=0; ii<vertices.size(); ++ii) 
-        vertices.at(ii) = GetVertexPos(ii); 
+    allp = _mesh->vertices(); 
+    for (int ii=0; ii<allp.size(); ++ii) 
+        allp.at(ii) = GetVertexPos(ii); 
+}
+
+//##############################################################################
+// Function GetAllVertexPos
+//##############################################################################
+bool FDTD_ShellObject:: 
+GetDisplacements(std::vector<REAL> &alld) const
+{
+    alld.resize(_mesh->num_vertices()*3);
+    if (_currentData) 
+    {
+        const auto d = _currentData->displacement; 
+        std::copy(d.begin(), d.end(), alld.begin()); 
+        return true; 
+    }
+    std::fill(alld.begin(), alld.end(), (REAL)0.0);
+    return false; 
 }
 
 //##############################################################################

@@ -97,8 +97,15 @@ public:
     void Initialize(); 
     void UpdatePosAcc(const REAL time);
     void GetAllVertexPos(std::vector<Point3d> &allp)const; 
+    bool GetDisplacements(std::vector<REAL> &alld)const; 
     Vector3d GetVertexPos(const int v_idx) const; 
     Vector3d GetVertexAcc(const int v_idx) const; 
+    int ReflectAgainstBoundary(const Vector3d &originalPoint, 
+                               const std::set<int> &triangles,
+                               Vector3d &reflectedPoint, 
+                               Vector3d &boundaryPoint, 
+                               Vector3d &erectedNormal, 
+                               REAL &distance);
 };
 using FDTD_ShellObject_Ptr = std::shared_ptr<FDTD_ShellObject>; 
 #endif
