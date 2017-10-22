@@ -4,6 +4,7 @@
 #include <wavesolver/VibrationalSource.h> 
 #include <wavesolver/ModalVibrationalSource.h> 
 #include <wavesolver/AccelerationNoiseVibrationalSource.h> 
+#include <wavesolver/ShellVibrationalSource.h> 
 #include <wavesolver/WaterVibrationalSource.h> 
 #include <wavesolver/FDTD_PlaneConstraint.h>
 #include <wavesolver/WaterVibrationalSourceBubbles.h> 
@@ -210,15 +211,22 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     while (node != NULL)
     {
         const std::string meshName           = std::to_string(meshCount++); 
-        const std::string workingDirectory   = queryRequiredAttr(node, "working_directory"   ); 
-        const std::string objectPrefix       = queryRequiredAttr(node, "object_prefix"       ); 
-        const std::string shellDataDirectory = queryRequiredAttr(node, "shell_data_directory"); 
+        const std::string workingDirectory   = queryRequiredAttr(node, "working_directory"        ); 
+        const std::string objectPrefix       = queryRequiredAttr(node, "object_prefix"            ); 
+        const std::string shellDataDirectory = queryRequiredAttr(node, "shell_data_directory"     ); 
+        const bool has_shell_source          = queryOptionalBool(node, "has_shell_source"    , "1"); 
         RigidObjectPtr object = std::make_shared<FDTD_ShellObject>(workingDirectory,
                                                                    shellDataDirectory,
                                                                    -1,
                                                                    objectPrefix,
                                                                    solverSettings,
                                                                    meshName); 
+        auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+        if (has_shell_source)
+        {
+            VibrationalSourcePtr sourcePtr(new ShellVibrationalSource(shell_object)); 
+            object->AddVibrationalSource(sourcePtr);
+        }
         objects->AddObject(std::stoi(meshName), object); 
         node = node->NextSiblingElement(name.c_str());
     }

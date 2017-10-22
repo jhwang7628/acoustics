@@ -1888,15 +1888,31 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceTravelled; 
         auto object = _objects->GetPtr(objectID); 
+        int closestTriangle;
         if (object->Type() == SHELL_OBJ)
         {
-            // TODO
+            // this procedure is the same as in pressureUpdateGhostCells
+            auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+            const int shell_object_id = std::stoi(shell_object->GetMeshName()); 
+            IntArray cell_list;
+            _pressureField.cell26Neighbours(cell_idx, cell_list);
+            cell_list.push_back(cell_idx); 
+            std::set<int> triangles;
+            for (const auto &cell : cell_list)
+                for (const auto tri_id : _cellTriangles.at(cell))
+                    if (tri_id.objectID == shell_object_id)
+                        triangles.insert(tri_id.triangleID); 
+            closestTriangle = shell_object->ReflectAgainstBoundary(cellPosition,
+                                                                   triangles,
+                                                                   imagePoint,
+                                                                   boundaryPoint, 
+                                                                   erectedNormal, 
+                                                                   distanceTravelled); 
         }
         else
         {
-            object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
+            closestTriangle = object->ReflectAgainstBoundary(cellPosition, imagePoint, boundaryPoint, erectedNormal, distanceTravelled); 
         }
-
         // prepare interpolation stencils, this part is similar to
         // the vandermonde part in ghost cell pressure update
         IntArray neighbours; 
@@ -2033,7 +2049,12 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         else
         {
             const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
-            const REAL an = object->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, simulationTime); 
+            const Tuple3ui triangle = object->GetMeshPtr()->triangle_ids(closestTriangle); 
+            Vector3d acc; 
+            for (int ii=0; ii<3; ++ii)
+                acc += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime); 
+            acc /= 3.0; 
+            const REAL an = acc.dotProduct(erectedNormal); 
             p(cell_idx, 0) = mlsVal(0, 0) + density*an*fabs(distanceTravelled);
         }
 #endif
