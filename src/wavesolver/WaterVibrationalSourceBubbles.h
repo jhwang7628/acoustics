@@ -53,6 +53,10 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         double _t1, _t2; // surrounding times for surface data
         Mesh _m1, _m2;
         Mesh *_m; // mesh that is currently being used
+
+        // TODO: these could probably be pointers to avoid data copying
+        Mesh _waveSolverM1, _waveSolverM2;
+        Mesh *_waveSolverM; // mesh that is currently being used
         SurfaceVelocityData _v1, _v2;
         MLSInterp _mls;
         std::shared_ptr<PointKDTree> _kd1, _kd2, _kd, _fullKd1, _fullKd2; // TODO: add copy/move semantics to the kd tree class so shared pointers aren't necessary

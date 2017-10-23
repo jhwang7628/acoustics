@@ -24,6 +24,7 @@ struct FileNames
     std::string meshFile;
     std::string datFile; // helmholtz solution file
     std::string freqFile; // frequency info file
+    std::string waveSolverMeshFile;
 };
 
 struct BubbleInputInfo
@@ -185,6 +186,11 @@ parseFileNames(const std::string &dataDir)
         }
 
         f.freqFile = p + string("/bemOutput/info-") + meshTime + string(".txt");
+
+        if (useExternalFiles)
+        {
+            f.waveSolverMeshFile = p + string("/g") + fn.substr(9);
+        }
 
         output[t] = f;
     }

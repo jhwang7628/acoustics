@@ -172,7 +172,8 @@ Initialize(const std::string &dataDir, const std::string &tmpDir)
         std::cout << iter->first << ":\n"
                   << "   " << iter->second.meshFile << "\n"
                   << "   " << iter->second.datFile << "\n"
-                  << "   " << iter->second.freqFile << std::endl;
+                  << "   " << iter->second.freqFile << "\n"
+                  << "   " << iter->second.waveSolverMeshFile << std::endl;
     }
 
     _curTime = -1;
@@ -197,9 +198,12 @@ writeObj(const std::string &fName, const Mesh *m)
     std::map<int, int> vertsToKeep;
     for (const auto& t : m->m_surfTris)
     {
-        vertsToKeep[m->m_triangles[t](0)] = -1;
-        vertsToKeep[m->m_triangles[t](1)] = -1;
-        vertsToKeep[m->m_triangles[t](2)] = -1;
+        if (m->m_triType.at(t) == Mesh::FLUID_AIR || m->m_triType.at(t) == Mesh::SOLID)
+        {
+            vertsToKeep[m->m_triangles[t](0)] = -1;
+            vertsToKeep[m->m_triangles[t](1)] = -1;
+            vertsToKeep[m->m_triangles[t](2)] = -1;
+        }
     }
 
     int counter = 1;
@@ -213,10 +217,13 @@ writeObj(const std::string &fName, const Mesh *m)
 
     for (const auto& t : m->m_surfTris)
     {
-        of << "f "
-           << vertsToKeep[m->m_triangles[t](0)] << " "
-           << vertsToKeep[m->m_triangles[t](1)] << " "
-           << vertsToKeep[m->m_triangles[t](2)] << std::endl;
+        if (m->m_triType.at(t) == Mesh::FLUID_AIR || m->m_triType.at(t) == Mesh::SOLID)
+        {
+            of << "f "
+               << vertsToKeep[m->m_triangles[t](0)] << " "
+               << vertsToKeep[m->m_triangles[t](1)] << " "
+               << vertsToKeep[m->m_triangles[t](2)] << std::endl;
+        }
     }
 }
 
@@ -236,6 +243,7 @@ step(REAL time)
         {
             _t1 = _t2;
             _m1 = _m2;
+            _waveSolverM1 = _waveSolverM2;
             _v1 = _v2;
             _kd1 = _kd2;
             _fullKd1 = _fullKd2;
@@ -259,6 +267,15 @@ step(REAL time)
         {
             _t2 = iter->first;
             _m2.loadGmsh(iter->second.meshFile);
+            if (iter->second.waveSolverMeshFile.size() > 0)
+            {
+                _waveSolverM2.loadGmsh(iter->second.waveSolverMeshFile);
+            }
+            else
+            {
+                _waveSolverM2 = _m2;
+            }
+
             _b2 = parseFreqFile(iter->second.freqFile);
             _kd2.reset(new PointKDTree(_m2.m_surfTriCenters.data(), _m2.m_surfTriCenters.size(), true));
             _fullKd2.reset(new PointKDTree(_m2.m_allTriCenters.data(), _m2.m_allTriCenters.size(), true));
@@ -280,6 +297,7 @@ step(REAL time)
         {
             _t1 = -1;
             _m1 = _m2;
+            _waveSolverM1 = _waveSolverM2;
             _v1 = _v2;
             _kd1 = _kd2;
             _fullKd1 = _fullKd2;
@@ -291,6 +309,7 @@ step(REAL time)
 
     // Interpolate onto the mesh that is closest
     _m = useT1 ? &_m1 : &_m2;
+    _waveSolverM = useT1 ? &_waveSolverM1 : &_waveSolverM2;
     //_kd = useT1 ? _fullKd1 : _fullKd2;
     _kd = useT1 ? _kd1 : _kd2;
 
@@ -303,7 +322,7 @@ step(REAL time)
         os << (useT1 ? _t1 : _t2);
 
         std::string fName(os.str());
-        writeObj(_tmpDir + std::string("/") + fName + std::string(".obj"), _m);
+        writeObj(_tmpDir + std::string("/") + fName + std::string(".obj"), _waveSolverM);
         _owner->Reinitialize(fName, false, false);
         _surfaceMesh = _owner->GetMeshPtr();
         _rigidMeshTime = useT1 ? _t1 : _t2;
