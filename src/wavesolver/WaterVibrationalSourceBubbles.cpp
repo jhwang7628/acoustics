@@ -303,6 +303,42 @@ step(REAL time)
             _fullKd1 = _fullKd2;
             _b1 = _b2;
         }
+
+        // Compute mesh mappings for velocity interpolation
+        _meshMapping2to1.clear();
+        _meshMapping1to2.clear();
+
+        for (int j = 0; j < _m1.m_surfTris.size(); ++j)
+        {
+            if (_m1.m_triType.at(_m1.m_surfTris.at(j)) != Mesh::FLUID_AIR)
+            {
+                continue;
+            }
+
+            // Now interpolate to correct times
+            MLSVal val1, val2;
+            MLSPoint p = _m1.m_surfTriCenters[j];
+
+            _kd2->find_nearest(p,
+                               5,
+                               _meshMapping2to1[j]);
+        }
+
+        for (int j = 0; j < _m2.m_surfTris.size(); ++j)
+        {
+            if (_m2.m_triType.at(_m2.m_surfTris.at(j)) != Mesh::FLUID_AIR)
+            {
+                continue;
+            }
+
+            // Now interpolate to correct times
+            MLSVal val1, val2;
+            MLSPoint p = _m2.m_surfTriCenters[j];
+
+            _kd1->find_nearest(p,
+                               5,
+                               _meshMapping1to2[j]);
+        }
     }
 
     bool useT1 = std::fabs(time - _t1) < std::fabs(_t2 - time);
@@ -1099,6 +1135,7 @@ computeVelocities(REAL time)
         //    bubbleNumber2 = bubbleNumber1;
         //}
 
+#if 0
         // DEBUGGING
         bool useFirstOnly = false;
         struct DebugData
@@ -1124,7 +1161,9 @@ computeVelocities(REAL time)
             }
         }
         // DEBUGGING
+#endif
 
+        MLSVal val1, val2;
         for (int j = 0; j < _m->m_surfTris.size(); ++j)
         {
             if (_m->m_triType.at(_m->m_surfTris.at(j)) != Mesh::FLUID_AIR)
@@ -1132,17 +1171,7 @@ computeVelocities(REAL time)
                 continue;
             }
 
-            // Now interpolate to correct times
-            MLSVal val1, val2;
-            MLSPoint p = _m->m_surfTriCenters[j];
-
-            tree1->find_nearest(p,
-                                5,
-                                closest1);
-
-            tree2->find_nearest(p,
-                                5,
-                                closest2);
+            MLSPoint p = _m1.m_surfTriCenters[j];
 
             // Values at t1 and t2
             try
@@ -1152,28 +1181,74 @@ computeVelocities(REAL time)
                 {
                     val1 << 0;
                 }
+                else if (useT1)
+                {
+                    if (existT1)
+                    {
+                        val1 << vel1.at(bubbleNumber1).at(j);
+                    }
+                    else
+                    {
+                        val1 = _mls.lookup(p,
+                                           localM1.m_surfTriCenters,
+                                           vel1.at(bubbleNumber1),
+                                           -1,
+                                           NULL,
+                                           &_meshMapping2to1.at(j));
+                    }
+                }
                 else
                 {
-                    val1 = _mls.lookup(p,
-                                       localM1.m_surfTriCenters,
-                                       vel1.at(bubbleNumber1),
-                                       -1,
-                                       NULL,
-                                       &closest1);
+                    if (existT1)
+                    {
+                        val1 = _mls.lookup(p,
+                                           localM1.m_surfTriCenters,
+                                           vel1.at(bubbleNumber1),
+                                           -1,
+                                           NULL,
+                                           &_meshMapping1to2.at(j));
+                    }
+                    else
+                    {
+                        val1 << vel1.at(bubbleNumber1).at(j);
+                    }
                 }
 
                 if (deadT2)
                 {
                     val2 << 0;
                 }
+                else if (!useT1)
+                {
+                    if (existT2)
+                    {
+                        val2 << vel2.at(bubbleNumber1).at(j);
+                    }
+                    else
+                    {
+                        val2 = _mls.lookup(p,
+                                           localM2.m_surfTriCenters,
+                                           vel2.at(bubbleNumber2),
+                                           -1,
+                                           NULL,
+                                           &_meshMapping1to2.at(j));
+                    }
+                }
                 else
                 {
-                    val2 = _mls.lookup(p,
-                                       localM2.m_surfTriCenters,
-                                       vel2.at(bubbleNumber2),
-                                       -1,
-                                       NULL,
-                                       &closest2);
+                    if (existT2)
+                    {
+                        val2 = _mls.lookup(p,
+                                           localM2.m_surfTriCenters,
+                                           vel2.at(bubbleNumber1),
+                                           -1,
+                                           NULL,
+                                           &_meshMapping2to1.at(j));
+                    }
+                    else
+                    {
+                        val2 << vel2.at(bubbleNumber2).at(j);
+                    }
                 }
 
                 //if (std::fabs(val1(0)) > 1e6)
@@ -1218,6 +1293,7 @@ computeVelocities(REAL time)
                 throw;
             }
 
+#if 0
             if (useFirstOnly)
             {
                 DebugData *ddata = static_cast<DebugData*>(osc.debugData);
@@ -1236,6 +1312,7 @@ computeVelocities(REAL time)
 
                 val2 = val1;
             }
+#endif
 
             // DEBUGGING, set surface velocity to constant 1 for now
             //val1.setConstant(1);
