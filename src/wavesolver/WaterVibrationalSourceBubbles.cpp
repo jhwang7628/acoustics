@@ -181,6 +181,8 @@ Initialize(const std::string &dataDir, const std::string &tmpDir)
     _dt = 1.0 / 192000.;
     _rigidMeshTime = -1;
 
+    _mls.setLookupOrder(0);
+
     FreqType ft = CAPACITANCE;
     std::string infoFile = dataDir + std::string("/bemOutput/oscillators/trackedBubInfo.txt");
     parseConfigFile(infoFile, ft);
@@ -305,8 +307,9 @@ step(REAL time)
         }
 
         // Compute mesh mappings for velocity interpolation
-        _meshMapping2to1.clear();
-        _meshMapping1to2.clear();
+        //_meshMapping2to1.clear();
+        //_meshMapping1to2.clear();
+        const int nn = _mls.getLookupOrder() == 0 ? 1 : 5;
 
         for (int j = 0; j < _m1.m_surfTris.size(); ++j)
         {
@@ -319,9 +322,11 @@ step(REAL time)
             MLSVal val1, val2;
             MLSPoint p = _m1.m_surfTriCenters[j];
 
+            _meshMapping1to2[j].reserve(nn);
+
             _kd2->find_nearest(p,
-                               5,
-                               _meshMapping2to1[j]);
+                               nn,
+                               _meshMapping1to2[j]);
         }
 
         for (int j = 0; j < _m2.m_surfTris.size(); ++j)
@@ -335,9 +340,11 @@ step(REAL time)
             MLSVal val1, val2;
             MLSPoint p = _m2.m_surfTriCenters[j];
 
+            _meshMapping2to1[j].reserve(nn);
+
             _kd1->find_nearest(p,
-                               5,
-                               _meshMapping1to2[j]);
+                               nn,
+                               _meshMapping2to1[j]);
         }
     }
 
@@ -1183,30 +1190,46 @@ computeVelocities(REAL time)
                 }
                 else if (useT1)
                 {
+                    // Interpolating to m1, j is indexing m1
                     if (existT1)
                     {
                         val1 << vel1.at(bubbleNumber1).at(j);
                     }
                     else
                     {
-                        val1 = _mls.lookup(p,
-                                           localM1.m_surfTriCenters,
-                                           vel1.at(bubbleNumber1),
-                                           -1,
-                                           NULL,
-                                           &_meshMapping2to1.at(j));
+                        if (_mls.getLookupOrder() == 0)
+                        {
+                            val1 << vel1.at(bubbleNumber1).at(_meshMapping1to2.at(j).at(0));
+                        }
+                        else
+                        {
+                            val1 = _mls.lookup(p,
+                                               localM1.m_surfTriCenters,
+                                               vel1.at(bubbleNumber1),
+                                               -1,
+                                               NULL,
+                                               &_meshMapping1to2.at(j));
+                        }
                     }
                 }
                 else
                 {
+                    // Interpolating to m2, j is indexing m2
                     if (existT1)
                     {
-                        val1 = _mls.lookup(p,
-                                           localM1.m_surfTriCenters,
-                                           vel1.at(bubbleNumber1),
-                                           -1,
-                                           NULL,
-                                           &_meshMapping1to2.at(j));
+                        if (_mls.getLookupOrder() == 0)
+                        {
+                            val1 << vel1.at(bubbleNumber1).at(_meshMapping2to1.at(j).at(0));
+                        }
+                        else
+                        {
+                            val1 = _mls.lookup(p,
+                                               localM1.m_surfTriCenters,
+                                               vel1.at(bubbleNumber1),
+                                               -1,
+                                               NULL,
+                                               &_meshMapping2to1.at(j));
+                        }
                     }
                     else
                     {
@@ -1220,30 +1243,46 @@ computeVelocities(REAL time)
                 }
                 else if (!useT1)
                 {
+                    // Interpolating to m2, j is indexing m2
                     if (existT2)
                     {
-                        val2 << vel2.at(bubbleNumber1).at(j);
+                        val2 << vel2.at(bubbleNumber2).at(j);
                     }
                     else
                     {
-                        val2 = _mls.lookup(p,
-                                           localM2.m_surfTriCenters,
-                                           vel2.at(bubbleNumber2),
-                                           -1,
-                                           NULL,
-                                           &_meshMapping1to2.at(j));
+                        if (_mls.getLookupOrder() == 0)
+                        {
+                            val2 << vel2.at(bubbleNumber2).at(_meshMapping2to1.at(j).at(0));
+                        }
+                        else
+                        {
+                            val2 = _mls.lookup(p,
+                                               localM2.m_surfTriCenters,
+                                               vel2.at(bubbleNumber2),
+                                               -1,
+                                               NULL,
+                                               &_meshMapping2to1.at(j));
+                        }
                     }
                 }
                 else
                 {
+                    // Interpolating to m1, j is indexing m1
                     if (existT2)
                     {
-                        val2 = _mls.lookup(p,
-                                           localM2.m_surfTriCenters,
-                                           vel2.at(bubbleNumber1),
-                                           -1,
-                                           NULL,
-                                           &_meshMapping2to1.at(j));
+                        if (_mls.getLookupOrder() == 0)
+                        {
+                            val2 << vel2.at(bubbleNumber2).at(_meshMapping1to2.at(j).at(0));
+                        }
+                        else
+                        {
+                            val2 = _mls.lookup(p,
+                                               localM2.m_surfTriCenters,
+                                               vel2.at(bubbleNumber2),
+                                               -1,
+                                               NULL,
+                                               &_meshMapping1to2.at(j));
+                        }
                     }
                     else
                     {
