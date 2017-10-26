@@ -54,7 +54,7 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
         Mesh _m1, _m2;
         Mesh *_m; // mesh that is currently being used
 
-        std::map<int, std::vector<int>> _meshMapping1to2, _meshMapping2to1;
+        std::vector<std::vector<int>> _meshMapping1to2, _meshMapping2to1;
 
         // TODO: these could probably be pointers to avoid data copying
         Mesh _waveSolverM1, _waveSolverM2;

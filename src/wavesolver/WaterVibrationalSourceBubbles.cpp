@@ -244,12 +244,12 @@ step(REAL time)
         if (_v2.size() > 0)
         {
             _t1 = _t2;
-            _m1 = _m2;
-            _waveSolverM1 = _waveSolverM2;
-            _v1 = _v2;
-            _kd1 = _kd2;
-            _fullKd1 = _fullKd2;
-            _b1 = _b2;
+            _m1 = std::move(_m2);
+            _waveSolverM1 = std::move(_waveSolverM2);
+            _v1 = std::move(_v2);
+            _kd1 = std::move(_kd2);
+            _fullKd1 = std::move(_fullKd2);
+            _b1 = std::move(_b2);
         }
 
         // New t2
@@ -259,11 +259,11 @@ step(REAL time)
             // Past the last solution data time
             // TODO: is this the best solution?
             //_t2 = 50000;
-            //_m2 = _m1;
-            //_v2 = _v1;
-            //_kd2 = _kd1;
-            //_fullKd2 = _fullKd1;
-            //_b2 = _b1;
+            _m2 = _m1;
+            _v2 = _v1;
+            _kd2 = _kd1;
+            _fullKd2 = _fullKd1;
+            _b2 = _b1;
         }
         else
         {
@@ -307,8 +307,11 @@ step(REAL time)
         }
 
         // Compute mesh mappings for velocity interpolation
-        //_meshMapping2to1.clear();
-        //_meshMapping1to2.clear();
+        if (_meshMapping1to2.size() < _m1.m_surfTris.size())
+        {
+            _meshMapping1to2.resize(_m1.m_surfTris.size());
+        }
+
         const int nn = _mls.getLookupOrder() == 0 ? 1 : 5;
 
         for (int j = 0; j < _m1.m_surfTris.size(); ++j)
@@ -327,6 +330,11 @@ step(REAL time)
             _kd2->find_nearest(p,
                                nn,
                                _meshMapping1to2[j]);
+        }
+
+        if (_meshMapping2to1.size() < _m2.m_surfTris.size())
+        {
+            _meshMapping2to1.resize(_m2.m_surfTris.size());
         }
 
         for (int j = 0; j < _m2.m_surfTris.size(); ++j)

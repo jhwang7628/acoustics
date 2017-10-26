@@ -82,6 +82,7 @@ public:
 
 		m_triangles.resize(numFaces);
 		m_triType.resize(numFaces);
+		m_allTriCenters.resize(numFaces);
 
         int fluidCounter = 0;
 		// Read triangles
@@ -121,7 +122,7 @@ public:
                 m_fullToSurf[i] = -1;
             }
 
-            m_allTriCenters.push_back( 1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]) );
+            m_allTriCenters[i] =  1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]);
         }
 	}
 };
