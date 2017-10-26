@@ -155,10 +155,13 @@ void VECTOR::clear()
 void VECTOR::resizeAndWipe(int size)
 {
     if (_size != size)
+    {
         delete[] _vector;
+        _vector = new REAL[size];
+    }
+
     _size = size;
 
-    _vector = new REAL[_size];
     clear();
 }
 

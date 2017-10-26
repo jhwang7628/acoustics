@@ -117,11 +117,14 @@ void MATRIX::copyInplace( const MATRIX &A )
 void MATRIX::resizeAndWipe(int rows, int cols)
 {
     if (_rows != rows || _cols != cols)
+    {
         delete[] _matrix;
+        _matrix = new REAL[rows * cols];
+    }
+
     _rows = rows;
     _cols = cols;
 
-    _matrix = new REAL[_rows * _cols];
     clear();
 }
 

@@ -193,6 +193,9 @@ void AdaptiveDistanceField::computeSignedField(const std::string& filename, doub
     };
 
     computeSignedField(closestFunc, bmin, bmax, subdivideRadius, maxAdfLevel, maxError, tileLevels, numWorkerThreads);
+
+    delete objFileOctree;
+    delete of;
 }
  
  
