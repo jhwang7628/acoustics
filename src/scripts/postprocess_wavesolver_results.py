@@ -57,6 +57,12 @@ if padTime > 0:
     all_data = np.pad(all_data, [(pad_amount, 0), (0,0)], 'constant', constant_values=0)
     N_steps  = all_data.shape[0]
 
+limTime = OptParse(parser, 'general', 'lim_time', 'f', -1)
+if limTime > 0:
+    lim_amount = int(round(limTime * sampfreq))
+    all_data = all_data[:lim_amount,:]
+    N_steps = all_data.shape[0]
+
 if ReqParse(parser, 'general', 'plot', 'b'):
     print '\n------ PLOTTING ------'
     xaxis_frame = ReqParse(parser, 'plot', 'xaxis_frame', 'b')
