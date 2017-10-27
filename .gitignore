@@ -40,3 +40,5 @@ src/tools/diff\.txt
 CMakeLists\.txt\.user
 
 *.orig
+# ctags file
+src/tags
