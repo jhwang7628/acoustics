@@ -7,6 +7,7 @@
 #define MAC_GRID_H
 
 #include <unordered_map>
+#include <set>
 #include <map>
 #include <distancefield/distanceField.h>
 #include <distancefield/closestPointField.h>
@@ -60,23 +61,6 @@ class MAC_Grid
             int ghostCellBoundaryID; 
         }; 
 
-        struct TriangleIdentifier
-        {
-            int objectID; 
-            int triangleID; 
-            bool active; 
-            Vector3d centroid; 
-            Vector3d normal;
-            TriangleIdentifier()
-            {}
-            TriangleIdentifier(const int &o_id, const int &t_id) 
-                : objectID(o_id), triangleID(t_id)
-            {}
-            TriangleIdentifier(const int &o_id, const int &t_id, const Vector3d &c, const Vector3d &n)
-                : objectID(o_id), triangleID(t_id), centroid(c), normal(n)
-            {}
-        };
-
         class FVMetaData
         {
             public:
@@ -84,7 +68,82 @@ class MAC_Grid
             void Clear(){cellMap.clear();}
         };
 
-        class GhostCell
+        //######################################################################
+        // Struct MAC_Grid::GhostCell
+        //  ownerCell flat cell index that owns this ghost cell, the owner cell
+        //            is always a solid cell (but has fluid neighbour)
+        //  neighbourCell flat cell index that share this ghost cell with owner,
+        //                the neighbourCell is always a fluid cell
+        //  topology topology (edge) between owner and neighbour. can only
+        //           take values {+1, -1, +2, -2, +3, -3}
+        //           +1: neighbour is at positive x direction relative to owner
+        //           -1: neighbour is at negative x direction relative to owner
+        //           +2: neighbour is at positive y direction relative to owner
+        //           -2: neighbour is at negative y direction relative to owner
+        //           +3: neighbour is at positive z direction relative to owner
+        //           -3: neighbour is at negative z direction relative to owner
+        //  pressure pressure value stored at this ghost cell
+        //  tid identify last-seen closest triangle
+        //  cache associated cached field
+        //######################################################################
+        struct GhostCell_Cache
+        {
+            TriangleIdentifier tid; 
+        }; 
+        using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
+        using GhostCell_Key  = unsigned long long int; 
+        using BoundaryGhostCell_Key  = std::string; 
+        struct GhostCell
+        {
+            int ownerCell; 
+            int neighbourCell; 
+            int topology;
+            int type;  // 0: bulky, 1: constraint, 2: shell 
+            Vector3d position; 
+            REAL pressure; 
+            GhostCell_Cache_UPtr cache; 
+            static GhostCell_Key MakeKey(const int &_a, const int &_b)
+            {
+                // Szudzik's function
+                const unsigned long long a = std::min(_a, _b); 
+                const unsigned long long b = std::max(_a, _b); 
+                return (a>=b ? a*a+a+b : a+b*b); 
+            }
+            inline GhostCell_Key MakeKey() const 
+            {return GhostCell::MakeKey(ownerCell, neighbourCell);}
+
+            bool boundary = false; 
+            std::string ownerSolverId; 
+            std::string neighbourSolverId;
+            BoundaryInterface_Ptr interface; 
+            static BoundaryGhostCell_Key MakeKey_Boundary(const std::string &oId, 
+                                                          const std::string &nId,
+                                                          const int &oCell, const int &nCell)
+            {
+                return (oId < nId ?
+                             oId + ":" + std::to_string(oCell) + ";"
+                           + nId + ":" + std::to_string(nCell)
+                         : 
+                             nId + ":" + std::to_string(nCell) + ";"
+                           + oId + ":" + std::to_string(oCell)
+                       );
+            }
+            BoundaryGhostCell_Key MakeKey_Boundary()
+            {
+                return GhostCell::MakeKey_Boundary(ownerSolverId, neighbourSolverId, 
+                                                   ownerCell, neighbourCell); 
+            }
+            Vector3d CellNormal()
+            {
+                Vector3d n; 
+                n[abs(topology)-1] = (topology>0 ? 1.0 : -1.0); 
+                return n;
+            }
+        };
+        using  GhostCell_UPtr = std::unique_ptr<GhostCell>;
+        using  GhostCell_Ptr = std::shared_ptr<GhostCell>; 
+
+        class GhostCell_Deprecated
         {
             public:
                 static std::vector<Timer<false> > ghostCellTimers; // NOTE not thread safe
@@ -117,7 +176,7 @@ class MAC_Grid
                 std::vector<BoundarySamples> boundarySamples; 
                 std::vector<VolumeSamples> volumeSamples; 
                 std::shared_ptr<std::vector<TriangleIdentifier> > hashedTriangles; 
-                GhostCell(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
+                GhostCell_Deprecated(const int &parent, std::shared_ptr<std::vector<TriangleIdentifier> > &triangles)
                     : validSample(true), parent_idx(parent), positions(FloatArray(6)), values(6, FloatArray(6, 0.0)), hashedTriangles(triangles)
                 {}
         };
@@ -165,6 +224,9 @@ class MAC_Grid
             REAL                RHS; 
         };
 
+        struct PML_PressureCell;
+        struct PML_VelocityCell; 
+
         struct PML_PressureCell
         {
             int index; 
@@ -173,6 +235,10 @@ class MAC_Grid
             REAL updateCoefficient[3]; 
             REAL divergenceCoefficient[3]; 
             REAL absorptionCoefficient; 
+            Vector3d position;
+            bool needRemove; 
+            PML_VelocityCell *lNeighbours[3]; 
+            PML_VelocityCell *rNeighbours[3]; 
         };
 
         struct PML_VelocityCell
@@ -184,6 +250,9 @@ class MAC_Grid
             int neighbour_p_right;
             REAL updateCoefficient; 
             REAL gradientCoefficient; 
+            REAL velocity; 
+            Vector3d position;
+            bool needRemove;
         }; 
 
     private: 
@@ -202,17 +271,25 @@ class MAC_Grid
         BoolArray                _isPMLCell;
         BoolArray                _isOneCellCavity;
 
+        // store all the triangle ids in cell for shells (not doing this
+        // for rigid bodies)
+        std::vector<std::set<TriangleIdentifier, TIComp>> _cellTriangles; 
+
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
         // valid
         BoolArray                _isVelocityBulkCell[ 3 ];
         BoolArray                _isVelocityInterfacialCell[ 3 ];
 
-
         std::vector<PML_PressureCell> _pmlPressureCells; 
         std::vector<PML_VelocityCell> _pmlVelocityCells; 
-        std::unordered_map<int, std::shared_ptr<GhostCell> > _ghostCellsCollection; 
-        IntArray                 _ghostCells;
+        std::unordered_map<int, std::shared_ptr<GhostCell_Deprecated> > _ghostCellsCollection; 
+        std::unordered_map<GhostCell_Key, GhostCell_UPtr> _ghostCells; 
+        std::unordered_map<int, std::set<GhostCell_Key>>  _ghostCellsTree; 
+        std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr> _boundaryGhostCells; 
+        using GhostCellType         = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
+        using BoundaryGhostCellType = std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr>; 
+        std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
         BoolArray                _pressureCellHasValidHistory; 
@@ -254,7 +331,12 @@ class MAC_Grid
         // for finite-volume formulation
         FVMetaData _fvMetaData; 
 
+        // boundary interface 
+        std::list<BoundaryInterface_Ptr> _boundaryInterfaces; 
+
     public:
+        std::string *grid_id = nullptr; 
+
         MAC_Grid(){}
         // Provide the size of the domain, finite difference division
         // size, and a signed distance function for the interior boundary
@@ -294,7 +376,7 @@ class MAC_Grid
                                  REAL t, REAL timeStep, REAL density);
 
         void PML_velocityUpdateCollocated(const REAL &simulationTime, const MATRIX (&pDirectional)[3], const MATRIX &pFull, MATRIX (&v)[3]); 
-        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext, MATRIX &laplacian);
+        void PML_pressureUpdateCollocated(const REAL &simulationTime, const MATRIX (&v)[3], MATRIX (&_pDirectional)[3], MATRIX &_pLast, MATRIX &_pCurr, MATRIX &_pNext, MATRIX &currLaplacian, MATRIX &pastLaplacian);
 
         // Performs a pressure update for the given pressure direction,
         // as detailed by Liu et al. (equation (16))
@@ -315,7 +397,9 @@ class MAC_Grid
         // Performs a pressure update for the ghost cells. 
         void PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
         void PML_pressureUpdateGhostCells_Coupled(MATRIX &p, FloatArray &pGC, const REAL &timeStep, const REAL &c, const REAL &simulationTime, const REAL density); 
+#ifdef USE_FV
         void UpdateGhostCells_FV(MATRIX &p, const REAL &simulationTime); 
+#endif
 
         // Samples data from a z slice of the finite difference grid and
         // puts it in to a matrix
@@ -350,7 +434,9 @@ class MAC_Grid
         inline BoundingBox PressureBoundingBox() const {return _pressureField.bbox();}
         inline BoundingBox VelocityBoundingBox(const int &dim) const {return _velocityField[dim].bbox();}
         inline const ScalarField &pressureField() const { return _pressureField; }
+        inline ScalarField &pressureField() { return _pressureField; }
         inline const ScalarField &velocityField(const int &ind) const { return _velocityField[ind]; }
+        inline ScalarField &velocityField(const int &ind) { return _velocityField[ind]; }
         inline Vector3d pressureFieldPosition(const Tuple3i &index) const { return _pressureField.cellPosition( index ); }
         inline Vector3d pressureFieldPosition(int index) const { return _pressureField.cellPosition( index ); }
         inline Vector3d velocityFieldPosition(const Tuple3i &index, const int &dim) const { return _velocityField[dim].cellPosition( index ); }
@@ -361,24 +447,40 @@ class MAC_Grid
         inline Tuple3i velocityFieldVertexIndex( int index, const int &dim ) const { return _velocityField[dim].cellIndex( index ); }
         inline const Tuple3i &pressureFieldDivisions() const { return _pressureField.cellDivisions(); }
         inline const Tuple3i &velocityFieldDivisions(const int &dim) const { return _velocityField[dim].cellDivisions(); }
-        inline const IntArray &ghostCells() const { return _ghostCells; }
+        //inline const IntArray &ghostCells() const { return _ghostCells; }
         inline const vector<const TriMesh *> &meshes() const { return _boundaryMeshes; }
         inline const bool IsVelocityCellSolid(const int &cell_idx, const int &dim) { return !_isVelocityInterfacialCell[dim].at(cell_idx) && !_isVelocityBulkCell[dim].at(cell_idx); }
-        inline const bool IsPressureCellSolid(const int &cell_idx) {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
+        inline const bool IsPressureCellGhost(const int &cell_idx) const {return _isGhostCell.at(cell_idx);}
+        inline const bool IsPressureCellBulk(const int &cell_idx) const {return _isBulkCell.at(cell_idx);}
+        inline const bool IsPressureCellSolid(const int &cell_idx) const {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
-        inline const std::shared_ptr<GhostCell> GetGhostCell(const int &cell_idx){const auto search = _ghostCellsCollection.find(cell_idx); return (search != _ghostCellsCollection.end() ? search->second : nullptr);}
+        inline const auto &GetGhostCells(){return _ghostCells;}
+        inline const auto &GetBoundaryGhostCells(){return _boundaryGhostCells;}
+        inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 
+        void classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose=false); 
         void classifyCellsDynamic(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void classifyCellsFV(MATRIX &pFull, MATRIX (&p)[3], FloatArray &pGCFull, FloatArray (&pGC)[3], MATRIX (&v)[3], const bool &useBoundary, const bool &verbose=false);
         void ComputeGhostCellSolveResidual(const FloatArray &p, REAL &minResidual, REAL &maxResidual, int &maxResidualEntry, REAL &maxOffDiagonalEntry); 
-        REAL PressureCellType(const int &idx) const;
+        REAL PressureCellType(const int &idx, const BoundingBox *sceneBox=nullptr) const;
         void ResetCellHistory(const bool &valid); 
+        void ResetClassified(){std::fill(_classified.begin(), _classified.end(), false);}
         void GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const; 
         void SetClassifiedSubset(const ScalarField &field, const int &N, const std::vector<ScalarField::RangeIndices> &indices, const bool &state);
         void CheckClassified(); 
         void Push_Back_GhostCellInfo(const int &gcIndex, const GhostCellInfo &info, FloatArray &pGCFull, FloatArray (&pGC)[3]); 
+        std::unique_ptr<GhostCell> MakeGhostCell(const int cell, const int neighbour, const int topology, const int ghostcellType); 
         int InPressureCell(const Vector3d &position); 
+        void RemoveOldPML(const BoundingBox &sceneBox); 
+        void UpdatePMLAbsorptionCoeffs(const BoundingBox &sceneBox); 
+        void UpdatePML(const BoundingBox &sceneBox);
+        void FillBoundaryFreshCellGrid(const int &dim, const int &ind, MATRIX &pCurr, const MATRIX &pLast); 
+        // if sign>0, grab all +dimension face cell indices and positions
+        // if sign<0, grab all -dimension ...
+        void GetAllBoundaryCells(const int &dimension, const int &sign, std::vector<int> &indices, std::vector<Vector3d> &positions); 
+        // return pressure at cell_b for this solver (solver_b)
+        bool BoundaryGhostCellPressure(const std::string &solver_a, const int &cell_a, const int &cell_b, REAL &pressure_b) const; 
 
         //// debug methods //// 
         void PrintFieldExtremum(const MATRIX &field, const std::string &fieldName); 
@@ -389,19 +491,22 @@ class MAC_Grid
         void ToFile_GhostCellCoupledMatrix(const std::string &filename); 
         void ToFile_GhostCellLinearSystem(const char *filename); 
 
+        inline void ClearBoundaryInterface()
+        {_boundaryInterfaces.clear();}
+        inline void AddBoundaryInterface(BoundaryInterface_Ptr interface)
+        {_boundaryInterfaces.push_back(interface);} 
+
     private:
         // Classifies cells as either a bulk cell, ghost cell, or
         // interfacial cell
         void classifyCells( bool useBoundary );
 
-        int InsidePML(const Vector3d &x, const REAL &absorptionWidth); 
+        bool InsidePML(const Vector3d &x, const REAL &absorptionWidth, int &flag, const BoundingBox *sceneBox=nullptr); 
 
         // Returns the absorption coefficient along a certain
         // dimension for a point in space.
-        //
-        // FIXME: For now, we will use a quadratic profile here, though
-        // we may need to try something more complex later on.
-        inline REAL PML_absorptionCoefficient( const Vector3d &x, REAL absorptionWidth, int dimension );
+        inline REAL PML_absorptionCoefficient(const Vector3d &x, REAL absorptionWidth, int dimension, 
+                                              const BoundingBox *sceneBox=nullptr) const;
 
         // Scaling factor for the initial velocity update in each time step
         //
@@ -458,9 +563,11 @@ class MAC_Grid
         inline void FindImagePoint(const Vector3d &cellPosition, const int &boundaryObjectID, Vector3d &closestPoint, Vector3d &imagePoint, Vector3d &erectedNormal); 
 
         // fill the Vandermonde matrix 
+        inline void FillVandermondeRegularS(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V, const Vector3d &origin, const REAL &h);
         inline void FillVandermondeRegular (const Vector3d &cellPosition, Eigen::VectorXd &V);
         inline void FillVandermondeRegular (const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V);
         inline void FillVandermondeBoundary(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V);
+        inline void FillVandermondeBoundaryS(const int &row, const Vector3d &boundaryPosition, const Vector3d &boundaryNormal, Eigen::MatrixXd &V, const Vector3d &origin, const REAL &h);
         void ClearUnusedCache(); 
 
     friend std::ostream &operator <<(std::ostream &os, const MAC_Grid &grid); 

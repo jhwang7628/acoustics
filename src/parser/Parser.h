@@ -20,6 +20,7 @@
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <string>
@@ -434,6 +435,22 @@ class Parser
         static REAL queryRequiredInt( TiXmlElement* node, const std::string &attr )
         {
             return atoi(queryRequiredAttr(node, attr).c_str());
+        }
+        static bool queryRequiredBool(TiXmlElement* node, const std::string &attr)
+        {
+            std::string flag = queryRequiredAttr(node, attr); 
+            std::transform(flag.begin(),flag.end(),flag.begin(),::tolower); 
+            if (flag == "0" || flag == "false")
+                return false; 
+            return true; 
+        }
+        static bool queryOptionalBool(TiXmlElement* node, const std::string &attr, const std::string &defaultBool)
+        {
+            std::string flag = queryOptionalAttr(node, attr, defaultBool); 
+            std::transform(flag.begin(),flag.end(),flag.begin(),::tolower); 
+            if (flag == "0" || flag == "false")
+                return false; 
+            return true; 
         }
 
         // If the attribute DNE, it will return the given defaultValue

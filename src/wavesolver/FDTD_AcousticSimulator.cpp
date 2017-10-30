@@ -1,9 +1,16 @@
 #include <wavesolver/FDTD_AcousticSimulator.h> 
+#include <wavesolver/SimWorldAuxDS.h>
+#include <io/FDTD_ListenShell.hpp>
+#include <geometry/BoundingBox.h>
 #include <utils/IO/IO.h>
 #include <macros.h>
-#define ACC_NOISE_SOURCE
-#define MODAL_SOURCE
+//#define DEBUG_HARMONIC_SOURCE
 
+
+// THESE TWO ARE DEPRECATED -- USE "has_modal_source" and "has_acc_noise_source"
+// in the config xml file instead
+//#define ACC_NOISE_SOURCE
+//#define MODAL_SOURCE
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
@@ -12,38 +19,40 @@ _ParseSolverSettings()
     _parser = std::make_shared<ImpulseResponseParser>(_configFile);
     _acousticSolverSettings = std::make_shared<PML_WaveSolver_Settings>(); 
     _sceneObjects = std::make_shared<FDTD_Objects>();
+
     _parser->GetSolverSettings(_acousticSolverSettings); 
     _parser->GetObjects(_acousticSolverSettings, _sceneObjects); 
-    _canInitializeSolver = true;
 }
 
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
-_SetBoundaryConditions()
+_SetBoundaryConditions() // NOTE: decrecated, not called anymore
 {
-    const int N_objects = _sceneObjects->N();
-    for (int index=0; index<N_objects; ++index)
+    auto &objects = _sceneObjects->GetRigidObjects(); 
+    for (auto &m : objects)
     {
-        RigidSoundObjectPtr objectPtr = _sceneObjects->GetPtr(index);
+        RigidObjectPtr objectPtr = m.second; 
 #ifdef MODAL_SOURCE
         // add modal vibrational source
-        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        objectPtr->AddVibrationalSource(sourcePtr); 
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr));
+        objectPtr->AddVibrationalSource(sourcePtr);  
 #endif
 #ifdef ACC_NOISE_SOURCE
         // add acceleration noise source
         VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
         objectPtr->AddVibrationalSource(anSourcePtr);
 #endif
+#ifdef DEBUG_HARMONIC_SOURCE
         // add debug harmonic source
-        //const REAL omega = 2.0*M_PI*500.0;
-        //const REAL phase = 0.0;
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0.0)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
-
+        const REAL omega = 2.0*M_PI*1500.0;
+        //const REAL omega = 2.0*M_PI*objectPtr->GetModeFrequency(0); 
+        const REAL phase = 0.0;
+        VibrationalSourcePtr hSourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //VibrationalSourcePtr hSourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0)); 
+        //std::dynamic_pointer_cast<HarmonicVibrationalSource>(hSourcePtr)->SetRange(0., 1./1500.);
+        objectPtr->AddVibrationalSource(hSourcePtr); 
+#endif
         //objectPtr->TestObjectBoundaryCondition();
     }
 }
@@ -54,7 +63,7 @@ void FDTD_AcousticSimulator::
 _SetPressureSources()
 {
     std::vector<PressureSourcePtr> &scenePressureSources = _sceneObjects->GetPressureSources(); 
-    _parser->GetPressureSources(_acousticSolverSettings->soundSpeed, scenePressureSources); 
+   _parser->GetPressureSources(_acousticSolverSettings->soundSpeed, scenePressureSources); 
 }
 
 //##############################################################################
@@ -62,26 +71,46 @@ _SetPressureSources()
 void FDTD_AcousticSimulator::
 _SetListeningPoints()
 {
-    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
-    _parser->GetListeningPoints(listeningPoints); 
-    if (listeningPoints.size() == 0) 
+    Vector3Array &listeningPoints = (_acousticSolverSettings->useShell ? 
+            _owner->listen->speakers :
+            _acousticSolverSettings->listeningPoints); 
+    if (_acousticSolverSettings->useShell && _owner)
     {
-        _acousticSolverSettings->listening = false; 
+        ListeningUnit::refShell = FDTD_ListenShell<REAL>::Build(_acousticSolverSettings->refShellFile); 
+        const REAL r_out = _owner->GetBoundingBox().minlength()/2.0 
+                         - (_acousticSolverSettings->PML_width+1)*_acousticSolverSettings->cellSize; 
+        const REAL r_inn = r_out - _acousticSolverSettings->spacing; 
+        assert(r_out>0. && r_inn>0.);
+        _owner->listen->outShell = 
+            std::make_shared<FDTD_ListenShell<REAL>>(
+                    ListeningUnit::refShell.get(), 
+                    _owner->BoundingBoxCenter(), 
+                    r_out); 
+        _owner->listen->innShell = 
+            std::make_shared<FDTD_ListenShell<REAL>>(
+                    ListeningUnit::refShell.get(), 
+                    _owner->BoundingBoxCenter(), 
+                    r_inn); 
+        _owner->UpdateSpeakers();
     }
     else 
     {
-        _acousticSolverSettings->listening = true; 
-        _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat"); 
+        _parser->GetListeningPoints(listeningPoints); 
     }
+
+    _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat"); 
 }
 
 //##############################################################################
 //##############################################################################
 std::string FDTD_AcousticSimulator::
-_CompositeFilename(const std::string filename)
+_CompositeFilename(const std::string filename_)
 {
     char buffer[512];
-    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), filename.c_str()); 
+    const std::string filename = 
+        (_simulatorID ? (*_simulatorID) + "_" + filename_ : filename_); 
+    snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), 
+             filename.c_str()); 
     return std::string(buffer); 
 }
 
@@ -104,14 +133,14 @@ _SaveSolverSettings(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SavePressureCellPositions(const std::string &filename)
 {
-    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const Tuple3i &pFieldDivisions = GetGrid().pressureFieldDivisions(); 
     const int N_cells = _acousticSolver->numCells();
     Eigen::MatrixXd vertexPosition(N_cells,3); 
     int count = 0;
     Vector3d vPosition; 
-    for (int kk=0; kk<N_cellsEachDimension; kk++)
-        for (int jj=0; jj<N_cellsEachDimension; jj++)
-            for (int ii=0; ii<N_cellsEachDimension; ii++)
+    for (int kk=0; kk<pFieldDivisions[2]; kk++)
+        for (int jj=0; jj<pFieldDivisions[1]; jj++)
+            for (int ii=0; ii<pFieldDivisions[0]; ii++)
             {
                 Tuple3i  vIndex(ii, jj, kk);
                 vPosition = _acousticSolver->fieldPosition(vIndex);
@@ -166,8 +195,11 @@ _SaveVelocityCellPositions(const std::string &filename, const int &dim)
 void FDTD_AcousticSimulator::
 _SaveListeningPositions(const std::string &filename)
 {
-    Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
+    Vector3Array &listeningPoints = (_acousticSolverSettings->useShell ? 
+            _owner->listen->speakers :
+            _acousticSolverSettings->listeningPoints); 
     const int N = listeningPoints.size(); 
+    if (N==0) return;
     Eigen::MatrixXd listeningPoints_eigen(N, 3); 
     for (int ii=0; ii<N; ii++) 
     {
@@ -183,6 +215,24 @@ _SaveListeningPositions(const std::string &filename)
     catch (const std::runtime_error &e)
     { 
     }
+
+    if (_owner && _acousticSolverSettings->useShell &&
+        _owner->listen->mode == ListeningUnit::MODE::SHELL)
+    {
+        std::string file_shell;
+        file_shell = _CompositeFilename("out_shell_config.txt"); 
+        {
+            std::ofstream ofs(file_shell.c_str()); 
+            _owner->listen->outShell->WriteToFile(ofs); 
+            ofs.close(); 
+        }
+        file_shell = _CompositeFilename("inn_shell_config.txt");
+        {
+            std::ofstream ofs(file_shell.c_str()); 
+            _owner->listen->innShell->WriteToFile(ofs); 
+            ofs.close(); 
+        }
+    }
 }
 
 //##############################################################################
@@ -190,13 +240,13 @@ _SaveListeningPositions(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SavePressureTimestep(const std::string &filename)
 {
-    const int N_cellsEachDimension = _acousticSolverSettings->cellDivisions;
+    const Tuple3i &pFieldDivisions = GetGrid().pressureFieldDivisions(); 
     const int N_cells = _acousticSolver->numCells();
     int count = 0;
     std::shared_ptr<Eigen::MatrixXd> vertexPressure(new Eigen::MatrixXd(N_cells, 1)); 
-    for (int kk=0; kk<N_cellsEachDimension; kk++)
-        for (int jj=0; jj<N_cellsEachDimension; jj++)
-            for (int ii=0; ii<N_cellsEachDimension; ii++)
+    for (int kk=0; kk<pFieldDivisions[2]; kk++)
+        for (int jj=0; jj<pFieldDivisions[1]; jj++)
+            for (int ii=0; ii<pFieldDivisions[0]; ii++)
             {
                 Tuple3i  vIndex( ii, jj, kk );
                 VECTOR vPressure;
@@ -246,9 +296,11 @@ _SaveVelocityTimestep(const std::string &filename, const int &dim)
 void FDTD_AcousticSimulator::
 _SaveListeningData(const std::string &filename)
 {
-    if (_acousticSolverSettings->listening)
+    Vector3Array &listeningPoints = (_owner ?
+            _owner->listen->speakers :
+            _acousticSolverSettings->listeningPoints); 
+    if (listeningPoints.size()>0)
     {
-        Vector3Array &listeningPoints = _acousticSolverSettings->listeningPoints; 
         Eigen::MatrixXd data; 
         _acousticSolver->FetchPressureData(listeningPoints, data); 
         try 
@@ -290,20 +342,24 @@ _SaveListeningData(const std::string &filename)
 void FDTD_AcousticSimulator::
 _SaveModalFrequencies(const std::string &filename)
 {
-    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-    for (const auto &object : objects)
+    auto &objects = _sceneObjects->GetRigidObjects(); 
+    for (const auto &m : objects)
     {
-        if (object->IsModalObject())
+        if (m.second->Type() == RIGID_SOUND_OBJ)
         {
-            const std::string objFilename = filename + "_" + object->GetMeshName();
-            std::ofstream of(objFilename.c_str()); 
-            of << setprecision(20);
-            const int N_modes = object->N_Modes(); 
-            for (int m_idx=0; m_idx<N_modes; ++m_idx)
+            const auto &object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second); 
+            if (object->IsModalObject())
             {
-                of << object->GetModeFrequency(m_idx) << "\n";
+                const std::string objFilename = filename + "_" + object->GetMeshName();
+                std::ofstream of(objFilename.c_str()); 
+                of << setprecision(20);
+                const int N_modes = object->N_Modes(); 
+                for (int m_idx=0; m_idx<N_modes; ++m_idx)
+                {
+                    of << object->GetModeFrequency(m_idx) << "\n";
+                }
+                of.close(); 
             }
-            of.close(); 
         }
     }
 }
@@ -351,35 +407,38 @@ _SaveSimulationSnapshot(const std::string &numbering)
 void FDTD_AcousticSimulator::
 InitializeSolver()
 {
-    if (!_canInitializeSolver)
-        _ParseSolverSettings();
+    assert(CanInitializeSolver()); 
+    _ParseSolverSettings();
+    auto p = _acousticSolverSettings->solverControlPolicy;  
+    assert( p && p->type == "static"); 
+    auto policy = std::dynamic_pointer_cast<Static_Policy>(p);
+    BoundingBox solverBox(_acousticSolverSettings->cellSize, 
+                          policy->cellDivisions, 
+                          policy->domainCenter); 
+    InitializeSolver(solverBox, _acousticSolverSettings); 
+}
 
-    // if rigidsim data exists, read and apply them to objects before
-    // initializing solver.
-    const auto &settings = _acousticSolverSettings; 
-    if (settings->rigidsimDataRead)
-    {
-        _sceneObjectsAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
-        _sceneObjectsAnimator->ReadAllKinematics(settings->fileDisplacement, settings->fileVelocity, settings->fileAcceleration); 
-        AnimateObjects(); // apply the transformation right away
-    }
-    else 
-    {
-        std::cerr << "**WARNING** no rigidsim data read\n";
-    }
+//##############################################################################
+//##############################################################################
+void FDTD_AcousticSimulator::
+InitializeSolver(const BoundingBox &solverBox, 
+                 const PML_WaveSolver_Settings_Ptr &settings)
+{
+    assert(CanInitializeSolver()); 
+    if (_acousticSolverSettings != settings) _acousticSolverSettings = settings; 
 
     // initialize solver and set various things
+    _acousticSolver = std::make_shared<PML_WaveSolver>(solverBox, settings, _sceneObjects); 
     _SetListeningPoints(); 
-    _acousticSolver = std::make_shared<PML_WaveSolver>(_acousticSolverSettings, _sceneObjects); 
-    _SetBoundaryConditions();
+    //_SetBoundaryConditions();
     _SetPressureSources();
 
     REAL startTime = 0.0; 
     // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources() && _acousticSolverSettings->fastForwardToEarliestImpact)
-        startTime = _sceneObjects->GetEarliestImpactEvent() - _acousticSolverSettings->timeStepSize; 
+    if (!_sceneObjects->HasExternalPressureSources() && settings->fastForwardToEarliestImpact)
+        startTime = _sceneObjects->GetEarliestImpactEvent() - settings->timeStepSize; 
     else 
-        startTime = _acousticSolverSettings->fastForwardToEventTime; 
+        startTime = settings->fastForwardToEventTime; 
     ResetStartTime(startTime);
 
     // save settings
@@ -392,28 +451,32 @@ void FDTD_AcousticSimulator::
 ResetStartTime(const REAL &startTime)
 {
     std::cout << "\nReset system start time to " << startTime << std::endl;
-    _stepIndex = 0; 
     _simulationTime = startTime; 
     if (_acousticSolverSettings->rigidsimDataRead)
     {
-        AnimateObjects();
-        auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-        for (auto &object : objects) 
-            if (object->Animated())
-                object->ResetUnionBox();
+        AnimateObjects(_simulationTime);
+        auto &objects = _sceneObjects->GetRigidObjects(); 
+        for (auto &m : objects) 
+            if (m.second->Type() == RIGID_SOUND_OBJ && 
+                std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)->Animated())
+                std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)->ResetUnionBox();
     }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
-    auto &objects = _sceneObjects->GetRigidSoundObjects(); 
-    for (auto &object : objects) 
+    auto &objects = _sceneObjects->GetRigidObjects(); 
+    for (auto &m : objects) 
     {
-        if (object->IsModalObject())
+        if (m.second->Type() == RIGID_SOUND_OBJ)
         {
-            // take one step to update q Vectors. Note that this way all modal odes are one
-            // step further than the solver because we need derivatives along
-            // the way.
-            object->SetODESolverTime(startTime);
-            object->AdvanceModalODESolvers(1); 
-            object->UpdateQPointers(); 
+            auto object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
+            if (object->IsModalObject())
+            {
+                // take one step to update q Vectors. Note that this way all modal odes are one
+                // step further than the solver because we need derivatives along
+                // the way.
+                object->SetODESolverTime(startTime);
+                object->AdvanceModalODESolvers(1); 
+                object->UpdateQPointers(); 
+            }
         }
     }
     _acousticSolver->GetGrid().ResetCellHistory(true);
@@ -490,32 +553,27 @@ PostStepping(const REAL &odeTime)
         std::ostringstream oss; 
         oss << std::setw(8) << std::setfill('0') << timeIndex; 
         const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat"); 
-        _SaveListeningData(filenameProbe);
-        if (settings->writePressureFieldToDisk)
-        {
-            const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
-            _SavePressureTimestep(filenameField); 
-            // uncomment if want to store velocities
-            //for (int dim=0; dim<3; ++dim) 
-            //{
-            //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
-            //    _SaveVelocityTimestep(filenameVelocityField, dim); 
-            //}
-        }
+        // uncomment if want to write file for each step
+        //_SaveListeningData(filenameProbe);
+        //if (settings->writePressureFieldToDisk)
+        //{
+        //    const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat"); 
+        //    _SavePressureTimestep(filenameField); 
+        //    // uncomment if want to store velocities
+        //    //for (int dim=0; dim<3; ++dim) 
+        //    //{
+        //    //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat"); 
+        //    //    _SaveVelocityTimestep(filenameVelocityField, dim); 
+        //    //}
+        //}
     }
-
-    // update modal vectors for the next time step
-    for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-        _sceneObjects->GetPtr(obj_idx)->UpdateQPointers(); 
-
-    std::cout << "Acoustic simulator time = " << _simulationTime << "; Modal ODE time = " << odeTime << std::endl;
+    std::cout << "Acoustic simulator time = " << _simulationTime 
+              << "; step index= " << _stepIndex 
+              << "; Modal ODE time = " << odeTime << std::endl;
     _stepIndex ++;
     _simulationTime += settings->timeStepSize; 
-
-    // move object to new position
-    AnimateObjects(); 
     //TestMoveObjects(); 
-
+      
 #ifdef DEBUG
     _acousticSolver->PrintAllFieldExtremum();
 #endif
@@ -538,7 +596,7 @@ PreviewStepping(const uint &speed)
     std::cout << "Acoustic simulator time = " << _simulationTime << std::endl;
     _stepIndex += speed;
     _simulationTime += settings->timeStepSize*(REAL)speed; 
-    AnimateObjects(); 
+    AnimateObjects(_simulationTime); 
 }
 
 
@@ -558,8 +616,7 @@ SaveSolverConfig()
         const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim)+"_vertex_position.dat"); 
         _SaveVelocityCellPositions(velocityVertexPosition_s, dim); 
     }
-    if (_acousticSolverSettings->listening)
-        _SaveListeningPositions(listeningPosition_s); 
+    _SaveListeningPositions(listeningPosition_s); 
 
     _SaveModalFrequencies(modalFrequencies_s); 
 }
@@ -571,23 +628,31 @@ SaveSolverConfig()
 void FDTD_AcousticSimulator::
 AnimateObjects(const REAL newTime)
 {
-    const REAL newSimulationTime = (newTime<0.0 ? _simulationTime : newTime); 
-    if (_sceneObjectsAnimator) 
+    _sceneObjects->AnimateObjects(newTime); 
+}
+
+//##############################################################################
+// Function MoveSimBox
+//   This function moves the sim box 
+//##############################################################################
+bool FDTD_AcousticSimulator:: 
+SetFieldCenter(const Vector3d &center) 
+{
+    auto &field = GetGrid().pressureField(); 
+    Tuple3i offset; 
+    const Vector3d nowCenter = _owner->BoundingBoxCenter(); 
+    for (int d=0; d<3; ++d)
     {
-        Point3d newCOM; 
-        Quaternion<REAL> quaternion; 
-        for (int obj_idx=0; obj_idx<_sceneObjects->N(); ++obj_idx)
-        {
-            const int rigidsimObjectID = std::stoi(_sceneObjects->GetMeshName(obj_idx)); 
-            const auto &object = _sceneObjects->GetPtr(rigidsimObjectID);
-            if (object->Animated())
-            {
-                _sceneObjectsAnimator->GetRigidObjectTransform(rigidsimObjectID, newSimulationTime, newCOM, quaternion); 
-                quaternion.normalize();
-                object->SetRigidBodyTransform(newCOM, quaternion);
-            }
-        }
+        offset[d] = (int)((center[d] - nowCenter[d])
+            /_acousticSolverSettings->cellSize); 
     }
+    const int l1 = abs(offset[0]) + abs(offset[1]) + abs(offset[2]);
+    if (l1 > 0) 
+    {
+        _acousticSolver->ScheduleMoveBox(offset); 
+        return true; 
+    }
+    return false; 
 }
 
 //##############################################################################
@@ -637,6 +702,6 @@ TestAnimateObjects(const int &N_steps)
     for (int ii=0; ii<N_steps; ++ii)
     {
         _simulationTime += settings->timeStepSize; 
-        AnimateObjects(); 
+        AnimateObjects(_simulationTime); 
     }
 }

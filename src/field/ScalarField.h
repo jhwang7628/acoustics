@@ -40,10 +40,21 @@ class ScalarField {
             Vector3i endIndex; 
             Vector3i dimensionIteration;
         }; 
+        enum BoundaryType 
+        {
+            Not_Boundary = 0x00,
+            Positive_X_Boundary = 0x01,
+            Negative_X_Boundary = 0x02, 
+            Positive_Y_Boundary = 0x04, 
+            Negative_Y_Boundary = 0x08, 
+            Positive_Z_Boundary = 0x10, 
+            Negative_Z_Boundary = 0x20
+        };
 
     private:
         BoundingBox              _bbox;
         Tuple3i                  _divisions;
+        Tuple3i                  _indexOffset; 
         REAL                     _cellSize;
 
         ScalarArray3D           *_fieldValues;
@@ -71,9 +82,18 @@ class ScalarField {
             Tuple3i index(x,y,z); 
             return cellIndex(index); 
         }
-
         // Returns the x, y and z index for the given flat cell index
         Tuple3i                  cellIndex( int flatIndex ) const;
+
+        inline int               cellIndex(const int &d0, const int &d1, const int &d2,
+                                           const int &i0, const int &i1, const int &i2) const
+        {
+            Tuple3i indices; 
+            indices[d0] = i0; 
+            indices[d1] = i1; 
+            indices[d2] = i2; 
+            return cellIndex(indices); 
+        }
 
         // Cell center for the given index
         Vector3d                 cellPosition( const Tuple3i &index ) const;
@@ -88,6 +108,9 @@ class ScalarField {
         // Returns this cell's neighbours
         void                     cellNeighbours( const Tuple3i &index,
                                                  IntArray &neighbours ) const;
+        void                     cellNeighbours( const int &flatIndex, 
+                                                 IntArray &neighbours,
+                                                 IntArray &neighbourTopology) const; 
 
         inline void              cellNeighbours( int flatIndex, 
                                                  IntArray &neighbours ) const
@@ -163,8 +186,42 @@ class ScalarField {
             return isBoundaryCell( cellIndex( index ) );
         }
 
+        inline unsigned char     boundaryCellType(int index) const 
+        {
+            const Tuple3i indices = cellIndex(index); 
+            unsigned char type = 0;
+            if      (indices[0] == 0              ) type = (type|Negative_X_Boundary); 
+            else if (indices[0] == _divisions[0]-1) type = (type|Positive_X_Boundary); 
+            if      (indices[1] == 0              ) type = (type|Negative_Y_Boundary); 
+            else if (indices[1] == _divisions[1]-1) type = (type|Positive_Y_Boundary); 
+            if      (indices[2] == 0              ) type = (type|Negative_Z_Boundary); 
+            else if (indices[2] == _divisions[2]-1) type = (type|Positive_Z_Boundary); 
+            return type; 
+        }
+
+        inline Tuple3i          boundaryCellNormal(int index, const int offset) const 
+        {
+            const Tuple3i indices = cellIndex(index); 
+            Tuple3i type; 
+            if      (indices[0] == offset                ) type[0] = -1; 
+            else if (indices[0] == _divisions[0]-1-offset) type[0] = +1; 
+            if      (indices[1] == offset                ) type[1] = -1; 
+            else if (indices[1] == _divisions[1]-1-offset) type[1] = +1; 
+            if      (indices[2] == offset                ) type[2] = -1; 
+            else if (indices[2] == _divisions[2]-1-offset) type[2] = +1; 
+            return type; 
+        }
+
+        inline Tuple3i          boundaryCellNormal(int index) const 
+        {
+            return boundaryCellNormal(index,0); 
+        }
+
         inline Vector3d minBound() const {return cellPosition(0);}
         inline Vector3d maxBound() const {return cellPosition(numCells()-1);}
+        inline const Tuple3i &indexOffset() const {return _indexOffset;}
+
+        void MoveCenter(const Tuple3i &amount); 
 
         //// debug methods ////
         void TestSubindices();

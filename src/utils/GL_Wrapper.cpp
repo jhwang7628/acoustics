@@ -84,4 +84,57 @@ void DrawWireBox(const double *const minBound, const double *const maxBound)
     glVertex3f(maxBound[0], minBound[1], maxBound[2]); 
     glEnd();
 }
+
+//##############################################################################
+//##############################################################################
+void DrawBox(const double *const minBound, const double *const maxBound) 
+{
+    glNormal3f(0.,0.,1.);
+    glBegin(GL_QUADS); 
+    glVertex3f(minBound[0], minBound[1], minBound[2]); 
+    glVertex3f(minBound[0], maxBound[1], minBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], minBound[2]); 
+    glVertex3f(maxBound[0], minBound[1], minBound[2]); 
+    glEnd();
+
+    glNormal3f(0.,0.,1.);
+    glBegin(GL_QUADS); 
+    glVertex3f(minBound[0], minBound[1], maxBound[2]); 
+    glVertex3f(minBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], minBound[1], maxBound[2]); 
+    glEnd();
+
+    glNormal3f(0.,1.,0.);
+    glBegin(GL_QUADS); 
+    glVertex3f(minBound[0], minBound[1], minBound[2]); 
+    glVertex3f(minBound[0], minBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], minBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], minBound[1], minBound[2]); 
+    glEnd();
+
+    glNormal3f(0.,1.,0.);
+    glBegin(GL_QUADS); 
+    glVertex3f(minBound[0], maxBound[1], minBound[2]); 
+    glVertex3f(minBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], minBound[2]); 
+    glEnd();
+
+    glNormal3f(1.,0.,0.);
+    glBegin(GL_QUADS); 
+    glVertex3f(minBound[0], minBound[1], minBound[2]); 
+    glVertex3f(minBound[0], maxBound[1], minBound[2]); 
+    glVertex3f(minBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(minBound[0], minBound[1], maxBound[2]); 
+    glEnd();
+
+    glNormal3f(1.,0.,0.);
+    glBegin(GL_QUADS); 
+    glVertex3f(maxBound[0], minBound[1], minBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], minBound[2]); 
+    glVertex3f(maxBound[0], maxBound[1], maxBound[2]); 
+    glVertex3f(maxBound[0], minBound[1], maxBound[2]); 
+    glEnd();
+}
 }; // namespace GL_Wrapper

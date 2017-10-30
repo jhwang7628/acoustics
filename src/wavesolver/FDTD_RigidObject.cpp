@@ -15,102 +15,121 @@ Initialize(const bool &buildFromTetMesh)
 {
     assert(_parsed); 
 
-    if (buildFromTetMesh)
+    if (_signedDistanceFieldResolution > 0)
     {
-        // first established paths for tet mesh, surface mesh, and correponding sdf
-        const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
-        const std::string geoFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".geo.txt"; 
-        const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
-        _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
-
-        if (!IO::ExistFile(tetMeshFile))
-            throw std::runtime_error("**ERROR** Tet mesh file not exist: " + tetMeshFile); 
-
-        // build/load mesh 
-        std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
-        if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
+        if (buildFromTetMesh)
         {
-            _mesh = std::make_shared<TriangleMeshGraph<REAL> >();
-            //_mesh.reset(new TriangleMesh<REAL>()); 
-            tetMesh->extract_surface(_mesh.get()); 
-            _mesh->generate_normals(); 
-            _mesh->update_vertex_areas(); 
-            _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
-            _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
-            if (_tetMeshIndexToSurfaceMesh->N_surfaceVertices() != _mesh->num_vertices())
-                throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
+            // first established paths for tet mesh, surface mesh, and correponding sdf
+            const std::string tetMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet"; 
+            const std::string geoFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".geo.txt"; 
+            const std::string tetSurfaceMeshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".tet.obj"; 
+            _signedDistanceFieldFilePrefix = tetSurfaceMeshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
+    
+            if (!IO::ExistFile(tetMeshFile))
+                throw std::runtime_error("**ERROR** Tet mesh file not exist: " + tetMeshFile); 
+    
+            // build/load mesh 
+            std::shared_ptr<FixVtxTetMesh<REAL> > tetMesh = std::make_shared<FixVtxTetMesh<REAL> >(); 
+            if (FV_TetMeshLoader_Double::load_mesh(tetMeshFile.c_str(), *tetMesh) == SUCC_RETURN) 
+            {
+                _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
+                //_mesh.reset(new TriangleMesh<REAL>()); 
+                tetMesh->extract_surface(_mesh.get()); 
+                _mesh->generate_normals(); 
+                _mesh->update_vertex_areas(); 
+                _tetMeshIndexToSurfaceMesh = std::make_shared<TetMeshIndexToSurfaceMesh>(); 
+                _tetMeshIndexToSurfaceMesh->ReadFromGeoFile(geoFile); 
+                if (_tetMeshIndexToSurfaceMesh->N_surfaceVertices() != _mesh->num_vertices())
+                    throw std::runtime_error("**ERROR** geo file has different number of surface vertices than the surface mesh from tet mesh");
+                else 
+                    std::cout << " Surface mesh and Tet-Surface mapping built.\n";
+                _volume = tetMesh->total_volume(); // cache volume
+                tetMesh->inertia_tensor(_volumeInertiaTensor, _volumeCenter); 
+                _hasVolume = true;
+            }
             else 
-                std::cout << " Surface mesh and Tet-Surface mapping built.\n";
-            _volume = tetMesh->total_volume(); // cache volume
-            tetMesh->inertia_tensor(_volumeInertiaTensor, _volumeCenter); 
-            _hasVolume = true;
-        }
-        else 
-        {
-            throw std::runtime_error("**ERROR** Cannot read mesh from" + tetMeshFile);
-        }
-
-        // write the surface mesh
-        if (!IO::ExistFile(tetSurfaceMeshFile))
-            MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
-
+            {
+                throw std::runtime_error("**ERROR** Cannot read mesh from" + tetMeshFile);
+            }
+    
+            // write the surface mesh
+            if (!IO::ExistFile(tetSurfaceMeshFile))
+                MeshObjWriter::write(*_mesh, tetSurfaceMeshFile.c_str()); 
+    
 #ifndef USE_ADF
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    tetSurfaceMeshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
-                );
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildSignedClosestPointField(
+                        tetSurfaceMeshFile.c_str(), 
+                        _signedDistanceFieldResolution, 
+                        _signedDistanceFieldFilePrefix.c_str()
+                        )
+                    );
 #else
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildAdaptiveDistanceField(
-                    tetSurfaceMeshFile.c_str(),
-                    _signedDistanceFieldFilePrefix.c_str(),
-                    ADF_SUBDIVIDE_RADIUS,
-                    ADF_MAX_OCTREE_LEVELS,
-                    ADF_ERROR_TOLERANCE
-                    )
-                );
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                        tetSurfaceMeshFile.c_str(),
+                        _signedDistanceFieldFilePrefix.c_str(),
+                        ADF_SUBDIVIDE_RADIUS,
+                        ADF_MAX_OCTREE_LEVELS,
+                        ADF_ERROR_TOLERANCE
+                        )
+                    );
 #endif
+        }
+        else // build from surface mesh
+        {
+            // first established paths for tet mesh, surface mesh, and correponding sdf
+            const std::string meshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".obj"; 
+            _signedDistanceFieldFilePrefix = meshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
+    
+            if (!IO::ExistFile(meshFile))
+                throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
+            
+            _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
+            //_mesh.reset(new TriangleMesh<REAL>());
+            if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
+            {
+                _mesh->generate_normals(); 
+            }
+            else
+                throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
+    
+#ifndef USE_ADF
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildSignedClosestPointField(
+                        meshFile.c_str(), 
+                        _signedDistanceFieldResolution, 
+                        _signedDistanceFieldFilePrefix.c_str()
+                        )
+                    );
+#else
+            _signedDistanceField.reset(
+                    DistanceFieldBuilder::BuildAdaptiveDistanceField(
+                        meshFile.c_str(),
+                        _signedDistanceFieldFilePrefix.c_str(),
+                        ADF_SUBDIVIDE_RADIUS,
+                        ADF_MAX_OCTREE_LEVELS,
+                        ADF_ERROR_TOLERANCE
+                        )
+                    ); 
+#endif
+        }
     }
-    else // build from surface mesh
+    else  // sdf resolution <= 0
     {
         // first established paths for tet mesh, surface mesh, and correponding sdf
         const std::string meshFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + ".obj"; 
-        _signedDistanceFieldFilePrefix = meshFile + "." + std::to_string(_signedDistanceFieldResolution) + ".dist";
-
+        std::cout << "FIXME debug " << meshFile << std::endl;
         if (!IO::ExistFile(meshFile))
             throw std::runtime_error("**ERROR** Surface mesh file not exist: " + meshFile); 
-        
         _mesh = std::make_shared<TriangleMeshGraph<REAL> >(); 
-        //_mesh.reset(new TriangleMesh<REAL>());
         if (MeshObjReader::read(meshFile.c_str(), *_mesh, false, false, _meshScale)==SUCC_RETURN)
         {
             _mesh->generate_normals(); 
         }
         else
             throw std::runtime_error("**ERROR** Cannot read mesh from" + meshFile);
-
-#ifndef USE_ADF
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildSignedClosestPointField(
-                    meshFile.c_str(), 
-                    _signedDistanceFieldResolution, 
-                    _signedDistanceFieldFilePrefix.c_str()
-                    )
-                );
-#else
-        _signedDistanceField.reset(
-                DistanceFieldBuilder::BuildAdaptiveDistanceField(
-                    meshFile.c_str(),
-                    _signedDistanceFieldFilePrefix.c_str(),
-                    ADF_SUBDIVIDE_RADIUS,
-                    ADF_MAX_OCTREE_LEVELS,
-                    ADF_ERROR_TOLERANCE
-                    )
-                ); 
-#endif
+    
     }
 
     // compute mesh centroid in object space and cache it 
@@ -143,8 +162,18 @@ Initialize(const bool &buildFromTetMesh)
     const REAL t_max = sqrt(_mesh->largest_triangle_area(largestTriangle)); 
     //const REAL d_max=0.0;
     //const REAL t_max=0.0;
-    _meshGraph->BuildGraph(d_max+t_max); 
+    const double knnradius = d_max + t_max; 
+    const std::string meshGraphFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) + 
+        "." + std::to_string(knnradius) + ".meshgraph"; 
+    _meshGraph->BuildGraph(meshGraphFile, knnradius); 
     UpdateBoundingBox();
+}
+
+void FDTD_RigidObject::
+Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh)
+{
+    _objectPrefix = objPrefix;
+    Initialize(buildFromTetMesh);
 }
 
 //##############################################################################
@@ -159,7 +188,7 @@ UpdateBoundingBox()
     // compute the new one
     if (_mesh)
     {
-        Vector3<REAL> minBound(D_INF, D_INF, D_INF); 
+        Vector3<REAL> minBound( D_INF,  D_INF,  D_INF); 
         Vector3<REAL> maxBound(-D_INF, -D_INF, -D_INF); 
         Eigen::Vector3d pointBuffer; 
         std::vector<Point3<REAL>> &meshVertices = _mesh->vertices(); 
@@ -192,6 +221,15 @@ UpdateBoundingBox()
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::
+ApplyScale(const REAL scale)
+{
+    FDTD_MovableObject::ApplyScale(scale); // scale the transformation
+    _meshScale *= scale; 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_RigidObject::
 ResetUnionBox()
 {
     _bboxWorldUnion2Steps = _bboxWorld;
@@ -209,7 +247,13 @@ DistanceToMesh(const double &x, const double &y, const double &z)
 
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position.eval();
-    return _signedDistanceField->distance(Vector3d(position[0],position[1],position[2])); 
+    const REAL d = _signedDistanceField->distance(
+                     Vector3d(position[0],
+                              position[1],
+                              position[2])
+                   ); 
+
+    return d * _meshScale; 
 }
 
 //##############################################################################
@@ -283,6 +327,19 @@ EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, 
 }
 
 //##############################################################################
+//##############################################################################
+Vector3d FDTD_RigidObject::
+EvaluateBoundaryAcceleration(const int &vertexID, const REAL &time)
+{
+    Vector3d bcValue; 
+    const SourceIterator sourceEnd = _vibrationalSources.end(); 
+    for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
+        bcValue += (*it)->Evaluate(vertexID, time);
+
+    return bcValue; 
+}
+
+//##############################################################################
 // This function locates acceleration noise source and evaluate the analytical
 // pressure for spheres.
 //##############################################################################
@@ -342,9 +399,8 @@ EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundary
 int FDTD_RigidObject::
 ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle)
 {
-    assert(_signedDistanceField!=nullptr); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
-
 #if 0 // use sdf for normal query
+    assert(_signedDistanceField); //&& (DistanceToMesh(originalPoint.x,originalPoint.y,originalPoint.z)<DISTANCE_TOLERANCE));
     // find boundary point, normal at query point, and reflection point.
     NormalToMesh(originalPoint.x, originalPoint.y, originalPoint.z, erectedNormal);
     erectedNormal.normalize(); 
@@ -369,32 +425,31 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     Vector3d projectedPoint; // object space
     if (startFromTriangle<0) 
     {
-      distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint, 100); 
     }
     else
     {
-      distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      // uncomment if want to test between graph-search and kdtree-search results
-      //int graph = closestTriangleIndex; 
-      //const Vector3d bpGraph = boundaryPoint; 
-      //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
-      //if (graph != closestTriangleIndex) 
-      //{
-      //    std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
-      //    std::cerr << " point       = " << originalPoint << std::endl; 
-      //    std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
-      //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
-      //}
+        distanceTravelled = _meshGraph->ComputeClosestPointOnMesh(startFromTriangle, originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint, 0.99, 100); 
+        // uncomment if want to test between graph-search and kdtree-search results
+        //int graph = closestTriangleIndex; 
+        //const Vector3d bpGraph = boundaryPoint; 
+        //distanceTravelled = _mesh->ComputeClosestPointOnMesh(originalPointObject, boundaryPoint, closestTriangleIndex, projectedPoint); 
+        //if (graph != closestTriangleIndex) 
+        //{
+        //    std::cerr << "DIFFERENCE IN SEARCH: " << graph << " <-> " << closestTriangleIndex << std::endl; 
+        //    std::cerr << " point       = " << originalPoint << std::endl; 
+        //    std::cerr << " bp_graph    = " << ObjectToWorldPoint(bpGraph)       << std::endl; 
+        //    std::cerr << " bp_kdtre    = " << ObjectToWorldPoint(boundaryPoint) << std::endl; 
+        //}
     }
     boundaryPoint = ObjectToWorldPoint(boundaryPoint); 
-    if (distanceTravelled < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
+    if (fabs(distanceTravelled) < KD_NEAREST_TOLERANCE) // dont trust the result if lower than tolerance
     {
-        std::cerr << "**WARNING** distance smaller than tolerance\n";
         // get closest triangle normal and push manually
         Vector3d t_normal = _mesh->triangle_normal(closestTriangleIndex); 
         t_normal.normalize(); 
-        reflectedPoint = originalPointObject + t_normal * TRI_NORMAL_PUSH_DIST; 
-        distanceTravelled = (TRI_NORMAL_PUSH_DIST/2.0); 
+        reflectedPoint = originalPointObject + t_normal * 2.0*KD_NEAREST_TOLERANCE; 
+        distanceTravelled = -KD_NEAREST_TOLERANCE; 
 
         // transform
         reflectedPoint = ObjectToWorldPoint(reflectedPoint); 
@@ -404,7 +459,7 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     }
     else
     {
-        const bool insideBoundary = DistanceToMesh(originalPoint.x, originalPoint.y, originalPoint.z) < 0 ? true : false;
+        const bool insideBoundary = (distanceTravelled < 0 ? true : false);
         if (insideBoundary)
         {
             erectedNormal = boundaryPoint - originalPoint; // world space
@@ -415,7 +470,15 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
             erectedNormal =-boundaryPoint + originalPoint; // world space
             reflectedPoint = originalPoint + erectedNormal; 
         }
-        erectedNormal.normalize();  // keep the behavior same as the distance field based query
+        erectedNormal.normalize();
+        // check the normal compared to the triangle normal, they should always be pointing
+        // in the same direction
+        const Vector3d t_normal = ObjectToWorldVector(_mesh->triangle_normal(closestTriangleIndex)); 
+        const REAL sgn = erectedNormal.dotProduct(t_normal)/t_normal.norm(); 
+        if (sgn <= 0.0) 
+        {
+            throw std::runtime_error("**ERROR** triangle normal and erected normal are in the opposite direction."); 
+        }
     }
 
 #endif // if 0
@@ -425,9 +488,6 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
 #pragma omp critical
 #endif
     {
-        //const Vector3d &vertex = closestPoint; 
-        //const Eigen::Vector3d vertexWorld_e = _modelingTransform * Eigen::Vector3d(vertex.x, vertex.y, vertex.z); 
-        //const Vector3d vertexWorld(vertexWorld_e[0], vertexWorld_e[1], vertexWorld_e[2]); 
         // write these special points for debugging purpose 
         _debugArrowStart.push_back(originalPoint); 
         _debugArrowNormal.push_back(reflectedPoint - originalPoint); 
@@ -464,7 +524,6 @@ SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion)
     _modelingTransform.prerotate(rotation);
     _modelingTransform.pretranslate(newCOM_e); 
     _modelingTransformInverse = _modelingTransform.inverse(); 
-    UpdateBoundingBox(); 
 }
 
 //##############################################################################

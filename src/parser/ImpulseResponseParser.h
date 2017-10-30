@@ -84,5 +84,6 @@ class ImpulseResponseParser : public Parser
         void GetListeningPoints(Vector3Array &listeningPoints); 
         void GetModalMaterials(ModalMaterialList &modalMaterials); 
 }; 
+using ImpulseResponseParser_Ptr = std::shared_ptr<ImpulseResponseParser>; 
 
 #endif 

@@ -1,7 +1,13 @@
 #include <wavesolver/GaussianPressureSource.h>
 #include <parser/ImpulseResponseParser.h> 
 #include <io/ImpulseSeriesReader.h>
+#include <wavesolver/VibrationalSource.h> 
+#include <wavesolver/ModalVibrationalSource.h> 
+#include <wavesolver/AccelerationNoiseVibrationalSource.h> 
+#include <wavesolver/ShellVibrationalSource.h> 
 #include <wavesolver/WaterVibrationalSource.h> 
+#include <wavesolver/FDTD_PlaneConstraint.h>
+#include <wavesolver/WaterVibrationalSourceBubbles.h> 
 #include <modal_model/SparseModalEncoder.h>
 
 //##############################################################################
@@ -39,13 +45,14 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         std::cout << "No rigid_sound_object found\n";
     }
 
+    int meshCount = 0; 
     std::vector<ImpulseSeriesReader> readers; 
     while (rigidSoundObjectNode != NULL)
     {
         //const std::string meshFileName = queryRequiredAttr(rigidSoundObjectNode, "file");
         //const std::string sdfFilePrefix = queryRequiredAttr(rigidSoundObjectNode, "distancefield");
-        const int meshID = queryRequiredInt(rigidSoundObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        //const int meshID = queryRequiredInt(rigidSoundObjectNode, "id"); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(rigidSoundObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(rigidSoundObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(rigidSoundObjectNode, "fieldresolution");
@@ -55,18 +62,10 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(rigidSoundObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidSoundObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        const std::string boundaryHandling = queryOptionalAttr(rigidSoundObjectNode, "boundary_handling", "piecewise_constant");
-        if (boundaryHandling.compare("piecewise_constant")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
-        else if (boundaryHandling.compare("rasterize")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
-        else if (boundaryHandling.compare("linear_mls")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
-        else
-            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = true;
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object_r = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidSoundObjectPtr object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object_r);
         object->SetOptionalAttributes(attr); 
         object->SetAnimated(true);
         // load impulse from file
@@ -95,22 +94,43 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->ModalAnalysisObject::Initialize(ODEStepSize, modeFile, materialPtr); 
         object->FDTD_RigidSoundObject::Initialize(); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        objects->AddObject(meshName,object); 
+
+        // get source and attach to objects
+        const bool has_modal_source     = queryRequiredBool(rigidSoundObjectNode, "has_modal_source"    ); 
+        const bool has_acc_noise_source = queryRequiredBool(rigidSoundObjectNode, "has_acc_noise_source"); 
+        if (has_modal_source)
+        {
+            std::cout << "has modal source\n";
+            VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(object)); 
+            object->AddVibrationalSource(sourcePtr); 
+        }
+        if (has_acc_noise_source)
+        {
+            std::cout << "has acc noise source\n";
+            VibrationalSourcePtr sourcePtr(new AccelerationNoiseVibrationalSource(object)); 
+            object->AddVibrationalSource(sourcePtr); 
+        }
+
+        objects->AddObject(std::stoi(meshName), object_r); 
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
     }
 
     const int N_rigidSoundObject = objects->N(); 
     for (int o_idx=0; o_idx<N_rigidSoundObject; ++o_idx)
     {
-        auto object = objects->GetPtr(o_idx); 
+        auto object = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(o_idx)); 
         readers.at(o_idx).LoadImpulses(o_idx, object, objects); 
         REAL impulseRangeStart, impulseRangeStop; 
         object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop); 
+#ifdef DEBUG_PRINT
+        std::cout << static_cast<ModalAnalysisObject>(*(object.get())) << std::endl; 
         std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
                   << " Number of impulses: " << object->N_Impulses() << "\n"
                   << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
                   << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
                   << "\n";
+        object->PrintAllImpulses(); 
+#endif
     }
 
     // parse and build rigid objects. In the implementation, I still use the class
@@ -126,8 +146,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (rigidObjectNode != NULL)
     {
-        const int meshID = queryRequiredInt(rigidObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(rigidObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(rigidObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(rigidObjectNode, "fieldresolution");
@@ -137,21 +156,12 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
-        const std::string boundaryHandling = queryOptionalAttr(rigidObjectNode, "boundary_handling", "piecewise_constant");
-        if (boundaryHandling.compare("piecewise_constant")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::PIECEWISE_CONSTANT;
-        else if (boundaryHandling.compare("rasterize")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::RASTERIZE;
-        else if (boundaryHandling.compare("linear_mls")==0)
-            attr.boundaryHandlingType = FDTD_RigidObject::OptionalAttributes::BoundaryHandling::LINEAR_MLS;
-        else
-            throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
-        objects->AddObject(meshName,object); 
+        objects->AddObject(std::stoi(meshName), object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
 
@@ -169,8 +179,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     }
     while (waterSurfaceObjectNode != NULL)
     {
-        const int meshID = queryRequiredInt(waterSurfaceObjectNode, "id"); 
-        const std::string meshName = std::to_string(meshID); 
+        const std::string meshName = std::to_string(meshCount++); 
         const std::string workingDirectory = queryRequiredAttr(waterSurfaceObjectNode, "working_directory"); 
         const std::string objectPrefix = queryRequiredAttr(waterSurfaceObjectNode, "object_prefix"); 
         const int sdfResolutionValue = queryRequiredInt(waterSurfaceObjectNode, "fieldresolution");
@@ -182,12 +191,99 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL decayRadius = queryOptionalReal(waterSurfaceObjectNode, "decay_radius", 5.0); 
 
         const bool buildFromTetMesh = false; 
-        RigidSoundObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSource>(object, inputRecordingFile, decayRadius); 
         object->AddVibrationalSource(sourcePtr); 
-        objects->AddObject(meshName, object); 
+        objects->AddObject(std::stoi(meshName), object); 
         waterSurfaceObjectNode = waterSurfaceObjectNode->NextSiblingElement(waterSurfaceObjectNodeName.c_str());
+    }
+
+    // build shells 
+    std::string name; 
+    TiXmlElement *node;
+    name = "shell_object"; 
+    try {
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, inputRoot, name.c_str()); 
+    } catch (const std::runtime_error &error) {
+        std::cout << "No shell objects found\n";
+    }
+    while (node != NULL)
+    {
+        const std::string meshName           = std::to_string(meshCount++); 
+        const std::string workingDirectory   = queryRequiredAttr(node, "working_directory"        ); 
+        const std::string objectPrefix       = queryRequiredAttr(node, "object_prefix"            ); 
+        const std::string shellDataDirectory = queryRequiredAttr(node, "shell_data_directory"     ); 
+        const bool has_shell_source          = queryOptionalBool(node, "has_shell_source"    , "1"); 
+        RigidObjectPtr object = std::make_shared<FDTD_ShellObject>(workingDirectory,
+                                                                   shellDataDirectory,
+                                                                   -1,
+                                                                   objectPrefix,
+                                                                   solverSettings,
+                                                                   meshName); 
+        auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+        if (has_shell_source)
+        {
+            VibrationalSourcePtr sourcePtr(new ShellVibrationalSource(shell_object)); 
+            object->AddVibrationalSource(sourcePtr);
+        }
+        objects->AddObject(std::stoi(meshName), object); 
+        node = node->NextSiblingElement(name.c_str());
+    }
+
+    // build constraints
+    name = "constraint"; 
+    try {
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, inputRoot, name.c_str()); 
+    } catch (const std::runtime_error &error) {
+        std::cout << "No constraint found\n";
+    }
+    while (node != NULL)
+    {
+        const std::string id = queryOptionalAttr(node, "id", std::to_string(objects->N_constraints()));
+        const int direction = queryOptionalInt(node, "direction", "1"); 
+        const int sign = queryOptionalInt(node, "sign", "1"); 
+        const REAL height = queryOptionalReal(node, "height", 0.0);
+        auto constraint = std::make_shared<FDTD_PlaneConstraint>(direction, sign, height); 
+        objects->AddConstraint(id, constraint); 
+        node = node->NextSiblingElement(name.c_str());
+    }
+
+    // Load data from the previous bubbles project
+    // Currently using a static mesh
+    const std::string bubblesNodeName("water_surface_bubbles_object");
+    TiXmlElement *bubblesNode;
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(bubblesNode, inputRoot, bubblesNodeName.c_str());
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No water_surface_bubbles_object found\n";
+    }
+    while (bubblesNode != NULL)
+    {
+        const std::string meshName = std::to_string(meshCount++); 
+        const std::string workingDirectory = queryRequiredAttr(bubblesNode, "working_directory");
+        const std::string objectPrefix = queryRequiredAttr(bubblesNode, "object_prefix");
+        const int sdfResolutionValue = queryRequiredInt(bubblesNode, "fieldresolution");
+        const REAL scale = queryOptionalReal(bubblesNode, "scale", 1.0);
+        const REAL initialPosition_x = queryOptionalReal(bubblesNode, "initial_position_x", 0.0);
+        const REAL initialPosition_y = queryOptionalReal(bubblesNode, "initial_position_y", 0.0);
+        const REAL initialPosition_z = queryOptionalReal(bubblesNode, "initial_position_z", 0.0);
+        const std::string dataDir = queryRequiredAttr(bubblesNode, "data_dir");
+        FDTD_RigidObject::OptionalAttributes attr;
+        //attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
+        attr.isFixed = false; 
+
+        const bool buildFromTetMesh = false;
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        object->SetOptionalAttributes(attr); 
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z);
+        VibrationalSourcePtr sourcePtr = std::make_shared<WaterVibrationalSourceBubbles>(object, dataDir);
+        object->AddVibrationalSource(sourcePtr);
+        objects->AddObject(std::stoi(meshName), object);
+        bubblesNode = bubblesNode->NextSiblingElement(bubblesNodeName.c_str());
     }
 }
 
@@ -215,15 +311,11 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
 
     // discretization settings 
     settings->cellSize           = queryRequiredReal(solverNode, "cellsize"); 
-    settings->cellDivisions      = queryRequiredInt (solverNode, "gridresolution"); 
     settings->timeEnd            = queryRequiredReal(solverNode, "stop_time"); 
-    settings->timeSavePerStep    = queryRequiredInt (solverNode, "substeps"); 
+    settings->timeSavePerStep    = queryOptionalInt (solverNode, "substeps", "-1"); 
+    settings->numberTimeSteps    = queryOptionalInt (solverNode, "number_of_timesteps", "0"); 
     const REAL timeStepFrequency= queryRequiredReal(solverNode, "timestepfrequency"); 
     settings->timeStepSize = 1.0/timeStepFrequency; 
-    const REAL domainCenter_x    = queryOptionalReal(solverNode, "domain_center_x", 0.0); 
-    const REAL domainCenter_y    = queryOptionalReal(solverNode, "domain_center_y", 0.0); 
-    const REAL domainCenter_z    = queryOptionalReal(solverNode, "domain_center_z", 0.0); 
-    settings->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
     settings->FV_boundarySubdivision = queryOptionalInt(solverNode, "fv_boundary_subdivision", "5"); 
 
     // IO settings
@@ -235,12 +327,21 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 
 
     // Optional settings
-    settings->useMesh                 = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
-    settings->useGhostCell            = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
-    settings->validateUsingFBem      =  (queryOptionalInt(solverNode, "validate_using_fbem", "0")==1) ? true : false; 
+    settings->alpha                 =  queryOptionalReal(solverNode, "air_viscosity_alpha", 0.0); 
+    if (settings->alpha > 0.0) settings->useAirViscosity = true; 
+    settings->useMesh               = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
+    settings->useGhostCell          = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
+    settings->validateUsingFBem     = (queryOptionalInt(solverNode, "validate_using_fbem", "0")==1) ? true : false; 
     settings->boundaryConditionPreset = (queryOptionalInt(solverNode, "boundary_condition_preset", "0")); 
     settings->fastForwardToEarliestImpact = (queryOptionalInt(solverNode, "fast_forward_to_earliest_impact", "0")==1) ? true : false; 
     settings->fastForwardToEventTime  = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0); 
+    const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling", "rasterize");
+    if (boundaryHandling.compare("rasterize")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE;
+    else if (boundaryHandling.compare("fully_coupled")==0)
+        settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED;
+    else
+        throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
 
     // set sources 
     //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
@@ -265,6 +366,20 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->fileAcceleration = queryRequiredAttr(rigidsimDataNode, "file_acceleration"); 
     }
 
+    // parse listening shell config
+    TiXmlElement *listNode; 
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_shell"); 
+        if (listNode)
+        {
+            settings->useShell = true; 
+            settings->refShellFile = queryRequiredAttr(listNode, "reference_shell_file"); 
+            settings->spacing      = queryRequiredReal(listNode, "finite_difference_spacing"); 
+        }
+    }
+    catch (const std::runtime_error &e) { }
+
     // parse and construct modal encoder
     bool hasEncoderDefined; 
     GET_FIRST_CHILD_ELEMENT_FLAG(encoderNode, root, "modal_encoder", hasEncoderDefined); 
@@ -273,6 +388,33 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         SparseModalEncoder::useEncoder = true; 
         SparseModalEncoder::rank       = queryRequiredInt(encoderNode, "rank"); 
         SparseModalEncoder::epsilon    = queryRequiredReal(encoderNode, "epsilon"); 
+    }
+
+    // parse solver control policy
+    TiXmlElement *node; 
+    GET_FIRST_CHILD_ELEMENT_GUARD(node, root, "solver_control_policy"); 
+    std::string ptype = queryRequiredAttr(node, "type"); 
+    if (ptype == "dynamic")
+    {
+        settings->solverControlPolicy = std::make_shared<Dynamic_Policy>(); 
+        std::shared_ptr<Dynamic_Policy> p = std::dynamic_pointer_cast<Dynamic_Policy>(settings->solverControlPolicy); 
+        p->padding = queryOptionalInt(node, "padding", "20"); 
+        p->type = "dynamic";
+    }
+    else if (ptype == "static")
+    {
+        settings->solverControlPolicy = std::make_shared<Static_Policy>(); 
+        auto p = std::dynamic_pointer_cast<Static_Policy>(settings->solverControlPolicy); 
+        const REAL domainCenter_x    = queryOptionalReal(node, "domain_center_x", 0.0); 
+        const REAL domainCenter_y    = queryOptionalReal(node, "domain_center_y", 0.0); 
+        const REAL domainCenter_z    = queryOptionalReal(node, "domain_center_z", 0.0); 
+        p->cellDivisions = queryRequiredInt (node, "gridresolution");
+        p->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z); 
+        p->type = "static";
+    }
+    else 
+    {
+        throw std::runtime_error("**ERRORR** solver control policy not understood"); 
     }
 }
 
@@ -320,13 +462,14 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
 void ImpulseResponseParser::
 GetListeningPoints(Vector3Array &listeningPoints)
 {
+    listeningPoints.clear(); 
     // get the element nodes required
     TiXmlElement *root, *listNode, *node;
     TiXmlDocument *document = &_document;
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response"); 
-    GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_point_list"); 
     try
     {
+        GET_FIRST_CHILD_ELEMENT_GUARD(listNode, root, "listening_point_list"); 
         GET_FIRST_CHILD_ELEMENT_GUARD(node, listNode, "listening_point"); 
         while (node) 
         {

@@ -58,7 +58,12 @@ class ModalAnalysisObject
         inline int N_vertices() const {return N_DOF()/3;}
         inline REAL GetODESolverTime(){return _time;}
         inline void SetModeFile(const std::string &modeFile){_modeFile = modeFile; _modeFileSet = true;}
-        inline REAL GetModeFrequency(const int modeIndex) const {return sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI);}
+        inline REAL GetModeFrequency(const int modeIndex) const 
+        {
+            return (modeIndex < _eigenValues.size() ? 
+                    sqrt(_eigenValues(modeIndex) * _material->inverseDensity) / (2.0*M_PI) : 
+                    0.0);
+        }
         inline bool IDTypeIsSurf(){return _idType==SURF_CULLED;}
         inline std::shared_ptr<ModalMaterial> GetMaterial(){return _material;}
         void ReadModeFromFile(); 

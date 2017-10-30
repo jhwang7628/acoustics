@@ -2,6 +2,7 @@
 #   define COLOR_MAP_H
 
 #include "linearalgebra/Tuple3.hpp"
+#include "macros.h"
 #include "utils/macros.h"
 #include "JET.h"
 #include "AUTUMN.h"
@@ -26,25 +27,7 @@ class ColorMap
         }
 
         // =========================================
-        Tuple3f get_color(int s) const
-        {
-            assert(s >= 0 && s < m_num);
-            return mp_colors[s];
-        }
-
-        void get_color(int s, Tuple3f& color) const
-        {
-            assert(s >= 0 && s < m_num);
-            color.set(mp_colors[s].r, mp_colors[s].g, mp_colors[s].b);
-        }
-
-        void get_color(int s, Tuple3f* color) const
-        {
-            assert(s >= 0 && s < m_num);
-            color->set(mp_colors[s].r, mp_colors[s].g, mp_colors[s].b);
-        }
-
-        Tuple3f get_interpolated_color(double v) const
+        virtual Tuple3f get_interpolated_color(double v) const
         {
             if ( v >= m_max ) return mp_colors[m_num - 1];
             if ( v <= m_min ) return mp_colors[0];
@@ -62,6 +45,9 @@ class ColorMap
         int  color_num() const { return m_num; }
         void set_interpolation_range(double minv, double maxv)
         {
+            // prevent maxv == minv within rounding error
+            if (EQUAL_FLOATS(minv, maxv))
+                maxv = minv + 1E-6; 
             assert(minv < maxv);
             m_min = minv;
             m_max = maxv;
@@ -124,6 +110,29 @@ class BoneColorMap : public ColorMap
         ~BoneColorMap()
         {
             mp_colors = NULL;
+        }
+};
+
+class DipoleColorMap : public ColorMap
+{
+    private: 
+        Tuple3f _pos_color = {1.0, 0.0, 0.0}; 
+        Tuple3f _neg_color = {0.0, 1.0, 0.0}; 
+    public: 
+        DipoleColorMap():ColorMap(1)
+        {
+            mp_colors = nullptr; 
+        }
+        ~DipoleColorMap() = default; 
+
+        Tuple3f get_interpolated_color(double v) const
+        {
+            if      (v >= m_max) return _pos_color; 
+            else if (v <= m_min) return _neg_color; 
+            const double m = (m_max + m_min)/2.0;
+            const double h = (m_max - m_min)/2.0;
+            return (v > m ? _pos_color*((v - m)/h)
+                          : _neg_color*((m - v)/h));
         }
 };
 

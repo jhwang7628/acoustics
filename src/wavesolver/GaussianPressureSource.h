@@ -41,6 +41,7 @@ class GaussianPressureSource : public PressureSource
         inline const Vector3d &SourcePosition() const {return _bboxWorld.centroid;} 
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle); 
         virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
+        virtual Vector3d Evaluate(const int &vertexID, const REAL &time);
         virtual void PrintSourceInfo(std::ostream &os) const; 
 };
 

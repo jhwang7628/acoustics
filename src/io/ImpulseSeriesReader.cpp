@@ -41,7 +41,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
     if (!inFile) 
         throw std::runtime_error("**ERROR** Cannot open impulse file: " + _impulseFile);
     
-    RigidSoundObjectPtr soundObject = objects->GetPtr(loadObjectID); 
+    RigidSoundObjectPtr soundObject = 
+        std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(loadObjectID)); 
     int objectID=-1, objectID_old=-1, count=0; 
     char pairOrder, impulseType; 
     ImpulseSeriesObject::ImpactRecord buffer, buffer_old; 
@@ -65,7 +66,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                 if (pairOrder == 'T') // old buffer contains the pair 'S'
                 {
                     assert(count > 0); // make sure buffer exists
-                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID_old); 
+                    RigidSoundObjectPtr pairObject = 
+                        std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(objectID_old)); 
                     buffer.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer.appliedVertex, buffer_old.appliedVertex, buffer.contactSpeed, buffer.impactVector); 
                     buffer.impactPosition = Vector3d(soundObject->GetMeshPtr()->vertex(buffer.appliedVertex));
                     buffer.gamma = M_PI*buffer.impactVector.length()/2.0/buffer.supportLength;
@@ -78,7 +80,8 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
                     inFile >> buffer.timestamp >> objectID >> buffer.appliedVertex >> buffer.contactSpeed
                            >> buffer.impactVector.x >> buffer.impactVector.y >> buffer.impactVector.z
                            >> pairOrder >> impulseType; 
-                    RigidSoundObjectPtr pairObject = objects->GetPtr(objectID); 
+                    RigidSoundObjectPtr pairObject = 
+                        std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(objectID)); 
                     buffer_old.supportLength = soundObject->EstimateContactTimeScale(pairObject, buffer_old.appliedVertex, buffer.appliedVertex, buffer_old.contactSpeed, buffer_old.impactVector); 
                     buffer_old.impactPosition = Vector3d(soundObject->GetMeshPtr()->vertex(buffer_old.appliedVertex));
                     buffer_old.gamma = M_PI*buffer.impactVector.length()/2.0/buffer.supportLength;

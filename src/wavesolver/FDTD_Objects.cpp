@@ -1,19 +1,33 @@
 #include <wavesolver/FDTD_Objects.h> 
+#include <geometry/tribox3.h>
 
 //##############################################################################
 // Handles a list of objects embedded in the wave solver
 // note this is not thread safe
 //##############################################################################
 void FDTD_Objects::
-AddObject(const std::string &objectName, RigidSoundObjectPtr &object)
+AddObject(const int &objectName, RigidObjectPtr &object)
 {
-    if (_meshIDMap.find(objectName) == _meshIDMap.end())
-    {
-        const int objectID = _rigidObjects.size()-1; 
-        _rigidObjects.push_back(object); 
-        _meshIDMap[objectName] = objectID; 
-        object->SetMeshID(objectID); 
-    }
+    _rigidObjects[objectName] = object; 
+}
+
+//##############################################################################
+//##############################################################################
+int FDTD_Objects::
+AddConstraint(const std::string &id, FDTD_PlaneConstraint_Ptr &constraint)
+{
+    _constraints[id] = constraint; 
+    return _constraints.size();
+}
+
+//##############################################################################
+//##############################################################################
+int FDTD_Objects::
+AddConstraints(FDTD_Objects_Ptr &rhs)
+{
+    auto &c = rhs->GetConstraints(); 
+    _constraints.insert(c.begin(), c.end()); 
+    return _constraints.size();
 }
 
 //##############################################################################
@@ -22,13 +36,90 @@ int FDTD_Objects::
 OccupyByObject(const Vector3d &positionWorld) 
 {
     const int N_objects = N(); 
-    for (int ii=0; ii<N_objects; ii++) 
+    for (const auto &m : _rigidObjects)
     {
-        const double distance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z);
-        if (distance < DISTANCE_TOLERANCE) 
-            return ii; 
+        if (m.second->Type() != SHELL_OBJ)
+        {
+            const double distance = m.second->DistanceToMesh(positionWorld);
+            if (distance < DISTANCE_TOLERANCE) 
+                return m.first; 
+        }
     }
     return -1;
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+OccupyByConstraint(const Vector3d &pos)
+{
+    FDTD_PlaneConstraint_Ptr ptr;
+    return OccupyByConstraint(pos, ptr);
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint)
+{
+    for (const auto &p : _constraints)
+        if (p.second->Inside(pos))
+        {
+            constraint = p.second; 
+            return true;
+        }
+    return false; 
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+TriangleCubeIntersection(const Vector3d &cubeCenter, 
+                         const Vector3d &cubeHalfSize,
+                         std::set<TriangleIdentifier, TIComp> &outTris)
+{
+    float cc[3] = {(float)cubeCenter.x, 
+                   (float)cubeCenter.y,
+                   (float)cubeCenter.z};
+    float cs[3] = {(float)cubeHalfSize.x,
+                   (float)cubeHalfSize.y,
+                   (float)cubeHalfSize.z};
+    float vtxs[3][3]; 
+    Vector3d vtxbuf; 
+    bool result = false; 
+    // only performs on shell objects to save time
+    for (const auto &m : _rigidObjects)
+    {
+        if (m.second->Type() == SHELL_OBJ)
+        {
+            auto shell_object = 
+                std::dynamic_pointer_cast<FDTD_ShellObject>(m.second);
+            const auto &mesh = shell_object->GetMeshPtr(); 
+            const auto &tris = mesh->triangles(); 
+            auto vert = mesh->vertices(); 
+            for (int ii=0; ii<mesh->num_vertices(); ++ii)
+                vert.at(ii) = shell_object->GetVertexPos(ii);
+            for (int tid=0; tid<tris.size(); ++tid)
+            {
+                const auto &tri = tris.at(tid); 
+                for (int ii=0; ii<3; ++ii) // ii-th vertex 
+                {
+                    vtxbuf = shell_object->ObjectToWorldPoint(vert.at(tri[ii])); 
+                    vtxs[ii][0] = (float)(vtxbuf.x);
+                    vtxs[ii][1] = (float)(vtxbuf.y);
+                    vtxs[ii][2] = (float)(vtxbuf.z);
+                }
+                const int test = triBoxOverlap(cc, cs, vtxs);
+                if (test > 0)
+                {
+                    const int oid = std::stoi(shell_object->GetMeshName()); 
+                    outTris.insert(TriangleIdentifier(oid, tid));
+                    result = true; 
+                }
+            }
+        }
+    }
+    return result; 
 }
 
 //##############################################################################
@@ -36,7 +127,7 @@ OccupyByObject(const Vector3d &positionWorld)
 REAL FDTD_Objects::
 ObjectDistance(const int &objectIndex, const Vector3d &positionWorld) 
 {
-    return _rigidObjects[objectIndex]->DistanceToMesh(positionWorld.x,positionWorld.y,positionWorld.z);
+    return _rigidObjects.at(objectIndex)->DistanceToMesh(positionWorld.x,positionWorld.y,positionWorld.z);
 }
 
 //##############################################################################
@@ -45,33 +136,58 @@ REAL FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld)
 {
     REAL distance = std::numeric_limits<REAL>::max(); 
-    for (int ii=0; ii<N(); ++ii) 
-        distance = std::min<REAL>(distance, _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z));
+    for (const auto &m : _rigidObjects) 
+    {
+        const REAL d = m.second->DistanceToMesh(positionWorld); 
+        if (fabs(d) < fabs(distance))
+            distance = d; 
+    }
     return distance; 
 }
 
 //##############################################################################
 // Find the closest object with respect to positionWorld
-//
-// Note: this might fail if positionWorld is too far from the region where sdf
-// is defined. 
 //##############################################################################
-void FDTD_Objects::
+bool FDTD_Objects::
 LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID) 
 {
+    if (_rigidObjects.size() == 0) return false; 
     REAL queriedDistance; 
-    distance = std::numeric_limits<REAL>::max();
-    objectID = std::numeric_limits<int>::max(); 
-    const int N_objects = N(); 
-    for (int ii=0; ii<N_objects; ++ii) 
+    distance = std::numeric_limits<REAL>::max(); 
+    objectID = _rigidObjects.begin()->first; 
+    for (const auto &m : _rigidObjects) 
     {
-        queriedDistance = _rigidObjects[ii]->DistanceToMesh(positionWorld.x, positionWorld.y, positionWorld.z);
-        if (queriedDistance < distance)
+        queriedDistance = m.second->DistanceToMesh(positionWorld); 
+        if (fabs(queriedDistance) < fabs(distance))
         {
             distance = queriedDistance; 
-            objectID = ii;
+            objectID = m.first;
         }
     } 
+    return true; 
+}
+
+//##############################################################################
+//##############################################################################
+bool FDTD_Objects::
+LowestConstraintDistance(const Vector3d &position, REAL &unsignedDistance,
+                         FDTD_PlaneConstraint_Ptr &constraint)
+{
+    REAL d; 
+    bool found = false; 
+    unsignedDistance = std::numeric_limits<REAL>::max(); 
+    constraint.reset(); 
+    for (const auto &m : _constraints) 
+    {
+        d = m.second->UnsignedDistanceToPlane(position); 
+        if (d < unsignedDistance)
+        {
+            unsignedDistance = d; 
+            constraint = m.second;
+            found = true; 
+        }
+    } 
+    return found; 
 }
 
 //##############################################################################
@@ -79,7 +195,7 @@ LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectI
 void FDTD_Objects::
 ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal) 
 {
-    _rigidObjects[objectIndex]->NormalToMesh(positionWorld.x,positionWorld.y,positionWorld.z, queriedNormal);
+    _rigidObjects.at(objectIndex)->NormalToMesh(positionWorld.x,positionWorld.y,positionWorld.z, queriedNormal);
 }
 
 //##############################################################################
@@ -175,9 +291,9 @@ ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPo
     {
         _rigidObjects.at(objectID)->ReflectAgainstBoundary(intermediatePoint, reflectedPoint, boundaryPoint, erectedNormal, distance); 
         if (distance < 0) // originalPoint was inside the object
-            accumulatedBoundaryConditionValue += -2.0*distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+            accumulatedBoundaryConditionValue += -2.0*distance*_rigidObjects.at(objectID)->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
         else if (distance >= 0) // originalPoint was outside the object
-            accumulatedBoundaryConditionValue += distance*_rigidObjects[objectID]->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
+            accumulatedBoundaryConditionValue += distance*_rigidObjects.at(objectID)->EvaluateBoundaryAcceleration(boundaryPoint, erectedNormal, time) *density;
 
         // if new reflectedPoint is outside object, break the loop
         objectID = OccupyByObject(reflectedPoint); 
@@ -195,9 +311,14 @@ ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPo
 REAL FDTD_Objects::
 AdvanceAllModalODESolvers(const int &N_steps)
 {
+    REAL t = -1.0;
     for (auto &object : _rigidObjects)
-        object->AdvanceModalODESolvers(N_steps); 
-    return (_rigidObjects.size()>0 ? _rigidObjects.at(0)->GetODESolverTime() : -1);
+        if (object.second->Type() == RIGID_SOUND_OBJ)
+        {
+            t = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)
+                ->AdvanceModalODESolvers(N_steps); 
+        }
+    return t; 
 }
 
 //##############################################################################
@@ -208,10 +329,90 @@ GetEarliestImpactEvent()
     REAL earliestTime = std::numeric_limits<REAL>::max(); 
     for (const auto &object : _rigidObjects)
     {
-        if (object->N_Impulses() > 0)
-            earliestTime = min(earliestTime, object->GetFirstImpulseTime());
+        if (object.second->Type() == RIGID_SOUND_OBJ)
+        {
+            auto o = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second); 
+            if (o->N_Impulses() > 0)
+                earliestTime = min(earliestTime, o->GetFirstImpulseTime());
+        }
     }
     return earliestTime; 
+}
+
+//##############################################################################
+// Function SetObjectStates
+//##############################################################################
+void FDTD_Objects::
+SetObjectStates(const REAL time)
+{
+    // update modal vectors for the next time step
+    for (auto &m : _rigidObjects) 
+    {
+        if (m.second->Type() == RIGID_SOUND_OBJ) 
+        {
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second)
+                ->UpdateQPointers(); 
+        }
+        else if (m.second->Type() == SHELL_OBJ)
+        {
+            std::dynamic_pointer_cast<FDTD_ShellObject>(m.second)
+                ->UpdatePosAcc(time);
+        }
+    }
+    AnimateObjects(time);
+}
+
+//##############################################################################
+// Function InitializeAnimator
+//##############################################################################
+void FDTD_Objects::
+InitializeAnimator(const std::string &fileDisplacement,
+                   const std::string &fileVelocity,
+                   const std::string &fileAcceleration)
+{
+    _objectAnimator = std::make_shared<FDTD_RigidObject_Animator>(); 
+    _objectAnimator->ReadAllKinematics(fileDisplacement, 
+                                       fileVelocity, 
+                                       fileAcceleration); 
+    AnimateObjects(0.0); // apply the transformation right away
+}
+
+//##############################################################################
+// Function AnimateObjects
+//##############################################################################
+void FDTD_Objects::
+AnimateObjects(const REAL toTime)
+{
+    Point3d newCOM; 
+    Quaternion<REAL> quaternion; 
+    for (auto &m : _rigidObjects)
+    {
+        const auto &object = m.second;
+        if (object->Animated() && _objectAnimator)
+        {
+            _objectAnimator->GetRigidObjectTransform(m.first, toTime, newCOM, quaternion);
+            quaternion.normalize();
+            object->SetRigidBodyTransform(newCOM, quaternion);
+        }
+        object->UpdateBoundingBox(); 
+    }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
+Join(FDTD_Objects_Ptr &toBeJoined) 
+{
+    auto &to_be_joined_obj_list = toBeJoined->GetRigidObjects(); 
+    auto &to_be_joined_src_list = toBeJoined->GetPressureSources(); 
+    for (auto &m : to_be_joined_obj_list)
+    {
+        _rigidObjects[m.first] = m.second; 
+    }
+    for (auto &p : to_be_joined_src_list)
+    {
+        _pressureSources.push_back(p); 
+    }
 }
 
 //##############################################################################
@@ -246,8 +447,8 @@ WriteFailedReflections(const std::string &filename)
 {
     for (auto &object : _rigidObjects) 
     {
-        const std::string objFilename = filename + object->GetMeshName();
-        object->WriteDebugArrow(objFilename); 
+        const std::string objFilename = filename + object.second->GetMeshName();
+        object.second->WriteDebugArrow(objFilename); 
     }
 }
 
@@ -257,7 +458,28 @@ void FDTD_Objects::
 ClearFailedReflections()
 {
     for (auto &object : _rigidObjects) 
-        object->ClearDebugArrow(); 
+        object.second->ClearDebugArrow(); 
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
+DebugWriteModalQ(const int steps, const std::string &filename)
+{
+    std::ofstream tmp("tmp.dat", std::ostream::out | std::ostream::binary);
+    if (!of_q) 
+    {
+        of_q = new std::ofstream(filename.c_str(), 
+                                 std::ostream::out | std::ostream::binary); 
+    }
+    for (auto &object : _rigidObjects)
+    {
+        if (object.second->Type() == RIGID_SOUND_OBJ &&
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)->IsModalObject())
+            std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object.second)->AdvanceModalODESolvers(steps, 0, tmp, *of_q); 
+    }
+    tmp.close();
+    of_q->close();
 }
 
 //##############################################################################
@@ -267,11 +489,9 @@ std::ostream &operator <<(std::ostream &os, const FDTD_Objects &objects)
     os << "--------------------------------------------------------------------------------\n" 
        << "Class FDTD_Objects\n" 
        << "--------------------------------------------------------------------------------\n";
-    for (int ii=0; ii<objects.N(); ++ii) 
+    for (const auto &m : objects._rigidObjects)
     {
-        const std::string &meshName = objects.GetMeshName(ii); 
-        os << " Object " << ii << ": " << meshName
-           << " <ID:" << objects.GetMeshID(meshName) << ">\n"; 
+        os << " Object <" << m.first << ", " << m.second->GetMeshName() << "\n"; 
     }
     os << "--------------------------------------------------------------------------------" 
        << std::flush; 

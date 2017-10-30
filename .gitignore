@@ -38,3 +38,5 @@ src/tools/diff\.txt
 *.autosave
 
 CMakeLists\.txt\.user
+
+*.orig

@@ -15,6 +15,7 @@ const int ScalarField::NUM_NEIGHBOURS = 6;
 ScalarField::ScalarField()
     : _bbox( Vector3d( 0, 0, 0 ), Vector3d( 0, 0, 0 ) ),
       _divisions( 1, 1, 1 ),
+      _indexOffset(0,0,0),
       _cellSize( 0.0 ),
       _fieldValues( NULL )
 {
@@ -26,7 +27,8 @@ ScalarField::ScalarField()
 // to ensure square cells.
 //////////////////////////////////////////////////////////////////////
 ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
-    : _cellSize( cellSize ),
+    : _indexOffset(0,0,0),
+      _cellSize( cellSize ),
       _fieldValues( NULL )
 {
     Vector3d                   minBound;
@@ -52,6 +54,7 @@ ScalarField::ScalarField( const BoundingBox &bbox, REAL cellSize )
 //////////////////////////////////////////////////////////////////////
 ScalarField::ScalarField( const Vector3d &minBound, const Tuple3i &divisions, REAL cellSize )
     : _divisions( divisions ),
+      _indexOffset(0,0,0),
       _cellSize( cellSize ),
       _fieldValues( NULL )
 {
@@ -83,11 +86,13 @@ ScalarField::~ScalarField()
 int ScalarField::cellIndex( const Tuple3i &index ) const
 {
     int                        flatIndex;
-
-    flatIndex = index[ 0 ] * ( _divisions[ 1 ] * _divisions[ 2 ] );
-    flatIndex += index[ 1 ] * _divisions[ 2 ];
-    flatIndex += index[ 2 ];
-
+    // with offset
+    const int newIndex[3] = {(index[0] + _indexOffset[0]) % _divisions[0], 
+                             (index[1] + _indexOffset[1]) % _divisions[1],
+                             (index[2] + _indexOffset[2]) % _divisions[2]}; 
+    flatIndex = newIndex[0] * ( _divisions[1] * _divisions[2] );
+    flatIndex += newIndex[ 1 ] * _divisions[ 2 ];
+    flatIndex += newIndex[ 2 ];
     return flatIndex;
 }
 
@@ -107,6 +112,9 @@ Tuple3i ScalarField::cellIndex( int flatIndex ) const
 
     index[ 2 ] = flatIndex;
 
+    // with offset
+    for (int d=0; d<3; ++d)
+        index[d] = (index[d] - _indexOffset[d] + _divisions[d]) % _divisions[d]; 
     return index;
 }
 
@@ -174,6 +182,38 @@ void ScalarField::cellNeighbours( const Tuple3i &index, IntArray &neighbours ) c
     }
 }
 
+//////////////////////////////////////////////////////////////////////
+// Returns this cell's neighbours and topology
+// @return neighbourTopology 
+//   +1: neighbour at positive x relative to queried cell
+//   -1: neighbour at negative x relative to queried cell
+//   +2: neighbour at positive y relative to queried cell
+//   -2: neighbour at negative y relative to queried cell
+//   +3: neighbour at positive z relative to queried cell
+//   -3: neighbour at negative z relative to queried cell
+//////////////////////////////////////////////////////////////////////
+void ScalarField::cellNeighbours(const int &flatIndex, IntArray &neighbours, 
+                                 IntArray &neighbourTopology) const
+{
+    neighbours.clear();
+    neighbourTopology.clear(); 
+    const Tuple3i index = cellIndex(flatIndex); 
+    for ( int dimension = 0; dimension < 3; dimension++ )
+    {
+        Tuple3i neighbourIndex = index;
+        for ( int idx = -1; idx <= 1; idx += 2 )
+        {
+            neighbourIndex[ dimension ] = index[ dimension ] + idx;
+            if ( neighbourIndex[ dimension ] >= 0
+                    && neighbourIndex[ dimension ] < _divisions[ dimension ] )
+            {
+                neighbours.push_back( cellIndex( neighbourIndex ) );
+                neighbourTopology.push_back(idx*(dimension+1)); 
+            }
+        }
+    }
+}
+
 void ScalarField::AddCornerNeighbours( const int &flatIndex, IntArray &neighbours ) const
 {
     const Tuple3i index = cellIndex(flatIndex); 
@@ -212,28 +252,37 @@ void ScalarField::cell26Neighbours( const int &flatIndex, IntArray &neighbours) 
             }
 }
 
+// Ex: N=6, any dimension, x is cell center:
+//
+// |--x--|--x--|--x--|--x--|--x--|--x--|
+//      o
+// want to find all x's enclosing o, in this case x(0) and x(1)
+// if out of bounds, clamp to boundary (no repeated indices guaranteed by set)
 void ScalarField::enclosingNeighbours(const Vector3d &position, IntArray &neighbours) const 
 {
-
     neighbours.clear(); 
 
     Vector3d diff = position - _bbox.minBound(); 
     diff -= _cellSize/2.0; 
 
-    // compute the lower corner and clamp it to the (boundary - 1) cell
-    const int x = min( max( (int) (diff.x/_cellSize), 1), _divisions[0]-2 ); 
-    const int y = min( max( (int) (diff.y/_cellSize), 1), _divisions[1]-2 ); 
-    const int z = min( max( (int) (diff.z/_cellSize), 1), _divisions[2]-2 ); 
+    const int x0 = min( max( (int) (diff.x/_cellSize), 0), _divisions[0]-1 ); 
+    const int y0 = min( max( (int) (diff.y/_cellSize), 0), _divisions[1]-1 ); 
+    const int z0 = min( max( (int) (diff.z/_cellSize), 0), _divisions[2]-1 ); 
+    const int x1 = (diff.x < 0.0 ? 0 : min(x0+1,_divisions[0]-1)); // if out of bounds, clamp to first
+    const int y1 = (diff.y < 0.0 ? 0 : min(y0+1,_divisions[1]-1)); 
+    const int z1 = (diff.z < 0.0 ? 0 : min(z0+1,_divisions[2]-1)); 
 
-    neighbours.push_back( cellIndex(x+0,y+0,z+0) ); 
-    neighbours.push_back( cellIndex(x+0,y+0,z+1) ); 
-    neighbours.push_back( cellIndex(x+0,y+1,z+0) ); 
-    neighbours.push_back( cellIndex(x+0,y+1,z+1) ); 
-    neighbours.push_back( cellIndex(x+1,y+0,z+0) ); 
-    neighbours.push_back( cellIndex(x+1,y+0,z+1) ); 
-    neighbours.push_back( cellIndex(x+1,y+1,z+0) ); 
-    neighbours.push_back( cellIndex(x+1,y+1,z+1) ); 
+    std::set<int> helper; 
+    helper.insert( cellIndex(x0,y0,z0) ); 
+    helper.insert( cellIndex(x0,y0,z1) ); 
+    helper.insert( cellIndex(x0,y1,z0) ); 
+    helper.insert( cellIndex(x0,y1,z1) ); 
+    helper.insert( cellIndex(x1,y0,z0) ); 
+    helper.insert( cellIndex(x1,y0,z1) ); 
+    helper.insert( cellIndex(x1,y1,z0) ); 
+    helper.insert( cellIndex(x1,y1,z1) ); 
 
+    std::copy(helper.begin(), helper.end(), std::back_inserter(neighbours)); 
 }
 
 void ScalarField::GetIterationBox(const Vector3d &in_minBound, const Vector3d &in_maxBound, RangeIndices &indices)
@@ -259,7 +308,8 @@ void ScalarField::GetIterationBox(const Vector3d &in_minBound, const Vector3d &i
     {
         indices.startIndex[d] = (int)std::floor((minBound[d]-fieldMinBound[d])/_cellSize); 
         indices.endIndex[d]   = (int) std::ceil((maxBound[d]-fieldMinBound[d])/_cellSize);
-        indices.dimensionIteration[d] = indices.endIndex[d] - indices.startIndex[d]; 
+        indices.dimensionIteration[d] = std::max<int>(indices.endIndex[d] - indices.startIndex[d],
+                                                      1); 
     }
 }
 
@@ -437,6 +487,24 @@ void ScalarField::interpolateVectorField( const Vector3d &x,
                 1, data.cols(), /* Copy size */
                 coef.second /* multiplier */ );
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Move the center towards direction and amount indicated by amount.
+// This will rotate the way cellIndex is computed, effectively shift
+// all data. For example, if amount=(1,0,0), the scene center moves 
+// one unit towards positive x, therefore the data should rotate 
+// one unit towards negative x (or move offset towards positive x).
+////////////////////////////////////////////////////////////////////////////////
+void ScalarField::MoveCenter(const Tuple3i &amount)
+{
+    for (int d=0; d<3; ++d) 
+        _indexOffset[d] = (_indexOffset[d] + amount[d] + _divisions[d]) % _divisions[d]; 
+    Vector3d offset(((double)amount[0])*_cellSize,
+                    ((double)amount[1])*_cellSize,
+                    ((double)amount[2])*_cellSize); 
+    _bbox.setMinBound(_bbox.minBound() + offset); 
+    _bbox.setMaxBound(_bbox.maxBound() + offset); 
 }
 
 void ScalarField::TestSubindices()

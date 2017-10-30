@@ -84,13 +84,15 @@
 //}
 
 //##############################################################################
-void TestAcousticSimulatorRun(const std::string &xmlName)
+void TestAcousticSimulatorRun(const std::string &xmlName, const int &steps)
 {
     FDTD_AcousticSimulator simulator(xmlName);
     simulator.InitializeSolver(); 
     //simulator.TestAnimateObjects(1);
-    simulator.Run();
-    //simulator.RunForSteps(1);
+    if (steps<0) 
+        simulator.Run();
+    else
+        simulator.RunForSteps(steps);
     //simulator.TestAllComponents();
 }
 
@@ -291,6 +293,8 @@ void TestWavRead()
 //##############################################################################
 int main(int argc, char ** argv)
 {
+#pragma message("This tool is disabled. Use fdtd-acoustic-simulator-viewer and pass in --nogui flag instead. " __FILE__)
+#if 0
     //TestBoundingBox();
     //TestParseMeshList(); 
     //TestScalarFieldSubindices();
@@ -301,13 +305,16 @@ int main(int argc, char ** argv)
     //Test_TriangleMeshGraph();
         
     std::string xmlName("/home/jui-hsien/code/acoustics/src/tools/unit_testing/test_FDTD_RigidObject.xml");
+    int steps = -1; 
     if (argc>1) 
         xmlName = std::string(argv[1]);
-
+    if (argc>2)
+        steps = atoi(argv[2]); 
     {
         boost::timer::auto_cpu_timer timer;
-        TestAcousticSimulatorRun(xmlName); 
+        TestAcousticSimulatorRun(xmlName, steps); 
     }
+#endif
 
     return 0;
 }

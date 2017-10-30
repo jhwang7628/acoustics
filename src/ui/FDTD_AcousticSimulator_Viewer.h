@@ -6,6 +6,7 @@
 #include <wavesolver/FDTD_AcousticSimulator.h>
 #include <wavesolver/FDTD_RigidObject_Animator.h> 
 #include <wavesolver/PML_WaveSolver_Settings.h>
+#include <wavesolver/SimWorld.h>
 #include <modal_model/KirchhoffIntegralSolver.h>
 #include <linearalgebra/Vector3.hpp>
 #include <linearalgebra/Vector2.hpp>
@@ -23,14 +24,33 @@ class FDTD_AcousticSimulator_Widget;
 class FDTD_AcousticSimulator_Viewer : public QGLViewer
 {
     public: 
-        typedef std::shared_ptr<FDTD_AcousticSimulator> SimulatorPtr; 
         typedef std::shared_ptr<KirchhoffIntegralSolver> BEMSolverPtr; 
         struct Arrow{Vector3f start; Vector3f normal;}; 
         struct Sphere{Vector3f origin; REAL scale;};
-        struct Slice{int dim; Vector3d origin; Vector3Array samples; Eigen::MatrixXd data; Vector3Array gridLines; int N_sample_per_dim; Vector3d minBound; Vector3d maxBound; std::vector<MAC_Grid::Cell> cells; bool dataReady = false;};
+        struct Slice
+        {
+            int dim; 
+            Vector3d origin; 
+            Vector3Array samples; 
+            Eigen::MatrixXd data; 
+            Vector3Array gridLines; 
+            Tuple3i N_sample_per_dim; 
+            Vector3d minBound; 
+            Vector3d maxBound; 
+            std::vector<MAC_Grid::Cell> cells; 
+            bool dataReady = false;
+            ActiveSimUnit_Ptr intersectingUnit; 
+        };
+        struct TextureMeta
+        {
+            QString name 
+                = "/home/jui-hsien/code/acoustics/src/ui/assets/checkerboard.png"; 
+            float blockSizeUV = 0.2; 
+            bool groundLoaded = false; 
+        } textureMeta;
 
     private: 
-        SimulatorPtr                             _simulator; 
+        SimWorld_UPtr                            _simWorld; 
         std::shared_ptr<PML_WaveSolver_Settings> _solverSettings;
 
         uint                    _previewSpeed = 0; 
@@ -43,7 +63,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                     _wireframe;
         std::bitset<2>          _sliceWireframe;
         bool                    _drawBoxLis; 
-        bool                    _drawGround;
+        int                     _drawGround;
         bool                    _drawHashedCells;
         bool                    _takeSnapshots = false;
         std::vector<Vector3f>   _objectColors; 
@@ -52,6 +72,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         std::vector<Slice>      _sliceCin; 
         REAL                    _drawAbsMax; 
         REAL                    _drawImpulseScaling = 1.; 
+        ActiveSimUnit_Ptr       _listenedUnit; 
         MAC_Grid::Cell          _listenedCell; 
 
         // slice related fields
@@ -60,16 +81,20 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         Vector2d                    _sliceColorMapRange; 
         int                         _sliceDivision = 80; 
         bool                        _fixedSliceColorMapRange = false; 
-        int                         _meshDataPointer = 0; // 0: nothing; 1: curvature
+        int                         _meshDataPointer = 0; // 0: nothing; 1: curvature; 2: surface acceleration
 
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;
         int             _bemModePointer = 0; 
 
+        // scene parameters 
+        BoundingBox *_sceneBox = nullptr; 
+
         void SetAllKeyDescriptions(); 
         void DrawMesh(); 
         void DrawImpulses(); 
         void DrawBox(); 
+        void LoadGround();
         void DrawGround();
         void DrawListeningPoints(); 
         void DrawSelection(); 
@@ -78,6 +103,8 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         void DrawDebugCin();
         void DrawHashedCells();
         inline void ResetSliceColormap(){_sliceColorMap->set_interpolation_range(_sliceColorMapRange.x, _sliceColorMapRange.y);}
+
+        void updateGL() {update();}
 
     protected: 
         virtual void draw(); 
@@ -90,28 +117,30 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         virtual void postSelection(const QPoint &point); 
 
     public: 
-
-        FDTD_AcousticSimulator_Viewer(const std::string &simulationXMLFile, const uint &preview_speed)
-            : _simulator(new FDTD_AcousticSimulator(simulationXMLFile)), _previewSpeed(preview_speed)
+        FDTD_AcousticSimulator_Viewer(SimWorld_UPtr world)
+            : _simWorld(std::move(world))
         {
-            RestoreDefaultDrawOptions();
-            _simulator->InitializeSolver(); 
-            _solverSettings = _simulator->GetSolverSettings(); 
-            if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
-                InitializeBEMSolver();
+            RestoreDefaultDrawOptions(); 
+            _solverSettings = _simWorld->GetSolverSettings(); 
+            //if (_simulator->SceneHasModalObject() && _solverSettings->validateUsingFBem)
+            //    InitializeBEMSolver();
+        }
+        ~FDTD_AcousticSimulator_Viewer()
+        {
+            if (_sceneBox) delete _sceneBox; 
         }
 
         inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
         void InitializeBEMSolver(); 
         void AddSlice(const int &dim, const REAL &offset);
         void ConstructSliceSamples(Slice &slice); 
-        void ComputeAndCacheSliceData(const int &dataPointer, Slice &slice); 
+        void ComputeAndCacheSliceData(const int &dataPointer); 
         void DrawOneFrameForward(); 
-        void DrawHalfFrameForward(); 
         void RestoreDefaultDrawOptions(); 
         void PrintFrameInfo(); 
         void PrintDrawOptions(); 
         void Push_Back_ReflectionArrows(const std::string &filename); 
+        void MoveSceneCenter(const int &dim, const double &displacement); 
 
     friend FDTD_AcousticSimulator_Widget; 
 };

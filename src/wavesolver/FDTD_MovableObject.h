@@ -10,6 +10,17 @@
 #include <Eigen/Dense> 
 
 //##############################################################################
+// Enum ObjectType
+//##############################################################################
+enum ObjectType
+{
+    RIGID_SOUND_OBJ = 0, 
+    SHELL_OBJ, 
+    PLANE,
+    SOURCE
+};
+
+//##############################################################################
 // Objects that can be animated using rigid body simulator. has bounding box to
 // accelerate collision detection etc. 
 //##############################################################################
@@ -60,6 +71,10 @@ class FDTD_MovableObject
                         y<(centroid[1]+scaledDimension[1])&&y>(centroid[1]-scaledDimension[1]) &&
                         z<(centroid[2]+scaledDimension[2])&&z>(centroid[2]-scaledDimension[2])); 
             }
+            inline bool Inside(const Vector3d &pos)
+            {
+                return Inside(pos.x, pos.y, pos.z); 
+            }
             inline void Update(const Vector3<double> &minBound_c, const Vector3<double> &maxBound_c)
             {
                 minBound = minBound_c; 
@@ -78,7 +93,15 @@ class FDTD_MovableObject
                 dimension = maxBound - minBound; 
                 centroid = (maxBound + minBound)/2.0; 
             }
+
+            inline Vector3d Center() const 
+            {
+                return (maxBound+minBound)/2.0;
+            }
         };
+
+    private: 
+        ObjectType _type; 
 
     protected: 
         // bounding box in the work coordinate system
@@ -90,13 +113,16 @@ class FDTD_MovableObject
         Affine3     _modelingTransform; 
         Affine3     _modelingTransformInverse; 
 
+
     public: 
-        FDTD_MovableObject()
-            : _modelingTransform(Affine3::Identity()), 
+        FDTD_MovableObject(const ObjectType &type)
+            : _type(type),
+              _modelingTransform(Affine3::Identity()), 
               _modelingTransformInverse(Affine3::Identity())
         {
         }
 
+        inline ObjectType Type() const {return _type;}
         inline const BoundingBox &GetUnionBBox(){return _bboxWorldUnion2Steps;}
         inline const BoundingBox &GetBBox(){return _bboxWorld;}
         inline bool InsideBoundingBox(const double &x, const double &y, const double &z, const double &scale)
@@ -108,7 +134,7 @@ class FDTD_MovableObject
         virtual void UpdateBoundingBox()=0; 
         virtual void ResetUnionBox()=0;
         virtual void ApplyTranslation(const double &x, const double &y, const double &z);
-        virtual void ApplyRotation(const Quaternion<REAL> &quaternion);
+        virtual void ApplyScale(const REAL scale);
         virtual void SetTransform(const double &x, const double &y, const double &z, const double &angle, const double &rotationVectorx, const double &rotationVectory, const double &rotationVectorz);
         virtual Vector3d WorldToObjectPoint(const Vector3d &worldPoint); 
         virtual Vector3d ObjectToWorldPoint(const Vector3d &objectPoint); 

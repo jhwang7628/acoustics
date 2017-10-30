@@ -16,7 +16,7 @@ installPath = projectPath();
 binPath = '%s/build_release/bin' %(installPath)
 redirect = '/dev/stdout'
 
-isoNlevel = 4; # number of levels
+isoNlevel = 5; # number of levels
 isoMargin = 1; # margin of the bounding box
 isoAlpha = 0.25; # alpha long value in isostuff algorithm
 isoBeta = 0.42978; # alpha short value in isostuff algorithm

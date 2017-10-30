@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<impulse_response>
+    <material_list>
+        <modal_material
+            alpha = "30." 
+            beta = "1.0E-6" 
+            density = "1070" 
+            poisson_ratio = "0.35"
+            youngs_modulus= "1.4E9"
+            /> 
+    </material_list>
+    <scene> 
+        <object_rigidsim_data
+            file_displacement="displace.bin"
+            file_velocity="velocity.bin"
+            file_acceleration="acceleration.bin"
+            />
+            <rigid_sound_object 
+                id="0"
+                working_directory="/home/jui-hsien/code/acoustics/work/two_sphere_collide"
+                object_prefix="sphere_d10cm"  
+                fieldresolution="400"
+                scale="1.0" 
+                initial_position_x="0.0"
+                initial_position_y="0.0"
+                initial_position_z="0.0"
+                use_rasterized_boundary="1"
+                material_id="0"
+                impulse_file="modalImpulses.txt"
+                impulse_rigidsim_config_file="rbd-config.cfg"
+                mode_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/sphere_d10cm.modes"
+                modal_ODE_step_frequency="176400"
+
+                has_modal_source = "1"
+                has_acc_noise_source = "1"
+                /> 
+            <!--
+            <constraint
+                id="floor"
+                height="0.0"
+                />
+                -->
+    </scene> 
+    <solver_control_policy
+        type="static"
+        gridresolution="80"
+        domain_center_x="0"
+        domain_center_y="0."
+        domain_center_z="0"
+    />
+    <!--
+    <solver_control_policy
+        type="dynamic"
+        padding="80"
+    />
+    -->
+    <solver
+        sound_speed="343.0"
+        density="1.184" 
+        air_viscosity_alpha="2E-5"
+        cellsize="0.0005" 
+        stop_time="1.0"
+        number_of_timesteps="176400"
+        substeps="1"
+        timestepfrequency="176400"
+        output_pattern="data_test/test_%s"
+        PML_width="0"
+        PML_strength="1000000.0" 
+        boundary_condition_preset="0"
+        write_pressure_field_to_disk="0"
+        fast_forward_to_earliest_impact="0"
+        fast_forward_to_event_time="0.3368"
+
+        validate_using_fbem="0"
+        /> 
+    <!--
+         -->
+    <pressure_source> 
+        <!--
+        <gaussian_pressure_source
+            source_width_time="0.0000020"
+            source_position_x="0.00"
+            source_position_y="0.012"
+            source_position_z="0.012"
+            />
+            -->
+    </pressure_source> 
+    <listening_point_list>
+        <listening_point x="0.3" y="0.5" z="0.4"/>
+        <listening_point x="0.5" y="0.4" z="0.3"/>
+        <listening_point x="0.4" y="0.3" z="0.5"/>
+    </listening_point_list> 
+
+</impulse_response>

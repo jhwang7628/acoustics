@@ -37,6 +37,9 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(convert-dat-vtk-nonuniform
         convert_dat_vtk_nonuniform.cpp) 
 
+    add_executable(kirchhoff_helmholtz
+        kirchhoff_helmholtz.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}

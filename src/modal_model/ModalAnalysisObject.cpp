@@ -208,7 +208,6 @@ CullHighFrequencyModes(const REAL &frequenciesToKeep)
     }
     if (cullModeStart >= 0)
         CullHighFrequencyModes(cullModeStart);
-    std::cout << *this << std::endl;
 }
 
 //##############################################################################

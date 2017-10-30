@@ -40,10 +40,86 @@ AddEdge(const int &src, const int &dest)
 }
 
 //##############################################################################
+// Function Save
+//##############################################################################
+template <typename T> 
+void TriangleMeshGraph<T>::Graph::
+Save(const std::string &filename)
+{
+    assert(array.size()>0);
+    // test if file exists, if it does, abort
+    {
+        ifstream f(filename.c_str());
+        if (f.good()) return; 
+        f.close(); 
+    }
+    // save to file
+    ofstream stream(filename.c_str(), std::ios::out|std::ios::binary);
+    int N_verts = numNodes, N_vert_neighbours; 
+    stream.write((char*) &(N_verts), sizeof(int)); 
+    for (int ii=0; ii<N_verts; ++ii) 
+    {
+        N_vert_neighbours = array.at(ii).size(); 
+        stream.write((char*) &(N_vert_neighbours), sizeof(int)); 
+        stream.write((char*) &(array.at(ii)[0]), sizeof(int)*N_vert_neighbours); 
+    }
+    stream.close(); 
+}
+
+//##############################################################################
+// Function Load
+//##############################################################################
+template <typename T> 
+void TriangleMeshGraph<T>::Graph::
+Load(const std::string &filename)
+{
+    // test if file exists, if it does not, throw exception
+    {
+        ifstream f(filename.c_str());
+        if (!f.good()) 
+            throw std::runtime_error("**ERROR** load file does not exist");  
+        f.close(); 
+    }
+    // save to file
+    array.clear(); 
+    ifstream stream(filename.c_str(), std::ios::in|std::ios::binary);
+    int N_verts, N_vert_neighbours; 
+    stream.read((char*) &(N_verts), sizeof(int)); 
+    numNodes = N_verts; 
+    array.resize(numNodes);
+    for (int ii=0; ii<numNodes; ++ii) 
+    {
+        std::vector<int> &list = array.at(ii); 
+        stream.read((char*) &(N_vert_neighbours), sizeof(int)); 
+        list.resize(N_vert_neighbours); 
+        stream.read((char*) &(list[0]), sizeof(int)*N_vert_neighbours); 
+    }
+    stream.close(); 
+}
+
+//##############################################################################
+// Function TryLoad
+//##############################################################################
+template <typename T> 
+bool TriangleMeshGraph<T>::Graph::
+TryLoad(const std::string &filename)
+{
+    try 
+    {
+        Load(filename); 
+    }
+    catch (std::runtime_error &e)
+    {
+        return false; 
+    }
+    return true; 
+}
+
+//##############################################################################
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
+FindKNearestTrianglesGraph(const int &k_max, const Vector3<T> &point, const int &maxLevel, const int &startTriangleIndex, std::vector<int> &triangleIndices) const
 {
     const TriangleDistanceComp<T> sorter(this, point); 
     if (maxLevel <= 1)
@@ -56,8 +132,7 @@ FindKNearestTrianglesGraph(const int &k, const Vector3<T> &point, const int &max
         NeighboursOfTriangle(startTriangleIndex, maxLevel, neighbours); 
         triangleIndices = std::vector<int>(neighbours.begin(), neighbours.end()); 
     }
-    if (triangleIndices.size()<k)
-        throw std::runtime_error("**ERROR** not enough neighbours in the graph"); 
+    const int k = std::min<int>(k_max, triangleIndices.size());
     std::partial_sort(triangleIndices.begin(), triangleIndices.begin()+k, triangleIndices.end(), sorter); 
     triangleIndices = std::vector<int>(triangleIndices.begin(), triangleIndices.begin()+k); 
 }
@@ -97,7 +172,7 @@ ComputeClosestPointOnMesh(const int &startTriangleIndex, const Vector3<T> &query
 //##############################################################################
 template <typename T> 
 void TriangleMeshGraph<T>::
-BuildGraph(const T &nnRadius)
+BuildGraph(const std::string &loadName, const T &nnRadius)
 {
 #ifdef USE_BOOST
     boost::timer::auto_cpu_timer timer("Boost timer: Building Graph for mesh takes %w seconds\n" );
@@ -105,6 +180,14 @@ BuildGraph(const T &nnRadius)
     typedef std::set<int>::iterator SetIterator;
     assert(m_vertices.size()>0 && m_triangles.size()>0); 
     _graph.Initialize(m_triangles.size()); 
+
+    const bool loaded = _graph.TryLoad(loadName);
+    if (loaded) 
+    {
+        std::cout << "loaded name: " << loadName << std::endl;
+        _graph_built = true; 
+        return; 
+    }
 
     // grab vertex neighbours
     std::vector<std::set<int> > vertexNeighbors; 
@@ -132,6 +215,12 @@ BuildGraph(const T &nnRadius)
         {
             _graph.AddEdge(ii, *it); 
         }
+    }
+
+    if (!loaded) 
+    {
+        std::cout << "saved name: " << loadName << std::endl;
+        _graph.Save(loadName); 
     }
     _graph_built = true; 
 }

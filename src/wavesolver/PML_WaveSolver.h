@@ -6,6 +6,8 @@
 #ifndef PML_WAVE_SOLVER_H
 #define PML_WAVE_SOLVER_H
 
+#include <queue>
+
 #include <distancefield/distanceField.h>
 
 #include <field/ScalarField.h>
@@ -72,7 +74,8 @@ class PML_WaveSolver : public Solver
         MATRIX                   _pThisTimestep;      // for restarting
         MATRIX                   _vThisTimestep[ 3 ]; // for restarting
 
-        MATRIX                   _pLaplacian; 
+        MATRIX                   _pLaplacian[2]; 
+        int                      _pLaplacianInd;  // point to new
         MATRIX                   _pCollocated[3]; // rotating buffer for pressure: [old, current, new]
         int                      _pCollocatedInd; // point to new
 
@@ -104,6 +107,17 @@ class PML_WaveSolver : public Solver
         // objects in the scene 
         std::shared_ptr<FDTD_Objects> _objects; 
         PML_WaveSolver_Settings_Ptr _waveSolverSettings;
+
+        struct SimBoxMoveControl
+        {
+            int counter = 0; 
+            int minInterval = 0; 
+            bool forceFix = false; 
+            std::queue<Tuple3i> queue; 
+            inline void Push(const Tuple3i &offset){queue.push(offset);}
+            Tuple3i Pop();            
+            bool CanMove(); 
+        } _boxMoveControl;
 
     public: 
         PML_WaveSolver() 
@@ -147,8 +161,10 @@ class PML_WaveSolver : public Solver
                         REAL endTime = -1.0
                         );
 
-        // initialize from settings parsed from xml
-        PML_WaveSolver(PML_WaveSolver_Settings_Ptr settings, std::shared_ptr<FDTD_Objects> objects);
+        // initialize from settings parsed from xml and bounding box
+        PML_WaveSolver(const BoundingBox &bbox,
+                       PML_WaveSolver_Settings_Ptr settings, 
+                       std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
         void Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime); 
@@ -187,11 +203,15 @@ class PML_WaveSolver : public Solver
         void FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data); 
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
-        void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
+        void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const BoundingBox *sceneBox=nullptr);
         void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
         void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
         void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;
+        const BoundingBox GetSolverBBox() const; 
 #ifdef USE_COLLOCATED
+        void ScheduleMoveBox(const Tuple3i &offset); 
+        void ClearCollocatedData(const int &dim, const int &ind); 
+        void FillBoundaryFreshCell(const int &dim, const int &ind); 
         void GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind);
 #endif
 
@@ -217,6 +237,10 @@ class PML_WaveSolver : public Solver
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
         virtual void vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const;
         virtual void writeWaveOutput() const;
+
+        void MoveSimBox();
+        void SetSimBoxForceFix(const bool &set)
+        {_boxMoveControl.forceFix = set;} 
 
         //// debugging/testing methods ////
         REAL GetMaxCFL();

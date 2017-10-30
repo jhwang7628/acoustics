@@ -258,7 +258,14 @@ class TriangleMesh
 
         // need FindKNearestTriangles()
         T ComputeClosestPointOnMesh(const Vector3<T> &queryPoint, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint, const int &N_neighbours=5) const; 
-        T ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const; 
+        T ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, 
+                                          const std::vector<int> &triangleIndices, 
+                                          Vector3<T> &closestPoint, 
+                                          int &closestTriangle, 
+                                          Vector3<T> &projectedPoint,
+                                          const bool useDeformation = false,
+                                          const std::vector<T> &deformation = std::vector<T>()
+                                          ) const; 
 
     protected:
         double                      m_totArea;
@@ -267,6 +274,8 @@ class TriangleMesh
         std::vector<Tuple3ui>       m_triangles;    // indices of triangle vertices
         std::valarray<T>            m_vtxAreas;     // area of each triangles
         std::vector<T>              m_vtxMeanCurvatures;
+        mutable bool                m_centroidComputed = false; 
+        mutable Vector3<T>          m_centroid; 
 };
 
 template <typename T>
@@ -774,12 +783,15 @@ template <typename T>
 Vector3<T> TriangleMesh<T>::
 ComputeCentroid() const
 {
-    Vector3<T> accumulate(0, 0, 0); 
+    if (m_centroidComputed)
+        return m_centroid;
+    m_centroid.set((T)0,(T)0,(T)0); 
     const int N_vertices = num_vertices(); 
     for (int v_idx=0; v_idx<N_vertices; ++v_idx)
-        accumulate += vertex(v_idx); 
-    accumulate /= (T)N_vertices; 
-    return accumulate; 
+        m_centroid += vertex(v_idx); 
+    m_centroid /= (T)N_vertices; 
+    m_centroidComputed = true; 
+    return m_centroid; 
 }
 
 /* 
@@ -798,18 +810,39 @@ ComputeCentroid() const
  */
 template <typename T> 
 T TriangleMesh<T>::
-ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<int> &triangleIndices, Vector3<T> &closestPoint, int &closestTriangle, Vector3<T> &projectedPoint) const
+ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, 
+                                const std::vector<int> &triangleIndices, 
+                                Vector3<T> &closestPoint, 
+                                int &closestTriangle, 
+                                Vector3<T> &projectedPoint, 
+                                const bool useDeformation,
+                                const std::vector<T> &deformation
+                                ) const
 {
     assert(triangleIndices.size() > 0);
     T minDistance = std::numeric_limits<T>::max(); 
     Vector3<T> closestPointBuffer, projectedPointBuffer;
+    if (useDeformation && deformation.size() != num_vertices()*3)
+        throw std::runtime_error("**ERROR** deformation passed in has wrong dimension");
     for (const int t_idx : triangleIndices)
     {
         // points CCW ordering
         const Tuple3ui &triangle = this->triangle_ids(t_idx); 
-        const Point3<T> &p0 = this->vertex(triangle.x); 
-        const Point3<T> &p1 = this->vertex(triangle.y); 
-        const Point3<T> &p2 = this->vertex(triangle.z); 
+        Point3<T> p0 = this->vertex(triangle.x); 
+        Point3<T> p1 = this->vertex(triangle.y); 
+        Point3<T> p2 = this->vertex(triangle.z); 
+        if (useDeformation)
+        {
+            p0.x += deformation.at(triangle.x*3  );
+            p0.y += deformation.at(triangle.x*3+1);
+            p0.z += deformation.at(triangle.x*3+2);
+            p1.x += deformation.at(triangle.y*3  );
+            p1.y += deformation.at(triangle.y*3+1);
+            p1.z += deformation.at(triangle.y*3+2);
+            p2.x += deformation.at(triangle.z*3  );
+            p2.y += deformation.at(triangle.z*3+1);
+            p2.z += deformation.at(triangle.z*3+2);
+        }
 
         // edges w.r.t p0
         const Vector3<T> e0 = p2 - p0; 
@@ -827,8 +860,10 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
 
         // to find projection of query point on this plane, first find the time
         // travelled t for the ray emitted from the query point to this plane.
+        // the sign of t tells which side is the point wrt plane
         const T t = (d - triangleNormal.dotProduct(queryPoint)) / (triangleNormal.lengthSqr()); 
         projectedPointBuffer = queryPoint + triangleNormal * t;
+        const T sgn = (t >= 0.0 ? -1.0 : 1.0);
 
         // compute barycentric coordinates of this projected point (u, v)
         // projectedPoint = p0 + u*(p2 - p0) + v*(p1 - p0)
@@ -891,12 +926,19 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
         }
         else // remaining case is u<0, v<0, (u+v)>=1 but this case is impossible
         {
+            std::cout.precision(12);
+            std::cout << p0.x << " " << p0.y << " " << p0.z << std::endl;
+            std::cout << p1.x << " " << p1.y << " " << p1.z << std::endl;
+            std::cout << p2.x << " " << p2.y << " " << p2.z << std::endl;
+            std::cout << queryPoint.x << " " << queryPoint.y << " " << queryPoint.z << std::endl;
+            std::cout << projectedPointBuffer.x << " " << projectedPointBuffer.y << " " << projectedPointBuffer.z << std::endl;
+            std::cout << u << " " << v << std::endl;
             throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
         }
-        const T distance = (queryPoint - closestPointBuffer).lengthSqr();
+        const T distance = sgn*(queryPoint - closestPointBuffer).lengthSqr();
 
         // keep closest
-        if (distance < minDistance) 
+        if (fabs(distance) < fabs(minDistance)) 
         {
             minDistance = distance; 
             closestTriangle = t_idx; 
@@ -904,7 +946,7 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint, const std::vector<
             projectedPoint = projectedPointBuffer; 
         }
     }
-    return sqrt(minDistance); 
+    return (minDistance >= 0.0 ? sqrt(minDistance) : -sqrt(-minDistance)); 
 }
 
 /* 

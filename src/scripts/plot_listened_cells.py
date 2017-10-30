@@ -79,7 +79,7 @@ if __name__ == '__main__':
         print 'Creating wav file for listening position', listeningPositions[ii, :]
         outputData = listenedData[:, ii]
         # normalizationConstant = maxValue
-        normalizationConstant = np.absolute(outputData.max())
+        normalizationConstant = np.absolute(outputData).max()
         # if normalizationConstant > 1E-14:
         #     outputData /= normalizationConstant
         outputData = signal.resample(outputData, int(float(len(outputData))/rateRatio))
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         dataR[pt_idx] = np.linalg.norm(listeningPositions[pt_idx, :])
     one_over_r = np.divide(np.ones(N_points), dataR)
    
-    IO.writeMatrixXdBinary('listened_data.dat', listenedData)
+    IO.writeMatrixXdBinary('test_listened_data.dat', listenedData)
     # trim data 
     # listenedData = listenedData[:, ::20]
     # listeningPositions = listeningPositions[::20, :]
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         # plotting
         colors = [cm.jet(x) for x in np.linspace(1, 0, N_points)]
         lw = 2.0
-        ls = '-o'
+        ls = '-'
         fig = plt.figure(figsize=[10, 10])
         if len(sys.argv) == 5: 
             plot_index = int(sys.argv[4]) 
@@ -141,7 +141,8 @@ if __name__ == '__main__':
                 # else:
                     # plt.plot(listenedData[:,ii], color=colors[ii], linewidth=lw) 
             # plt.legend(loc=4)
-        plt.title('Collocated formulation with PML')
+        # plt.title('Collocated formulation with PML')
+        plt.legend()
         plt.xlabel('frame') 
         plt.ylabel('Pressure (Pascal)')
         plt.grid()

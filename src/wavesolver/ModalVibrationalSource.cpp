@@ -41,6 +41,20 @@ Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 
 //##############################################################################
 //##############################################################################
+Vector3d ModalVibrationalSource::
+Evaluate(const int &vertexID, const REAL &time)
+{
+    if (!_modalObjectOwner->IsModalObject())
+        return Vector3d();
+#if DEBUG_PERFECT_MODAL_HARMONICS == 0
+    return _modalObjectOwner->SampleModalAcceleration(vertexID, time); 
+#else
+    return _modalObjectOwner->PerfectHarmonics_SampleModalAcceleration(DEBUG_PERFECT_MODAL_HARMONICS, vertexID, time); 
+#endif
+}
+
+//##############################################################################
+//##############################################################################
 REAL ModalVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {

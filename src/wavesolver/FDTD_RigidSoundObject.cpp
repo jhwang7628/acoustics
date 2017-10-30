@@ -92,8 +92,7 @@ GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSp
 {
     // surface mesh vertex id
     const Vector3d &force = record.impactVector; 
-    const int &vertexID = record.appliedVertex; // FIXME debug
-
+    const int &vertexID = record.appliedVertex;
     if (vertexID >= ModalAnalysisObject::N_vertices())
         throw std::runtime_error("**ERROR** vertexID "+std::to_string(vertexID)+" out of bounds. Total #vertices = "+std::to_string(ModalAnalysisObject::N_vertices())); 
     const int startIndex = vertexID*3; 
@@ -152,7 +151,7 @@ GetModalDisplacement(Eigen::VectorXd &displacement)
 //  This function does not update timestamp automatically, call
 //  UpdateQPointers() manually.
 //##############################################################################
-void FDTD_RigidSoundObject::
+REAL FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps)
 {
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
@@ -160,8 +159,8 @@ AdvanceModalODESolvers(const int &N_steps)
         // retrieve impact records (forces) within the time range 
         std::vector<ImpactRecord> impactRecords; 
         Eigen::VectorXd forceTimestep, forceBuffer; 
-        _timer_substep_advanceODE[0].Start();
-        GetForces(_time, impactRecords);
+        _timer_substep_advanceODE[0].Start(); 
+        GetForces(_time, impactRecords); 
         _timer_substep_advanceODE[0].Pause(); 
 
         _timer_substep_advanceODE[1].Start(); 
@@ -173,6 +172,7 @@ AdvanceModalODESolvers(const int &N_steps)
             GetForceInModalSpace(impactRecords.at(rec_idx), forceBuffer); 
             forceTimestep += forceBuffer; 
         }
+        //forceTimestep.setOnes(); //FIXME debug set U^T f = [1,1,...1]
         _timer_substep_advanceODE[1].Pause(); 
 
         // step the system using force computed
@@ -188,6 +188,7 @@ AdvanceModalODESolvers(const int &N_steps)
         if (_modalAccEncoder)
             _modalAccEncoder->Encode(_qDDot_c); 
     }
+    return GetODESolverTime(); 
 }
 
 //##############################################################################
@@ -196,15 +197,17 @@ AdvanceModalODESolvers(const int &N_steps)
 //      = 1: write displacement
 //      = 2: write both
 //##############################################################################
-void FDTD_RigidSoundObject::
+REAL FDTD_RigidSoundObject::
 AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q)
 {
+    if (mode >=1)
     {
         const int N_rows = N_steps; 
         const int N_cols = _mesh->num_vertices(); 
         of_displacement.write((char*)&N_rows, sizeof(int)); 
         of_displacement.write((char*)&N_cols, sizeof(int)); 
     }
+    if (mode == 0 || mode == 2)
     {
         const int N_rows = N_steps; 
         const int N_cols = N_Modes(); 
@@ -257,6 +260,7 @@ AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_di
               << "  Get volume u     : " << _timer_substep_q2u[0].Duration()        * scale << " ms\n"
               << "  Map to surface   : " << _timer_substep_q2u[1].Duration()        * scale << " ms\n"
               << " Write data to disk: " << _timer_mainstep[2].Duration()           * scale << " ms\n"; 
+    return GetODESolverTime(); 
 }
 
 //##############################################################################
@@ -447,6 +451,33 @@ SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const
 }
 
 //##############################################################################
+// This function samples modal acceleration given mesh vertex
+//##############################################################################
+Vector3d FDTD_RigidSoundObject::
+SampleModalAcceleration(const int &vertexID, const REAL &sampleTime)
+{
+    // evaluate sample values
+    REAL sampledValue; 
+    if (EQUAL_FLOATS(sampleTime, _time-_ODEStepSize)) // sample at current time
+    {
+        if (!_modalAccEncoder)
+            sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c); 
+        else
+            sampledValue = _modalAccEncoder->Decode(vertexID); 
+    }
+    else if (EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+    {
+        sampledValue = _eigenVectorsNormal.row(vertexID).dot(_qDDot_c_plus); 
+    }
+    else
+    {
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    }
+    const Vector3d n = ObjectToWorldVector(_mesh->normal(vertexID)); 
+    return n*sampledValue; 
+}
+
+//##############################################################################
 // This function estimates the contact time scale for acceleration noises
 // between object a and constraint (such as ground). See Eq (7-8) in ref:
 //  [2012] Chadwick, Precomputed Acceleration Noise for Improved Rigid-Body Sound
@@ -461,8 +492,8 @@ EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Ve
     const REAL m = object_a->EffectiveMass(x_a, impulse_a); 
     const REAL one_over_r = mesh_a->vertex_mean_curvature(vertex_a); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E; 
-
-    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
+    return 2.87*pow(pow(m*one_over_E, 2) * fabs(one_over_r/contactSpeed), 0.2)
+        * CONTACT_TIMESCALE_SCALE; 
 }
 
 //##############################################################################
@@ -486,8 +517,8 @@ EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b,
                           + mesh_b->vertex_mean_curvature(vertex_b); 
     const REAL one_over_E = material_a->one_minus_nu2_over_E 
                           + material_b->one_minus_nu2_over_E; 
-
-    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2); 
+    return 2.87*pow(pow(m*one_over_E, 2) * one_over_r / fabs(contactSpeed), 0.2) 
+        * CONTACT_TIMESCALE_SCALE; 
 }
 
 //##############################################################################

@@ -262,6 +262,23 @@ FloatArray checkErrors( const VECTOR &eigenvalues, const MATRIX &eigenvectors,
     return errors;
 }
 
+// Compute U^T M U = D, D is diagonal matrix
+FloatArray checkMassOrthogonality( const VECTOR &eigenvalues, const MATRIX &eigenvectors,
+                                   const SPARSE_MATRIX &M )
+{
+    FloatArray diagElements( eigenvalues.size() );
+
+    for ( int eig_idx = 0; eig_idx < eigenvalues.size(); eig_idx++ ) {
+        // Compute u^T M u for each eigenvector
+        // pair (l, u)
+        VECTOR eVec( M.rows(), eigenvectors.row( eig_idx ) );
+        VECTOR Mu = M * eVec; 
+        diagElements.at(eig_idx) = eVec * Mu; // dot product
+    }
+
+    return diagElements;
+}
+
 int main(int argc, char* argv[])
 {
     LoggingManager::instance().set_logging_level(LOG_INFO);
@@ -360,10 +377,16 @@ int main(int argc, char* argv[])
     solver.compute_eigs( eigenvalues.data(), eigenvectors.data() );
     cout << "Done" << endl;
 
+    // check eigenvalue error
     FloatArray               errors = checkErrors( eigenvalues, eigenvectors, K, M );
-
     for ( int i = 0 ; i < eigenvalues.size(); i++ ) {
         printf( "Eigenvalue %03d: %e     error = %e\n", i, eigenvalues[ i ], errors[ i ] );
+    }
+
+    // check mass orthogonalities
+    FloatArray               diagElements = checkMassOrthogonality(eigenvalues, eigenvectors, M); 
+    for ( int i = 0 ; i < eigenvalues.size(); i++ ) {
+        printf( "Mode %03d: u^T M u = %e\n", i, diagElements[ i ] );
     }
 
     IntArray                 ids( numEigv );

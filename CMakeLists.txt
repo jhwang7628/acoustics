@@ -12,7 +12,11 @@ cmake_minimum_required(VERSION 3.0.2)
 # set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
-SET(CMAKE_CXX_FLAGS "-std=c++14")
+# set c++14: https://stackoverflow.com/questions/40795474/qt-5-7-adding-std-gnu11-to-my-compiler-flags-clobbering-std-c14
+#SET(CMAKE_CXX_FLAGS "-std=c++14")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
@@ -63,6 +67,8 @@ option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER        "Compiles Kirchhoff integral solve
 #   We should eventually go through and resolve all of these diffs
 add_definitions(-DDIFF_DEFINE)
 add_definitions(-DCGAL_INTERSECTION_VERSION=1)
+## FIXME hack
+add_definitions(-DNO_DRAW)
 
 #===================================================================
 ## Compiler
@@ -71,12 +77,13 @@ if ( USE_DEBUG )
     MESSAGE(STATUS "Using debug mode")
     add_definitions(-DDEBUG)
     add_definitions(-Wall)
+    add_definitions(-Wno-sign-compare)
     set(CMAKE_BUILD_TYPE Debug)
 else ( USE_DEBUG )
     MESSAGE(STATUS "Using release mode")
     set(CMAKE_BUILD_TYPE Release)
-    add_definitions(-Wall)
-    add_definitions(-Wno-unused-result -Wno-sign-compare -Wno-unused-variable -Wno-unused-local-typedefs)
+    #add_definitions(-Wall)
+    add_definitions(-g -Wno-unused-result -Wno-sign-compare -Wno-unused-variable -Wno-unused-local-typedefs)
 endif ( USE_DEBUG )
 
 if (USE_DEBUG_PRINT)
@@ -130,7 +137,11 @@ if ( BUILD_ISOSTUFFER_GUI OR BUILD_TETVIEWER )
     find_package(OpenGL REQUIRED)
     find_package(GLUT REQUIRED)
 
-    find_package(Qt4 REQUIRED)
+    if (USE_QT5)
+        find_package(Qt5Widgets REQUIRED)
+    else (USE_QT5)
+        find_package(Qt4 REQUIRED)
+    endif (USE_QT5)
 
     # check the existence of libQGLViewer
     find_package(QGLViewer 1.0 REQUIRED)

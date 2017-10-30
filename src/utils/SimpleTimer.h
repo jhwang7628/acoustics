@@ -16,6 +16,7 @@ class SimpleTimer
     public:
         SimpleTimer() : _elapsed(0) {}
 
+        inline void Reset() { _count = 0; _elapsed = std::chrono::high_resolution_clock::duration(0);}
         inline void Start() { _start = std::chrono::high_resolution_clock::now();}
         inline void Pause() { _elapsed += std::chrono::high_resolution_clock::now() - _start; _count++; }
         inline double Duration() { return (std::chrono::duration_cast<std::chrono::duration<double>>(_elapsed)).count(); }

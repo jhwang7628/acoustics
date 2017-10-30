@@ -32,19 +32,12 @@ class FDTD_RigidObject : public FDTD_MovableObject
         struct OptionalAttributes
         {
             bool isFixed=false; 
-            enum BoundaryHandling
-            {
-                RASTERIZE = 0,
-                PIECEWISE_CONSTANT = 1, 
-                LINEAR_MLS = 2, 
-            } boundaryHandlingType;
         };
 
     protected: 
         std::string                         _workingDirectory;
         std::string                         _objectPrefix; 
 
-        int                                 _meshID; 
         REAL                                _meshScale; 
         std::string                         _meshName;
         std::shared_ptr<TriangleMesh<REAL>> _mesh; 
@@ -74,11 +67,13 @@ class FDTD_RigidObject : public FDTD_MovableObject
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
 
+        bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
+
     public: 
-        FDTD_RigidObject()
-            : _workingDirectory("NOT_IDENTIFIED"),
+        FDTD_RigidObject(const ObjectType &type)
+            : FDTD_MovableObject(type),
+              _workingDirectory("NOT_IDENTIFIED"),
               _objectPrefix("NOT_IDENTIFIED"),
-              _meshID(-1), 
               _meshScale(1.0), 
               _meshName("NOT_IDENTIFIED"),
               _solverSettings(nullptr),
@@ -86,10 +81,17 @@ class FDTD_RigidObject : public FDTD_MovableObject
         {
         }
 
-        FDTD_RigidObject(const std::string &workingDirectory, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
-            : _workingDirectory(workingDirectory), 
+        FDTD_RigidObject(const ObjectType &type,
+                         const std::string &workingDirectory, 
+                         const int &resolution, 
+                         const std::string &objectPrefix, 
+                         const bool &buildFromTetMesh, 
+                         const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
+                         const std::string &meshName="NOT_IDENTIFIED", 
+                         const int &scale=1.0)
+            : FDTD_MovableObject(type),
+              _workingDirectory(workingDirectory), 
               _objectPrefix(objectPrefix),
-              _meshID(-1), 
               _meshScale(scale), 
               _meshName(meshName),
               _solverSettings(solverSettings),
@@ -99,6 +101,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
             Initialize(buildFromTetMesh); 
         }
 
+        inline bool Animated(){return _animated;}
+        inline void SetAnimated(const bool &is){_animated = is;}
         inline bool Exist(){return (_mesh!=0);}
         inline std::shared_ptr<TriangleMesh<REAL>> GetMeshPtr(){return _mesh;} 
         inline const std::shared_ptr<TriangleMesh<REAL>> &GetMeshPtr() const {return _mesh;} 
@@ -109,25 +113,27 @@ class FDTD_RigidObject : public FDTD_MovableObject
 #endif
         inline std::string &GetMeshName(){return _meshName;} 
         inline void AddVibrationalSource(VibrationalSourcePtr &sourcePtr){_vibrationalSources.push_back(std::move(sourcePtr));}
+        inline void ClearVibrationalSources(){_vibrationalSources.clear();}
         inline void SetOptionalAttributes(const OptionalAttributes &attr){_optionalAttributes = attr;}
         inline const OptionalAttributes &GetOptionalAttributes(){return _optionalAttributes;}
-        inline void SetMeshID(const int &ID){_meshID = ID;}
-        inline int GetMeshID(){return _meshID;}
         void Initialize(const bool &buildFromTetMesh); 
+        void Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh);
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 
+        virtual void ApplyScale(const REAL scale); 
         // in-place query for object sdf distance from world x,y,z
-        REAL DistanceToMesh(const double &x, const double &y, const double &z); 
-        REAL DistanceToMesh(const Vector3d &position); 
+        virtual REAL DistanceToMesh(const double &x, const double &y, const double &z); 
+        virtual REAL DistanceToMesh(const Vector3d &position); 
         // in-place query for object sdf normal from world x,y,z
         // return success or not (could be that query point is outside of bbox,
         // then normal is not defined
-        bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
-        bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
+        virtual bool NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal); 
+        virtual bool NormalToMesh(const Vector3d &position, Vector3d &queriedNormal); 
         REAL EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle=-1); 
         REAL EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
+        Vector3d EvaluateBoundaryAcceleration(const int &vertexID, const REAL &time); 
         REAL EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time); 
-        int ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
+        virtual int ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled, const int &startFromTriangle=-1);
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 
@@ -141,6 +147,5 @@ class FDTD_RigidObject : public FDTD_MovableObject
         int FindLowestVertex(const int &dimension, Vector3d &position); 
 };
 //##############################################################################
-
 
 #endif 

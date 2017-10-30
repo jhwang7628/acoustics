@@ -12,7 +12,7 @@ else()
             /sw/include/QGLViewer
         )
 
-    find_library(QGLViewer_LIBRARY NAMES qglviewer-qt4 QGLViewer
+    find_library(QGLViewer_LIBRARY NAMES qglviewer-qt4 QGLViewer-qt5 QGLViewer
         PATHS
         /usr/lib
         /usr/local/lib
