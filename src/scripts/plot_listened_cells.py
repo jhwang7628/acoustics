@@ -65,7 +65,7 @@ if __name__ == '__main__':
     maxValue = np.absolute(listenedData).max()
     print 'Normalize all data by max value = %f' %(maxValue)
     # writing the wav files
-    frontPadTime = 0.312100
+    frontPadTime = 0.288700
     endPadTime = 0.0
     N_frontPad = int(frontPadTime*float(wavRate))
     N_endPad = int(endPadTime*float(wavRate))
