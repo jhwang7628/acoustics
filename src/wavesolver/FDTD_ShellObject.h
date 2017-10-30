@@ -16,8 +16,10 @@ private:
         static const REAL stepSize; 
         int               frameID; 
         REAL              frameTime; 
-        std::vector<REAL> acceleration; // length: N_unconstrained_vertices*3 
+        std::vector<REAL> acceleration; // length: N_total_vertices*3 
         std::vector<REAL> displacement;
+        std::vector<REAL> constraint_displacement; 
+        std::vector<REAL> constraint_acceleration; 
         std::vector<int>  constrainedVertices; 
     };
     using _DataStep_UPtr = std::unique_ptr<_DataStep>; 
@@ -26,6 +28,8 @@ private:
         static std::queue<boost::filesystem::path> qPrefixes; // to-be-read file prefixes
         const std::string                          accSuffix = "wsacc"; 
         const std::string                          disSuffix = "displacement"; 
+        const std::string                          cdisSuffix = "constraint_displacement"; 
+        const std::string                          caccSuffix = "constraint_acceleration"; 
         const int                                  bufLen = 10; 
         unsigned int                               bufValidLen;
         REAL                                       bufStartTime = -1.0;

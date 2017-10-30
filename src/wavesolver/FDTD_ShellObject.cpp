@@ -230,12 +230,19 @@ ReadNextBuffer()
         auto p = std::move(_DataBuffer::qPrefixes.front()); 
         const std::string f_dis = p.replace_extension(disSuffix).string(); 
         const std::string f_acc = p.replace_extension(accSuffix).string(); 
+        const std::string f_cdis = p.replace_extension(cdisSuffix).string(); 
+        const std::string f_cacc = p.replace_extension(caccSuffix).string(); 
 
         // read displacement and acceleration
         _DataStep &step = buf.at(bb); 
         auto &dis = step.displacement; 
         auto &acc = step.acceleration; 
+        auto &cdis = step.constraint_displacement; 
+        auto &cacc = step.constraint_acceleration; 
         int N_unconstrained_dof; 
+        int N_constrained_dof; 
+        bool has_constraint_dis = false; 
+        bool has_constraint_acc = false; 
 
         {
             std::ifstream stream(f_dis.c_str(), std::ios::binary); 
@@ -255,6 +262,29 @@ ReadNextBuffer()
             stream.read((char*)&(acc[0]), sizeof(REAL)*N_unconstrained_dof); 
         }
 
+        {
+            std::ifstream stream(f_cdis.c_str(), std::ios::binary); 
+            if (stream) 
+            {
+                stream.read((char*)&N_constrained_dof, sizeof(int)); 
+                cdis.resize(N_constrained_dof); 
+                stream.read((char*)&(cdis[0]), sizeof(REAL)*N_constrained_dof); 
+                has_constraint_dis = true; 
+            }
+        }
+
+        {
+            std::ifstream stream(f_cacc.c_str(), std::ios::binary); 
+            if (stream) 
+            {
+                stream.read((char*)&N_constrained_dof, sizeof(int)); 
+                cacc.resize(N_constrained_dof); 
+                stream.read((char*)&(cacc[0]), sizeof(REAL)*N_constrained_dof); 
+                has_constraint_acc = true; 
+                assert(has_constraint_dis);
+            }
+        }
+
         // reorder vertices based on map
         {
             const int N_total_v         = owner->_i2oMap.size();
@@ -271,6 +301,21 @@ ReadNextBuffer()
                 tmp_a.at(o_v*3  ) = acc.at(ii*3  );
                 tmp_a.at(o_v*3+1) = acc.at(ii*3+1);
                 tmp_a.at(o_v*3+2) = acc.at(ii*3+2);
+            }
+            if (has_constraint_dis && has_constraint_acc)
+            {
+                assert(N_constrained_dof = N_constrained_v*3);
+                for (int jj=N_unconstrained_v; jj<N_total_v; ++jj)
+                {
+                    const int o_v = owner->_i2oMap.at(jj); 
+                    const int ii = jj-N_unconstrained_v;
+                    tmp_d.at(o_v*3  ) = cdis.at(ii*3  );
+                    tmp_d.at(o_v*3+1) = cdis.at(ii*3+1);
+                    tmp_d.at(o_v*3+2) = cdis.at(ii*3+2);
+                    tmp_a.at(o_v*3  ) = cacc.at(ii*3  );
+                    tmp_a.at(o_v*3+1) = cacc.at(ii*3+1);
+                    tmp_a.at(o_v*3+2) = cacc.at(ii*3+2);
+                }
             }
             std::swap(tmp_d, dis); 
             std::swap(tmp_a, acc); 
@@ -307,7 +352,7 @@ ReadMetaData()
     for (directory_iterator it(p); it!=directory_iterator(); ++it)
     {
         const auto filename = it->path().filename().string(); 
-        if (filename.find(disSuffix) != std::string::npos)
+        if (filename.find("."+disSuffix) != std::string::npos)
         {
             const auto stemstr = it->path().stem().string(); 
             ordered_filenames.push_back(stemstr);
@@ -327,6 +372,8 @@ ReadMetaData()
     // queue all the filenames (prefix with path)
     for (const auto key : ordered_filenames)
         _DataBuffer::qPrefixes.push(map_path.at(key)); 
+    std::cout << "Queued shell data step count: " 
+              << _DataBuffer::qPrefixes.size() << std::endl;
 
     // read vertex map 
     {
