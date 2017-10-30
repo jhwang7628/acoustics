@@ -4,7 +4,13 @@
 #include <geometry/BoundingBox.h>
 #include <utils/IO/IO.h>
 #include <macros.h>
+//#define DEBUG_HARMONIC_SOURCE
 
+
+// THESE TWO ARE DEPRECATED -- USE "has_modal_source" and "has_acc_noise_source"
+// in the config xml file instead
+//#define ACC_NOISE_SOURCE
+//#define MODAL_SOURCE
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator::
@@ -27,23 +33,26 @@ _SetBoundaryConditions() // NOTE: decrecated, not called anymore
     for (auto &m : objects)
     {
         RigidObjectPtr objectPtr = m.second; 
+#ifdef MODAL_SOURCE
         // add modal vibrational source
-        //VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(sourcePtr); 
-
+        VibrationalSourcePtr sourcePtr(new ModalVibrationalSource(objectPtr));
+        objectPtr->AddVibrationalSource(sourcePtr);  
+#endif
+#ifdef ACC_NOISE_SOURCE
         // add acceleration noise source
-        //VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
-        //objectPtr->AddVibrationalSource(anSourcePtr);
-
+        VibrationalSourcePtr anSourcePtr(new AccelerationNoiseVibrationalSource(objectPtr)); 
+        objectPtr->AddVibrationalSource(anSourcePtr);
+#endif
+#ifdef DEBUG_HARMONIC_SOURCE
         // add debug harmonic source
         const REAL omega = 2.0*M_PI*1500.0;
         //const REAL omega = 2.0*M_PI*objectPtr->GetModeFrequency(0); 
         const REAL phase = 0.0;
-        VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
-        //VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0)); 
-        //std::dynamic_pointer_cast<HarmonicVibrationalSource>(sourcePtr)->SetRange(0., 1./1500.);
-        objectPtr->AddVibrationalSource(sourcePtr); 
-
+        VibrationalSourcePtr hSourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase)); 
+        //VibrationalSourcePtr hSourcePtr(new HarmonicVibrationalSource(objectPtr, omega, phase, 1000., 0)); 
+        //std::dynamic_pointer_cast<HarmonicVibrationalSource>(hSourcePtr)->SetRange(0., 1./1500.);
+        objectPtr->AddVibrationalSource(hSourcePtr); 
+#endif
         //objectPtr->TestObjectBoundaryCondition();
     }
 }

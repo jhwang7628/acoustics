@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import struct
 from scene import *
+from get_paths import *
 ################################################################################
 ## Format sees Simulation.cpp:Write_Output_Alltransform
 ################################################################################
@@ -40,7 +41,7 @@ def Read_Transform_Frames(filename, rigid_objects):
 
 if __name__ == "__main__":
     ##
-    test_file = '/home/jui-hsien/code/acoustics/work/demo/wobbling_plate/displace.bin'
+    test_file = projectPath() + '/work/demo/wobbling_plate/displace.bin'
     plate = Rigid_Wavefront_Obj('/home/jui-hsien/data/models/plate/plate.obj')
     plate.Read_Rest_COM('/home/jui-hsien/data/models/plate/plate_centerOfMass.3vector')
     ##

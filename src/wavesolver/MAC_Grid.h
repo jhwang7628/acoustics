@@ -269,6 +269,7 @@ class MAC_Grid
         BoolArray                _isBulkCell;
         BoolArray                _isGhostCell;
         BoolArray                _isPMLCell;
+        BoolArray                _isOneCellCavity;
 
         // store all the triangle ids in cell for shells (not doing this
         // for rigid bodies)
@@ -366,7 +367,7 @@ class MAC_Grid
         void setPMLBoundaryWidth( REAL width, REAL strength );
 
         void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
-        void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const; 
+        void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) /* const */; 
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))

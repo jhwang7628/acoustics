@@ -31,6 +31,7 @@
 
 //#define ENGQUIST_ORDER 1
 #define ENGQUIST_ORDER 2
+//#define DISABLE_CAVITY_FIX
 
 //##############################################################################
 // Static variable initialize
@@ -115,6 +116,7 @@ void MAC_Grid::Reinitialize_MAC_Grid(const BoundingBox &bbox, const REAL &cellSi
 
     // resize all necessary arrays defined everywhere
     _isBulkCell.resize(N_pressureCells, false);
+    _isOneCellCavity.resize(N_pressureCells, false);
     _pressureCellHasValidHistory.resize(N_pressureCells, true); 
     _containingObject.resize(N_pressureCells, -1);
     if (_useGhostCellBoundary)
@@ -180,7 +182,7 @@ void MAC_Grid::pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) co
     }
 }
 
-void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) const
+void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) // const
 {
     if (laplacian.rows()!=value.rows() || laplacian.cols()!=value.cols())
         laplacian.resizeAndWipe(value.rows(), value.cols()); 
@@ -196,6 +198,7 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
     {
         if (!_isBulkCell.at(cell_idx))
             continue; 
+        int surroundedDims = 0;
         const Tuple3i cellIndices = field.cellIndex(cell_idx); 
         Tuple3i bufPos = cellIndices, bufNeg = cellIndices; 
         int buf_iPos = -1, buf_iNeg = -1; 
@@ -220,9 +223,12 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
             if (gc_pos) gc_pos_val = (gc_pos->validSample ? gc_pos->values.at(gc_pos->valuePointer).at(dim*2  ) : value(cell_idx,0)); 
             if (gc_neg) gc_neg_val = (gc_neg->validSample ? gc_neg->values.at(gc_neg->valuePointer).at(dim*2+1) : value(cell_idx,0)); 
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
+            {
                 laplacian(cell_idx, 0) += (  gc_pos_val
                                            + gc_neg_val
                                            - 2.0*value(cell_idx, 0)) / (9.0/16.0); 
+                ++surroundedDims;
+            }
             else if (_isGhostCell.at(buf_iPos) && !_isGhostCell.at(buf_iNeg)) // only right side is ghost cell
                 laplacian(cell_idx, 0) += (  gc_pos_val
                                            + 0.75*value(buf_iNeg, 0)
@@ -237,9 +243,12 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            - 2.0*value(cell_idx, 0)); 
 #else
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
+            {
                 laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
                                            + _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iNeg))->pressure
                                            - 2.0*value(cell_idx, 0)) / (9.0/16.0); 
+                ++surroundedDims;
+            }
             else if (_isGhostCell.at(buf_iPos) && !_isGhostCell.at(buf_iNeg)) // only right side is ghost cell
                 laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
                                            + 0.75*value(buf_iNeg, 0)
@@ -258,6 +267,9 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
             if (isBoundaryFace!=-1) // v_i-1 if exists, otherwise v_i
                 bufNeg[dim] += 1; 
         }
+#ifndef DISABLE_CAVITY_FIX
+        _isOneCellCavity.at(cell_idx) = (surroundedDims > 1 ); //(surroundedDims == 3);
+#endif
         laplacian(cell_idx, 0) *= scale; 
     }
 }
@@ -822,7 +834,9 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
         else  // not boundary cells
         {
             // update normal cell
-            if (_waveSolverSettings->useAirViscosity && _pressureCellHasValidHistory.at(cell_idx))
+            if ( _isOneCellCavity.at(cell_idx)  && _pressureCellHasValidHistory.at(cell_idx) )
+                pNext(cell_idx, 0) = pLast(cell_idx,0) = pCurr(cell_idx,0);
+            else if (_waveSolverSettings->useAirViscosity && _pressureCellHasValidHistory.at(cell_idx))
                 pNext(cell_idx, 0) = 2.0*pCurr(cell_idx, 0) 
                                    -     pLast(cell_idx, 0) 
                                    - lastLaplacian(cell_idx, 0) *  kcalp
@@ -2244,6 +2258,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
 
     _isBulkCell.clear();
     _isGhostCell.clear();
+    _isOneCellCavity.clear();
     _classified.clear(); 
     _isVelocityInterfacialCell[ 0 ].clear();
     _isVelocityInterfacialCell[ 1 ].clear();
@@ -2255,6 +2270,7 @@ void MAC_Grid::classifyCells( bool useBoundary )
     _isBulkCell.resize(numPressureCells, false);
     _isGhostCell.resize(numPressureCells, false);
     _isPMLCell.resize(numPressureCells, false); 
+    _isOneCellCavity.resize(numPressureCells, false);
     _classified.resize(maxNumCells, false); 
 
     _isVelocityInterfacialCell[ 0 ].resize( numVcells[ 0 ], false );
@@ -2874,6 +2890,7 @@ void MAC_Grid::classifyCellsDynamic_FAST(MATRIX &pFull, MATRIX (&p)[3], FloatArr
 
     std::cout << "test 7-1\n"; // FIXME debug
     std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); // FIXME debug
+    std::fill(_isOneCellCavity.begin(), _isOneCellCavity.end(), false); // FIXME debug
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); // FIXME debug 
     std::fill(_containingObject.begin(), _containingObject.end(), -1); // FIXME debug
 
@@ -3292,6 +3309,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 
     // set default field values
     std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
+    std::fill(_isOneCellCavity.begin(), _isOneCellCavity.end(), false); // FIXME debug
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
     if (_cellTriangles.size() != numPressureCells())

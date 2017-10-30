@@ -15,7 +15,7 @@ This project uses a number of open source projects to work properly. The followi
 * [VLFeat](http://www.vlfeat.org/index.html) - For faster NN lookup in the TriangleMeshKDTree class. This class is only available if the flag `USE_VLFEAT` is on. As a result, this is an optional package. If CMake cannot locate this library and an error is thrown, set environmental variable `VLFEAT_ROOT` to the install directory. For example, on Linux, do `export VLFEAT_ROOT=/home/<name>/opt/src/vlfeat-0.9.20`.
 * [libigl](https://github.com/libigl/libigl) - Libigl is used to replace GTS on computing mesh curvature, since it was found that GTS might fail when computing mean curvatures on tet extracted mesh (used for acceleration noise). A [fork](https://github.com/jhwang7628/libigl) from this library is used with some minor changes in namespace prefix to fix name collision with our own Matrix library and to keep it as lightweight as possible. This is currently integrated into the acoustic repo as submodules. If you are cloning the repo for the first time, you will have the directory `src/libigl` but with no contents in it. To initialize, 
 ``` 
-cd src/libigl
+cd external/libigl
 git submodule init
 git submodule update
 ```
@@ -28,22 +28,29 @@ More on git submodules: [link](https://git-scm.com/book/en/v2/Git-Tools-Submodul
 ## Build Directions:
 Create build directory within source directory and configure cmake
 ```
-mkdir build
-cd build
+mkdir build_release
+cd build_release
 cmake ..
 ```
 At the last step, you can specify build option such as `cmake -DUSE_OPENMP=ON`. To view all the option, its easiest to use package such as ccmake: `ccmake ..`.
 
+To make a debug build, do the following:
+```
+mkdir build_debug
+cd build_debug
+cmake -DUSE_DEBUG=ON ..
+```
+
 ### Simulator module
 To build the simulator test module in parallel, do
 ```
-make -j8 unit_testing_FDTD_AcousticSimulator
+make -j40 unit_testing_FDTD_AcousticSimulator
 ```
 
 ### Postprocessing module
 The result of the run can be visualized by paraview. The simulator can be configured to dump raw data in `*.dat` files, and we have a converter to turn these files into `*.vtk` files, which can be recognized by paraview. To build the converter, do 
 ```
-make -j8 convert-dat-vtk
+make -j40 convert-dat-vtk
 ```
 
 ## Run the code

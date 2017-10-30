@@ -208,6 +208,8 @@ UpdateBoundingBox()
             maxBound.y = max(maxBound.y, pointBuffer[1]);
             maxBound.z = max(maxBound.z, pointBuffer[2]);
         }
+        if( minBound.x == D_INF )
+            throw std::runtime_error("**ERROR** bounding box not set in UpdateBoundingBox");
         _bboxWorld.Update(minBound, maxBound); 
     }
     else 

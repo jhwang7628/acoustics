@@ -133,7 +133,7 @@ ObjectDistance(const int &objectIndex, const Vector3d &positionWorld)
 //##############################################################################
 //##############################################################################
 REAL FDTD_Objects::
-LowestObjectDistance(const Vector3d &positionWorld) 
+LowestObjectDistance(const Vector3d &positionWorld)
 {
     REAL distance = std::numeric_limits<REAL>::max(); 
     for (const auto &m : _rigidObjects) 

@@ -220,8 +220,10 @@ static void write_eigenvalues(int nev, int nsz,
 #if 0
     while (stid < nev && eval[ids[stid]] < EV_THRESHOLD ) ++ stid;
 #endif
-
-    stid = NUM_RIGID_MODES;
+#ifndef KEEP_NEGATIVE_EMODES
+    while (( stid < nev - NUM_RIGID_MODES ) && eval[ids[stid]] < 0) ++stid;
+#endif
+    stid += NUM_RIGID_MODES;
 
     int nevout = nev - stid;    // # of eigenvalue to output
     fout.write((char *)&nevout, sizeof(int));

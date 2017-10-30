@@ -1,5 +1,5 @@
 find_path(Eigen_INCLUDE_DIR Eigen/Core
-  HINTS $ENV{EIGEN_ROOT}
+  HINTS $ENV{EIGEN_ROOT} /usr/local/include/eigen3
   DOC "The directory where Eigen/Core resides"
 )                                                                                                                                             
 mark_as_advanced(Eigen_INCLUDE_DIR)

@@ -8,6 +8,21 @@
 
 using namespace std;
 
+
+#define CONFIG_LOOKUP_HELPER(c,tag,variable) \
+    c.lookupValue(tag,variable);
+
+#define CONFIG_LOOKUP_HELPER_DEFAULT(c,tag,variable,defaultValue) \
+    if(!c.lookupValue(tag,variable)) variable=defaultValue;
+
+#define CONFIG_LOOKUP_HELPER_ASSERT(c,tag,variable) \
+    assert(c.lookupValue(tag,variable))
+
+#define CONFIG_LOOKUP_HELPER_FLAG(c,tag,variable,flag) \
+    flag=c.lookupValue(tag,variable);
+
+
+// ----------------------------------------------------------------------------
 struct MatRec
 {
     double density;
@@ -149,18 +164,39 @@ static void load_config(const char* file)
             double dx, dy, dz, rot = 0.;
             Quaternion<double> qrot;
             /*
-             * NOTE: assuming the translation and rotation are all related to the origin
+             * Initialize object state
              */
             if ( !ssO[i].lookupValue("dx", dx) ) dx = 0;
             if ( !ssO[i].lookupValue("dy", dy) ) dy = 0;
             if ( !ssO[i].lookupValue("dz", dz) ) dz = 0;
+            std::vector<Quat4d> rotations;
+            if (ssO[i].exists("rotations"))
+            {
+                const libconfig::Setting &r = ssO[i]["rotations"];
+                double angle, rx, ry, rz;
+                for(int j=0; j<r.getLength(); j++)
+                {
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"angle",angle);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"rx"   ,rx);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"ry"   ,ry);
+                    CONFIG_LOOKUP_HELPER_ASSERT(r[j],"rz"   ,rz);
+                    rotations.push_back(Quat4d::fromAxisRotD(Vector3d(rx,ry,rz), angle));
+                }
+            }
+            if (rotations.size()>0)
+            {
+                Quat4d quat = rotations[0];
+                for(int j=1;j<rotations.size();j++)
+                    quat *= rotations[j];
+                rbodies[i]->init_com_rotation(quat.w,quat.v.x,quat.v.y,quat.v.z);
+            }
             rbodies[i]->translate(dx, dy, dz);
 
-            if ( ssO[i].exists("rot") ) 
-            {
-                const Setting& rr = ssO[i]["rot"];
-                rbodies[i]->init_origin_rotation(rr[0], rr[1], rr[2], rr[3]);
-            }
+#if 0
+            // FIXME
+            qrot = Quat4d::fromAxisRotD(Vector3d(1,0,0), 90.0);
+            rbodies[i]->rotate( qrot );
+#endif
 #if 0
             if ( ssO[i].lookupValue("rx", rot) )
                 qrot = Quat4d::fromAxisRotD(Vector3d(1,0,0), rot);
@@ -186,6 +222,7 @@ static void load_config(const char* file)
 
             if ( setFixed )
             {
+              printf( "Fixing an object!\n" );
               rbodies[i]->set_fixed( true );
             }
             else
@@ -225,7 +262,7 @@ static void load_config(const char* file)
                   animatePeriod = 0.0;
                 }
 
-                // Specify an animation state
+                // Check to see if we want to specify an animation state
                 //
                 // NOTE: I hacked this in here for the key chain example
                 RigidState     *s = new RigidState();
@@ -284,6 +321,10 @@ static void load_config(const char* file)
             if ( !ssO[i].lookupValue("vy", dy) ) dy = 0;
             if ( !ssO[i].lookupValue("vz", dz) ) dz = 0;
             rbodies[i]->init_velocity(dx, dy, dz);
+            if ( !ssO[i].lookupValue("wx", dx) ) dx = 0;
+            if ( !ssO[i].lookupValue("wy", dy) ) dy = 0;
+            if ( !ssO[i].lookupValue("wz", dz) ) dz = 0;
+            rbodies[i]->init_angular_velocity(dx, dy, dz);
             /* add to rigid simulator */
             sim.add_rigid_body(rbodies[i]);
         }

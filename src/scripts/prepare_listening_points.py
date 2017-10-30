@@ -1,11 +1,12 @@
 #!/usr/bin/env python 
 import math
 import numpy as np 
+from get_paths import *
 
 def ObjectPlacementTemplate(x, y, z, ID):
     rigidObjectStr = """
             <rigid_object 
-                working_directory="/home/jui-hsien/code/acoustics/work/two_sphere_collide"
+                working_directory=\"""" + projectPath() + """/work/two_sphere_collide"
                 object_prefix="sphere_d10cm"  
                 id="%u" 
                 fieldresolution="400"

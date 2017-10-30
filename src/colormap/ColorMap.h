@@ -2,6 +2,7 @@
 #   define COLOR_MAP_H
 
 #include "linearalgebra/Tuple3.hpp"
+#include "macros.h"
 #include "utils/macros.h"
 #include "JET.h"
 #include "AUTUMN.h"
