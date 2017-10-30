@@ -247,41 +247,66 @@ DrawMesh()
             }
             curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature);
         }
+        
+        // get acceleration if needed
+        std::vector<REAL> accel(N_vertices); 
+        DipoleColorMap accelColorMap;
+        REAL maxAccel = std::numeric_limits<REAL>::min();
+        REAL minAccel = std::numeric_limits<REAL>::max();
+        if (_meshDataPointer == 2)
+        {
+            for (int v_idx=0; v_idx<N_vertices; ++v_idx)
+            {
+                Vector3<REAL> n = object->ObjectToWorldVector(normals.at(v_idx)); 
+                accel.at(v_idx)  = object->EvaluateBoundaryAcceleration(v_idx, n, _simWorld->GetWorldTime());
+                maxAccel = std::max<REAL>(maxAccel, accel.at(v_idx));
+                minAccel = std::min<REAL>(minAccel, accel.at(v_idx));
+            }
+            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel)); 
+            const REAL scale = 0.8;
+            accelColorMap.set_interpolation_range(-5E5, 5E5);
+            std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
+        }
 
         // draw triangles
         glEnable(GL_LIGHTING);
         if (_wireframe == 0 || _wireframe == 2)
         {
-            JetColorMap accelColorMap;
-            REAL maxAccel = std::numeric_limits<REAL>::min();
-            REAL minAccel = std::numeric_limits<REAL>::max();
-            std::vector<double> accel(N_triangles);
-
-            for (int t_idx=0; t_idx<N_triangles; ++t_idx)
-            {
-                const Tuple3ui &triangle = triangles.at(t_idx);
-                Point3<REAL> x = vertices.at(triangle.x);
-                Point3<REAL> y = vertices.at(triangle.y);
-                Point3<REAL> z = vertices.at(triangle.z);
-                Vector3<REAL> nx = normals.at(triangle.x);
-                Vector3<REAL> ny = normals.at(triangle.y);
-                Vector3<REAL> nz = normals.at(triangle.z);
-                x = object->ObjectToWorldPoint(x);
-                y = object->ObjectToWorldPoint(y);
-                z = object->ObjectToWorldPoint(z);
-                nx = object->ObjectToWorldVector(nx);
-                ny = object->ObjectToWorldVector(ny);
-                nz = object->ObjectToWorldVector(nz);
-
-                accel[t_idx] = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simWorld->GetWorldTime(), -1);
-
-                maxAccel = std::max<REAL>(maxAccel, accel.at(t_idx));
-                minAccel = std::min<REAL>(minAccel, accel.at(t_idx));
-            }
-            accelColorMap.set_interpolation_range(minAccel, maxAccel);
-
-            //std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
-
+//            DipoleColorMap accelColorMap;
+//            REAL maxAccel = std::numeric_limits<REAL>::min();
+//            REAL minAccel = std::numeric_limits<REAL>::max();
+//            std::vector<double> accel(N_triangles);
+//
+//            for (int t_idx=0; t_idx<N_triangles; ++t_idx)
+//            {
+//                const Tuple3ui &triangle = triangles.at(t_idx);
+//                Point3<REAL> x = vertices.at(triangle.x);
+//                Point3<REAL> y = vertices.at(triangle.y);
+//                Point3<REAL> z = vertices.at(triangle.z);
+//                Vector3<REAL> nx = normals.at(triangle.x);
+//                Vector3<REAL> ny = normals.at(triangle.y);
+//                Vector3<REAL> nz = normals.at(triangle.z);
+//                x = object->ObjectToWorldPoint(x);
+//                y = object->ObjectToWorldPoint(y);
+//                z = object->ObjectToWorldPoint(z);
+//                nx = object->ObjectToWorldVector(nx);
+//                ny = object->ObjectToWorldVector(ny);
+//                nz = object->ObjectToWorldVector(nz);
+//
+//                //accel[t_idx] = object->EvaluateBoundaryAcceleration((x + y + z) / 3.0, (nx + ny + nz) / 3.0, _simWorld->GetWorldTime(), -1);
+//                accel[t_idx]  = object->EvaluateBoundaryAcceleration(triangle.x, nx, _simWorld->GetWorldTime());
+//                accel[t_idx] += object->EvaluateBoundaryAcceleration(triangle.y, ny, _simWorld->GetWorldTime());
+//                accel[t_idx] += object->EvaluateBoundaryAcceleration(triangle.z, nz, _simWorld->GetWorldTime());
+//                accel[t_idx] /= 3.0;
+//
+//                maxAccel = std::max<REAL>(maxAccel, accel.at(t_idx));
+//                minAccel = std::min<REAL>(minAccel, accel.at(t_idx));
+//            }
+//            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel)); 
+//            accelColorMap.set_interpolation_range(-range, range);
+//
+//            std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
+//
             glBegin(GL_TRIANGLES);
             const auto &color = _objectColors.at(obj_idx);
             glColor3f(color.x, color.y, color.z);
@@ -329,16 +354,20 @@ DrawMesh()
                 }
                 else // surface acceleration
                 {
-                    const Tuple3f c = accelColorMap.get_interpolated_color(accel.at(t_idx));
-
+                    const REAL xAcc = accel.at(triangle.x);
+                    const REAL yAcc = accel.at(triangle.y);
+                    const REAL zAcc = accel.at(triangle.z);
+                    const Tuple3f cx = accelColorMap.get_interpolated_color(xAcc);
+                    const Tuple3f cy = accelColorMap.get_interpolated_color(yAcc);
+                    const Tuple3f cz = accelColorMap.get_interpolated_color(zAcc);
                     glNormal3f(nx.x, nx.y, nx.z);
-                    glColor3f(c.x, c.y, c.z);
+                    glColor3f(cx.x, cx.y, cx.z);
                     glVertex3f(x.x, x.y, x.z);
                     glNormal3f(ny.x, ny.y, ny.z);
-                    glColor3f(c.x, c.y, c.z);
+                    glColor3f(cy.x, cy.y, cy.z);
                     glVertex3f(y.x, y.y, y.z);
                     glNormal3f(nz.x, nz.y, nz.z);
-                    glColor3f(c.x, c.y, c.z);
+                    glColor3f(cz.x, cz.y, cz.z);
                     glVertex3f(z.x, z.y, z.z);
                 }
             }
@@ -855,7 +884,7 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ControlModifier)) {
-        _meshDataPointer = (_meshDataPointer+1)%2; 
+        _meshDataPointer = (_meshDataPointer+1)%3; 
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {

@@ -81,7 +81,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         Vector2d                    _sliceColorMapRange; 
         int                         _sliceDivision = 80; 
         bool                        _fixedSliceColorMapRange = false; 
-        int                         _meshDataPointer = 0; // 0: nothing; 1: curvature; 2: surface acceleration
+        int                         _meshDataPointer = 2; // 0: nothing; 1: curvature; 2: surface acceleration
 
         // frequency transfer solver
         BEMSolverPtr    _bemSolver;
@@ -91,6 +91,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         BoundingBox *_sceneBox = nullptr; 
 
         void SetAllKeyDescriptions(); 
+        void UpdateVertexShader(); 
         void DrawMesh(); 
         void DrawImpulses(); 
         void DrawBox(); 
