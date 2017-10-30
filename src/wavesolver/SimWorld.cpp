@@ -284,7 +284,7 @@ StepWorld()
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize; 
 #if 1
-    UpdateObjectState(_state.time); 
+    UpdateObjectState(_state.time);
 #else
     // simple translation
     //auto objects = _objectCollections->GetRigidSoundObjects(); 

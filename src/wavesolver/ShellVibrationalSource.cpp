@@ -7,6 +7,7 @@ REAL ShellVibrationalSource::
 Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, 
          const int &hintTriangle)
 {
+    return 0.0;
 }
 
 //##############################################################################
