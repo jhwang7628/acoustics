@@ -3314,6 +3314,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     std::fill(_classified.begin(), _classified.end(), false); 
     if (_cellTriangles.size() != numPressureCells())
         _cellTriangles.resize(numPressureCells()); 
+    else 
+        for (auto &ct : _cellTriangles)
+            ct.clear();
 
     // copy the cache to map and clear ghost cells
     // do not do this if a mesh changed
@@ -3404,6 +3407,10 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     for (auto &tcc : thread_candidate_cells)
         tcc.reserve(numCells/4); 
 
+    // for shells
+    bool collided_cells_initialized = (_collidedCellsForShells.size() != 0);
+    std::vector<std::set<int>> thread_collidedCells(N_max_threads); 
+
     // loop through each of the box and set bulk cells
     for (const auto &bbox : bbox_rast)
     {
@@ -3433,7 +3440,9 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                 isSolid = true; 
                 thread_GCType.at(thread_idx)[cell_idx] = type;
             }
-            else if (_objects->TriangleCubeIntersection( // for shells
+            // if no previous collision record, do the slow triangle-cube intersection
+            else if (!collided_cells_initialized && 
+                     _objects->TriangleCubeIntersection(
                        pos, Vector3d(_waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0),
@@ -3442,6 +3451,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                 isSolid = true; 
                 _cellTriangles.at(cell_idx) = std::move(out_tris_shell);
                 thread_GCType.at(thread_idx)[cell_idx] = 2;
+                thread_collidedCells.at(thread_idx).insert(cell_idx); 
             }
 
             if (isSolid)
@@ -3451,6 +3461,79 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             }
             _classified.at(cell_idx) = true; 
         }
+    }
+
+    // if previous collided cells record exists, we just need to check the immediate neighbours of each of these cells
+    // first come up with a list of cells for checking
+    {
+        std::set<int> check_cells_s;
+        if (collided_cells_initialized)
+        {
+            check_cells_s = _collidedCellsForShells; 
+            for (const int &c : _collidedCellsForShells)
+            {
+                IntArray nc; nc.reserve(26);
+                _pressureField.cell26Neighbours(c, nc); 
+                check_cells_s.insert(nc.begin(), nc.end()); 
+            }
+        }
+        else
+        {
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+            for (int ii=0; ii<thread_collidedCells.size(); ++ii)
+            {
+                auto &tcc = thread_collidedCells.at(ii);
+                std::set<int> tccfix = tcc; 
+                for (const int &c : tccfix)
+                {
+                    IntArray nc; nc.reserve(26);
+                    _pressureField.cell26Neighbours(c, nc); 
+                    tcc.insert(nc.begin(), nc.end()); 
+                }
+            }
+            for (auto &tcc : thread_collidedCells)
+            {
+                check_cells_s.insert(tcc.begin(), tcc.end()); 
+                tcc.clear();
+            }
+        }
+
+        std::vector<int> check_cells; 
+        check_cells.reserve(check_cells_s.size());
+        std::copy(check_cells_s.begin(), check_cells_s.end(), std::back_inserter(check_cells));
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+        for (int ii=0; ii<check_cells.size(); ++ii)
+        {
+#ifdef USE_OPENMP
+            const int thread_idx = omp_get_thread_num(); 
+#else
+            const int thread_idx = 0; 
+#endif
+            const int cell_idx = check_cells.at(ii);
+            const Vector3d pos = _pressureField.cellPosition(cell_idx); 
+            std::set<TriangleIdentifier, TIComp> out_tris_shell; 
+            if (_objects->TriangleCubeIntersection(
+                  pos, Vector3d(_waveSolverSettings->cellSize/2.0,
+                                _waveSolverSettings->cellSize/2.0,
+                                _waveSolverSettings->cellSize/2.0),
+                  out_tris_shell))
+            {
+                _cellTriangles.at(cell_idx) = std::move(out_tris_shell);
+                thread_GCType.at(thread_idx)[cell_idx] = 2;
+                _isBulkCell.at(cell_idx) = false; 
+                thread_candidate_cells.at(thread_idx).push_back(cell_idx); 
+                thread_collidedCells.at(thread_idx).insert(cell_idx); 
+            }
+        }
+
+        // combine all thread collided cells 
+        _collidedCellsForShells.clear(); 
+        for (const auto &tcc : thread_collidedCells)
+            _collidedCellsForShells.insert(tcc.begin(), tcc.end()); 
     }
 
     // concatenate results from different threads
@@ -3843,6 +3926,7 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
     std::fill(v[0].begin(), v[0].end(), valid); 
     std::fill(v[1].begin(), v[1].end(), valid); 
     std::fill(v[2].begin(), v[2].end(), valid); 
+    _collidedCellsForShells.clear();
 }
 
 void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const
