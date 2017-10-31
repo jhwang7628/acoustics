@@ -129,8 +129,8 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     _grid.initFieldRasterized( useBoundary );
     _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
     _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false); // FIXME debug
-    _grid.classifyCells_FAST(_pCollocated, false); 
     _grid.ResetCellHistory(true); // set all history to valid
+    _grid.classifyCells_FAST(_pCollocated, false); 
     _grid.ClearGhostCellPreviousTriangles(); 
 
     //if ( _listeningPositions )
