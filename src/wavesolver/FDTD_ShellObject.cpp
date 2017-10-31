@@ -88,6 +88,14 @@ UpdateBoundingBox()
         b_h.y = std::max(b_h.y, v.y);
         b_h.z = std::max(b_h.z, v.z);
     }
+    for (int ii=0; ii<3; ++ii)
+    {
+        if (EQUAL_FLOATS(b_l[ii], b_h[ii]))
+        {
+            b_l[ii] = b_h[ii] - 1E-8;
+            b_h[ii] = b_h[ii] + 1E-8;
+        }
+    }
     Point3d b_c = (b_l + b_h)/2.0;
     const Vector3d h = (b_h - b_l)/2.0*1.05; // enlarge by 105%
     b_l = b_c - h; 
