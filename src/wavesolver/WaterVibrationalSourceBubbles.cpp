@@ -11,6 +11,16 @@
 
 //#define DUMP_OSCILLATORS
 
+static double maxOscillatorFrequency(const Oscillator& osc)
+{
+    if (osc.m_frequencies.getData().size() > 0)
+    {
+        return osc.m_frequencies.getData().col(1).maxCoeff() / 2. / M_PI;
+    }
+
+    return 0;
+}
+
 //##############################################################################
 //##############################################################################
 WaterVibrationalSourceBubbles::
@@ -468,6 +478,9 @@ updateOscillators(REAL time)
 
         // Skip if there are not enough frequency solves
         if (osc.m_frequencies.getData().rows() < 1) continue;
+
+        // Skip high frequency bubbles
+        if (maxOscillatorFrequency(osc) > 20000) continue;
 
         // If this oscillator is not active yet, skip it
         if (!osc.isActive(time)) continue;
@@ -1075,6 +1088,7 @@ computeVelocities(REAL time)
         Oscillator &osc = _oscillators[i];
 
         if (!osc.isActive(time) || osc.m_trackedBubbleNumbers.empty()) continue;
+        if (maxOscillatorFrequency(osc) > 20000) continue;
 
 #ifdef DUMP_OSCILLATORS
         if (i % 100 == 0)
