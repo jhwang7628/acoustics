@@ -129,9 +129,10 @@ UpdatePosAcc(const REAL time)
 // Function GetAllVertexPos
 //##############################################################################
 void FDTD_ShellObject:: 
-GetAllVertexPos(std::vector<Point3d> &allp) const
+GetAllVertexPos(std::vector<Vector3d> &allp) const
 {
-    allp = _mesh->vertices(); 
+    allp.clear(); 
+    allp.resize(_mesh->num_vertices()); 
     for (int ii=0; ii<allp.size(); ++ii) 
         allp.at(ii) = GetVertexPos(ii); 
 }

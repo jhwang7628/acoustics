@@ -110,7 +110,11 @@ class FDTD_Objects
         bool OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint); 
         bool TriangleCubeIntersection(const Vector3d &maxCubeBound, 
                                       const Vector3d &minCubeBound, 
-                                      std::set<TriangleIdentifier, TIComp> &outTris); 
+                                      std::set<TriangleIdentifier, TIComp> &outTris);
+        bool TriangleSetCubeIntersection(const Vector3d &maxCubeBound, 
+                                      const Vector3d &minCubeBound, 
+                                      const std::set<TriangleIdentifier, TIComp> &candidateTris,
+                                      std::set<TriangleIdentifier, TIComp> &outTris);
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
         REAL LowestObjectDistance(const Vector3d &positionWorld); 
         bool LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 

@@ -3312,11 +3312,20 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     std::fill(_isOneCellCavity.begin(), _isOneCellCavity.end(), false); // FIXME debug
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
+
+    bool hasCellTrianglesRecord = false; 
+    std::vector<std::set<TriangleIdentifier, TIComp>> cellTrianglesLast; 
     if (_cellTriangles.size() != numPressureCells())
+    {
         _cellTriangles.resize(numPressureCells()); 
+    }
     else 
+    { 
+        cellTrianglesLast = _cellTriangles; 
         for (auto &ct : _cellTriangles)
             ct.clear();
+        hasCellTrianglesRecord = true;
+    }
 
     // copy the cache to map and clear ghost cells
     // do not do this if a mesh changed
@@ -3515,14 +3524,39 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 #endif
             const int cell_idx = check_cells.at(ii);
             const Vector3d pos = _pressureField.cellPosition(cell_idx); 
+            const Vector3d hfc = Vector3d(_waveSolverSettings->cellSize/2.0,
+                                          _waveSolverSettings->cellSize/2.0,
+                                          _waveSolverSettings->cellSize/2.0); 
+
+            // find out whether this cell has any intersecting triangles.
+            // if triangles has been hashed to these cells in the last timestep, 
+            // then only check the triangles contained in the neighbouring cells
+            // in the last timestep
+            bool intersected = false; 
             std::set<TriangleIdentifier, TIComp> out_tris_shell; 
-            if (_objects->TriangleCubeIntersection(
-                  pos, Vector3d(_waveSolverSettings->cellSize/2.0,
-                                _waveSolverSettings->cellSize/2.0,
-                                _waveSolverSettings->cellSize/2.0),
-                  out_tris_shell))
+            if (hasCellTrianglesRecord)
             {
-                _cellTriangles.at(cell_idx) = std::move(out_tris_shell);
+                std::set<int> cell_and_neighbours;
+                IntArray neig; neig.reserve(26); 
+                _pressureField.cell26Neighbours(cell_idx, neig); 
+                cell_and_neighbours.insert(cell_idx); 
+                cell_and_neighbours.insert(neig.begin(), neig.end()); 
+                std::set<TriangleIdentifier, TIComp> candidate_tris; 
+                for (const int c : cell_and_neighbours)
+                    candidate_tris.insert(cellTrianglesLast.at(c).begin(), 
+                                          cellTrianglesLast.at(c).end());
+                if (_objects->TriangleSetCubeIntersection(pos, hfc, candidate_tris, out_tris_shell))
+                    intersected = true; 
+            }
+            else 
+            {
+                if (_objects->TriangleCubeIntersection(pos, hfc, out_tris_shell))
+                    intersected = true; 
+            }
+
+            if (intersected)
+            {
+                _cellTriangles.at(cell_idx) = out_tris_shell;
                 thread_GCType.at(thread_idx)[cell_idx] = 2;
                 _isBulkCell.at(cell_idx) = false; 
                 thread_candidate_cells.at(thread_idx).push_back(cell_idx); 

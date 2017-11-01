@@ -100,7 +100,7 @@ public:
 
     void Initialize(); 
     void UpdatePosAcc(const REAL time);
-    void GetAllVertexPos(std::vector<Point3d> &allp)const; 
+    void GetAllVertexPos(std::vector<Vector3d> &allp)const; 
     bool GetDisplacements(std::vector<REAL> &alld)const; 
     Vector3d GetVertexPos(const int v_idx) const; 
     Vector3d GetVertexAcc(const int v_idx) const; 

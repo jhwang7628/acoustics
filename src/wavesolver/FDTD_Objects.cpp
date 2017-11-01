@@ -124,6 +124,63 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
 
 //##############################################################################
 //##############################################################################
+bool FDTD_Objects::
+TriangleSetCubeIntersection(const Vector3d &cubeCenter, 
+                            const Vector3d &cubeHalfSize,
+                            const std::set<TriangleIdentifier, TIComp> &candTris,
+                            std::set<TriangleIdentifier, TIComp> &outTris)
+{
+    float cc[3] = {(float)cubeCenter.x, 
+                   (float)cubeCenter.y,
+                   (float)cubeCenter.z};
+    float cs[3] = {(float)cubeHalfSize.x,
+                   (float)cubeHalfSize.y,
+                   (float)cubeHalfSize.z};
+    float vtxs[3][3]; 
+    Vector3d vtxbuf; 
+    bool result = false; 
+    // only performs on shell objects to save time
+    for (const auto &m : _rigidObjects)
+    {
+        if (m.second->Type() == SHELL_OBJ)
+        {
+            auto shell_object = 
+                std::dynamic_pointer_cast<FDTD_ShellObject>(m.second);
+            const auto &mesh = shell_object->GetMeshPtr(); 
+            // collect all triangle ids and send in a vector
+            std::vector<std::pair<int,Tuple3ui>> tris; tris.reserve(10); 
+            for (const auto &ti : candTris)
+                if (ti.objectID == std::stoi(shell_object->GetMeshName()))
+                    tris.push_back(
+                            std::make_pair(
+                                ti.triangleID, mesh->triangle_ids(ti.triangleID))); 
+            std::vector<Vector3d> vert; 
+            shell_object->GetAllVertexPos(vert);
+            for (int ii=0; ii<tris.size(); ++ii)
+            {
+                const auto &tid = tris.at(ii).first; 
+                const auto &tri = tris.at(ii).second; 
+                for (int dd=0; dd<3; ++dd) // dd-th vertex 
+                {
+                    vtxs[dd][0] = (float)(vert.at(tri[dd]).x);
+                    vtxs[dd][1] = (float)(vert.at(tri[dd]).y);
+                    vtxs[dd][2] = (float)(vert.at(tri[dd]).z);
+                }
+                const int test = triBoxOverlap(cc, cs, vtxs);
+                if (test > 0)
+                {
+                    const int oid = std::stoi(shell_object->GetMeshName()); 
+                    outTris.insert(TriangleIdentifier(oid, tid));
+                    result = true; 
+                }
+            }
+        }
+    }
+    return result; 
+}
+
+//##############################################################################
+//##############################################################################
 REAL FDTD_Objects::
 ObjectDistance(const int &objectIndex, const Vector3d &positionWorld) 
 {
