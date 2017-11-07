@@ -158,7 +158,6 @@ UpdateTime(const REAL time)
 {
     bool changed = false;
     // step if necessary
-#pragma omp critical
     while (std::fabs(time - _curTime) > 1e-12)
     {
         changed = changed || step(time);

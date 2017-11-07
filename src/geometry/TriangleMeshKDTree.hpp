@@ -32,13 +32,18 @@ class TriangleMeshKDTree : public TriangleMesh<T>
         typedef Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> RowMajorMatrixXd; 
 
     protected:
-        std::shared_ptr<VlKDForest>         _nnForest; 
+        // TODO: investigate using vl forest searchers instead of creating multiple copies of the
+        // tree. Not sure if it saves anything besides memory though.
+        std::vector<VlKDForest*>         _nnForest; 
         std::vector<Vector3<T>>             _triangleCentroids; 
 
     public: 
         ~TriangleMeshKDTree()
         {
-            //vl_kdforest_delete(_nnForest.get());
+            for (auto & tree : _nnForest)
+            {
+                vl_kdforest_delete(tree);
+            }
         }
 
         virtual T FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &triangleIndices) const; 
@@ -60,7 +65,7 @@ BuildKDTree()
 #ifdef USE_BOOST
     boost::timer::auto_cpu_timer timer("Boost timer: Building KDTree for mesh takes %w seconds\n" );
 #endif
-    if (_nnForest)
+    if (_nnForest.size() > 0)
         return; 
 
     // first compute centroids for each triangles and stored them
@@ -78,8 +83,19 @@ BuildKDTree()
     }
 
     // build forest
-    _nnForest.reset(vl_kdforest_new(VL_TYPE_DOUBLE, 3, 1, VlDistanceL2)); 
-    vl_kdforest_build(_nnForest.get(), N_triangles, &(_triangleCentroids[0])); 
+    int nThreads = 1;
+#ifdef USE_OPENMP
+    nThreads = omp_get_max_threads();
+#endif
+
+    _nnForest.resize(nThreads);
+
+#pragma omp parallel for
+    for (int i = 0; i < nThreads; ++i)
+    {
+        _nnForest[i] = vl_kdforest_new(VL_TYPE_DOUBLE, 3, 1, VlDistanceL2); 
+        vl_kdforest_build(_nnForest[i], N_triangles, &(_triangleCentroids[0])); 
+    }
 }
 
 //##############################################################################
@@ -96,7 +112,13 @@ FindKNearestTriangles(const int &k, const Vector3<T> &point, std::vector<int> &t
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
 #endif
     VlKDForestNeighbor neighbours[k]; 
-    vl_kdforest_query(_nnForest.get(), neighbours, k, &point); 
+
+    int threadNum = 0;
+#ifdef USE_OPENMP
+    threadNum = omp_get_thread_num();
+#endif
+
+    vl_kdforest_query(_nnForest.at(threadNum), neighbours, k, &point); 
     triangleIndices.reserve(k); 
     for (int nn_idx=0; nn_idx<k; ++nn_idx)
     {
@@ -122,7 +144,13 @@ FindNearestTriangle(const Vector3<T> &point, int &triangleIndex) const
     boost::timer::auto_cpu_timer timer("Boost timer: KDTree Query takes %w seconds\n" );
 #endif
     VlKDForestNeighbor neighbours; 
-    vl_kdforest_query(_nnForest.get(), &neighbours, 1, &point); 
+
+    int threadNum = 0;
+#ifdef USE_OPENMP
+    threadNum = omp_get_thread_num();
+#endif
+
+    vl_kdforest_query(_nnForest.at(threadNum), &neighbours, 1, &point); 
     triangleIndex = neighbours.index; 
     return neighbours.distance; 
 }

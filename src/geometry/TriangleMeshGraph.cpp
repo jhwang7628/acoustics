@@ -193,6 +193,8 @@ BuildGraph(const std::string &loadName, const T &nnRadius)
     std::vector<std::set<int> > vertexNeighbors; 
     this->get_vtx_tgls(vertexNeighbors); 
     const int N_faces = m_triangles.size(); 
+
+#pragma omp parallel for
     for (int ii=0; ii<N_faces; ++ii)
     {
         const Tuple3ui &t_id = this->triangle_ids(ii); 
@@ -204,13 +206,15 @@ BuildGraph(const std::string &loadName, const T &nnRadius)
             triangleNeighbours.insert(neighbours.begin(), neighbours.end()); 
         }
         // add geometric neighbours (who might not be topologic neighbours)
-        if (nnRadius>0 && this->_nnForest)
+        if (nnRadius>0 && this->_nnForest.size() > 0)
         {
             std::set<int> geometricNeighbours; 
             this->FindTrianglesWithinBall(this->TriangleCentroid(ii), nnRadius, geometricNeighbours); 
             triangleNeighbours.insert(geometricNeighbours.begin(), geometricNeighbours.end()); 
         }
+
         // add edge to graph using the set
+#pragma omp critical (mesh_graph_add_edge)
         for (SetIterator it=triangleNeighbours.begin(); it!=triangleNeighbours.end(); ++it)
         {
             _graph.AddEdge(ii, *it); 
