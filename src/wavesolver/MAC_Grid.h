@@ -90,7 +90,8 @@ class MAC_Grid
         {
             TriangleIdentifier tid; 
         }; 
-        using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
+        //using GhostCell_Cache_UPtr = std::unique_ptr<GhostCell_Cache>; 
+        using GhostCell_Cache_Ptr = std::shared_ptr<GhostCell_Cache>; 
         using GhostCell_Key  = unsigned long long int; 
         using BoundaryGhostCell_Key  = std::string; 
         struct GhostCell
@@ -101,7 +102,7 @@ class MAC_Grid
             int type;  // 0: bulky, 1: constraint, 2: shell 
             Vector3d position; 
             REAL pressure; 
-            GhostCell_Cache_UPtr cache; 
+            GhostCell_Cache_Ptr cache; 
             static GhostCell_Key MakeKey(const int &_a, const int &_b)
             {
                 // Szudzik's function
@@ -291,7 +292,7 @@ class MAC_Grid
         std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr> _boundaryGhostCells; 
         using GhostCellType         = std::unordered_map<GhostCell_Key, GhostCell_UPtr>; 
         using BoundaryGhostCellType = std::unordered_map<BoundaryGhostCell_Key, GhostCell_UPtr>; 
-        std::unordered_map<GhostCell_Key, GhostCell_Cache_UPtr> _ghostCellsCached; 
+        std::unordered_map<GhostCell_Key, GhostCell_Cache_Ptr> _ghostCellsCached; 
         std::vector<IntArray>    _ghostCellsChildren; 
         BoolArray                _classified; // show if this cell has been classified, used in classifyCellsDynamic_FAST
         BoolArray                _pressureCellHasValidHistory; 

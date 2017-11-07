@@ -3309,7 +3309,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 
     // set default field values
     std::fill(_isBulkCell.begin(), _isBulkCell.end(), true); 
-    std::fill(_isOneCellCavity.begin(), _isOneCellCavity.end(), false); // FIXME debug
+    std::fill(_isOneCellCavity.begin(), _isOneCellCavity.end(), false);
     std::fill(_isGhostCell.begin(), _isGhostCell.end(), false); 
     std::fill(_classified.begin(), _classified.end(), false); 
 
@@ -3333,7 +3333,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     {
         for (auto &m : _ghostCells)
             _ghostCellsCached.emplace(
-                    std::make_pair(m.second->MakeKey(), std::move(m.second->cache))); 
+                    std::make_pair(m.second->MakeKey(), m.second->cache)); 
     }
     _meshChanged = false;
 
@@ -4107,9 +4107,9 @@ MakeGhostCell(const int cell, const int neighbour,
     auto key = gc->MakeKey(); 
     auto it = _ghostCellsCached.find(key); 
     if (it != _ghostCellsCached.end())
-        gc->cache = std::move(it->second); 
+        gc->cache = it->second; 
     else 
-        gc->cache = std::make_unique<GhostCell_Cache>(); 
+        gc->cache = std::make_shared<GhostCell_Cache>(); 
     return gc; 
 }
 
