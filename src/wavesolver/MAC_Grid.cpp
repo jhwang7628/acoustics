@@ -31,6 +31,7 @@
 
 //#define ENGQUIST_ORDER 1
 #define ENGQUIST_ORDER 2
+//#define ENABLE_FAST_RASTERIZATION
 //#define DISABLE_CAVITY_FIX
 
 //##############################################################################
@@ -3417,7 +3418,11 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         tcc.reserve(numCells/4); 
 
     // for shells
+#ifdef ENABLE_FAST_RASTERIZATION
     bool collided_cells_initialized = (_collidedCellsForShells.size() != 0);
+#else 
+    bool collided_cells_initialized = false; 
+#endif // ENABLE_FAST_RASTERIZATION
     std::vector<std::set<int>> thread_collidedCells(N_max_threads); 
 
     // loop through each of the box and set bulk cells
@@ -3472,6 +3477,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         }
     }
 
+#ifdef ENABLE_FAST_RASTERIZATION
     // if previous collided cells record exists, we just need to check the immediate neighbours of each of these cells
     // first come up with a list of cells for checking
     {
@@ -3569,6 +3575,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         for (const auto &tcc : thread_collidedCells)
             _collidedCellsForShells.insert(tcc.begin(), tcc.end()); 
     }
+#endif // ENABLE_FAST_RASTERIZATION
 
     // concatenate results from different threads
     for (int tid=1; tid<N_max_threads; ++tid)
