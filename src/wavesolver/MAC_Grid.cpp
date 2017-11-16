@@ -3419,7 +3419,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 
     // for shells
 #ifdef ENABLE_FAST_RASTERIZATION
-    bool collided_cells_initialized = (_collidedCellsForShells.size() != 0);
+    bool collided_cells_initialized = (_collidedCellsForShells_v.size() != 0);
 #else 
     bool collided_cells_initialized = false; 
 #endif // ENABLE_FAST_RASTERIZATION
@@ -3484,12 +3484,22 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         std::set<int> check_cells_s;
         if (collided_cells_initialized)
         {
-            check_cells_s = _collidedCellsForShells; 
-            for (const int &c : _collidedCellsForShells)
+#ifdef USE_OPENMP
+#pragma omp parallel for schedule(static) default(shared)
+#endif
+            for (int ii = 0; ii < _collidedCellsForShells_v.size(); ++ii)
             {
+                int c = _collidedCellsForShells_v[ii];
+#ifdef USE_OPENMP
+                const int thread_idx = omp_get_thread_num(); 
+#else
+                const int thread_idx = 0; 
+#endif
+                auto &tcc = thread_collidedCells.at(thread_idx);
                 IntArray nc; nc.reserve(26);
                 _pressureField.cell26Neighbours(c, nc); 
-                check_cells_s.insert(nc.begin(), nc.end()); 
+                tcc.insert(c);
+                tcc.insert(nc.begin(), nc.end()); 
             }
         }
         else
@@ -3508,11 +3518,11 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                     tcc.insert(nc.begin(), nc.end()); 
                 }
             }
-            for (auto &tcc : thread_collidedCells)
-            {
-                check_cells_s.insert(tcc.begin(), tcc.end()); 
-                tcc.clear();
-            }
+        }
+        for (auto &tcc : thread_collidedCells)
+        {
+            check_cells_s.insert(tcc.begin(), tcc.end()); 
+            tcc.clear();
         }
 
         std::vector<int> check_cells; 
@@ -3571,9 +3581,11 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         }
 
         // combine all thread collided cells 
-        _collidedCellsForShells.clear(); 
+        std::set<int> collidedCellsForShells;
         for (const auto &tcc : thread_collidedCells)
-            _collidedCellsForShells.insert(tcc.begin(), tcc.end()); 
+            collidedCellsForShells.insert(tcc.begin(), tcc.end()); 
+
+        _collidedCellsForShells_v = std::vector<int>(collidedCellsForShells.begin(), collidedCellsForShells.end());
     }
 #endif // ENABLE_FAST_RASTERIZATION
 
@@ -3967,7 +3979,7 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
     std::fill(v[0].begin(), v[0].end(), valid); 
     std::fill(v[1].begin(), v[1].end(), valid); 
     std::fill(v[2].begin(), v[2].end(), valid); 
-    _collidedCellsForShells.clear();
+    _collidedCellsForShells_v.clear();
 }
 
 void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const

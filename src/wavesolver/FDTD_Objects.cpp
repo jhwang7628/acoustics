@@ -154,17 +154,17 @@ TriangleSetCubeIntersection(const Vector3d &cubeCenter,
                     tris.push_back(
                             std::make_pair(
                                 ti.triangleID, mesh->triangle_ids(ti.triangleID))); 
-            std::vector<Vector3d> vert; 
-            shell_object->GetAllVertexPos(vert);
+            
             for (int ii=0; ii<tris.size(); ++ii)
             {
                 const auto &tid = tris.at(ii).first; 
                 const auto &tri = tris.at(ii).second; 
                 for (int dd=0; dd<3; ++dd) // dd-th vertex 
                 {
-                    vtxs[dd][0] = (float)(vert.at(tri[dd]).x);
-                    vtxs[dd][1] = (float)(vert.at(tri[dd]).y);
-                    vtxs[dd][2] = (float)(vert.at(tri[dd]).z);
+                    const Vector3d& vertPos = shell_object->GetVertexPos(tri[dd]);
+                    vtxs[dd][0] = (float)(vertPos.x);
+                    vtxs[dd][1] = (float)(vertPos.y);
+                    vtxs[dd][2] = (float)(vertPos.z);
                 }
                 const int test = triBoxOverlap(cc, cs, vtxs);
                 if (test > 0)

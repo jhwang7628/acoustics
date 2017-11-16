@@ -276,7 +276,7 @@ class MAC_Grid
         // for rigid bodies)
         std::vector<std::set<TriangleIdentifier, TIComp>> _cellTriangles; 
         // map key: shell object id, map value: grid cell index that collide with this shell object
-        std::set<int> _collidedCellsForShells; 
+        std::vector<int> _collidedCellsForShells_v; 
 
         // isInterfacialCell refers to cells in the three velocity grid
         // interfacial cells are classified as non bulk although its value is
