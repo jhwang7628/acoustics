@@ -89,11 +89,17 @@ if ReqParse(parser, 'general', 'plot', 'b'):
 
 if ReqParse(parser, 'general', 'write_wav', 'b'):
     print '\n------ WRITING WAV FILES ------'
-    wavfreq  = ReqParse(parser, 'wav'    , 'wavfreq' , 'i')
-    prefix   = ReqParse(parser, 'wav'    , 'prefix'  , 's')
+    wavfreq  = ReqParse(parser, 'wav', 'wavfreq' , 'i')
+    prefix   = ReqParse(parser, 'wav', 'prefix'  , 's')
+    wavformat= OptParse(parser, 'wav', 'format'  , 's', '32float')
     rateRatio = float(sampfreq) / float(wavfreq)
     for ii in range(N_points):
         print 'point %u' %(ii)
         outputdata = signal.resample(all_data[:,ii], int(float(N_steps)/rateRatio))
         normalization = np.absolute(outputdata).max()
-        scipy.io.wavfile.write('%s/%s_%u.wav' %(out_dir, prefix, ii), wavfreq, outputdata/normalization)
+        if wavformat == '32float': 
+            finaldata = outputdata/normalization
+        elif wavformat == '16int':
+            finaldata = ((outputdata/normalization*32767)).astype('int16')
+        scipy.io.wavfile.write('%s/%s_%u.wav' %(out_dir, prefix, ii), wavfreq, finaldata)
+
