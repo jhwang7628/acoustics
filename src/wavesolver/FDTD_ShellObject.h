@@ -35,7 +35,7 @@ private:
         REAL                                       bufStartTime = -1.0;
         FDTD_ShellObject                          *owner; 
         std::vector<_DataStep>                     buf; 
-        REAL                                       lastQueriedTime; 
+        REAL                                       lastQueriedTime = -1.0; 
         _DataBuffer()
             : owner(nullptr)
         {} 

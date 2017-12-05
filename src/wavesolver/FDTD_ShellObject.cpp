@@ -4,7 +4,7 @@
 // Static Initialization
 //##############################################################################
 std::queue<boost::filesystem::path> FDTD_ShellObject::_DataBuffer::qPrefixes; 
-const REAL FDTD_ShellObject::_DataStep::stepSize = 1./88200.;
+const REAL FDTD_ShellObject::_DataStep::stepSize = 1./44100.;
 
 //##############################################################################
 // Function DistanceToMesh
@@ -200,6 +200,7 @@ bool FDTD_ShellObject::_DataBuffer::
 FindData(const REAL time, _DataStep **data)
 {
     assert(time >= bufStartTime); 
+    if (bufStartTime < 0.0) ReadNextBuffer();
     const int offset = (int) std::floor(
             (time - bufStartTime)/FDTD_ShellObject::_DataStep::stepSize); 
     if (offset < bufValidLen) // data in current buffer
