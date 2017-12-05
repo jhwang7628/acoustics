@@ -222,6 +222,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
                                                                    solverSettings,
                                                                    meshName); 
         auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+        shell_object->Initialize();
         if (has_shell_source)
         {
             VibrationalSourcePtr sourcePtr(new ShellVibrationalSource(shell_object)); 
