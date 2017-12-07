@@ -152,7 +152,8 @@ GetModalDisplacement(Eigen::VectorXd &displacement)
 //  UpdateQPointers() manually.
 //##############################################################################
 REAL FDTD_RigidSoundObject::
-AdvanceModalODESolvers(const int &N_steps)
+AdvanceModalODESolvers(const int &N_steps, const bool encodeIfPossible,
+                       const Eigen::VectorXd *debugForce)
 {
     for (int ts_idx=0; ts_idx<N_steps; ++ts_idx)
     {
@@ -172,7 +173,8 @@ AdvanceModalODESolvers(const int &N_steps)
             GetForceInModalSpace(impactRecords.at(rec_idx), forceBuffer); 
             forceTimestep += forceBuffer; 
         }
-        //forceTimestep.setOnes(); //FIXME debug set U^T f = [1,1,...1]
+        if (debugForce)
+            forceTimestep = *debugForce;
         _timer_substep_advanceODE[1].Pause(); 
 
         // step the system using force computed
@@ -185,8 +187,16 @@ AdvanceModalODESolvers(const int &N_steps)
         _timer_substep_advanceODE[2].Pause();
 
         // update encoder
-        if (_modalAccEncoder)
+        if (_modalAccEncoder && encodeIfPossible)
+        {
             _modalAccEncoder->Encode(_qDDot_c); 
+            // uncomment if want to write q in wavesolver
+            //std::string file("encoder_q.txt"); 
+            //std::cout << "debug: write encoder q_tilde to file: " 
+            //          << file << std::endl; 
+            //std::vector<int> qIndices = {0, 15, 30, 45, 60};
+            //_modalAccEncoder->Debug_WriteQComparison(file, qIndices); 
+        }
     }
     return GetODESolverTime(); 
 }

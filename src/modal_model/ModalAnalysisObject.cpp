@@ -115,15 +115,17 @@ InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr)
 //##############################################################################
 //##############################################################################
 void ModalAnalysisObject:: 
-InitializeSparseModalEncoder()
+InitializeSparseModalEncoder(const bool useProjectedU)
 {
     const int N_modes = N_Modes(); 
     Eigen::VectorXd eigenFreqs(N_modes); 
     for (int ii=0; ii<N_modes; ++ii)
         eigenFreqs[ii] = GetModeFrequency(ii); 
 
-    // NOTE always uses projected modal matrix
-    _modalAccEncoder = std::make_shared<SparseModalEncoder>(_eigenVectorsNormal, eigenFreqs);
+    if (useProjectedU)
+        _modalAccEncoder = std::make_shared<SparseModalEncoder>(_eigenVectorsNormal, eigenFreqs);
+    else
+        _modalAccEncoder = std::make_shared<SparseModalEncoder>(_eigenVectors, eigenFreqs);
 }
 
 //##############################################################################

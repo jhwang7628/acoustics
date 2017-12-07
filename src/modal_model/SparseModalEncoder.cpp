@@ -69,8 +69,20 @@ ComputeWeights()
     const int N_modes = N_Modes(); 
     for (int ii=0; ii<N_modes; ++ii)
         _wi[ii] = interp->Weight(_eigenFreqs[ii]); 
+    const REAL wsum = _wi.sum();
+    _wi /= wsum; 
     std::cout << "Wi = " << _wi << std::endl;
-    interp->Test(); 
+    //interp->Test(); 
+}
+
+//##############################################################################
+//##############################################################################
+void SparseModalEncoder::
+SetWeights(const Eigen::VectorXd &wi)
+{
+    if (wi.size() != _wi.size())
+        throw std::runtime_error("**ERROR** sparse modal encoder weights wrong dim"); 
+    _wi = wi; 
 }
 
 //##############################################################################
@@ -112,36 +124,63 @@ MinimizeSparseUpdate()
     // using ||W \Delta q|| to normalize
     const REAL error_sqr_target_relative = _error_sqr_target*E; 
     int ii; 
-    int count_sparsity=0;
+    _q_sparsity=0;
     std::cout << "===== l1 Minimization START =====\n"; 
     std::cout << " current error  = " << E                         << std::endl; 
     std::cout << " target  error  = " << error_sqr_target_relative << std::endl; 
-    while (E >= error_sqr_target_relative && count_sparsity<N_Modes())
+    while (E >= error_sqr_target_relative && _q_sparsity<N_Modes())
     {
         _error_lsq.maxCoeff(&ii); 
         _delta_q.insert(ii) = _Delta_q[ii]; 
         E -= _error_lsq[ii]; 
         _error_lsq[ii] = 0.0;
-        std::cout << "Iteration " << count_sparsity << ": error = " << E << "\n"; 
-        ++count_sparsity;
+        std::cout << "Iteration " << _q_sparsity << ": error = " << E << "; turn on: " << ii << "\n"; 
+        ++_q_sparsity;
     }
     std::cout << " N_modes = " << N_Modes() << "\n";
-    std::cout << " sparsity = " << (REAL)count_sparsity/(REAL)N_Modes() << "\n";
+    std::cout << " sparsity = " << (REAL)_q_sparsity/(REAL)N_Modes() << "\n";
     std::cout << "===== l1 Minimization END =====\n"; 
-    return count_sparsity;
+    return _q_sparsity;
 }
 
 //##############################################################################
 //##############################################################################
 void SparseModalEncoder:: 
-Encode(const Eigen::VectorXd &q) 
+Encode(const Eigen::VectorXd &q, SimpleTimer *timers) 
 {
     PRINT_FUNC_HEADER;
-    LeastSquareSolve(q); 
-    MinimizeSparseUpdate(); 
-    _Q_tilde.UpdateBasis(q);
-    _a_buf = _A_tilde.A*_c+_U*_delta_q; 
-    _A_tilde.UpdateBasis(_a_buf);
+    if (!timers)
+    {
+        LeastSquareSolve(q); 
+        MinimizeSparseUpdate(); 
+        _q_aprox = _Q_tilde.A*_c;
+        _q_aprox += _delta_q; 
+        _Q_tilde.UpdateBasis(_q_aprox);
+        _a_buf = _A_tilde.A*_c+_U*_delta_q; 
+        _A_tilde.UpdateBasis(_a_buf);
+        _q_exact = q; 
+    }
+    else
+    {
+        timers[0].Start(); 
+        LeastSquareSolve(q); 
+        timers[0].Pause(); 
+        timers[1].Start(); 
+        MinimizeSparseUpdate(); 
+        timers[1].Pause(); 
+        timers[2].Start(); 
+        _q_aprox = _Q_tilde.A*_c;
+        _q_aprox += _delta_q; 
+        _Q_tilde.UpdateBasis(_q_aprox);
+        timers[2].Pause(); 
+        timers[3].Start(); 
+        _a_buf = _A_tilde.A*_c+_U*_delta_q; 
+        timers[3].Pause(); 
+        timers[4].Start(); 
+        _A_tilde.UpdateBasis(_a_buf);
+        timers[4].Pause(); 
+        _q_exact = q; 
+    }
 }
 
 //##############################################################################
@@ -156,6 +195,16 @@ Decode(const int &row)
 //##############################################################################
 //##############################################################################
 void SparseModalEncoder::
-Test_PerformanceTest()
+Debug_WriteQComparison(const std::string &filename, 
+                       const std::vector<int> &qIndices) const
 {
+    std::ofstream stream(filename.c_str(), std::ios::app); 
+    for (const auto &q_idx : qIndices) 
+    {
+        stream << std::setprecision(16) 
+               << q_idx           << " " 
+               << _q_exact(q_idx) << " " 
+               << _q_aprox(q_idx) << " ";
+    }
+    stream << _q_sparsity << std::endl;
 }

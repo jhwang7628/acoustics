@@ -87,13 +87,21 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         }
 
         // build object with mesh, sdf, modes
-        FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const std::string &modeFile, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0)
+        FDTD_RigidSoundObject(const std::string &workingDirecotry, 
+                              const int &resolution, 
+                              const std::string &objectPrefix, 
+                              const std::string &modeFile, 
+                              const bool &buildFromTetMesh, 
+                              const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
+                              const std::string &meshName="NOT_IDENTIFIED", 
+                              const int &scale=1.0)
             : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
               ModalAnalysisObject(modeFile),
               ImpulseSeriesObject(GetMeshPtr())
         {
         }
 
+        inline const Eigen::VectorXd &GetModalAcceleration() const {return _qDDot_c;}
         inline bool IsModalObject(){return N_Modes()>0;}
         inline Vector3d PremultiplyInvInertiaTensor(const Vector3d &x){return _invInertiaTensor * x;}
 
@@ -104,7 +112,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
         void GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement);  // only transform the mode quried
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
-        REAL AdvanceModalODESolvers(const int &N_steps);
+        REAL AdvanceModalODESolvers(const int &N_steps, const bool encodeIfPossible = true, const Eigen::VectorXd *debugForce=nullptr);
         REAL AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
         void UpdateQPointers(); 
         bool UpdateVibrationalSources(const REAL time)

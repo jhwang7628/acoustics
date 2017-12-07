@@ -53,6 +53,8 @@ class ModalAnalysisObject
             : _modeFileSet(true), _modeFile(modeFile), _idType(VOL_UNCULL), _time(0.0)
         {}
 
+        inline SparseModalEncoderPtr GetModalEncoder(){return _modalAccEncoder;}
+        inline const Eigen::MatrixXd &GetEigenVectors() const {return _eigenVectors;}
         inline int N_Modes() const {return _eigenVectors.cols();}
         inline int N_DOF() const {return _eigenVectors.rows();}
         inline int N_vertices() const {return N_DOF()/3;}
@@ -75,7 +77,7 @@ class ModalAnalysisObject
         void SetODESolverTime(const REAL &time);
         void Initialize(const REAL &ODEStepSize, const std::string &modeFile, std::shared_ptr<ModalMaterial> materialPtr);
         void InitializeModalODESolvers(std::shared_ptr<ModalMaterial> materialPtr);
-        void InitializeSparseModalEncoder(); 
+        void InitializeSparseModalEncoder(const bool useProjectedU = true); 
         // remove all non-surface mode shapes and permute the rows of modal
         // matrix
         void CullNonSurfaceModeShapes(std::shared_ptr<TetMeshIndexToSurfaceMesh> idMapPtr, std::shared_ptr<TriangleMesh<REAL> > meshPtr); 
