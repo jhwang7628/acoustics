@@ -8,6 +8,7 @@
 #include <wavesolver/WaterVibrationalSource.h> 
 #include <wavesolver/FDTD_PlaneConstraint.h>
 #include <wavesolver/WaterVibrationalSourceBubbles.h> 
+#include <wavesolver/SpeakerVibrationalSource.h>
 #include <modal_model/SparseModalEncoder.h>
 
 //##############################################################################
@@ -161,6 +162,26 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
+
+        // get speaker shader 
+        const bool hasSpeakerShader = queryOptionalBool(rigidObjectNode, "has_speaker_shader", "0");
+        if (hasSpeakerShader)
+        {
+            // TODO 
+            std::cout << "has speaker shader, do something\n"; 
+            // FIXME debug
+            VibrationalSourcePtr source(new SpeakerVibrationalSource(object)); 
+            object->AddVibrationalSource(source); 
+        }
+
+        // get kinematics if any 
+        const std::string fileKinematics = queryOptionalAttr(rigidObjectNode, "speaker_file", "N/A");
+        if (fileKinematics != "N/A")
+        {
+            // TODO 
+            std::cout << "has file_kinematics, do something\n";
+        }
+
         objects->AddObject(std::stoi(meshName), object); 
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
