@@ -444,6 +444,34 @@ class Parser
                 return false; 
             return true; 
         }
+        // int list format example: <... int_list="0 1 2 5"/>
+        static std::vector<int> queryRequiredIntList(TiXmlElement *node, const std::string &attr)
+        {
+            const std::string line = queryRequiredAttr(node, attr); 
+            std::istringstream iss(line);
+            int buf; 
+            std::vector<int> list; 
+            while(iss >> buf) 
+                list.push_back(buf); 
+            return list; 
+        }
+        static std::vector<int> queryRequiredIntListFromFile(TiXmlElement *node, const std::string &attr)
+        {
+            const std::string filename = queryRequiredAttr(node, attr); 
+            std::ifstream stream(filename.c_str()); 
+            if (!stream)
+                throw std::runtime_error("**ERROR** Cannot parse int list from file, non-existant: "+filename);
+            std::string line; 
+            int buf; 
+            std::vector<int> list; 
+            while(std::getline(stream, line)) 
+            {
+                std::istringstream iss(line); 
+                while (iss >> buf)
+                    list.push_back(buf); 
+            }
+            return list; 
+        }
         static bool queryOptionalBool(TiXmlElement* node, const std::string &attr, const std::string &defaultBool)
         {
             std::string flag = queryOptionalAttr(node, attr, defaultBool); 

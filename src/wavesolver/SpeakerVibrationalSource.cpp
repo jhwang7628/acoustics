@@ -1,4 +1,33 @@
+#include <sndgen/WavReader.hpp>
 #include <wavesolver/SpeakerVibrationalSource.h> 
+
+//##############################################################################
+//##############################################################################
+void SpeakerVibrationalSource::
+Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
+{
+    // read wav file to set up speaker
+    WavReader<REAL> reader; 
+    try
+    {
+        reader.Open(speakerFile); 
+    } 
+    catch (std::runtime_error &e) 
+    {
+        std::cout << "**WARNING** Cannot open file for SpeakerVibrationalSource: " 
+                  << speakerFile << std::endl; 
+        return; 
+    }
+    reader.ReadChannel(_speakerData, 0);  // only read one channel
+    STL_Wrapper::PrintVectorContent(std::cout, _speakerData, 10);
+    _speakerDataSampleRate = reader.SampleRate(); 
+    reader.Close(); 
+
+    // create set of handles
+    _handles.insert(handleVIds.begin(), handleVIds.end());
+
+    // TODO
+}
 
 //##############################################################################
 //##############################################################################
@@ -15,6 +44,14 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 REAL SpeakerVibrationalSource::
 Evaluate(const int &vertexID, const Vector3d &normal, const REAL &time)
 {
+    if (_handles.find(vertexID) != _handles.end())
+    {
+        const int idx = time/_speakerDataSampleRate; 
+        if (idx < 0 || idx >= _speakerData.size())
+            return 0.0; 
+        else 
+            return _speakerData.at(idx);
+    }
     return 0.0;
 }
 
@@ -23,7 +60,9 @@ Evaluate(const int &vertexID, const Vector3d &normal, const REAL &time)
 Vector3d SpeakerVibrationalSource::
 Evaluate(const int &vertexID, const REAL &time)
 {
-    return Vector3d(1.0, 1.0, 1.0);
+    const REAL a = Evaluate(vertexID, Vector3d(), time); 
+    const Vector3d n = _owner->GetMeshPtr()->normal(vertexID).normalized(); 
+    return n*a;
 }
 
 //##############################################################################

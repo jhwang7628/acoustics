@@ -167,10 +167,20 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const bool hasSpeakerShader = queryOptionalBool(rigidObjectNode, "has_speaker_shader", "0");
         if (hasSpeakerShader)
         {
-            // TODO 
-            std::cout << "has speaker shader, do something\n"; 
-            // FIXME debug
+            const std::string speakerFile = queryRequiredAttr(rigidObjectNode, "speaker_file"); 
+            IntArray vids; 
+            try
+            {
+                vids = queryRequiredIntListFromFile(rigidObjectNode, "speaker_vids_file"); 
+            }
+            catch (std::runtime_error &e)
+            {
+                vids = queryRequiredIntList(rigidObjectNode, "speaker_vids"); 
+            }
+            assert(vids.size()>0);
+
             VibrationalSourcePtr source(new SpeakerVibrationalSource(object)); 
+            std::dynamic_pointer_cast<SpeakerVibrationalSource>(source)->Initialize(speakerFile, vids); 
             object->AddVibrationalSource(source); 
         }
 
