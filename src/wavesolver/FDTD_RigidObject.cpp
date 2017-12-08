@@ -15,6 +15,7 @@ Initialize(const bool &buildFromTetMesh, bool needsCurvature)
 {
     assert(_parsed); 
 
+    _disableEvals = false;
     if (_signedDistanceFieldResolution > 0)
     {
         if (buildFromTetMesh)
@@ -310,6 +311,7 @@ REAL FDTD_RigidObject::
 EvaluateBoundaryAcceleration(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time, const int &hintTriangle)
 {
     REAL bcValue = 0.0; 
+    if (_disableEvals) return 0.0;
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
         bcValue += (*it)->Evaluate(boundaryPoint, boundaryNormal, time, hintTriangle);
@@ -323,6 +325,7 @@ REAL FDTD_RigidObject::
 EvaluateBoundaryAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)
 {
     REAL bcValue = 0.0; 
+    if (_disableEvals) return 0.0;
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
         bcValue += (*it)->Evaluate(vertexID, vertexNormal, time);
@@ -336,6 +339,7 @@ Vector3d FDTD_RigidObject::
 EvaluateBoundaryAcceleration(const int &vertexID, const REAL &time)
 {
     Vector3d bcValue; 
+    if (_disableEvals) return bcValue;
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
         bcValue += (*it)->Evaluate(vertexID, time);
@@ -351,6 +355,7 @@ REAL FDTD_RigidObject::
 EvaluateAccelerationNoiseAnalytical(const Vector3d &listeningPoint, const REAL &time, const REAL &density, const REAL &soundSpeed, const REAL &sphereRadius)
 {
     REAL bcValue = 0.0;
+    if (_disableEvals) return 0.0;
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it)
     {
@@ -373,6 +378,7 @@ REAL FDTD_RigidObject::
 EvaluateBoundaryVelocity(const Vector3d &boundaryPoint, const Vector3d &boundaryNormal, const REAL &time)
 {
     REAL bcValue=0; 
+    if (_disableEvals) return 0.0;
     const SourceIterator sourceEnd = _vibrationalSources.end(); 
     for (SourceIterator it=_vibrationalSources.begin(); it!=sourceEnd; ++it) 
     {

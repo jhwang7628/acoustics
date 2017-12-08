@@ -177,6 +177,7 @@ Vector3d FDTD_ShellObject::
 GetVertexAcc(const int v_idx) const 
 {
     Vector3d acc; 
+    if (_disableEvals) return acc;
     if (_currentData)
     {
         acc.x += _currentData->acceleration.at(v_idx*3  ); 

@@ -344,6 +344,16 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->outputPattern = queryRequiredAttr(solverNode, "output_pattern"); 
     settings->writePressureFieldToDisk = (queryRequiredInt(solverNode, "write_pressure_field_to_disk")==0) ? false : true; 
 
+    // time parallelization settings
+    settings->timeParallel        = queryOptionalInt(solverNode, "time_parallel", "0") != 0;
+    if(settings->timeParallel)
+    {
+        settings->numTimeChunks   = queryRequiredInt(solverNode, "num_time_chunks") ;
+        settings->modalParallelErrorTol = queryOptionalReal(solverNode, "modal_parallel_error_tol", 1e-7);
+        settings->modalMinDampingPeriods = queryOptionalInt(solverNode, "modal_min_damping_periods", "2");
+        settings->overlapTime = queryOptionalReal(solverNode, "overlap_time", 6e-3);
+    }
+
     // Boundary settings
     settings->PML_width          = queryRequiredReal(solverNode, "PML_width"); 
     settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 

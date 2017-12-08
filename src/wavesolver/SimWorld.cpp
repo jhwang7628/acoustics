@@ -71,16 +71,30 @@ UpdateSpeakers()
 // Function Build
 //##############################################################################
 void SimWorld::
-Build(ImpulseResponseParser_Ptr &parser)
+Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
 {
     _objectCollections = std::make_shared<FDTD_Objects>();
     _simulatorSettings = std::make_shared<PML_WaveSolver_Settings>(); 
 
     // parse settings and construct objects in the scene
     parser->GetSolverSettings(_simulatorSettings); 
+    _simulatorSettings->indTimeChunks = indTimeChunks;
     parser->GetObjects(_simulatorSettings, _objectCollections); 
     SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
-    SetWorldTime(_simulatorSettings->fastForwardToEventTime); 
+    // logic for Time Parallelism
+    REAL simTime = _simulatorSettings->timeStepSize * _simulatorSettings->numberTimeSteps;
+    REAL chunkTime = simTime / _simulatorSettings->numTimeChunks;
+    REAL startTime = _simulatorSettings->fastForwardToEventTime + chunkTime * _simulatorSettings->indTimeChunks;
+    _simulatorSettings->numberTimeSteps /= _simulatorSettings->numTimeChunks;
+
+    // TODO: Debug this overlap time thing.
+    if( _simulatorSettings->timeParallel )
+    {
+        _simulatorSettings->stopBoundaryAccTime = startTime + chunkTime;
+        _simulatorSettings->numberTimeSteps += _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
+    }
+    SetWorldTime(startTime);   
+    _simulatorSettings->fastForwardToEventTime = startTime;  
 
     // read and initialize animator if data exists
     if (_simulatorSettings->rigidsimDataRead)
@@ -184,7 +198,12 @@ Build(ImpulseResponseParser_Ptr &parser)
 
     // setup filename for output
     char buffer[512];
-    const std::string filename("all_audio.dat"); 
+    std::string filename("all_audio.dat"); 
+    if(_simulatorSettings->timeParallel)
+    {
+        snprintf(buffer, 512, "%05d_all_audio.dat", _simulatorSettings->indTimeChunks);
+        filename = std::string(buffer);
+    }
     snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
              filename.c_str()); 
     const int N_listen = (*_simUnits.begin())->listen->mode == ListeningUnit::SHELL ?
@@ -204,6 +223,13 @@ UpdateObjectState(const REAL &time)
 {
     // update objects
     _objectCollections->SetObjectStates(time); 
+
+    if (_simulatorSettings->timeParallel && (time > _simulatorSettings->stopBoundaryAccTime ) )
+        if( !_objectCollections->AreEvalsDisabled() )
+        {
+            std::cout << "Disabling Boundary Evaluations!\n";
+            _objectCollections->DisableAllEvals();
+        }
 
     if (_simulatorSettings->solverControlPolicy->type == "static")
         return; 

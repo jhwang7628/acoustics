@@ -74,6 +74,7 @@ class FDTD_Objects
         std::unordered_map<int, RigidObjectPtr>                   _rigidObjects; 
         std::vector<PressureSourcePtr>                            _pressureSources; 
         FDTD_RigidObject_Animator_Ptr                             _objectAnimator; 
+        bool                                                      _disableAllEvals = false;
 
     public: 
         inline int N() const {return _rigidObjects.size();} 
@@ -134,6 +135,10 @@ class FDTD_Objects
                                 const std::string &fileAcceleration); 
         void AnimateObjects(const REAL toTime); 
         void Join(FDTD_Objects_Ptr &toBeJoined); 
+        // for time parallelization - disable evaluations if we are in the overlap region
+        void DisableAllEvals();
+        void EnableAllEvals();
+        bool AreEvalsDisabled() { return _disableAllEvals; }
 
         //// debug methods ////
         std::ofstream *of_q; 

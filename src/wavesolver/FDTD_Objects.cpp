@@ -287,6 +287,7 @@ EvaluateNearestVibrationalSources(const Vector3d &position, const Vector3d &norm
 REAL FDTD_Objects::
 EvaluatePressureSources(const Vector3d &position, const Vector3d &normal, const REAL &time) 
 {
+    if (_disableAllEvals) return 0.0;
     const int N_sources = _pressureSources.size(); 
     REAL sourceValue = 0; 
     for (int ii=0; ii<N_sources; ++ii) 
@@ -491,6 +492,26 @@ Join(FDTD_Objects_Ptr &toBeJoined)
     {
         _pressureSources.push_back(p); 
     }
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
+DisableAllEvals()
+{
+    _disableAllEvals = true;
+    for ( auto &m : _rigidObjects )
+        m.second->DisableEvals();
+}
+
+//##############################################################################
+//##############################################################################
+void FDTD_Objects::
+EnableAllEvals()
+{
+    _disableAllEvals = false;
+    for ( auto &m : _rigidObjects )
+        m.second->EnableEvals();
 }
 
 //##############################################################################

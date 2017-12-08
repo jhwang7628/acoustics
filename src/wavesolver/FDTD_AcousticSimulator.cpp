@@ -5,6 +5,9 @@
 #include <utils/IO/IO.h>
 #include <macros.h>
 //#define DEBUG_HARMONIC_SOURCE
+// uncomment this if you want the Modal ODEs to jump directly to the start time
+//    without the effects of earlier impulses
+//#define JUMP_MODAL_ODES_TO_START
 
 
 // THESE TWO ARE DEPRECATED -- USE "has_modal_source" and "has_acc_noise_source"
@@ -107,8 +110,15 @@ std::string FDTD_AcousticSimulator::
 _CompositeFilename(const std::string filename_)
 {
     char buffer[512];
-    const std::string filename = 
-        (_simulatorID ? (*_simulatorID) + "_" + filename_ : filename_); 
+    buffer[0] = 0;
+
+    if(_acousticSolverSettings->timeParallel)
+    {
+        snprintf(buffer, 512, "%05d_", _acousticSolverSettings->indTimeChunks);
+    }
+
+    std::string filename = 
+        (_simulatorID ? (*_simulatorID) + "_" + buffer + filename_ : filename_);     
     snprintf(buffer, 512, _acousticSolverSettings->outputPattern.c_str(), 
              filename.c_str()); 
     return std::string(buffer); 
@@ -463,6 +473,9 @@ ResetStartTime(const REAL &startTime)
     }
     _acousticSolver->Reinitialize_PML_WaveSolver(_acousticSolverSettings->useMesh, startTime); 
     auto &objects = _sceneObjects->GetRigidObjects(); 
+    if( _sceneObjects->AreEvalsDisabled() )
+        _sceneObjects->EnableAllEvals();
+
     for (auto &m : objects) 
     {
         if (m.second->Type() == RIGID_SOUND_OBJ)
@@ -473,13 +486,35 @@ ResetStartTime(const REAL &startTime)
                 // take one step to update q Vectors. Note that this way all modal odes are one
                 // step further than the solver because we need derivatives along
                 // the way.
+#ifdef JUMP_MODAL_ODES_TO_START
                 object->SetODESolverTime(startTime);
+#else
+                REAL earliestImpulseTime = object->GetFirstImpulseTime();
+                if ( earliestImpulseTime < startTime )
+                {
+                    int nTimeSteps = std::ceil((startTime - earliestImpulseTime) / object->GetODEStepSize() );
+                    REAL ODEStartTime = startTime - nTimeSteps * object->GetODEStepSize();
+                    std::cout << "Setting time back by " << nTimeSteps << " timesteps to " << ODEStartTime << std::endl;
+
+                    object->SetODESolverTime(ODEStartTime);
+                    for( int ind = 0; ind < nTimeSteps; ind++ )
+                    {
+                        object->AdvanceModalODESolvers(1);
+                        object->UpdateQPointers();
+                    }
+                }
+                else
+                {
+                    object->SetODESolverTime(startTime);
+                }
+#endif
                 object->AdvanceModalODESolvers(1); 
                 object->UpdateQPointers(); 
             }
         }
     }
     _acousticSolver->GetGrid().ResetCellHistory(true);
+    std::cout << "\nDone resetting start time!" << std::endl;
 }
 
 //##############################################################################

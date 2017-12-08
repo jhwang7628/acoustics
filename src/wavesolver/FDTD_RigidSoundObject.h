@@ -148,6 +148,7 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         REAL PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
         void PrintAllVelocity(const std::string &filename, const int &mode) const;
 
+        REAL GetODEStepSize() { return _ODEStepSize; }
     friend class AccelerationNoiseVibrationalSource; 
 };
 

@@ -71,7 +71,7 @@ public:
     inline const auto &GetActiveSimUnits(){return _simUnits;}
     std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> GetSolverBBoxs(); 
     // 
-    void Build(ImpulseResponseParser_Ptr &parser); 
+    void Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks); 
     void UpdateObjectState(const REAL &time); 
     bool StepWorld(); 
     bool CheckSimUnitBoundaries(); 

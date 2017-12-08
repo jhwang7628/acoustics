@@ -64,6 +64,15 @@ struct PML_WaveSolver_Settings
     bool            fastForwardToEarliestImpact;  
     REAL            fastForwardToEventTime; // in effect only if fastForwardToEarliestImpact = false
 
+    // time parallelization 
+    bool            timeParallel = false;
+    int             indTimeChunks = 0;
+    int             numTimeChunks = 1;
+    REAL            modalParallelErrorTol;// = 1e-7;
+    REAL            modalMinDampingPeriods;// = 2;
+    REAL            overlapTime; // = 6e-3
+    REAL            stopBoundaryAccTime; // to be set
+
     // ghost cell settings
     int FV_boundarySubdivision;
 

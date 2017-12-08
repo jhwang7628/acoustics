@@ -67,6 +67,9 @@ class FDTD_RigidObject : public FDTD_MovableObject
         std::vector<Vector3d>               _debugArrowStart; 
         std::vector<Vector3d>               _debugArrowNormal; 
 
+        bool _disableEvals = false; // disable boundary evaluation after the end of a time chunk
+                                    //    (for time parallelization) when we are in the overlap region
+
         bool _animated = false; // if an object is being animated by rbd sim, then this should be set to true
 
     public: 
@@ -139,6 +142,8 @@ class FDTD_RigidObject : public FDTD_MovableObject
         void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 
 
+        void DisableEvals() { _disableEvals = true; }
+        void EnableEvals() { _disableEvals = false; }
         //// debug methods //// 
         void TestQueryDistance(); 
         void TestObjectBoundaryCondition();
