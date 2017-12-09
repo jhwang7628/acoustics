@@ -72,7 +72,10 @@ void WavReader<T>::
 Close()
 {
     if (_sndFile != nullptr)
+    {
         sf_close(_sndFile.get());
+        _sndFile.reset();
+    }
 }
 
 //##############################################################################
