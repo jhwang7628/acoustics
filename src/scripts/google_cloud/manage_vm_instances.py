@@ -135,6 +135,6 @@ if __name__ == '__main__':
     # Create_Instance_With_Disk(instance_name, instance_name, machine_type)
 
     # query instance status
-    # Query_Instances(query_file = 'instances.txt') 
+    Query_Instances() 
 
-    Add_VMs_To_ForwardAgent()
+    # Add_VMs_To_ForwardAgent()
