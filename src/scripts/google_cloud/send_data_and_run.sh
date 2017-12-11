@@ -1,14 +1,15 @@
 #!/bin/bash 
 
 declare -a essential_files=(
-    # "models"
-    # "rush_working_man_mono.wav" 
-    # "config_parallel.xml"
+    "config_parallel.xml"
+    "kin"
+    "models"
+    "speaker_shader_assets"
     "launch_parallel_chunk.sh"
 )
 
-dest_dir="/home/jui-hsien/code/acoustics/work/demo/musical_box_1"
-create_dir="data_test"
+dest_dir="/home/jui-hsien/code/acoustics/work/demo/box_radio"
+create_dir="data"
 
 echo -e "\n=== Sending files/dirs START ==="
 for i in "${essential_files[@]}"; do
