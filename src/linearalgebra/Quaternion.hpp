@@ -361,7 +361,8 @@ class Quaternion
         {
             Quaternion<T> ret;
             T cosTheta = w * q2.w + v.x * q2.v.x + v.y *q2.v.y + v.z * q2.v.z;
-            if ( fabs(cosTheta) >= 1.0 ) return *this;
+            if ( fabs(cosTheta) >= 1.0 || r == (T)0) return *this;
+            else if (r == (T)1) return q2; 
 
             T theta = (T) acos(cosTheta);
             T sinTheta = (T)sqrt(1.0 - cosTheta * cosTheta);
