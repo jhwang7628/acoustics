@@ -55,9 +55,7 @@ if(time_parallel):
     NStepsEachChunk = ReqParse(parser, 'general', 'time_steps_each_chunk', 'i')
 all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk)
 
-
 ##
-
 N_points = all_data.shape[1]
 N_steps  = all_data.shape[0]
 sampfreq = ReqParse(parser, 'general', 'sampfreq', 'i')
@@ -106,7 +104,11 @@ if ReqParse(parser, 'general', 'write_wav', 'b'):
     rateRatio = float(sampfreq) / float(wavfreq)
     for ii in range(N_points):
         print 'point %u' %(ii)
-        outputdata = signal.resample(all_data[:,ii], int(float(N_steps)/rateRatio))
+        # scipy resample uses FFT, zero-pad it to make it fast
+        outputdata = all_data[:,ii].copy()
+        nextpow2 = int(np.power(2, np.floor(np.log2(len(outputdata)))+1))
+        outputdata = np.pad(outputdata, (0, nextpow2-len(outputdata)), 'constant', constant_values=(0.,0.))
+        outputdata = signal.resample(outputdata, int(float(len(outputdata))/rateRatio))
         normalization = np.absolute(outputdata).max()
         if wavformat == '32float': 
             finaldata = outputdata/normalization
