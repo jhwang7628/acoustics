@@ -445,6 +445,23 @@ UpdateSourceTimes(const REAL time)
 // Function InitializeAnimator
 //##############################################################################
 void FDTD_Objects::
+InitializeAnimator(const std::map<std::string, KinematicsMetadata> &objKinMeta)
+{
+    _objectAnimator = std::make_shared<FDTD_RigidObject_Blender_Animator>(); 
+    auto anim = 
+        std::dynamic_pointer_cast<FDTD_RigidObject_Blender_Animator>(_objectAnimator);
+    const bool blender_rotate_y_up = true; 
+    for (const auto &m : objKinMeta)
+    {
+        anim->ReadObjectKinData(m.first, m.second, blender_rotate_y_up); 
+    }
+    AnimateObjects(0.0); 
+}
+
+//##############################################################################
+// Function InitializeAnimator
+//##############################################################################
+void FDTD_Objects::
 InitializeAnimator(const std::string &fileDisplacement,
                    const std::string &fileVelocity,
                    const std::string &fileAcceleration)

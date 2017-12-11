@@ -61,6 +61,11 @@ struct PML_WaveSolver_Settings
     std::string     fileDisplacement; 
     std::string     fileVelocity; 
     std::string     fileAcceleration;
+
+    // kinematic scripting files from blender, this should be disjoint with rigidsimDataRead
+    bool            kinFileExists = false; 
+    std::map<std::string, KinematicsMetadata> objKinematicsMetadata; 
+
     bool            fastForwardToEarliestImpact;  
     REAL            fastForwardToEventTime; // in effect only if fastForwardToEarliestImpact = false
 

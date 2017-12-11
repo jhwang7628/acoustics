@@ -97,7 +97,11 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     _simulatorSettings->fastForwardToEventTime = startTime;  
 
     // read and initialize animator if data exists
-    if (_simulatorSettings->rigidsimDataRead)
+    if (_simulatorSettings->kinFileExists) 
+    {
+        _objectCollections->InitializeAnimator(_simulatorSettings->objKinematicsMetadata); 
+    }
+    else if (_simulatorSettings->rigidsimDataRead)
     {
         _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement, 
                                                _simulatorSettings->fileVelocity, 
@@ -513,8 +517,28 @@ CheckSimUnitBoundaries()
 // Function PreviewStepping
 //##############################################################################
 void SimWorld::
-PreviewStepping(const int &previewSpeed) // TODO!
+PreviewStepping(const uint &previewSpeed)
 {
+    // update simulation
+    std::cout << "================ Step START ================\n";
+    int count=0;
+    for (auto &unit : _simUnits)
+    {
+        std::cout << "-------- unit " << count 
+                  << " START -------- \n"; 
+        unit->simulator->PreviewStepping(previewSpeed); 
+        std::cout << "-------- unit " << count 
+                  << " STOP -------- \n"; 
+        count++; 
+    }
+
+    // update sim units topology
+    CheckSimUnitBoundaries(); 
+
+    // update time and object states
+    _state.time += _simulatorSettings->timeStepSize*previewSpeed; 
+    UpdateObjectState(_state.time);
+    std::cout << "================ Step STOP ================\n";
 }
 
 //##############################################################################

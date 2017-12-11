@@ -131,7 +131,10 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
             if (_sceneBox) delete _sceneBox; 
         }
 
-        inline void SetAllSliceDataReady(const bool &isReady){for (auto &slice : _sliceCin) slice.dataReady = isReady;}
+        inline void SetAllSliceDataReady(const bool &isReady)
+        {for (auto &slice : _sliceCin) slice.dataReady = isReady;}
+        inline void SetPreviewSpeed(const uint &speed)
+        {_previewSpeed = speed;}
         void InitializeBEMSolver(); 
         void AddSlice(const int &dim, const REAL &offset);
         void ConstructSliceSamples(Slice &slice); 

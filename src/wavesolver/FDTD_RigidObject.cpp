@@ -174,6 +174,8 @@ Initialize(const bool &buildFromTetMesh, bool needsCurvature)
     UpdateBoundingBox();
 }
 
+//##############################################################################
+//##############################################################################
 void FDTD_RigidObject::
 Reinitialize(const std::string& objPrefix, const bool buildFromTetMesh, bool needsCurvature)
 {

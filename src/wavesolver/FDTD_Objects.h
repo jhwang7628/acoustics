@@ -130,6 +130,7 @@ class FDTD_Objects
         REAL GetEarliestImpactEvent();
         void SetObjectStates(const REAL time); 
         bool UpdateSourceTimes(const REAL time); 
+        void InitializeAnimator(const std::map<std::string, KinematicsMetadata> &objKinFiles); 
         void InitializeAnimator(const std::string &fileDisplacement,
                                 const std::string &fileVelocity,
                                 const std::string &fileAcceleration); 

@@ -75,7 +75,7 @@ public:
     void UpdateObjectState(const REAL &time); 
     bool StepWorld(); 
     bool CheckSimUnitBoundaries(); 
-    void PreviewStepping(const int &previewSpeed);
+    void PreviewStepping(const uint &previewSpeed);
     void ResetStartTime(const REAL &startTime); 
     void ClearAllSources(); 
 };

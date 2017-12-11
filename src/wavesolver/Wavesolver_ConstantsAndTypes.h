@@ -97,6 +97,16 @@ const REAL CONTACT_TIMESCALE_SCALE = 1.;
 enum VibrationalSourceType { HarmonicSource=0 };
 
 //##############################################################################
+// Structs
+//##############################################################################
+struct KinematicsMetadata
+{
+    std::string objId; 
+    std::string fileKinematics; 
+    REAL stepSize; 
+};
+
+//##############################################################################
 // Debugging flags, settings
 //##############################################################################
 #define DEBUG_ANALYTICAL_ACC_NOISE 0

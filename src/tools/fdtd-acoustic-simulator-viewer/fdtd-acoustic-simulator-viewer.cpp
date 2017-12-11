@@ -7,7 +7,7 @@
 #include <ui/FDTD_AcousticSimulator_Widget.h>
 #include <boost/program_options.hpp>
 
-int GUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTimeChunks); 
+int GUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTimeChunks, const uint &previewSpeed); 
 int TUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTimeChunks);
 
 int main(int argc, char** argv)
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
         opt.add_options()
             ("config,c"       , po::value<std::string>(&xmlFile)->required()     , "configuration xml file")
             ("nogui,n"        , po::bool_switch()->default_value(false)          , "Don't run GUI (if no GUI, number_of_timesteps is needed in settings)")
-            ("preview_speed,p", po::value<uint>(&preview_speed)->default_value(0), "preview rigid body motion")
+            ("preview,p"      , po::value<uint>(&preview_speed)->default_value(0), "preview rigid body motion")
             ("index,i"        , po::value<uint>(&index)->default_value(0)        , "Time chunk index for time parallelism"); 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, opt), vm);
@@ -54,10 +54,11 @@ int main(int argc, char** argv)
 
     if (nogui)
         return TUI_Run(argc, argv, xmlFile, index); 
-    return GUI_Run(argc, argv, xmlFile, index);
+    return GUI_Run(argc, argv, xmlFile, index, preview_speed);
 }
 
-int GUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTimeChunks)
+int GUI_Run(int argc, char **argv, const std::string &xmlFile, 
+            const uint &indTimeChunks, const uint &previewSpeed)
 {
     QApplication application(argc,argv);
 
@@ -66,6 +67,8 @@ int GUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTi
     world->Build(parser, indTimeChunks); 
     std::shared_ptr<FDTD_AcousticSimulator_Viewer> viewer = 
         std::make_shared<FDTD_AcousticSimulator_Viewer>(std::move(world));
+    if (previewSpeed > 0)
+        viewer->SetPreviewSpeed(previewSpeed); 
     FDTD_AcousticSimulator_Widget widget(viewer); 
     widget.setWindowTitle("FDTD Acoustic Simulator Widget");
     widget.show();

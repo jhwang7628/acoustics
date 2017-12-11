@@ -185,11 +185,19 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         }
 
         // get kinematics if any 
-        const std::string fileKinematics = queryOptionalAttr(rigidObjectNode, "speaker_file", "N/A");
+        const std::string fileKinematics = queryOptionalAttr(rigidObjectNode, "file_kinematics", "N/A");
         if (fileKinematics != "N/A")
         {
-            // TODO 
-            std::cout << "has file_kinematics, do something\n";
+            const REAL stepSize = 1.0/queryRequiredReal(rigidObjectNode, "kinematics_frame_rate"); 
+            solverSettings->rigidsimDataRead = false; // this conflicts with rigid sim data, so disable it
+            solverSettings->kinFileExists = true; 
+
+            KinematicsMetadata meta; 
+            meta.objId = meshName; 
+            meta.fileKinematics = fileKinematics; 
+            meta.stepSize = stepSize; 
+            solverSettings->objKinematicsMetadata[meshName] = meta; 
+            object->SetAnimated(true);
         }
 
         objects->AddObject(std::stoi(meshName), object); 

@@ -1,3 +1,4 @@
+#include <fstream>
 #include <wavesolver/FDTD_RigidObject_Animator.h>
 #include <utils/STL_Wrapper.h>
 
@@ -28,12 +29,11 @@ ReadAllKinematics(const std::string &fileDisplacement, const std::string &fileVe
 }
 
 //##############################################################################
-// Because of how it is stored, the current implementation might not have good 
-// data locality. Might want to consider refactor some parts for a much larger
-// scene.
+// Function GetRigidObjectTransform
 //##############################################################################
 void FDTD_RigidObject_Animator::
-GetRigidObjectTransform(const int &objectID, const REAL &time, Point3d &newCOM, Quaternion<REAL> &quaternion)
+GetRigidObjectTransform(const int &objectID, const REAL &time, 
+                        Point3d &newCOM, Quaternion<REAL> &quaternion)
 {
     const int N_frames = _rigidsimResults->N_Frames(); 
     const auto &timeStamps = _rigidsimResults->Timesteps(); 
@@ -68,4 +68,84 @@ GetRigidObjectTransform(const int &objectID, const REAL &time, Point3d &newCOM, 
         const Quaternion<REAL> &hQuat = quaternions.at(hFrame).at(objectID); 
         quaternion = lQuat.slerp(ratio, hQuat); 
     }
+}
+
+//##############################################################################
+// Function ReadObjectKinFile
+//   file format: 
+//     frame_id translation_x translation_y translation_z quaternion_w  ...
+//     quaternion_y quaternion_z 
+//##############################################################################
+void FDTD_RigidObject_Blender_Animator::
+ReadObjectKinData(const std::string &objId, 
+                  const KinematicsMetadata &meta,
+                  const bool blenderRotateYUp)
+{
+    const std::string kinFile = meta.fileKinematics; 
+    std::cout << "Reading object kinematic file: " << kinFile << std::endl; 
+    std::ifstream stream(kinFile.c_str()); 
+    if (!stream) 
+        throw std::runtime_error("**ERROR** Cannot read object kinematics file: " + kinFile); 
+
+    auto &data = _objectsData[objId].data; 
+    _objectsData.at(objId).meta = meta; 
+    std::string line; 
+    double buf_w;
+    Vector3d buf_v; 
+    while(std::getline(stream, line))
+    {
+        StepData sd;
+        std::istringstream iss(line); 
+        iss >> sd.frame; 
+        iss >> sd.translation.x;
+        iss >> sd.translation.y;
+        iss >> sd.translation.z;
+        iss >> buf_w; 
+        iss >> buf_v[0]; 
+        iss >> buf_v[1]; 
+        iss >> buf_v[2]; 
+        // to prevent numerical error, clamp w
+        buf_w = std::max<REAL>(-1.0, std::min<REAL>(1.0, buf_w));  
+        sd.rotation = Quaternion<REAL>(buf_w, buf_v); 
+        // blender uses z-up as default so we apply -90 rot about x-axis
+        if (blenderRotateYUp)
+        {
+            Quaternion<REAL> corr = 
+                Quaternion<REAL>::fromAxisRotD(Vector3<REAL>(1.0, 0.0, 0.0),
+                                               -90.);
+            sd.rotation = sd.rotation*corr; 
+        }
+        std::cout << "read step data: "  // FIXME debug
+                  << sd.frame << " " 
+                  << sd.translation << " " 
+                  << sd.rotation << std::endl; 
+        data.push_back(sd); 
+    }
+}
+
+//##############################################################################
+// Function GetRigidObjectTransform
+//##############################################################################
+void FDTD_RigidObject_Blender_Animator::
+GetRigidObjectTransform(const int &objectID, const REAL &time, 
+                        Point3d &newCOM, Quaternion<REAL> &quaternion)
+{
+    const std::string objName = std::to_string(objectID); 
+    const auto &it = _objectsData.find(objName); 
+    const auto &objData = it->second; 
+    if (it == _objectsData.end() || objData.data.size() == 0)
+        return; 
+
+    const int idx_0 = std::min<int>(
+            std::max<int>(0, (time-_timeStart)/objData.meta.stepSize), 
+            objData.data.size()-1); 
+    const int idx_1 = std::min<int>(idx_0+1, objData.data.size()-1); 
+    const REAL t_0 = idx_0*objData.meta.stepSize; 
+    const REAL t_1 = idx_1*objData.meta.stepSize; 
+
+    const REAL alpha = (idx_0 == idx_1 ? 1.0 : (time - t_0)/(t_1 - t_0)); 
+    newCOM = objData.data.at(idx_0).translation*(1.0-alpha)
+           + objData.data.at(idx_1).translation*(    alpha); 
+    quaternion = objData.data.at(idx_0).rotation.slerp(alpha, 
+                 objData.data.at(idx_1).rotation); 
 }
