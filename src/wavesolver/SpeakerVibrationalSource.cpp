@@ -44,15 +44,8 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 REAL SpeakerVibrationalSource::
 Evaluate(const int &vertexID, const Vector3d &normal, const REAL &time)
 {
-    if (_handles.find(vertexID) != _handles.end())
-    {
-        const int idx = time/_speakerDataSampleRate; 
-        if (idx < 0 || idx >= _speakerData.size())
-            return 0.0; 
-        else 
-            return _speakerData.at(idx);
-    }
-    return 0.0;
+    const Vector3d a = Evaluate(vertexID, time); 
+    return a.dotProduct(normal);
 }
 
 //##############################################################################
@@ -60,8 +53,15 @@ Evaluate(const int &vertexID, const Vector3d &normal, const REAL &time)
 Vector3d SpeakerVibrationalSource::
 Evaluate(const int &vertexID, const REAL &time)
 {
-    const REAL a = Evaluate(vertexID, Vector3d(), time); 
-    const Vector3d n = _owner->GetMeshPtr()->normal(vertexID).normalized(); 
+    REAL a = 0.0; 
+    if (_handles.find(vertexID) != _handles.end())
+    {
+        const int idx = time/_speakerDataSampleRate; 
+        if (idx >= 0 && idx < _speakerData.size())
+            a = _speakerData.at(idx);
+    }
+    const Vector3d n = _owner->ObjectToWorldVector(
+            _owner->GetMeshPtr()->normal(vertexID).normalized()); 
     return n*a;
 }
 
