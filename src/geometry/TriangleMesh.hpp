@@ -52,6 +52,8 @@
 #include <stdexcept>
 #include <utils/STL_Wrapper.h>
 
+#include <cmath>
+
 #ifdef USE_NAMESPACE
 namespace carbine
 {
@@ -821,7 +823,7 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint,
 {
     assert(triangleIndices.size() > 0);
     T minDistance = std::numeric_limits<T>::max(); 
-    Vector3<T> closestPointBuffer, projectedPointBuffer;
+    Point3<T> closestPointBuffer, projectedPointBuffer;
     if (useDeformation && deformation.size() != num_vertices()*3)
         throw std::runtime_error("**ERROR** deformation passed in has wrong dimension");
     for (const int t_idx : triangleIndices)
@@ -871,7 +873,8 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint,
         const Vector3<T> e2 = projectedPointBuffer - p0; 
         const T dot02 = e0.dotProduct(e2); 
         const T dot12 = e1.dotProduct(e2); 
-        const T invDenom = 1. / (dot00 * dot11 - dot01 * dot01); 
+        const T denom = (dot00 * dot11 - dot01 * dot01);
+        const T invDenom = 1. / denom; 
         const T u = (dot11 * dot02 - dot01 * dot12) * invDenom; 
         const T v = (dot00 * dot12 - dot01 * dot02) * invDenom; 
 
@@ -926,14 +929,41 @@ ComputeClosestPointOnMeshHelper(const Vector3<T> &queryPoint,
         }
         else // remaining case is u<0, v<0, (u+v)>=1 but this case is impossible
         {
-            std::cout.precision(12);
+            std::cout.precision(16);
             std::cout << p0.x << " " << p0.y << " " << p0.z << std::endl;
             std::cout << p1.x << " " << p1.y << " " << p1.z << std::endl;
             std::cout << p2.x << " " << p2.y << " " << p2.z << std::endl;
             std::cout << queryPoint.x << " " << queryPoint.y << " " << queryPoint.z << std::endl;
             std::cout << projectedPointBuffer.x << " " << projectedPointBuffer.y << " " << projectedPointBuffer.z << std::endl;
             std::cout << u << " " << v << std::endl;
-            throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
+            //throw std::runtime_error("**ERROR** Barycentric coordinates computation yields impossible case");
+
+            std::cout << "**WARNING** Barycentric coordinates computation yields impossible case" << std::endl;
+
+            // Use closest vertex
+            const T d0 = projectedPointBuffer.distanceSqr(p0);
+            const T d1 = projectedPointBuffer.distanceSqr(p1);
+            const T d2 = projectedPointBuffer.distanceSqr(p2);
+
+            if (d0 < d1)
+            {
+                if (d0 < d2)
+                {
+                    closestPointBuffer = Vector3<T>(p0);
+                }
+                else
+                {
+                    closestPointBuffer = Vector3<T>(p2);
+                }
+            }
+            else if (d1 < d2)
+            {
+                closestPointBuffer = Vector3<T>(p1);
+            }
+            else
+            {
+                closestPointBuffer = Vector3<T>(p2);
+            }
         }
         const T distance = sgn*(queryPoint - closestPointBuffer).lengthSqr();
 

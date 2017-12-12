@@ -125,6 +125,16 @@ public:
             m_allTriCenters[i] =  1./3. * (m_vertices[v1] + m_vertices[v2] + m_vertices[v3]);
         }
 	}
+
+	double
+	triangleArea(int triIndex) const
+    {
+        const auto &tri = m_triangles.at(triIndex);
+        Eigen::Vector3d e1 = m_vertices[tri(0)] - m_vertices[tri(1)];
+        Eigen::Vector3d e2 = m_vertices[tri(2)] - m_vertices[tri(1)];
+
+        return 0.5 * e1.cross(e2).norm();
+    }
 };
 
 #endif // BUBBLE_MESH_HPP

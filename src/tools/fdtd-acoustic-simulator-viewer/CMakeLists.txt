@@ -91,6 +91,11 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         boost_filesystem
         boost_regex
         boost_program_options
+        meshfix
+        jmesh
+        jmeshext
+        nl
+        superlu
         )
 
     set_target_properties(fdtd-acoustic-simulator-viewer PROPERTIES AUTOMOC TRUE)

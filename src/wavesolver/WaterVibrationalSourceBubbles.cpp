@@ -5,6 +5,9 @@
 #include <utils/STL_Wrapper.h>
 #include <fstream>
 
+#include "FixMesh.h"
+#include <igl/write_triangle_mesh.h>
+
 #include "bubbles/bubbleForcing.hpp"
 #include "bubbles/FileInput.hpp"
 #include "bubbles/ODEInt.hpp"
@@ -201,11 +204,10 @@ Initialize(const std::string &dataDir, const std::string &tmpDir)
 //##############################################################################
 //##############################################################################
 void WaterVibrationalSourceBubbles::
-writeObj(const std::string &fName, const Mesh *m)
+extractSurfaceToIGL(const Mesh *m,
+                    Eigen::MatrixXd &V,
+                    Eigen::MatrixXi &F)
 {
-    std::ofstream of(fName.c_str());
-    of.precision(16);
-
     std::map<int, int> vertsToKeep;
     for (const auto& t : m->m_surfTris)
     {
@@ -217,23 +219,52 @@ writeObj(const std::string &fName, const Mesh *m)
         }
     }
 
+    V.resize(vertsToKeep.size(), 3);
+
     int counter = 1;
     for (auto& ve : vertsToKeep)
     {
         const auto& v = m->m_vertices.at(ve.first);
 
-        of << "v " << v.transpose() << std::endl;
+        V.row(counter-1) = m->m_vertices.at(ve.first).transpose();
         ve.second = counter++;
     }
 
-    for (const auto& t : m->m_surfTris)
+    int nSurfTris = 0;
+    std::set<int> badTris;
+    for (int i = 0; i < m->m_surfTris.size(); ++i)
     {
+        const auto& t = m->m_surfTris[i];
         if (m->m_triType.at(t) == Mesh::FLUID_AIR || m->m_triType.at(t) == Mesh::SOLID)
         {
-            of << "f "
-               << vertsToKeep[m->m_triangles[t](0)] << " "
-               << vertsToKeep[m->m_triangles[t](1)] << " "
-               << vertsToKeep[m->m_triangles[t](2)] << std::endl;
+            bool degenerate = m->triangleArea(i) < 1e-10;
+            if (degenerate)
+            {
+                badTris.insert(i);
+            }
+            else
+            {
+                ++nSurfTris;
+            }
+        }
+    }
+
+    F.resize(nSurfTris, 3);
+    counter = 0;
+    for (int i = 0; i < m->m_surfTris.size(); ++i)
+    {
+        const auto& t = m->m_surfTris[i];
+
+        if (m->m_triType.at(t) == Mesh::FLUID_AIR || m->m_triType.at(t) == Mesh::SOLID)
+        {
+            bool degenerate = badTris.count(i) > 0;
+
+            if (!degenerate)
+            {
+                F.row(counter++) << vertsToKeep[m->m_triangles[t](0)]-1,
+                                    vertsToKeep[m->m_triangles[t](1)]-1,
+                                    vertsToKeep[m->m_triangles[t](2)]-1;
+            }
         }
     }
 }
@@ -378,11 +409,36 @@ step(REAL time)
         // Write mesh out
         std::ostringstream os;
         os << "tmpMesh-";
-        os << std::setfill('0') << std::setw(9) << std::fixed << std::setprecision(6);
+        os << std::setfill('0') << std::setw(10) << std::fixed << std::setprecision(6);
         os << (useT1 ? _t1 : _t2);
 
         std::string fName(os.str());
-        writeObj(_tmpDir + std::string("/") + fName + std::string(".obj"), _waveSolverM);
+        std::string fullName = _tmpDir + std::string("/") + fName + std::string(".obj");
+
+        // Only clean up and write if obj file doesn't already exist
+        {
+            ifstream exist(fullName.c_str());
+            if (!exist.good())
+            {
+                // Clean up mesh first
+                Eigen::MatrixXd V, W;
+                Eigen::MatrixXi F, G;
+
+                extractSurfaceToIGL(_waveSolverM, V, F);
+                bool result = myMeshFix(V,F,W,G,true);
+
+                if (!result)
+                {
+                    W = V;
+                    G = F;
+                    std::cout << "ERROR: problem fixing mesh" << std::endl;
+                }
+
+                // Write to OBJ
+                igl::write_triangle_mesh(fullName,W,G);
+            }
+        }
+
         _owner->Reinitialize(fName, false, false);
         _surfaceMesh = _owner->GetMeshPtr();
         _rigidMeshTime = useT1 ? _t1 : _t2;

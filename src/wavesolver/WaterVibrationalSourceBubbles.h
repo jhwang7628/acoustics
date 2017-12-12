@@ -85,7 +85,9 @@ class WaterVibrationalSourceBubbles : public VibrationalSource
 
         void projectToSurface();
 
-        void writeObj(const std::string &fName, const Mesh *m);
+        void extractSurfaceToIGL(const Mesh *m,
+                                 Eigen::MatrixXd &V,
+                                 Eigen::MatrixXi &F);
 
     public:
         WaterVibrationalSourceBubbles(RigidObjectPtr owner, const std::string &dataDir, const std::string &tmpDirectory);

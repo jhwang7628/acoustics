@@ -26,6 +26,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSourceBubbles.h
     ${CMAKE_CURRENT_SOURCE_DIR}/WaterVibrationalSourceBubbles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FixMesh.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/FixMesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.h
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_Objects.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FDTD_MovableObject.h

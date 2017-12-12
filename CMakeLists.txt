@@ -214,7 +214,15 @@ endif (USE_VLFEAT)
 
 if (USE_IGL)
     add_definitions(-DUSE_IGL)
-    include_directories(external/libigl/include) 
+    include_directories(external/libigl/include)
+    include_directories(external/meshfix)
+    include_directories(external/meshfix/JMeshExt-1.0alpha_src/include)
+    include_directories(external/meshfix/JMeshExt-1.0alpha_src/JMeshLib-1.2/include)
+    add_definitions(-DMESHFIX_WITH_EIGEN)
+    link_directories(external/meshfix/build)
+    link_directories(external/meshfix/build/JMeshExt-1.0alpha_src)
+    link_directories(external/meshfix/build/JMeshExt-1.0alpha_src/OpenNL3.2.1/binaries/lib)
+    link_directories(external/meshfix/build/JMeshExt-1.0alpha_src/JMeshLib-1.2)
 endif (USE_IGL)
 
 # check if we're using Intel's compiler
