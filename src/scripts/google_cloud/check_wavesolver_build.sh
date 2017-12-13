@@ -9,10 +9,6 @@ for ii in `seq 7 26`; do
     echo "Launching make on remote node and detach"
     gcloud compute ssh $p -- -t "
         cd ${BUILD_DIR}; 
-        git pull;
-        tmux new -s make -d \"
-            . ~/.zshrc;
-            cmake ..;
-            make fdtd-acoustic-simulator-viewer -j ${N_CORES};\"
+        git log | head -6
     "
 done

@@ -25,8 +25,6 @@ Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
 
     // create set of handles
     _handles.insert(handleVIds.begin(), handleVIds.end());
-
-    // TODO
 }
 
 //##############################################################################
