@@ -492,8 +492,17 @@ ResetStartTime(const REAL &startTime)
                 REAL earliestImpulseTime = object->GetFirstImpulseTime();
                 if ( earliestImpulseTime < startTime )
                 {
-                    int nTimeSteps = std::ceil((startTime - earliestImpulseTime) / object->GetODEStepSize() );
-                    REAL ODEStartTime = startTime - nTimeSteps * object->GetODEStepSize();
+                    REAL timeStepSize = object->GetODEStepSize();
+                    int nTimeSteps = std::ceil((startTime - earliestImpulseTime) / timeStepSize );
+                    // Calculate the start time by setting it back nTimeSteps timesteps.
+                    // Don't do it this way, because we need to match the accumulated machine error in the ODE stepper:
+                    // REAL ODEStartTime = startTime - nTimeSteps * timeStepSize;
+
+                    // calculate ODE start time by subtracting nTimeSteps timesteps (this accurately models machine error)
+                    REAL ODEStartTime = startTime;
+                    for( int ind = 0; ind < nTimeSteps; ind++)
+                        ODEStartTime -= timeStepSize;
+
                     std::cout << "Setting time back by " << nTimeSteps << " timesteps to " << ODEStartTime << std::endl;
 
                     object->SetODESolverTime(ODEStartTime);
