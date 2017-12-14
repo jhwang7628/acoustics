@@ -1,3 +1,9 @@
 [submodule "src/libigl"]
 	path = external/libigl
 	url = http://github.com/jhwang7628/libigl.git
+[submodule "external/tetgen"]
+	path = external/tetgen
+	url = https://github.com/ufz/tetgen.git
+[submodule "external/meshfix"]
+	path = external/meshfix
+	url = git@github.com:timmyL17/meshfix.git
