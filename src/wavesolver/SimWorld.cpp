@@ -82,15 +82,28 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     parser->GetObjects(_simulatorSettings, _objectCollections); 
     SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
     // logic for Time Parallelism
-    REAL simTime = _simulatorSettings->timeStepSize * _simulatorSettings->numberTimeSteps;
-    REAL chunkTime = simTime / _simulatorSettings->numTimeChunks;
-    REAL startTime = _simulatorSettings->fastForwardToEventTime + chunkTime * _simulatorSettings->indTimeChunks;
+    // This is the old logic for calculating startTime:
+    // REAL simTime = _simulatorSettings->timeStepSize * _simulatorSettings->numberTimeSteps;
+    // REAL chunkTime = simTime / _simulatorSettings->numTimeChunks;
+    // REAL startTime = _simulatorSettings->fastForwardToEventTime + chunkTime * _simulatorSettings->indTimeChunks;
+    // It turns out, there is a lot of machine error built up from stepping time forwards, so we
+    //    need to calculate this the same way as the integrator does: via repeated adding
+    int timeStepsPerChunk = _simulatorSettings->numberTimeSteps / _simulatorSettings->numTimeChunks;
+    REAL startTime = _simulatorSettings->fastForwardToEventTime;
+    for( int i = 0; i < timeStepsPerChunk * _simulatorSettings->indTimeChunks; i++ )
+        startTime += _simulatorSettings->timeStepSize;
+
     _simulatorSettings->numberTimeSteps /= _simulatorSettings->numTimeChunks;
 
     // TODO: Debug this overlap time thing.
     if( _simulatorSettings->timeParallel )
     {
-        _simulatorSettings->stopBoundaryAccTime = startTime + chunkTime;
+        // This is the old logic for calculating the stop Boundary Time:
+        // _simulatorSettings->stopBoundaryAccTime = startTime + chunkTime;
+        // This is the new logic, taking into account machine error:
+        _simulatorSettings->stopBoundaryAccTime = startTime;
+        for( int i = 0; i < timeStepsPerChunk; i++)
+            _simulatorSettings->stopBoundaryAccTime += _simulatorSettings->timeStepSize;
         _simulatorSettings->numberTimeSteps += _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
     }
     SetWorldTime(startTime);   
@@ -228,7 +241,7 @@ UpdateObjectState(const REAL &time)
     // update objects
     _objectCollections->SetObjectStates(time); 
 
-    if (_simulatorSettings->timeParallel && (time > _simulatorSettings->stopBoundaryAccTime ) )
+    if (_simulatorSettings->timeParallel && (time >= _simulatorSettings->stopBoundaryAccTime ) )
         if( !_objectCollections->AreEvalsDisabled() )
         {
             std::cout << "Disabling Boundary Evaluations!\n";
