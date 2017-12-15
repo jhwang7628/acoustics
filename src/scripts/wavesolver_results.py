@@ -5,6 +5,11 @@ import glob,os
 ################################################################################
 ## Class Wavesolver_Results
 ################################################################################
+USE_CUBIC_POLY = True # use cubics to attach chunks such that they have continuous derivatives
+# cutoff frequency above which waves have little effect on derivative calc. Pre-multiply by chunk time before input.
+#    (As in, if we divide this number by chunk time in seconds, that's the frequency above which waves have no effect ).
+CUTOFF_FREQ = 50
+
 class Wavesolver_Results: 
     def __init__(self):
         self.folder = None
@@ -47,7 +52,7 @@ class Wavesolver_Results:
                 with open(filename, 'rb') as stream: 
                     num_steps = int(np.floor(filesizebytes/8/self.num_listening_points))
                     if(i == 0):
-                        total_steps = int(num_steps + (NChunks - 1) * NStepsEachChunk  + 1)
+                        total_steps = int(num_steps + (NChunks - 1) * NStepsEachChunk  + 1900)
                         all_data = np.zeros((total_steps, self.num_listening_points))
                     print 'Reading Chunk %d' %(i)
                     print '  reading %d steps' %(num_steps)
@@ -58,7 +63,28 @@ class Wavesolver_Results:
                     data = np.array(struct.unpack('d'*N, buf))
                     print 'step 2'
                     data = data.reshape((num_steps, self.num_listening_points))
-                    
+                    # make chunks have continous derivatives
+                    # fit a cubic spline to first and last points
+
+                    if (USE_CUBIC_POLY):
+                        d0 = data[0,:]
+                        dend = data[-1,:]
+                        # secant method to calculate derivatives
+                        derwidth = np.ceil(num_steps / CUTOFF_FREQ).astype(int)
+                        dder0 = (data[derwidth,:] - data[0,:]) / derwidth / (num_steps - 1)
+                        dderend = (data[-1,:] - data[-1-derwidth,:]) / derwidth  / (num_steps - 1)
+                        # fit a t^3 + bt^2 + ct + d
+                        t = np.linspace(0.0,1.0, num_steps).reshape((num_steps,1))
+                        t2 = np.multiply(t,t)
+                        t3 = np.multiply(t2,t)
+                        c = dder0
+                        d = d0
+                        a = c + 2 * d + dderend - 2 * dend
+                        b = 3*dend - dderend - 2 * c - 3 * d
+                        # multiply in the right order (tall matrix * long matrix) to fit the shape of data.
+                        spline = t3 * a + t2 * b + t * c + d
+                        data -= spline
+
                     all_data[i * NStepsEachChunk : i * NStepsEachChunk + num_steps, 0:self.num_listening_points] += data;
                     # for row in range(num_steps): 
                     #     buf = stream.read(8*self.num_listening_points)
