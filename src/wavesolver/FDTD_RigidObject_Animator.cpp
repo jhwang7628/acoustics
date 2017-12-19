@@ -115,10 +115,14 @@ ReadObjectKinData(const std::string &objId,
                                                -90.);
             sd.rotation = sd.rotation*corr; 
         }
-        std::cout << "read step data: "  // FIXME debug
+        // FIXME debug START
+        Vector3<REAL> rotAxis;
+        const REAL deg = sd.rotation.toAxisRotD(rotAxis); 
+        std::cout << "read step data: " 
                   << sd.frame << " " 
                   << sd.translation << " " 
-                  << sd.rotation << std::endl; 
+                  << rotAxis << "; deg = " << deg << std::endl; 
+        // FIXME debug END
         data.push_back(sd); 
     }
 }

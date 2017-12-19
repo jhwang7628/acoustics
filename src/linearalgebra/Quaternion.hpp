@@ -328,6 +328,11 @@ class Quaternion
                   static_cast<T>(2)*v.dotProduct(vec)*v;
         }
 
+        T dotProduct(const Quaternion<T> q2) const
+        {
+            return w * q2.w + v.x * q2.v.x + v.y *q2.v.y + v.z * q2.v.z; 
+        }
+
         /*!
          * Linear interpolation of two Quaternions
          * \param fact Factor of interpolation. For translation from positon
@@ -359,6 +364,7 @@ class Quaternion
          */
         Quaternion<T> slerp(T r, const Quaternion<T>& q2) const 
         {
+#if 0
             Quaternion<T> ret;
             T cosTheta = w * q2.w + v.x * q2.v.x + v.y *q2.v.y + v.z * q2.v.z;
             if ( fabs(cosTheta) >= 1.0 || r == (T)0) return *this;
@@ -382,6 +388,37 @@ class Quaternion
                 ret.v.z = v.z * rA + q2.v.z * rB;
             }
             return ret;
+#else
+            // https://en.wikipedia.org/wiki/Slerp#Quaternion_Slerp
+            Quaternion<T> v0 = *this; 
+            Quaternion<T> v1 = q2; 
+            v0.normalize(); 
+            v1.normalize(); 
+
+            T dot = v0.dotProduct(v1); 
+            const T DOT_THRESHOLD = 0.9995; 
+            if (fabs(dot) > DOT_THRESHOLD)
+            {
+                Quaternion<T> ret = v0 + (v1 - v0)*r; 
+                ret.normalize(); 
+                return ret; 
+            }
+
+            if (dot < 0.0f) 
+            {
+                v1 = v1 * (T)-1.0; 
+                dot = -dot; 
+            }
+
+            dot = std::min<T>(std::max<T>(dot, (T)-1.0), (T)1.0); 
+            const T theta_0 = (T)acos(dot); 
+            const T theta = theta_0*r; 
+
+            Quaternion<T> v2 = v1 - v0*dot; 
+            v2.normalize();
+
+            return v0*cos(theta) + v2*sin(theta); 
+#endif
         }
 };
 
