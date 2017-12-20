@@ -6,9 +6,6 @@ import glob,os
 ## Class Wavesolver_Results
 ################################################################################
 USE_CUBIC_POLY = True # use cubics to attach chunks such that they have continuous derivatives
-# cutoff frequency above which waves have little effect on derivative calc. Pre-multiply by chunk time before input.
-#    (As in, if we divide this number by chunk time in seconds, that's the frequency above which waves have no effect ).
-CUTOFF_FREQ = 50
 
 class Wavesolver_Results: 
     def __init__(self):
@@ -48,11 +45,11 @@ class Wavesolver_Results:
                 else: 
                     print '**WARNING** File %s does not exist' %(filename)
                     return None
-                print 'Reading all_audio.dat'
+                print 'Reading %s' %(filename)
                 with open(filename, 'rb') as stream: 
                     num_steps = int(np.floor(filesizebytes/8/self.num_listening_points))
                     if(i == 0):
-                        total_steps = int(num_steps + (NChunks - 1) * NStepsEachChunk  + 1900)
+                        total_steps = int(num_steps + (NChunks - 1) * NStepsEachChunk  + 19000)
                         all_data = np.zeros((total_steps, self.num_listening_points))
                     print 'Reading Chunk %d' %(i)
                     print '  reading %d steps' %(num_steps)
@@ -69,10 +66,9 @@ class Wavesolver_Results:
                     if (USE_CUBIC_POLY):
                         d0 = data[0,:]
                         dend = data[-1,:]
-                        # secant method to calculate derivatives
-                        derwidth = np.ceil(num_steps / CUTOFF_FREQ).astype(int)
-                        dder0 = (data[derwidth,:] - data[0,:]) / derwidth / (num_steps - 1)
-                        dderend = (data[-1,:] - data[-1-derwidth,:]) / derwidth  / (num_steps - 1)
+                        # Set the derivatives at the endpoints to 0
+                        dder0 = np.zeros((1,self.num_listening_points))
+                        dderend = np.zeros((1,self.num_listening_points))
                         # fit a t^3 + bt^2 + ct + d
                         t = np.linspace(0.0,1.0, num_steps).reshape((num_steps,1))
                         t2 = np.multiply(t,t)
