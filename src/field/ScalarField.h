@@ -171,19 +171,19 @@ class ScalarField {
             return _divisions;
         }
 
-        inline bool              isBoundaryCell( const Tuple3i &index ) const
+        inline bool              isBoundaryCell( const Tuple3i &index, const int offset = 0 ) const
         {
-            return (    index[ 0 ] == 0
-                     || index[ 0 ] == _divisions[ 0 ] - 1
-                     || index[ 1 ] == 0
-                     || index[ 1 ] == _divisions[ 1 ] - 1 
-                     || index[ 2 ] == 0
-                     || index[ 2 ] == _divisions[ 2 ] - 1 );
+            return (    index[ 0 ] == offset
+                     || index[ 0 ] == _divisions[ 0 ] - 1 - offset
+                     || index[ 1 ] == offset
+                     || index[ 1 ] == _divisions[ 1 ] - 1 - offset
+                     || index[ 2 ] == offset
+                     || index[ 2 ] == _divisions[ 2 ] - 1 - offset);
         }
 
-        inline bool              isBoundaryCell( int index ) const
+        inline bool              isBoundaryCell( int index, const int offset = 0 ) const
         {
-            return isBoundaryCell( cellIndex( index ) );
+            return isBoundaryCell( cellIndex( index ), offset );
         }
 
         inline unsigned char     boundaryCellType(int index) const 
