@@ -5,7 +5,7 @@ import glob,os
 ################################################################################
 ## Class Wavesolver_Results
 ################################################################################
-USE_CUBIC_POLY = True # use cubics to attach chunks such that they have continuous derivatives
+USE_CUBIC_POLY = False # use cubics to attach chunks such that they have continuous derivatives
 
 class Wavesolver_Results: 
     def __init__(self):
