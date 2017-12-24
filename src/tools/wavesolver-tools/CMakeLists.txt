@@ -40,6 +40,9 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(kirchhoff_helmholtz
         kirchhoff_helmholtz.cpp)
 
+    add_executable(find_speaker_vertices
+        find_speaker_vertices.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
