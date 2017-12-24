@@ -70,6 +70,7 @@
         write_pressure_field_to_disk="0"
         fast_forward_to_earliest_impact="0"
         fast_forward_to_event_time="0.3368"
+        boundary_handling="fully_coupled"
 
         time_parallel="1"
         num_time_chunks="10"
