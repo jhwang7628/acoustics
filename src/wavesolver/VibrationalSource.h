@@ -26,6 +26,7 @@ class VibrationalSource : public Source
         {}
 
         // output the acceleration
+        void SetOwner(const RigidObjectPtr &owner){_owner = owner;}
         virtual REAL Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle=-1)=0; 
         virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time)=0; 
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time)=0;

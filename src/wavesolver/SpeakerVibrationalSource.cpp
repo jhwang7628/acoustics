@@ -1,11 +1,88 @@
+#include <boost/algorithm/string.hpp>
 #include <sndgen/WavReader.hpp>
 #include <wavesolver/SpeakerVibrationalSource.h> 
+//##############################################################################
+//##############################################################################
+SpeakerVibrationalSource::DataStep SpeakerVibrationalSource::
+ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
+                   const std::string &speakerVIdsDir,
+                   const std::string &speakerVIdsSuf)
+{
+    std::cout << "Reading meta data for speaker vibrational source \n"; 
+
+    using namespace boost::filesystem; 
+
+    // helper to parse the filename
+    auto ParseFileID = [](const path &a) {
+        std::vector<std::string> tokens; 
+        boost::split(tokens, a.filename().string(), [](char c){return c == '_';});
+        return std::stoi(tokens.at(2));};
+
+    // iterate through directory and find main character obj series 
+    path p(dir.c_str());
+    std::vector<path> filenames; 
+    for (directory_iterator it(p); it!=directory_iterator(); ++it)
+    {
+        const auto filename = it->path().filename().string(); 
+        if (filename.find(objPrefix) != std::string::npos &&
+            it->path().extension().string() == ".obj")
+            filenames.push_back(it->path()); 
+    }
+    std::sort(filenames.begin(), filenames.end(),
+            [&](const path &a, const path &b) {
+                const int ia = ParseFileID(a);
+                const int ib = ParseFileID(b); 
+                return ia < ib;
+            }); 
+
+    // find corresponding selected vertices and push data into data steps 
+    for (auto f : filenames)
+    {
+        IntArray handles; 
+        {
+            const std::string handlesFile = speakerVIdsDir + "/" + f.stem().string() + speakerVIdsSuf; 
+            std::ifstream stream(handlesFile.c_str()); 
+            if (!stream)
+                throw std::runtime_error("**ERROR** Cannot open handles file: "+handlesFile);
+            std::string line; 
+            int buf; 
+            while(std::getline(stream, line)) 
+            {
+                std::istringstream iss(line); 
+                while (iss >> buf)
+                    handles.push_back(buf); 
+            }
+        }
+
+        DataStep data; 
+        data.frame = ParseFileID(f); 
+        data.objFilePrefix = f.stem().string(); 
+        data.handles = std::move(handles); 
+        // FIXME debug START
+        std::cout << data.frame << " " << data.objFilePrefix << " \n"; 
+        for (auto h : data.handles)
+            std::cout << h << " "; 
+        std::cout << std::endl; 
+        // FIXME debug END
+
+        _objSeqData.push(std::move(data)); 
+    }
+
+    assert(!_objSeqData.empty()); 
+    DataStep firstStep = std::move(_objSeqData.front()); 
+    assert(firstStep.frame == 0);
+    _objSeqData.pop(); 
+    return firstStep; 
+}
 
 //##############################################################################
 //##############################################################################
 void SpeakerVibrationalSource::
 Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
 {
+    _speakerData.clear(); 
+    _handles.clear(); 
+
     // read wav file to set up speaker
     WavReader<REAL> reader; 
     try
@@ -22,9 +99,43 @@ Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
     STL_Wrapper::PrintVectorContent(std::cout, _speakerData, 10);
     _speakerDataSampleRate = reader.SampleRate(); 
     reader.Close(); 
+    _speakerWavFile = speakerFile; 
 
     // create set of handles
     _handles.insert(handleVIds.begin(), handleVIds.end());
+}
+
+//##############################################################################
+//##############################################################################
+bool SpeakerVibrationalSource::
+UpdateTime(const REAL time) 
+{
+    if (_objSeqData.empty())
+    {
+        _time = time; 
+        return false; 
+    }
+
+    bool changed = false; 
+    DataStep step = _objSeqData.front(); 
+    while (!_objSeqData.empty() && time >= 
+            (REAL)_objSeqData.front().frame*_objSeqSampleRate)
+    {
+        step = _objSeqData.front(); 
+        _objSeqData.pop(); 
+        changed = true; 
+    }
+
+    if (changed)
+    {
+        std::cout << "SpeakerVibrationalSource::Mesh changed: " 
+                  << step.objFilePrefix << std::endl; 
+        _owner->Reinitialize(step.objFilePrefix, false, false);
+        Initialize(_speakerWavFile, step.handles); 
+    }
+        
+    _time = time; 
+    return changed; 
 }
 
 //##############################################################################

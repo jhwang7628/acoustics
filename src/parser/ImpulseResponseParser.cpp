@@ -204,6 +204,68 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         rigidObjectNode = rigidObjectNode->NextSiblingElement(rigidObjectNodeName.c_str());
     }
 
+    // parse and build rigid object sequence. This class of object uses a sequence of (rigid) objs to 
+    // represent the deformation of an object. 
+    const std::string rigidObjectSeqNodeName("rigid_object_sequence"); 
+    TiXmlElement *rigidObjectSeqNode;
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(rigidObjectSeqNode, inputRoot, rigidObjectSeqNodeName.c_str()); 
+    }
+    catch (const std::runtime_error &error)
+    {
+        std::cout << "No rigid_object_seq found\n";
+    }
+    while (rigidObjectSeqNode != NULL)
+    {
+        const std::string meshName = std::to_string(meshCount++); 
+        const std::string workingDirectory = queryRequiredAttr(rigidObjectSeqNode, "working_directory"); 
+        const std::string sequencePrefix = queryRequiredAttr(rigidObjectSeqNode, "obj_sequence_prefix"); 
+        const REAL sequenceFramerate = 1./queryRequiredReal(rigidObjectSeqNode,  "obj_sequence_frequency"); 
+        const int sdfResolutionValue = queryOptionalInt(rigidObjectSeqNode, "fieldresolution", "400");
+        const REAL scale = queryOptionalReal(rigidObjectSeqNode, "scale", 1.0); 
+        const REAL initialPosition_x = queryOptionalReal(rigidObjectSeqNode, "initial_position_x", 0.0); 
+        const REAL initialPosition_y = queryOptionalReal(rigidObjectSeqNode, "initial_position_y", 0.0); 
+        const REAL initialPosition_z = queryOptionalReal(rigidObjectSeqNode, "initial_position_z", 0.0); 
+        const bool buildFromTetMesh = false; 
+
+        // get speaker shader, use this shader to load rigid objects (similar to water bubbles shader)
+        // NOTE: this is not a good abstraction because object and shader should be separate, however, 
+        //       I am doing it this way to keep it consistent with the water bubble shader. 
+        // for this reason, speaker shader needs to exist for the rigid object sequency type
+        const bool hasSpeakerShader = queryOptionalBool(rigidObjectSeqNode, "has_speaker_shader", "0");
+        if (!hasSpeakerShader)
+            throw std::runtime_error("**ERROR** Does not support rigid object sequence without speaker shader source"); 
+
+        const std::string speakerFile = queryRequiredAttr(rigidObjectSeqNode, "speaker_file"); 
+        const std::string speakerVIdsDir = queryRequiredAttr(rigidObjectSeqNode, "speaker_vids_file_directory"); 
+        const std::string speakerVIdsSuf = queryRequiredAttr(rigidObjectSeqNode, "speaker_vids_file_suffix"); 
+
+        VibrationalSourcePtr source(new SpeakerVibrationalSource()); 
+        auto speakerSrc = std::dynamic_pointer_cast<SpeakerVibrationalSource>(source); 
+        speakerSrc->SetSeqSampleRate(sequenceFramerate); 
+        SpeakerVibrationalSource::DataStep firstStep = 
+            speakerSrc->ReadObjSeqMetaData(workingDirectory, sequencePrefix, speakerVIdsDir, speakerVIdsSuf);
+        speakerSrc->Initialize(speakerFile, firstStep.handles); 
+
+        // TODO START
+        RigidObjectPtr object = 
+            std::make_shared<FDTD_RigidSoundObject>(
+                    workingDirectory, 
+                    sdfResolutionValue, 
+                    firstStep.objFilePrefix, 
+                    buildFromTetMesh, 
+                    solverSettings, 
+                    meshName, 
+                    scale);
+        object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
+        source->SetOwner(object); 
+        object->AddVibrationalSource(source); 
+        objects->AddObject(std::stoi(meshName), object); 
+        // TODO END
+        rigidObjectSeqNode = rigidObjectSeqNode->NextSiblingElement(rigidObjectSeqNodeName.c_str());
+    }
+
     // parse and build water surface objects. Right now use rigid object to
     // test, but water surface might deform so its not suitable.  // TODO
     const std::string waterSurfaceObjectNodeName("water_surface_object"); 

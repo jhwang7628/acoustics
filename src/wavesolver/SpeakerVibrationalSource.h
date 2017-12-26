@@ -1,6 +1,6 @@
 #ifndef SPEAKER_VIBRATIONAL_SOURCE_H 
 #define SPEAKER_VIBRATIONAL_SOURCE_H 
-
+#include <queue>
 #include <unordered_set>
 #include <TYPES.h> 
 #include <wavesolver/VibrationalSource.h> 
@@ -11,18 +11,35 @@
 //##############################################################################
 class SpeakerVibrationalSource : public VibrationalSource
 {
+    public: 
+        struct DataStep
+        {
+            int frame; 
+            std::string objFilePrefix; 
+            std::vector<int> handles; 
+        };
     private: 
+        std::string       _speakerWavFile; 
         std::vector<REAL> _speakerData;
         REAL              _speakerDataSampleRate; 
         std::unordered_set<int> _handles; 
+        REAL              _time = 0.0;
+        std::queue<DataStep> _objSeqData;
+        REAL                 _objSeqSampleRate; 
 
     public:
+        SpeakerVibrationalSource() = default;
         SpeakerVibrationalSource(RigidObjectPtr owner) 
             : VibrationalSource(owner) 
         {}
 
+        DataStep ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
+                                const std::string &speakerVIdsDir, 
+                                const std::string &speakerVIdsSuf);
+        void SetSeqSampleRate(const REAL &sampleRate){_objSeqSampleRate = sampleRate;}
         void Initialize(const std::string &speakerFile, 
                         const std::vector<int> &handleVIds);
+        virtual bool UpdateTime(const REAL time); 
         virtual REAL Evaluate(const Vector3d &position, 
                               const Vector3d &normal, 
                               const REAL &time, 
