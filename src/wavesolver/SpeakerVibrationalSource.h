@@ -55,6 +55,8 @@ class SpeakerVibrationalSource : public VibrationalSource
         virtual REAL EvaluateDisplacement(const Vector3d &position, 
                                           const Vector3d &normal, 
                                           const REAL &time); 
+        ///// debug /////
+        void PrintHandlesTotalArea(); 
 };
 
 #endif

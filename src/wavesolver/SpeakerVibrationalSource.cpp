@@ -42,15 +42,20 @@ ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
         {
             const std::string handlesFile = speakerVIdsDir + "/" + f.stem().string() + speakerVIdsSuf; 
             std::ifstream stream(handlesFile.c_str()); 
-            if (!stream)
-                throw std::runtime_error("**ERROR** Cannot open handles file: "+handlesFile);
-            std::string line; 
-            int buf; 
-            while(std::getline(stream, line)) 
+            if (stream)
             {
-                std::istringstream iss(line); 
-                while (iss >> buf)
-                    handles.push_back(buf); 
+                std::string line; 
+                int buf; 
+                while(std::getline(stream, line)) 
+                {
+                    std::istringstream iss(line); 
+                    while (iss >> buf)
+                        handles.push_back(buf); 
+                }
+            }
+            else
+            {
+                std::cerr << "**WARNING** Cannot open handles file: "+handlesFile << std::endl;
             }
         }
 
@@ -58,13 +63,6 @@ ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
         data.frame = ParseFileID(f); 
         data.objFilePrefix = f.stem().string(); 
         data.handles = std::move(handles); 
-        // FIXME debug START
-        std::cout << data.frame << " " << data.objFilePrefix << " \n"; 
-        for (auto h : data.handles)
-            std::cout << h << " "; 
-        std::cout << std::endl; 
-        // FIXME debug END
-
         _objSeqData.push(std::move(data)); 
     }
 
@@ -103,6 +101,7 @@ Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
 
     // create set of handles
     _handles.insert(handleVIds.begin(), handleVIds.end());
+    PrintHandlesTotalArea(); // FIXME debug
 }
 
 //##############################################################################
@@ -190,4 +189,20 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
 {
     throw std::runtime_error("**ERROR** not implemented"); 
     return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
+void SpeakerVibrationalSource::
+PrintHandlesTotalArea()
+{
+    if (!_owner) return; 
+    auto mesh = _owner->GetMeshPtr(); 
+    auto area = mesh->vertex_areas();
+    REAL sum = 0.0;
+    for (auto h : _handles)
+        sum += area[h];
+    std::cout << "SpeakerVibrationalSource::PrintHandlesTotalArea()\n"; 
+    std::cout << " Num handle vertices: " << _handles.size() << "\n"; 
+    std::cout << " Total handle area:   " << sum << "\n"; 
 }
