@@ -247,18 +247,22 @@ ResetUnionBox()
 REAL FDTD_RigidObject::
 DistanceToMesh(const double &x, const double &y, const double &z)
 {
-    if (!_signedDistanceField)
-        throw std::runtime_error("**ERROR** distance field not built.");
     if (!_bboxWorld.Inside(x, y, z, AABB_CHECK_TOLERANCE_SCALE))
         return std::numeric_limits<REAL>::max();
-
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position.eval();
-    const REAL d = _signedDistanceField->distance(
-                     Vector3d(position[0],
-                              position[1],
-                              position[2])
-                   ); 
+    REAL d; 
+    if (!_signedDistanceField)
+    {
+        return std::numeric_limits<REAL>::max(); 
+    }
+    else
+    {
+        d = _signedDistanceField->distance(
+              Vector3d(position[0],
+                       position[1],
+                       position[2])); 
+    }
 
     return d * _meshScale; 
 }
@@ -281,8 +285,6 @@ DistanceToMesh(const Vector3d &position)
 bool FDTD_RigidObject::
 NormalToMesh(const double &x, const double &y, const double &z, Vector3d &queriedNormal)
 {
-    if (!_signedDistanceField)
-        throw std::runtime_error("**ERROR** distance field not built.");
     if (!_bboxWorld.Inside(x,y,z,1.1))
     {
         const REAL limit = std::numeric_limits<REAL>::max(); 
@@ -292,10 +294,17 @@ NormalToMesh(const double &x, const double &y, const double &z, Vector3d &querie
 
     Eigen::Vector3d position(x,y,z); 
     position = _modelingTransformInverse*position.eval();
-    queriedNormal = _signedDistanceField->gradient(Conversions::ToVector3<double>(position));
-    Eigen::Vector3d normal = Conversions::ToEigen<double>(queriedNormal); 
-    normal = _modelingTransform.linear()*normal.eval(); 
-    queriedNormal = Conversions::ToVector3(normal); 
+    if (!_signedDistanceField)
+    {
+        return std::numeric_limits<REAL>::max(); 
+    }
+    else
+    {
+        queriedNormal = _signedDistanceField->gradient(Conversions::ToVector3<double>(position));
+        Eigen::Vector3d normal = Conversions::ToEigen<double>(queriedNormal); 
+        normal = _modelingTransform.linear()*normal.eval(); 
+        queriedNormal = Conversions::ToVector3(normal); 
+    }
     return true; 
 }
 

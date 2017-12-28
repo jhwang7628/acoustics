@@ -31,6 +31,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
     public: 
         struct OptionalAttributes
         {
+            bool isThinStructure=false; 
             bool isFixed=false; 
         };
 
@@ -105,6 +106,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
             Initialize(buildFromTetMesh, needsCurvature); 
         }
 
+        inline bool IsThinStructure() const {return _optionalAttributes.isThinStructure;}
         inline bool Animated(){return _animated;}
         inline void SetAnimated(const bool &is){_animated = is;}
         inline bool Exist(){return (_mesh!=0);}

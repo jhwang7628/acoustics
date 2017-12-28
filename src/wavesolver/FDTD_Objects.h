@@ -109,8 +109,8 @@ class FDTD_Objects
         int OccupyByObject(const Vector3d &positionWorld); 
         bool OccupyByConstraint(const Vector3d &pos); 
         bool OccupyByConstraint(const Vector3d &pos, FDTD_PlaneConstraint_Ptr &constraint); 
-        bool TriangleCubeIntersection(const Vector3d &maxCubeBound, 
-                                      const Vector3d &minCubeBound, 
+        bool TriangleCubeIntersection(const Vector3d &cubeCenter, 
+                                      const Vector3d &cubeHalfSize, 
                                       std::set<TriangleIdentifier, TIComp> &outTris);
         bool TriangleSetCubeIntersection(const Vector3d &maxCubeBound, 
                                       const Vector3d &minCubeBound, 

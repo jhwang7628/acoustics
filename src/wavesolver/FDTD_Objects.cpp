@@ -118,6 +118,31 @@ TriangleCubeIntersection(const Vector3d &cubeCenter,
                 }
             }
         }
+        else if (m.second->IsThinStructure())
+        {
+            auto object = m.second;
+            const auto &mesh = object->GetMeshPtr(); 
+            const auto &tris = mesh->triangles(); 
+            auto vert = mesh->vertices(); 
+            for (int tid=0; tid<tris.size(); ++tid)
+            {
+                const auto &tri = tris.at(tid); 
+                for (int ii=0; ii<3; ++ii) // ii-th vertex 
+                {
+                    vtxbuf = object->ObjectToWorldPoint(vert.at(tri[ii])); 
+                    vtxs[ii][0] = (float)(vtxbuf.x);
+                    vtxs[ii][1] = (float)(vtxbuf.y);
+                    vtxs[ii][2] = (float)(vtxbuf.z);
+                }
+                const int test = triBoxOverlap(cc, cs, vtxs);
+                if (test > 0)
+                {
+                    const int oid = std::stoi(object->GetMeshName()); 
+                    outTris.insert(TriangleIdentifier(oid, tid));
+                    result = true; 
+                }
+            }
+        }
     }
     return result; 
 }
