@@ -26,7 +26,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
     setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
     setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
-    setKeyDescription(Qt::Key_C, "Clear all debug sphere"); 
+    setKeyDescription(Qt::Key_C, "Recenter camera"); 
     setKeyDescription(Qt::Key_N, "Draw an arrow"); 
     setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
     setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
@@ -35,7 +35,7 @@ SetAllKeyDescriptions()
     setKeyDescription(Qt::Key_S, "Set scene radius"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug arrows"); 
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug sphere and arrows"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw debug arrows stored in FDTD_RigidObject class"); 
     setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
@@ -1121,10 +1121,19 @@ keyPressEvent(QKeyEvent *e)
         SetAllSliceDataReady(false);
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
-            _sphereCin.clear();
+        const auto bboxs = _simWorld->GetSolverBBoxs(); 
+        Vector3d camCenter; 
+        for (const auto &p : bboxs)
+        {
+            auto &unit = p.first; 
+            camCenter += unit->BoundingBoxCenter();
+        }
+        camCenter /= (REAL) bboxs.size(); 
+        camera()->setPivotPoint(qglviewer::Vec(camCenter.x, camCenter.y, camCenter.z));
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
-            _arrowCin.clear();
+        _sphereCin.clear();
+        _arrowCin.clear();
     }
     else if ((e->key() == Qt::Key_R) && (modifiers == Qt::ControlModifier)) {
         PRE_CIN_CLEAR;
