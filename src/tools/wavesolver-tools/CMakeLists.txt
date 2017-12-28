@@ -43,6 +43,12 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(find_speaker_vertices
         find_speaker_vertices.cpp)
 
+    add_executable(triangulate_obj
+        triangulate_obj.cpp)
+
+    add_executable(remove_duplicates
+        remove_duplicates.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
