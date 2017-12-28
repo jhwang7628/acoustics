@@ -459,7 +459,7 @@ UpdateSourceTimes(const REAL time)
         if (m.second->Type() == RIGID_SOUND_OBJ)
         {
             auto ptr = std::dynamic_pointer_cast<FDTD_RigidSoundObject>(m.second);
-            changed = changed || ptr->UpdateVibrationalSources(time);
+            changed = ptr->UpdateVibrationalSources(time) || changed;
         }
     }
 
