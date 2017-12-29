@@ -42,7 +42,7 @@ int main(int argc, char **argv)
             Fnew(ii,jj) = vmap.at(F(ii,jj)); 
         }
 
-    Vnew.resize(idx+1, 3); 
+    Vnew.resize(idx, 3); 
     for (const auto &m : vmap)
         Vnew.row(m.second) = V.row(m.first); 
 
