@@ -49,6 +49,9 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(remove_duplicates
         remove_duplicates.cpp)
 
+    add_executable(remove_unused_vertices_obj
+        remove_unused_vertices_obj.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
