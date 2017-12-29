@@ -31,8 +31,8 @@
 
 //#define ENGQUIST_ORDER 1
 #define ENGQUIST_ORDER 2
-#define ENABLE_FAST_RASTERIZATION
-#define DISABLE_CAVITY_FIX
+//#define ENABLE_FAST_RASTERIZATION
+//#define DISABLE_CAVITY_FIX
 
 //##############################################################################
 // Static variable initialize
@@ -1137,7 +1137,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         int boundaryObject, closestTriangle;
         Vector3d boundaryPoint, imagePoint, erectedNormal; 
         REAL distance; 
-        _objects->LowestObjectDistance(cellPosition, distance, boundaryObject); 
+        distance = gc->distance; 
+        boundaryObject = gc->boundaryObject; 
         auto object = _objects->GetPtr(boundaryObject); 
         if (object->Type() == SHELL_OBJ)
         {
@@ -1205,6 +1206,7 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         bool use_immerse_interface = 
             (neighbours.size() == 8 ) && 
             (object->Type() != SHELL_OBJ) &&
+            !(object->IsThinStructure()) &&
             (boundaryType == PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED); 
 
         if (!use_immerse_interface)
@@ -1212,6 +1214,10 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             const int row = mapGC.at(key_gc); 
             threadGCEntries.at(thread_idx).push_back(Triplet(row, row, 1.0)); 
             rhsGC(row) = pg; 
+#ifdef USE_OPENMP
+#pragma omp critical
+#endif
+            ++disable_gc_count; 
             continue; 
         }
 
@@ -1917,6 +1923,30 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         REAL distance; 
         int objectID; 
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
+
+        // for thin shells
+        {
+            IntArray cell_list; 
+            _pressureField.cell26Neighbours(cell_idx, cell_list); 
+            cell_list.push_back(cell_idx); 
+            std::set<TriangleIdentifier, TIComp> triangles; 
+            for (const auto &cell : cell_list)
+                for (const auto tri_id : _cellTriangles.at(cell))
+                    triangles.insert(tri_id); 
+            REAL d; 
+            int oid; 
+            _objects->LowestThinObjectDistance(
+                cellPosition, 
+                d,
+                oid, 
+                triangles
+            ); 
+            if (d < distance)
+            {
+                distance = d; 
+                objectID = oid; 
+            }
+        }
         
         if (distance < DISTANCE_TOLERANCE)
             throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. objectID: " + std::to_string(objectID)); 
@@ -3323,6 +3353,12 @@ try{
 //#############################################################################
 void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
 {
+    // can skip early if there's only obj sequence and mesh does not changed
+    if (!_meshChanged && _waveSolverSettings->onlyObjSequence)
+        return; 
+    else
+        _cellTriangles.clear(); 
+      
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
     std::copy(_isBulkCell.begin(), _isBulkCell.end(), 
@@ -3356,7 +3392,14 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             _ghostCellsCached.emplace(
                     std::make_pair(m.second->MakeKey(), m.second->cache)); 
     }
-    _meshChanged = false;
+    if (_meshChangedCounter > 0) 
+    {
+        _meshChangedCounter --;
+    }
+    else
+    {
+        _meshChanged = false;
+    }
 
     _ghostCells.clear(); 
     _boundaryGhostCells.clear(); // boundary ghost cells utilize no cache
@@ -3644,6 +3687,30 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                 //int gctype; isFluid(_pressureField.cellPosition(cell_idx), gctype); 
                 //auto gc = MakeGhostCell(cell_idx, ns, to, gctype); 
                 auto gc = MakeGhostCell(cell_idx, ns, to, gcTypes.at(cell_idx)); 
+                // find closest object to this ghost cell
+                _objects->LowestObjectDistance(
+                    _pressureField.cellPosition(gc->ownerCell),
+                    gc->distance,
+                    gc->boundaryObject
+                ); 
+                if (gc->type == 2)
+                {
+                    const auto &cellTrianglesSet = _cellTriangles.at(gc->ownerCell); 
+                    REAL d; 
+                    int oid; 
+                    _objects->LowestThinObjectDistance(
+                        _pressureField.cellPosition(gc->ownerCell), 
+                        d,
+                        oid, 
+                        cellTrianglesSet
+                    ); 
+                    if (d < gc->distance)
+                    {
+                        gc->distance = d; 
+                        gc->boundaryObject = oid; 
+                    }
+                }
+
 #ifdef USE_OPENMP
                 const int thread_idx = omp_get_thread_num(); 
 #else
@@ -3987,8 +4054,6 @@ void MAC_Grid::FindImagePoint(const Vector3d &cellPosition, const int &boundaryO
         if (csdf->distance(imagePoint) < -1E-3)
             std::cerr << "**ERROR** image point very inside object" << std::endl; 
     }
-
-
 }
 
 void MAC_Grid::ResetCellHistory(const bool &valid)
@@ -4000,6 +4065,7 @@ void MAC_Grid::ResetCellHistory(const bool &valid)
     std::fill(v[1].begin(), v[1].end(), valid); 
     std::fill(v[2].begin(), v[2].end(), valid); 
     _collidedCellsForShells_v.clear();
+    _meshChanged = true;
 }
 
 void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], const MATRIX &pFull, const FloatArray &pGC, const MATRIX (&v)[3], Cell &cell) const
@@ -4045,6 +4111,7 @@ void MAC_Grid::GetCell(const int &cellIndex, MATRIX const (&pDirectional)[3], co
                 auto key = GhostCell::MakeKey(cellIndex, neighbour_idx); 
                 if (_ghostCells.find(key) != _ghostCells.end())
                     cell.gcValue[count] = _ghostCells.at(key)->pressure; 
+                count += 1;
             }
         }
 #endif
@@ -4252,7 +4319,6 @@ void MAC_Grid::UpdatePML(const BoundingBox &sceneBox)
     // flag all the cells that need removal
     RemoveOldPML(sceneBox); 
     UpdatePMLAbsorptionCoeffs(sceneBox); 
-    //TODO 
 }
 
 void MAC_Grid::FillVandermondeRegularS(const int &row, const Vector3d &cellPosition, Eigen::MatrixXd &V,

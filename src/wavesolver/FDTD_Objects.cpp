@@ -250,6 +250,43 @@ LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectI
 }
 
 //##############################################################################
+// Find the closest thin object with respect to positionWorld 
+//##############################################################################
+bool FDTD_Objects::
+LowestThinObjectDistance(const Vector3d &positionWorld, 
+                         REAL &distance, 
+                         int &objectID,
+                         const std::set<TriangleIdentifier, TIComp> &candidates)
+{
+    if (_rigidObjects.size() == 0) return false; 
+
+    REAL d; 
+    distance = std::numeric_limits<REAL>::max(); 
+
+    std::map<int, std::vector<int>> triangles; 
+    for (const auto &c : candidates)
+    {
+        auto obj  = GetPtr(c.objectID); 
+        triangles[c.objectID].push_back(c.triangleID); 
+    }
+
+    for (const auto &t : triangles)
+    {
+        auto obj = GetPtr(t.first); 
+        auto mesh = obj->GetMeshPtr(); 
+        const Vector3d p_o = obj->WorldToObjectPoint(positionWorld); 
+        Vector3d cp, pp; 
+        int ct; 
+        d = mesh->ComputeClosestPointOnMeshHelper(p_o, t.second, cp, ct, pp);  
+        if (fabs(d) < fabs(distance))
+        {
+            distance = d * obj->GetMeshScale(); 
+            objectID = t.first; 
+        }
+    }
+}
+
+//##############################################################################
 //##############################################################################
 bool FDTD_Objects::
 LowestConstraintDistance(const Vector3d &position, REAL &unsignedDistance,

@@ -100,6 +100,8 @@ class MAC_Grid
             int neighbourCell; 
             int topology;
             int type;  // 0: bulky, 1: constraint, 2: shell 
+            int boundaryObject = -1; 
+            REAL distance = std::numeric_limits<REAL>::max(); 
             Vector3d position; 
             REAL pressure; 
             GhostCell_Cache_Ptr cache; 
@@ -337,7 +339,8 @@ class MAC_Grid
         // boundary interface 
         std::list<BoundaryInterface_Ptr> _boundaryInterfaces; 
 
-        bool _meshChanged; // Used to store if a mesh has changed. If so, do not use cached ghost cell data.
+        bool _meshChanged = true; // Used to store if a mesh has changed. If so, do not use cached ghost cell data.
+        int _meshChangedCounter = 0; // classifyCells_FAST needs to run twice after new obj is loaded and has intersection with boundary. this keeps track of that. 
 
     public:
         std::string *grid_id = nullptr; 
@@ -374,7 +377,7 @@ class MAC_Grid
         void pressureFieldLaplacian(const MATRIX &value, MATRIX &laplacian) const; 
         void pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatArray &ghostCellValue, MATRIX &laplacian) /* const */; 
 
-        void setMeshChanged() {_meshChanged = true;}
+        void setMeshChanged() {_meshChanged = true; _meshChangedCounter = 1;}
 
         // Performs a velocity update in the given direction, as detailed
         // by Liu et al. (equation (14))

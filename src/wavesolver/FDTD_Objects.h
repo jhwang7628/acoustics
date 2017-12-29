@@ -119,6 +119,7 @@ class FDTD_Objects
         REAL ObjectDistance(const int &objectIndex, const Vector3d &positionWorld); 
         REAL LowestObjectDistance(const Vector3d &positionWorld); 
         bool LowestObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID); 
+        bool LowestThinObjectDistance(const Vector3d &positionWorld, REAL &distance, int &objectID, const std::set<TriangleIdentifier, TIComp> &candidates); 
         bool LowestConstraintDistance(const Vector3d &positionWorld, REAL &unsignedDistance, FDTD_PlaneConstraint_Ptr &constraint); 
         void ObjectNormal(const int &objectIndex, const Vector3d &positionWorld, Vector3d &queriedNormal); 
         void AddVibrationalSourceToObject(const int &objectIndex, VibrationalSourcePtr &sourcePtr);

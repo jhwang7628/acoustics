@@ -157,9 +157,10 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_z = queryOptionalReal(rigidObjectNode, "initial_position_z", 0.0); 
         FDTD_RigidObject::OptionalAttributes attr;
         attr.isFixed = (queryOptionalReal(rigidObjectNode, "fixed", 0.0) > 1E-10) ? true : false; 
+        attr.isThinStructure = queryOptionalBool(rigidObjectNode, "thin_structure", "0");
 
         const bool buildFromTetMesh = false; 
-        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale);
+        RigidObjectPtr object = std::make_shared<FDTD_RigidSoundObject>(workingDirectory, sdfResolutionValue, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale, false);
         object->SetOptionalAttributes(attr); 
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
 
@@ -228,6 +229,9 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         const REAL initialPosition_y = queryOptionalReal(rigidObjectSeqNode, "initial_position_y", 0.0); 
         const REAL initialPosition_z = queryOptionalReal(rigidObjectSeqNode, "initial_position_z", 0.0); 
         const bool buildFromTetMesh = false; 
+        FDTD_RigidObject::OptionalAttributes attr;
+        attr.isFixed = false; 
+        attr.isThinStructure = queryOptionalBool(rigidObjectSeqNode, "thin_structure", "0");
 
         // get speaker shader, use this shader to load rigid objects (similar to water bubbles shader)
         // NOTE: this is not a good abstraction because object and shader should be separate, however, 
@@ -248,7 +252,7 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
             speakerSrc->ReadObjSeqMetaData(workingDirectory, sequencePrefix, speakerVIdsDir, speakerVIdsSuf);
         speakerSrc->Initialize(speakerFile, firstStep.handles); 
 
-        // TODO START
+        // initialize object and connect object/source
         RigidObjectPtr object = 
             std::make_shared<FDTD_RigidSoundObject>(
                     workingDirectory, 
@@ -257,12 +261,14 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
                     buildFromTetMesh, 
                     solverSettings, 
                     meshName, 
-                    scale);
+                    scale,
+                    false
+                    );
+        object->SetOptionalAttributes(attr);
         object->ApplyTranslation(initialPosition_x, initialPosition_y, initialPosition_z); 
         source->SetOwner(object); 
         object->AddVibrationalSource(source); 
         objects->AddObject(std::stoi(meshName), object); 
-        // TODO END
         rigidObjectSeqNode = rigidObjectSeqNode->NextSiblingElement(rigidObjectSeqNodeName.c_str());
     }
 
@@ -454,6 +460,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::FULLY_COUPLED;
     else
         throw std::runtime_error("**ERROR** boundary handling type not understood: " + boundaryHandling); 
+    settings->onlyObjSequence = queryOptionalBool(solverNode, "only_obj_sequence", "0"); 
 
     // set sources 
     //parms._f = queryOptionalReal( "impulse_response/solver", "f", "500" );
