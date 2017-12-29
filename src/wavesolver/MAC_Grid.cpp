@@ -1924,7 +1924,7 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         int objectID; 
         _objects->LowestObjectDistance(cellPosition, distance, objectID); 
 
-        // for thin shells
+        // for thin shells that does not have distance field
         {
             IntArray cell_list; 
             _pressureField.cell26Neighbours(cell_idx, cell_list); 
@@ -1932,7 +1932,8 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
             std::set<TriangleIdentifier, TIComp> triangles; 
             for (const auto &cell : cell_list)
                 for (const auto tri_id : _cellTriangles.at(cell))
-                    triangles.insert(tri_id); 
+                    if (!_objects->GetPtr(tri_id.objectID)->HasDistanceField())
+                        triangles.insert(tri_id); 
             REAL d; 
             int oid; 
             _objects->LowestThinObjectDistance(
@@ -1941,15 +1942,17 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
                 oid, 
                 triangles
             ); 
-            if (d < distance)
+            if (fabs(d) < distance) // these objects don't have signed distance, the sign is given by triangle normals but is not what we want 
             {
-                distance = d; 
+                distance = fabs(d); 
                 objectID = oid; 
             }
         }
         
         if (distance < DISTANCE_TOLERANCE)
+        {
             throw std::runtime_error("**ERROR** Fresh cell inside some object. This shouldn't happen for pressure cells. objectID: " + std::to_string(objectID)); 
+        }
         Vector3d imagePoint, boundaryPoint, erectedNormal; 
         REAL distanceTravelled; 
         auto object = _objects->GetPtr(objectID); 
@@ -3357,7 +3360,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     if (!_meshChanged && _waveSolverSettings->onlyObjSequence)
         return; 
     else
-        _cellTriangles.clear(); 
+        _cellTriangles.clear();
       
     // set history valid for interpolation
     const int numCells = _pressureField.numCells(); 
@@ -3409,7 +3412,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
     const int N = _objects->N(); 
     auto &objects = _objects->GetRigidObjects(); 
     int count = 0;
-#if 1 // faster 
+#if 1 // faster
     std::vector<ScalarField::RangeIndices> bbox_rast(N); 
     const auto &constraints = _objects->GetConstraints(); 
     for (auto &m : objects)

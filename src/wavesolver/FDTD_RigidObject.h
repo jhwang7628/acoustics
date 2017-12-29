@@ -106,6 +106,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
             Initialize(buildFromTetMesh, needsCurvature); 
         }
 
+        inline bool HasDistanceField() const {return _signedDistanceField != nullptr;}
         inline REAL GetMeshScale() const {return _meshScale;}
         inline bool IsThinStructure() const {return _optionalAttributes.isThinStructure;}
         inline bool Animated(){return _animated;}
