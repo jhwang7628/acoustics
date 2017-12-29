@@ -53,7 +53,8 @@ NStepsEachChunk = 0
 if(time_parallel):
     NChunks = ReqParse(parser, 'general', 'time_chunks', 'i')
     NStepsEachChunk = ReqParse(parser, 'general', 'time_steps_each_chunk', 'i')
-all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk)
+    exclude_chunks = OptParse(parser, 'general', 'exclude_chunks', 'li')
+all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=exclude_chunks)
 
 ##
 N_points = all_data.shape[1]

@@ -31,14 +31,18 @@ class Wavesolver_Results:
         self.listening_points = readMatrixXdBinary(filename,1)
         self.num_listening_points = self.listening_points.shape[0]
         print ' %d points is read\n' %(self.num_listening_points)
-    def Read_All_Audio(self, TimeParallel, NChunks, NStepsEachChunk): 
+    def Read_All_Audio(self, TimeParallel, NChunks, NStepsEachChunk, exclude_chunks=None): 
         if (self.folder is None): 
             return
         if (self.listening_points is None): 
             self.Read_Listening_Position(TimeParallel)
         if (TimeParallel):
             all_data = np.array([])
+            if exclude_chunks is not None:
+                exclude_chunks = set(exclude_chunks)
             for i in range(NChunks):
+                if i in exclude_chunks:
+                    continue
                 filename = '%s/%s_%05d_all_audio.dat' %(self.folder, self.prefix, i)
                 if os.path.isfile(filename):
                     filesizebytes = os.path.getsize(filename)
@@ -60,6 +64,7 @@ class Wavesolver_Results:
                     data = np.array(struct.unpack('d'*N, buf))
                     print 'step 2'
                     data = data.reshape((num_steps, self.num_listening_points))
+                    print data 
                     # make chunks have continous derivatives
                     # fit a cubic spline to first and last points
 
