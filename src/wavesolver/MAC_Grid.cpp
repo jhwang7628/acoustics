@@ -580,15 +580,23 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                                                                + p_kk_p 
                                                                + p_kk_n); 
                 p1 *= (lambda2/(1. + 2.*lambda));
-                p_ii_p = pl_ii_p
-                       + p_ii_n 
-                       - pl_ii_n
-                       - 2./lambda*(p1 + pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
-                       + lambda *  (p_jj_p
-                                +   p_jj_n 
-                                +   p_kk_p
-                                +   p_kk_n
-                                -4.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)); 
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_p,jj,kk); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_ii_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_ii_p = pl_ii_p
+                           + p_ii_n 
+                           - pl_ii_n
+                           - 2./lambda*(p1 + pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - 2.*pCurr(PCELL_IDX(di,dj,dk,ii,jj,kk),0))
+                           + lambda *  (p_jj_p
+                                    +   p_jj_n 
+                                    +   p_kk_p
+                                    +   p_kk_n
+                                    -4.*pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)); 
+                }
 #endif
                 pCurr(PCELL_IDX(di,dj,dk,ii_p,jj,kk),0) = p_ii_p;
 
@@ -654,8 +662,24 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                    + (2.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + 2.*p_ii_n + 2.*p_jj_n + p_kk_p + p_kk_n;
                 p1 *= (lambda2/(1. + 2.*lambda)); 
-                p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
-                p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_p,jj,kk); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_ii_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+                }
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_p,kk); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_jj_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+                }
 //#elif ENGQUIST_ORDER == 2
 //                p1 = (2. + 6.*lambda - 6.*lambda2 - 2.*lambda3)* pCurr(PCELL_IDX(di,dj,dk,ii  ,jj  ,kk  ),0)
 //                   + lambda2                                   *(pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
@@ -753,9 +777,33 @@ void MAC_Grid::PML_pressureUpdateCollocated(const REAL &simulationTime, const MA
                    + (3.0*lambda - 1.0)/lambda2*pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0)
                    + 2.*p_ii_n + 2.*p_jj_n + 2.*p_kk_n;
                 p1 *= (lambda2/(1. + 3.*lambda)); 
-                p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
-                p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
-                p_kk_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_kk_n;
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii_p,jj,kk); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_ii_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_ii_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_ii_n;
+                }
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj_p,kk); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_jj_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_jj_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_jj_n;
+                }
+                neighbour_idx = PCELL_IDX(di,dj,dk,ii,jj,kk_p); 
+                if (_isGhostCell.at(neighbour_idx))
+                {
+                    p_kk_p = _ghostCells.at(GhostCell::MakeKey(cell_idx, neighbour_idx))->pressure;
+                }
+                else
+                {
+                    p_kk_p = (pLast(PCELL_IDX(di,dj,dk,ii,jj,kk),0) - p1)/lambda + p_kk_n;
+                }
 //#elif ENGQUIST_ORDER == 2
 //                const REAL p_spnm = pLast(PCELL_IDX(di,dj,dk,ii_p,jj  ,kk  ),0)
 //                                  + pLast(PCELL_IDX(di,dj,dk,ii  ,jj_p,kk  ),0)
@@ -1300,8 +1348,8 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
             weightedPressure = pg;
 #ifdef USE_OPENMP
 #pragma omp critical
-            ++disable_gc_count; 
 #endif
+            ++disable_gc_count; 
         }
 
         // either way, w should be well-posed now
