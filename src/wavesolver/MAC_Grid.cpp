@@ -3574,7 +3574,8 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                        pos, Vector3d(_waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0,
                                      _waveSolverSettings->cellSize/2.0),
-                       out_tris_shell))
+                       out_tris_shell,
+                       &_pressureField.bbox()))
             {
                 isSolid = true; 
                 _cellTriangles.at(cell_idx) = std::move(out_tris_shell);
@@ -3680,7 +3681,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
             }
             else 
             {
-                if (_objects->TriangleCubeIntersection(pos, hfc, out_tris_shell))
+                if (_objects->TriangleCubeIntersection(pos, hfc, out_tris_shell, &_pressureField.bbox()))
                     intersected = true; 
             }
 
