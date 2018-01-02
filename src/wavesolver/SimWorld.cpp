@@ -1,3 +1,5 @@
+#include <queue>
+#include <map>
 #include <unordered_map>
 #include <Eigen/Dense>
 #include "macros.h"
@@ -600,4 +602,185 @@ ClearAllSources()
     for (auto &obj : objects)
         obj.second->ClearVibrationalSources();
 }
+
+//##############################################################################
+// Function RunChunksAnalysis
+//##############################################################################
+void SimWorld::
+RunChunksAnalysis(const ChunkPartitionParam_Ptr &param)
+{
+    std::cout << "\n\n==========================================================\n";
+    std::cout << "Running chunks analysis ...\n";
+    std::cout << "==========================================================\n";
+    // first print some info
+    std::cout << " World start time: "  << _state.time << std::endl;
+    std::cout << " Number of objects: " << _objectCollections->N() << std::endl;
+    const auto &objs = _objectCollections->GetRigidObjects();;
+    for (const auto &m : objs)
+    {
+        const auto &obj = m.second;
+        std::cout << "  Object " << obj->GetMeshName()
+                  << " has " << obj->NumberVibrationalSources()
+                  << " vibrational shader sources\n";
+    }
+    std::cout << " Chunk Partitioning Parameters: \n"
+              << "  adaptive = " << param->adaptive << "\n"
+              << "  L_z      = " << param->L_z      << "\n"
+              << "  N_0      = " << param->N_0      << "\n"
+              << "  N_maxc   = " << param->N_maxc   << "\n"
+              << "  out_file = " << param->outFile  << "\n";
+    // compute zero masks
+    std::cout << "\nComputing zero masks ...\n";
+    auto &ws = _simulatorSettings;
+    const REAL dt = ws->timeStepSize;
+    const int N_t = ws->numberTimeSteps;
+    std::vector<REAL> q;
+    std::vector<Eigen::Vector2d> Z, Z_bar;
+    const REAL T[2] = {_state.time,
+                       _state.time + (REAL)N_t *dt};
+    for (int ii=0; ii<N_t; ++ii)
+    {
+        const REAL t = T[0] + (REAL)ii*dt;
+        bool isZero = true;
+        for (const auto &m : objs)
+        {
+            if (!m.second->ShaderIsZero(t))
+            {
+                isZero = false;
+                break;
+            }
+        }
+        if (isZero)
+        {
+            q.push_back(t);
+        }
+        else
+        {
+            if (q.size() != 0 && (t - q[0]) >= param->L_z)
+            {
+                Z.push_back({q[0], t});
+            }
+            q.clear();
+        }
+    }
+    if (q.size() != 0)
+    {
+        Z.push_back({q[0], T[1]});
+    }
+
+    std::cout << " Z = \n";
+    for (const auto &z : Z)
+        std::cout << "    " << z.transpose() << std::endl;
+
+    // compute complement
+    std::cout << "\nComputing complement masks ...\n";
+    if (Z.size() == 0)
+    {
+        Z_bar.push_back({T[0], T[1]});
+    }
+    else
+    {
+        if (!EQUAL_FLOATS(Z[0][0], T[0]))
+            Z_bar.push_back({T[0], Z[0][0]});
+        for (int ii=0; ii<Z.size()-1; ++ii)
+            Z_bar.push_back({Z[ii][1], Z[ii+1][0]});
+        if (!EQUAL_FLOATS(Z[Z.size()-1][1], T[1]))
+            Z_bar.push_back({Z[Z.size()-1][1], T[1]});
+    }
+
+    std::cout << " Z_bar = \n";
+    for (const auto &z : Z_bar)
+        std::cout << "    " << z.transpose() << std::endl;
+
+    // helper function to compute intersections
+    auto Intersect = [](const Eigen::Vector2d &I,
+                        const std::vector<Eigen::Vector2d> &Z,
+                        std::vector<Eigen::Vector2d> &out)
+    {
+        out.clear();
+        for (const Eigen::Vector2d &z : Z)
+        {
+            if ((z[0] < I[0] && z[1] < I[0]) ||
+                (z[0] > I[1] && z[1] > I[1]))
+                continue;
+            out.push_back({std::max(I[0], z[0]),
+                           std::min(I[1], z[1])});
+        }
+    };
+    auto PrintRange = [](const Eigen::Vector2d &s)
+    {
+        char buf[512];
+        snprintf(buf, 512, "%.6f, %.6f", s[0], s[1]);
+        return std::string(buf);
+    };
+
+    // initialize uniform chunks and shrink them
+    std::cout << "\nInitializing uniform chunks and shrink the bounds ...\n";
+    std::map<int, Eigen::Vector2d> S;
+    const REAL h_0 = (T[1] - T[0])/(REAL)(param->N_0);
+    for (int ii=0; ii<param->N_0; ++ii)
+    {
+        const Eigen::Vector2d I_i = {T[0] + (REAL)(ii+0)*h_0,
+                                     T[0] + (REAL)(ii+1)*h_0};
+        std::vector<Eigen::Vector2d> z_bar;
+        Intersect(I_i, Z_bar, z_bar);
+        if (z_bar.size() > 0)
+        {
+            S[ii] = {std::max(I_i[0], z_bar[0             ][0]),
+                     std::min(I_i[1], z_bar[z_bar.size()-1][1])};
+        }
+    }
+
+    std::cout << " (vanilla) S = \n";
+    for (const auto &s : S)
+        std::cout << "    " << s.first << ": "
+                  << PrintRange(s.second) << std::endl;
+
+    // greedily pick the largest zero-mask and remove them from chunks until
+    // reaches limits
+    std::cout << "\nSubdivide chunks starting from the largest zero part ...\n";
+    std::sort(Z.begin(), Z.end(),
+              [](const Eigen::Vector2d &a, const Eigen::Vector2d &b)
+              {return (a[1]-a[0]) > (b[1]-b[0]);});
+
+    std::cout << " sorted Z = \n";
+    for (const auto &z : Z)
+        std::cout << "    " << z[1]-z[0] << ": " << PrintRange(z) << std::endl;
+
+    int i = S.size();
+    int largest_idx = 0;
+    while (i < param->N_maxc && largest_idx < Z.size())
+    {
+        const auto &z_q = Z.at(largest_idx);
+        ++largest_idx;
+        if (z_q[1]-z_q[0] < param->L_z)
+            break;
+        std::vector<Eigen::Vector2d> inter;
+        std::vector<Eigen::Vector2d> z_qs = {z_q};
+        std::map<int, Eigen::Vector2d> S_freeze = S;
+        for (const auto &s : S_freeze)
+        {
+            Intersect(s.second, z_qs, inter);
+            for (const Eigen::Vector2d z : inter)
+            {
+                if (z[1]-z[0] > param->L_z)
+                {
+                    assert(S.find(i) == S.end());
+                    S[i] = {S_freeze[s.first][0], z[0]};
+                    ++i;
+                    assert(S.find(i) == S.end());
+                    S[i] = {z[1], S_freeze[s.first][1]};
+                    ++i;
+                    S.erase(s.first);
+                }
+            }
+        }
+    }
+
+    std::cout << " S = \n";
+    for (const auto &s : S)
+        std::cout << "    " << s.first << ": "
+                  << PrintRange(s.second) << std::endl;
+}
+
 //##############################################################################

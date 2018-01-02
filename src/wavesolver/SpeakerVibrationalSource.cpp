@@ -198,6 +198,20 @@ EarliestEventTime(const REAL startTime) const
         ++i;
     return _speakerDataStartTime + (REAL)i * _speakerDataSampleRate;
 }
+//##############################################################################
+//##############################################################################
+bool SpeakerVibrationalSource::
+IsZero(const REAL t,
+       const bool checkBound,
+       const Vector3d &minBound,
+       const Vector3d &maxBound) const
+{
+    if (t < _speakerDataStartTime ||
+        t > _speakerData.size()*_speakerDataSampleRate)
+        return true;
+    const int idx = (int)((t - _speakerDataStartTime)/_speakerDataSampleRate);
+    return fabs(_speakerData.at(idx)) < _speakerDataThreshold;
+}
 
 //##############################################################################
 //##############################################################################

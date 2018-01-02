@@ -71,13 +71,16 @@ public:
     inline const auto &GetActiveSimUnits(){return _simUnits;}
     std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> GetSolverBBoxs();
     //
-    void Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks);
+    void Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks=0);
     void UpdateObjectState(const REAL &time);
     bool StepWorld();
     bool CheckSimUnitBoundaries();
     void PreviewStepping(const uint &previewSpeed);
     void ResetStartTime(const REAL &startTime);
     void ClearAllSources();
+
+    // time-parallelization stuff
+    void RunChunksAnalysis(const ChunkPartitionParam_Ptr &param);
 };
 using SimWorld_UPtr = std::unique_ptr<SimWorld>;
 

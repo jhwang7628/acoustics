@@ -58,6 +58,10 @@ class SpeakerVibrationalSource : public VibrationalSource
                                           const Vector3d &normal,
                                           const REAL &time);
         virtual REAL EarliestEventTime(const REAL startTime) const;
+        virtual bool IsZero(const REAL t,
+                            const bool checkBound = false,
+                            const Vector3d &minBound = Vector3d(),
+                            const Vector3d &maxBound = Vector3d()) const;
         ///// debug /////
         void PrintHandlesTotalArea();
 };
