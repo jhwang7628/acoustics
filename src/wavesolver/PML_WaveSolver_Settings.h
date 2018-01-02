@@ -67,7 +67,7 @@ struct PML_WaveSolver_Settings
     std::map<std::string, KinematicsMetadata> objKinematicsMetadata; 
     bool            onlyObjSequence = false; 
 
-    bool            fastForwardToEarliestImpact;  
+    bool            adaptiveStartTime;  
     REAL            fastForwardToEventTime; // in effect only if fastForwardToEarliestImpact = false
 
     // time parallelization 

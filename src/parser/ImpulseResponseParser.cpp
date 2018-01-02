@@ -445,15 +445,16 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->PML_strength       = queryRequiredReal(solverNode, "PML_strength"); 
 
     // Optional settings
-    settings->alpha                 =  queryOptionalReal(solverNode, "air_viscosity_alpha", 0.0); 
-    if (settings->alpha > 0.0) settings->useAirViscosity = true; 
-    settings->useMesh               = (queryOptionalInt(solverNode, "use_mesh", "1")==0) ? false : true; 
-    settings->useGhostCell          = (queryOptionalInt(solverNode, "use_ghost_cell", "1")==1) ? true : false; 
-    settings->validateUsingFBem     = (queryOptionalInt(solverNode, "validate_using_fbem", "0")==1) ? true : false; 
-    settings->boundaryConditionPreset = (queryOptionalInt(solverNode, "boundary_condition_preset", "0")); 
-    settings->fastForwardToEarliestImpact = (queryOptionalInt(solverNode, "fast_forward_to_earliest_impact", "0")==1) ? true : false; 
-    settings->fastForwardToEventTime  = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0); 
-    const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling", "rasterize");
+    settings->alpha                    = queryOptionalReal(solverNode, "air_viscosity_alpha"       , 0.0        ); 
+    settings->useMesh                  = queryOptionalBool(solverNode, "use_mesh"                  , "1"        ); 
+    settings->useGhostCell             = queryOptionalBool(solverNode, "use_ghost_cell"            , "1"        ); 
+    settings->validateUsingFBem        = queryOptionalBool(solverNode, "validate_using_fbem"       , "0"        ); 
+    settings->boundaryConditionPreset  = queryOptionalInt(solverNode, "boundary_condition_preset" , "0"         ); 
+    settings->fastForwardToEventTime   = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0        ); 
+    settings->adaptiveStartTime        = queryOptionalBool(solverNode, "adapative_start_time"      , "1"        );
+    const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling"         , "rasterize");
+    if (settings->alpha > 0.0) 
+        settings->useAirViscosity = true; 
     if (boundaryHandling.compare("rasterize")==0)
         settings->boundaryHandlingType = PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE;
     else if (boundaryHandling.compare("fully_coupled")==0)

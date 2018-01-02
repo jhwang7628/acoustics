@@ -6,7 +6,7 @@
 #include <macros.h>
 //#define DEBUG_HARMONIC_SOURCE
 // uncomment this if you want the Modal ODEs to jump directly to the start time
-//    without the effects of earlier impulses
+// without the effects of earlier impulses
 //#define JUMP_MODAL_ODES_TO_START
 
 
@@ -443,12 +443,7 @@ InitializeSolver(const BoundingBox &solverBox,
     //_SetBoundaryConditions();
     _SetPressureSources();
 
-    REAL startTime = 0.0; 
-    // if no pressure sources found, get the earliest impact event and reset/shift all solver time to that event
-    if (!_sceneObjects->HasExternalPressureSources() && settings->fastForwardToEarliestImpact)
-        startTime = _sceneObjects->GetEarliestImpactEvent() - settings->timeStepSize; 
-    else 
-        startTime = settings->fastForwardToEventTime; 
+    const REAL startTime = settings->fastForwardToEventTime;  // default: 0
     ResetStartTime(startTime);
 
     // save settings

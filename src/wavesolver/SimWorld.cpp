@@ -92,10 +92,16 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     REAL startTime = _simulatorSettings->fastForwardToEventTime;
     for( int i = 0; i < timeStepsPerChunk * _simulatorSettings->indTimeChunks; i++ )
         startTime += _simulatorSettings->timeStepSize;
-
     _simulatorSettings->numberTimeSteps /= _simulatorSettings->numTimeChunks;
 
-    // TODO: Debug this overlap time thing.
+    // TODO adaptive start time
+    if (_simulatorSettings->adaptiveStartTime)
+    {
+        const REAL firstEventTime = _objectCollections->GetEarliestEventTime(startTime); 
+        while (startTime < firstEventTime)
+            startTime += _simulatorSettings->timeStepSize; 
+    }
+
     if( _simulatorSettings->timeParallel )
     {
         // This is the old logic for calculating the stop Boundary Time:
@@ -230,6 +236,23 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
     AudioOutput::instance()->SetBufferSize(N_listen); 
     AudioOutput::instance()->OpenStream(std::string(buffer)); 
+
+    // write start time
+    {
+        filename = "start_time";
+        if (_simulatorSettings->timeParallel)
+        {
+            snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks, 
+                     filename.c_str());
+            filename = std::string(buffer);
+        }
+        snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
+                 filename.c_str()); 
+        std::ofstream stream(buffer); 
+        if (stream)
+            stream << std::setprecision(18) << std::fixed
+                   << _state.time << std::endl; 
+    }
 }
 
 //##############################################################################
