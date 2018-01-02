@@ -130,6 +130,7 @@ class FDTD_Objects
         bool ReflectAgainstAllBoundaries(const int &startObjectID, const Vector3d &originalPoint, const REAL &time, Vector3d &reflectedPoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &accumulatedBoundaryConditionValue, const REAL &density, const int &maxIteration=1); 
         REAL AdvanceAllModalODESolvers(const int &N_steps); 
         REAL GetEarliestImpactEvent();
+        REAL GetEarliestEventTime(const REAL &startTime) const;
         void SetObjectStates(const REAL time); 
         bool UpdateSourceTimes(const REAL time); 
         void InitializeAnimator(const std::map<std::string, KinematicsMetadata> &objKinFiles); 

@@ -23,6 +23,7 @@ class ModalVibrationalSource : public VibrationalSource
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        virtual REAL EarliestEventTime(const REAL startTime) const; 
 };
 
 #endif

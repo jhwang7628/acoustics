@@ -145,6 +145,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         bool FindImageFreshCell(const Vector3d &originalPoint, Vector3d &imagePoint, Vector3d &boundaryPoint, Vector3d &erectedNormal, REAL &distanceTravelled);
         void SetRigidBodyTransform(const Point3d &newCOM, const Quaternion<REAL> &quaternion); 
         Vector3d MeshCentroid(); 
+        REAL GetEarliestEventTime(const REAL &startTime) const;
 
         void DisableEvals() { _disableEvals = true; }
         void EnableEvals() { _disableEvals = false; }

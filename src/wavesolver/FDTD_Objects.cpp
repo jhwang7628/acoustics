@@ -467,6 +467,19 @@ GetEarliestImpactEvent()
 }
 
 //##############################################################################
+//##############################################################################
+REAL FDTD_Objects::
+GetEarliestEventTime(const REAL &startTime) const
+{
+    REAL t = std::numeric_limits<REAL>::max(); 
+    for (const auto &m : _rigidObjects)
+    {
+        t = std::min(t, m.second->GetEarliestEventTime(startTime)); 
+    }
+    return t;
+}
+
+//##############################################################################
 // Function SetObjectStates
 //##############################################################################
 void FDTD_Objects::

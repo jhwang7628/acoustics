@@ -21,11 +21,14 @@ class SpeakerVibrationalSource : public VibrationalSource
     private: 
         std::string       _speakerWavFile; 
         std::vector<REAL> _speakerData;
+        std::vector<char> _speakerDataMask;
         REAL              _speakerDataSampleRate; 
+        REAL              _speakerDataStartTime = 0.0; 
         std::unordered_set<int> _handles; 
-        REAL              _time = 0.0;
         std::queue<DataStep> _objSeqData;
         REAL                 _objSeqSampleRate; 
+        // keep this low, user should provide proper mask
+        const REAL        _speakerDataThreshold = 1E-15;
 
     public:
         SpeakerVibrationalSource() = default;
@@ -55,6 +58,7 @@ class SpeakerVibrationalSource : public VibrationalSource
         virtual REAL EvaluateDisplacement(const Vector3d &position, 
                                           const Vector3d &normal, 
                                           const REAL &time); 
+        virtual REAL EarliestEventTime(const REAL startTime) const; 
         ///// debug /////
         void PrintHandlesTotalArea(); 
 };

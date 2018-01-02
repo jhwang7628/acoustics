@@ -110,10 +110,7 @@ bool SpeakerVibrationalSource::
 UpdateTime(const REAL time) 
 {
     if (_objSeqData.empty())
-    {
-        _time = time; 
         return false; 
-    }
 
     bool changed = false; 
     DataStep step = _objSeqData.front(); 
@@ -133,7 +130,6 @@ UpdateTime(const REAL time)
         Initialize(_speakerWavFile, step.handles); 
     }
         
-    _time = time; 
     return changed; 
 }
 
@@ -164,7 +160,7 @@ Evaluate(const int &vertexID, const REAL &time)
     REAL a = 0.0; 
     if (_handles.find(vertexID) != _handles.end())
     {
-        const int idx = time/_speakerDataSampleRate; 
+        const int idx = (time - _speakerDataStartTime)/_speakerDataSampleRate; 
         if (idx >= 0 && idx < _speakerData.size())
             a = _speakerData.at(idx);
     }
@@ -189,6 +185,18 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
 {
     throw std::runtime_error("**ERROR** not implemented"); 
     return 0.0;
+}
+
+//##############################################################################
+//##############################################################################
+REAL SpeakerVibrationalSource::
+EarliestEventTime(const REAL startTime) const
+{
+    int i = (startTime - _speakerDataStartTime)/_speakerDataSampleRate; 
+    while(i<_speakerData.size() && 
+          fabs(_speakerData.at(i))<_speakerDataThreshold) 
+        ++i; 
+    return _speakerDataStartTime + (REAL)i * _speakerDataSampleRate; 
 }
 
 //##############################################################################

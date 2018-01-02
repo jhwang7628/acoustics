@@ -160,3 +160,11 @@ EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, con
 
     return p; 
 }
+
+//##############################################################################
+//##############################################################################
+REAL AccelerationNoiseVibrationalSource::
+EarliestEventTime(const REAL startTime) const
+{
+    return _modalObjectOwner->GetFirstImpulseTime(startTime); 
+}

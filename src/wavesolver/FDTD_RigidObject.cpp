@@ -557,6 +557,19 @@ MeshCentroid()
 
 //##############################################################################
 //##############################################################################
+REAL FDTD_RigidObject::
+GetEarliestEventTime(const REAL &startTime) const
+{
+    REAL t = std::numeric_limits<REAL>::max(); 
+    for (const auto &src : _vibrationalSources)
+    {
+        t = std::min(t, src->EarliestEventTime(startTime));
+    }
+    return t; 
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_RigidObject::
 TestQueryDistance()
 {

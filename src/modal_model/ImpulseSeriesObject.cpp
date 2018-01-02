@@ -166,6 +166,19 @@ Filter()
 
 //##############################################################################
 //##############################################################################
+REAL ImpulseSeriesObject::
+GetFirstImpulseTime(const REAL &startTime) const
+{
+    if (startTime < _firstImpulseTime || _impulses.size()==0)
+        return _firstImpulseTime; 
+    REAL first = std::numeric_limits<REAL>::max();
+    for (const auto &ir : _impulses)
+        first = std::min(first, ir.timestamp);
+    return first; 
+}
+
+//##############################################################################
+//##############################################################################
 void ImpulseSeriesObject::
 PrintAllImpulses()
 {

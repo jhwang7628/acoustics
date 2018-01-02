@@ -43,6 +43,8 @@ class GaussianPressureSource : public PressureSource
         virtual REAL Evaluate(const int &vertexID, const Vector3d &vertexNormal, const REAL &time); 
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time);
         virtual void PrintSourceInfo(std::ostream &os) const; 
+        virtual REAL EarliestEventTime(const REAL startTime) const
+        {return std::max(startTime,_offsetTime);}
 };
 
 #endif 

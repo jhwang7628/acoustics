@@ -38,7 +38,7 @@ class ImpulseSeriesObject
         // impulse data can be read from modalImpulse.txt
         REAL                    _firstImpulseTime; 
         REAL                    _lastImpulseTime; 
-        std::vector<ImpactRecord> _impulses; 
+        std::vector<ImpactRecord> _impulses;
 
         // rigidbody configurations can be read from config file
         RigidsimConfigDataPtr   _rigidsimConfigData; 
@@ -48,7 +48,6 @@ class ImpulseSeriesObject
         ImpulseSeriesObject(const TriangleMeshPtr &meshPtr); 
 
         inline int N_Impulses(){return _impulses.size();}
-        inline REAL GetFirstImpulseTime(){return _firstImpulseTime;}
         inline void SetMesh(const TriangleMeshPtr &meshPtr){_objectMesh = meshPtr;}
         inline bool Initialized(){return _objectMesh!=nullptr && N_Impulses()!=0;}
         inline RigidsimConfigDataPtr GetRigidsimConfigData(){assert(_rigidsimConfigData); return _rigidsimConfigData;}
@@ -61,6 +60,8 @@ class ImpulseSeriesObject
         void GetImpulseWithinSupport(const REAL &timeStart, std::vector<ImpactRecord> &records); 
         void GetForces(const REAL &time, std::vector<ImpactRecord> &records); 
         void GetRangeOfImpulses(REAL &firstImpulseTime, REAL &lastImpulseTime);
+        REAL GetFirstImpulseTime()const{return _firstImpulseTime;}
+        REAL GetFirstImpulseTime(const REAL &startTime) const;
         void Filter(); 
 
         //// debug methods ////

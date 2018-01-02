@@ -20,6 +20,10 @@ class Source : public FDTD_MovableObject
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time)=0;
         virtual void UpdateBoundingBox(); 
         virtual void ResetUnionBox(); 
+        // earliest nonzero source evaluation time in [startTime, infty)
+        // default is no thresholding
+        virtual REAL EarliestEventTime(const REAL startTime) const
+        {return startTime;}
 };
 
 #endif 

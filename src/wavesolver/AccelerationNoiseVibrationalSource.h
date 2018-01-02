@@ -25,6 +25,7 @@ class AccelerationNoiseVibrationalSource : public VibrationalSource
         virtual Vector3d Evaluate(const int &vertexID, const REAL &time); 
         virtual REAL EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time); 
         virtual REAL EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time); 
+        virtual REAL EarliestEventTime(const REAL startTime) const; 
 
         ///// debug method ///// 
         virtual REAL EvaluatePressureAnalytical(const Vector3d &position, const Vector3d &normal, const REAL &time, const REAL &density, const REAL &soundSpeed, const REAL &sphereRadius); 

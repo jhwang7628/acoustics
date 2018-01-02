@@ -76,3 +76,11 @@ EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REA
         return 0.0;
     return _modalObjectOwner->SampleModalDisplacement(position, normal, time); 
 }
+
+//##############################################################################
+//##############################################################################
+REAL ModalVibrationalSource::
+EarliestEventTime(const REAL startTime) const
+{
+    return _modalObjectOwner->GetFirstImpulseTime(startTime); 
+}
