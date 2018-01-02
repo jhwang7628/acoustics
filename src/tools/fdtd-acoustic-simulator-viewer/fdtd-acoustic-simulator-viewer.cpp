@@ -6,6 +6,7 @@
 #include <ui/FDTD_AcousticSimulator_Viewer.h>
 #include <ui/FDTD_AcousticSimulator_Widget.h>
 #include <boost/program_options.hpp>
+#include <boost/timer/timer.hpp>
 
 const std::string STR_NOT_EXISTS = "NOT_EXIST";
 //##############################################################################
@@ -24,9 +25,9 @@ int main(int argc, char** argv)
     // enable multi-threading with Eigen: https://eigen.tuxfamily.org/dox/TopicMultiThreading.html
     Eigen::initParallel();
     //
-    std::string xmlFile, cnkFile;
+    std::string xmlFile;
     uint preview_speed;
-    bool nogui;
+    bool nogui, run_chunks_analysis;
     uint index = 0u;
     //
     namespace po = boost::program_options;
@@ -55,6 +56,7 @@ int main(int argc, char** argv)
         }
         // assign from parsed commands
         nogui = vm["nogui"].as<bool>();
+        run_chunks_analysis = vm["run_chunks_analysis"].as<bool>();
     }
     catch(std::exception &e)
     {
@@ -68,7 +70,7 @@ int main(int argc, char** argv)
     }
 
     // if run chunks analysis then skip solver
-    if (cnkFile != STR_NOT_EXISTS)
+    if (run_chunks_analysis)
     {
         Run_Chunks_Analysis(xmlFile);
         return 0;
@@ -110,9 +112,13 @@ int TUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTi
     SimWorld_UPtr world(new SimWorld());
     world->Build(parser, indTimeChunks);
     const int numberSteps = world->GetSolverSettings()->numberTimeSteps;
-    for (int ii=0; ii<numberSteps; ++ii)
     {
-        world->StepWorld();
+        boost::timer::auto_cpu_timer timer("Run wall-clock time: %w sec\n");
+        for (int ii=0; ii<numberSteps; ++ii)
+        {
+            world->StepWorld();
+        }
+        world->PostRunWrite();
     }
     return (numberSteps >=0 ? 0 : -1);
 }
@@ -129,7 +135,11 @@ void Run_Chunks_Analysis(const std::string &xmlFile)
     SimWorld_UPtr world(new SimWorld());
     world->Build(parser);
     auto param = parser->GetChunkPartitionParam();
-    world->RunChunksAnalysis(param);
+
+    // reset number of timestep from xml since world.Build changes it..
+    std::shared_ptr<PML_WaveSolver_Settings> set;
+    parser->GetSolverSettings(set);
+    world->RunChunksAnalysis(param, set->numberTimeSteps);
     std::cout << "==========================================================\n";
     std::cout << "==========================================================\n";
 }

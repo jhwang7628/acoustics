@@ -96,14 +96,6 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
         startTime += _simulatorSettings->timeStepSize;
     _simulatorSettings->numberTimeSteps /= _simulatorSettings->numTimeChunks;
 
-    // TODO adaptive start time
-    if (_simulatorSettings->adaptiveStartTime)
-    {
-        const REAL firstEventTime = _objectCollections->GetEarliestEventTime(startTime);
-        while (startTime < firstEventTime)
-            startTime += _simulatorSettings->timeStepSize;
-    }
-
     if( _simulatorSettings->timeParallel )
     {
         // This is the old logic for calculating the stop Boundary Time:
@@ -114,7 +106,61 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
             _simulatorSettings->stopBoundaryAccTime += _simulatorSettings->timeStepSize;
         _simulatorSettings->numberTimeSteps += _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
     }
+
+    // if use adaptive start time, read chunk partition file and overwrite uniform chunk setup
+    if (_simulatorSettings->adaptiveStartTime && _simulatorSettings->timeParallel)
+    {
+        auto acParam = parser->GetChunkPartitionParam();
+        std::ifstream stream(acParam->outFile.c_str());
+        if (stream)
+        {
+            std::string line;
+            while(std::getline(stream, line))
+                if (line.at(0) != '#')
+                    break;
+            std::istringstream iss(line);
+            uint N_c;
+            iss >> N_c;
+            assert(N_c > 0 && indTimeChunks < N_c);
+            REAL T[2];
+            for (uint ii=0; ii<N_c; ++ii)
+            {
+                std::getline(stream, line);
+                std::istringstream iss(line);
+                iss >> T[0] >> T[1];
+                if (ii == indTimeChunks)
+                    break;
+            }
+            // reset start and end time and number of steps
+            REAL T_r[2]; // rounded time range for this chunk, within this range shader is on
+            T_r[0] = _simulatorSettings->fastForwardToEventTime;
+            while (T_r[0] < T[0])
+                T_r[0] += _simulatorSettings->timeStepSize;
+            T_r[1] = T_r[0];
+            int steps = 0;
+            while (T_r[1] < T[1])
+            {
+                T_r[1] += _simulatorSettings->timeStepSize;
+                ++steps;
+            }
+            startTime = T_r[0];
+            _simulatorSettings->stopBoundaryAccTime = T_r[1];
+            _simulatorSettings->numberTimeSteps = steps
+                                                + _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
+
+            std::cout << "Shader ON time-range for chunk " << indTimeChunks
+                      << ": [" << T_r[0] << ", " << T_r[1] << "]\n";
+            std::cout << "Solve time-range: [" << T_r[0] << ", "
+                      << (REAL)_simulatorSettings->numberTimeSteps*_simulatorSettings->timeStepSize << "]\n";
+        }
+        else
+        {
+            std::cerr << "**WARNING** Adaptive start time is used but no partition config file found. Run chunk analysis first.\n";
+        }
+    }
+
     SetWorldTime(startTime);
+    _state.startTime = startTime;
     _simulatorSettings->fastForwardToEventTime = startTime;
 
     // read and initialize animator if data exists
@@ -241,7 +287,8 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
 
     // write start time
     {
-        filename = "start_time";
+        char buffer[512];
+        std::string filename = "start_time";
         if (_simulatorSettings->timeParallel)
         {
             snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks,
@@ -252,8 +299,11 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
                  filename.c_str());
         std::ofstream stream(buffer);
         if (stream)
+        {
             stream << std::setprecision(18) << std::fixed
-                   << _state.time << std::endl;
+                   << _state.startTime << std::endl;
+            stream.close();
+        }
     }
 }
 
@@ -604,17 +654,64 @@ ClearAllSources()
 }
 
 //##############################################################################
+// Function ClearAllSources
+//##############################################################################
+void SimWorld::
+PostRunWrite()
+{
+    // write chunk time range
+    {
+        char buffer[512];
+        std::string filename = "time_range";
+        if (_simulatorSettings->timeParallel)
+        {
+            snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks,
+                     filename.c_str());
+            filename = std::string(buffer);
+        }
+        snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(),
+                 filename.c_str());
+        std::ofstream stream(buffer);
+        if (stream)
+        {
+            stream << std::setprecision(18) << std::fixed
+                   << _state.startTime << std::endl
+                   << _simulatorSettings->stopBoundaryAccTime << std::endl
+                   << _state.time << std::endl;
+            stream.close();
+        }
+    }
+
+    // write a txt file to label it finish
+    {
+        char buffer[512];
+        std::string filename = "sim-done";
+        if (_simulatorSettings->timeParallel)
+        {
+            snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks,
+                     filename.c_str());
+            filename = std::string(buffer);
+        }
+        snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(),
+                 filename.c_str());
+        std::ofstream stream(buffer);
+        stream.close();
+    }
+}
+
+//##############################################################################
 // Function RunChunksAnalysis
 //##############################################################################
 void SimWorld::
-RunChunksAnalysis(const ChunkPartitionParam_Ptr &param)
+RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t)
 {
     std::cout << "\n\n==========================================================\n";
     std::cout << "Running chunks analysis ...\n";
     std::cout << "==========================================================\n";
     // first print some info
-    std::cout << " World start time: "  << _state.time << std::endl;
-    std::cout << " Number of objects: " << _objectCollections->N() << std::endl;
+    std::cout << " World start time     : " << _state.time             << "\n";
+    std::cout << " Number of total steps: " << N_t                     << "\n";
+    std::cout << " Number of objects    : " << _objectCollections->N() << "\n";
     const auto &objs = _objectCollections->GetRigidObjects();;
     for (const auto &m : objs)
     {
@@ -633,7 +730,6 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param)
     std::cout << "\nComputing zero masks ...\n";
     auto &ws = _simulatorSettings;
     const REAL dt = ws->timeStepSize;
-    const int N_t = ws->numberTimeSteps;
     std::vector<REAL> q;
     std::vector<Eigen::Vector2d> Z, Z_bar;
     const REAL T[2] = {_state.time,
@@ -781,6 +877,28 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param)
     for (const auto &s : S)
         std::cout << "    " << s.first << ": "
                   << PrintRange(s.second) << std::endl;
+
+    // writing it to output file
+    std::cout << "\nWriting chunks to file: " << param->outFile << std::endl;
+    {
+        std::ofstream stream(param->outFile.c_str());
+        if (stream)
+        {
+            stream << "#Chunk partitioning config file for wavesolver time-parallelization\n";
+            stream << "#Parameters:\n"
+                   << "#  adaptive = " << param->adaptive << "\n"
+                   << "#  L_z      = " << param->L_z      << "\n"
+                   << "#  N_0      = " << param->N_0      << "\n"
+                   << "#  N_maxc   = " << param->N_maxc   << "\n"
+                   << "#  out_file = " << param->outFile  << "\n"
+                   << "#\n"
+                   << "#Partitions:\n";
+            stream << S.size() << "\n";
+            for (const auto &s : S)
+                stream << std::setprecision(16) << std::fixed
+                       << s.second[0] << " " << s.second[1] << "\n";
+        }
+    }
 }
 
 //##############################################################################

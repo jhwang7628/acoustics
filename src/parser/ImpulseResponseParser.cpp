@@ -449,9 +449,9 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
     settings->useMesh                  = queryOptionalBool(solverNode, "use_mesh"                  , "1"        );
     settings->useGhostCell             = queryOptionalBool(solverNode, "use_ghost_cell"            , "1"        );
     settings->validateUsingFBem        = queryOptionalBool(solverNode, "validate_using_fbem"       , "0"        );
-    settings->boundaryConditionPreset  = queryOptionalInt(solverNode, "boundary_condition_preset" , "0"         );
+    settings->boundaryConditionPreset  = queryOptionalInt(solverNode, "boundary_condition_preset"  , "0"        );
     settings->fastForwardToEventTime   = queryOptionalReal(solverNode, "fast_forward_to_event_time", 0.0        );
-    settings->adaptiveStartTime        = queryOptionalBool(solverNode, "adapative_start_time"      , "1"        );
+    settings->adaptiveStartTime        = queryOptionalBool(solverNode, "adaptive_start_time"       , "0"        );
     const std::string boundaryHandling = queryOptionalAttr(solverNode, "boundary_handling"         , "rasterize");
     if (settings->alpha > 0.0)
         settings->useAirViscosity = true;

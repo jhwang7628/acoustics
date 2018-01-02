@@ -26,6 +26,7 @@ class SimWorld
 {
     struct State
     {
+        REAL startTime = 0.0;
         REAL time = 0.0;
     } _state;
 
@@ -78,9 +79,10 @@ public:
     void PreviewStepping(const uint &previewSpeed);
     void ResetStartTime(const REAL &startTime);
     void ClearAllSources();
+    void PostRunWrite();
 
     // time-parallelization stuff
-    void RunChunksAnalysis(const ChunkPartitionParam_Ptr &param);
+    void RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t);
 };
 using SimWorld_UPtr = std::unique_ptr<SimWorld>;
 
