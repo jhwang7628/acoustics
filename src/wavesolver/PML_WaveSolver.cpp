@@ -8,7 +8,7 @@
 #include <utils/IO.h>
 #include <utils/STLUtil.h>
 
-#include <wavesolver/FDTD_Objects.h> 
+#include <wavesolver/FDTD_Objects.h>
 #include "PML_WaveSolver.h"
 #include "utils/Evaluator.h"
 #include "utils/STL_Wrapper.h"
@@ -19,7 +19,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 REAL cellSize,
                                 const TriMesh &mesh,
                                 const DistanceField &distanceField,
-                                REAL waveSpeed, 
+                                REAL waveSpeed,
                                 REAL density,
                                 REAL distanceTolerance,
                                 bool useBoundary,
@@ -27,7 +27,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const char *outputFile,
                                 WriteCallback *callback,
                                 int subSteps, int N,
-                                REAL endTime) 
+                                REAL endTime)
     : _waveSpeed(waveSpeed),
       _density(density),
       _grid( bbox, cellSize, mesh, distanceField, distanceTolerance, N ),
@@ -41,7 +41,7 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
       _listeningPositions( listeningPositions ),
       _outputFile( outputFile ),
       _callback( callback )
-{ 
+{
     Reinitialize_PML_WaveSolver(useBoundary, 0.0);
 }
 
@@ -49,15 +49,15 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
                                 const BoundingBox &bbox, REAL cellSize,
                                 vector<const TriMesh *> &meshes,
                                 vector<const DistanceField *> &boundaryFields,
-                                REAL waveSpeed, 
-                                REAL density, 
+                                REAL waveSpeed,
+                                REAL density,
                                 REAL distanceTolerance,
                                 bool useBoundary,
                                 const Vector3Array *listeningPositions,
                                 const char *outputFile,
                                 WriteCallback *callback,
                                 int subSteps, int N,
-                                REAL endTime) 
+                                REAL endTime)
     : _waveSpeed(waveSpeed),
       _density(density),
       _grid( bbox, cellSize, meshes, boundaryFields, distanceTolerance, N ),
@@ -71,32 +71,32 @@ PML_WaveSolver::PML_WaveSolver( REAL timeStep,
       _listeningPositions( listeningPositions ),
       _outputFile( outputFile ),
       _callback( callback )
-{ 
+{
     Reinitialize_PML_WaveSolver(useBoundary, 0.0);
 }
 
-PML_WaveSolver::PML_WaveSolver(const BoundingBox &bbox, 
-                               PML_WaveSolver_Settings_Ptr settings, 
+PML_WaveSolver::PML_WaveSolver(const BoundingBox &bbox,
+                               PML_WaveSolver_Settings_Ptr settings,
                                std::shared_ptr<FDTD_Objects> objects)
-    : _waveSpeed(settings->soundSpeed), 
-      _density(settings->airDensity), 
+    : _waveSpeed(settings->soundSpeed),
+      _density(settings->airDensity),
       //_grid(BoundingBox(settings->cellSize,settings->cellDivisions,settings->domainCenter),settings,objects),
       _grid(bbox,settings,objects),
-      _cellSize(settings->cellSize), 
-      _subSteps(settings->timeSavePerStep), 
-      _endTime(settings->timeEnd), 
-      _timeStep(settings->timeStepSize), 
-      _timeIndex(0), 
+      _cellSize(settings->cellSize),
+      _subSteps(settings->timeSavePerStep),
+      _endTime(settings->timeEnd),
+      _timeStep(settings->timeStepSize),
+      _timeIndex(0),
       _N(1),
       _zSlice(-1),
-      _listeningPositions(nullptr ), 
-      _outputFile(nullptr), 
+      _listeningPositions(nullptr ),
+      _outputFile(nullptr),
       _callback(nullptr),
       _useGhostCellBoundary(settings->useGhostCell),
-      _objects(objects), 
+      _objects(objects),
       _waveSolverSettings(settings)
 {
-    Reinitialize_PML_WaveSolver(settings->useMesh, 0.0); 
+    Reinitialize_PML_WaveSolver(settings->useMesh, 0.0);
 }
 
 void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime)
@@ -112,26 +112,26 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     _v[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(),_N );
     _v[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(),_N );
 
-    //_pLastTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
-    //_pThisTimestep.resizeAndWipe( _grid.numPressureCells(), _N ); 
+    //_pLastTimestep.resizeAndWipe( _grid.numPressureCells(), _N );
+    //_pThisTimestep.resizeAndWipe( _grid.numPressureCells(), _N );
     //_vThisTimestep[ 0 ].resizeAndWipe( _grid.numVelocityCellsX(), _N );
     //_vThisTimestep[ 1 ].resizeAndWipe( _grid.numVelocityCellsY(), _N );
     //_vThisTimestep[ 2 ].resizeAndWipe( _grid.numVelocityCellsZ(), _N );
 
-    _pLaplacian[0].resizeAndWipe(_grid.numPressureCells(), _N); 
-    _pLaplacian[1].resizeAndWipe(_grid.numPressureCells(), _N); 
-    _pLaplacianInd = 1; 
-    _pCollocated[0].resizeAndWipe(_grid.numPressureCells(), _N); 
-    _pCollocated[1].resizeAndWipe(_grid.numPressureCells(), _N); 
-    _pCollocated[2].resizeAndWipe(_grid.numPressureCells(), _N); 
-    _pCollocatedInd = 1; 
+    _pLaplacian[0].resizeAndWipe(_grid.numPressureCells(), _N);
+    _pLaplacian[1].resizeAndWipe(_grid.numPressureCells(), _N);
+    _pLaplacianInd = 1;
+    _pCollocated[0].resizeAndWipe(_grid.numPressureCells(), _N);
+    _pCollocated[1].resizeAndWipe(_grid.numPressureCells(), _N);
+    _pCollocated[2].resizeAndWipe(_grid.numPressureCells(), _N);
+    _pCollocatedInd = 1;
 
     _grid.initFieldRasterized( useBoundary );
-    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true); 
+    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, useBoundary, true);
     _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false); // FIXME debug
     _grid.ResetCellHistory(true); // set all history to valid
-    _grid.classifyCells_FAST(_pCollocated, false); 
-    _grid.ClearGhostCellPreviousTriangles(); 
+    _grid.classifyCells_FAST(_pCollocated, false);
+    _grid.ClearGhostCellPreviousTriangles();
 
     //if ( _listeningPositions )
     //{
@@ -142,26 +142,26 @@ void PML_WaveSolver::Reinitialize_PML_WaveSolver(const bool &useBoundary, const 
     //}
 
     _listenerOutput.resizeAndWipe( _N );
-    _sourceEvaluator = nullptr; 
+    _sourceEvaluator = nullptr;
 }
 
 int PML_WaveSolver::numVelocityCells(const int &dim) const
-{ 
-    if (dim==0) 
-        return _grid.numVelocityCellsX(); 
-    else if (dim==1) 
-        return _grid.numVelocityCellsY(); 
-    else if (dim==2) 
-        return _grid.numVelocityCellsZ(); 
-    else 
-        throw std::runtime_error("**ERROR** dimension for velocity cells out of bounds"); 
-} 
+{
+    if (dim==0)
+        return _grid.numVelocityCellsX();
+    else if (dim==1)
+        return _grid.numVelocityCellsY();
+    else if (dim==2)
+        return _grid.numVelocityCellsZ();
+    else
+        throw std::runtime_error("**ERROR** dimension for velocity cells out of bounds");
+}
 
 void PML_WaveSolver::SetGhostCellBoundary(const bool &isOn)
-{ 
-    _useGhostCellBoundary = isOn; 
-    _grid.SetGhostCellBoundary(isOn); 
-} 
+{
+    _useGhostCellBoundary = isOn;
+    _grid.SetGhostCellBoundary(isOn);
+}
 
 // not used anymore, see Reinitialize_PML_WaveSolver
 void PML_WaveSolver::initSystem( REAL startTime )
@@ -180,66 +180,66 @@ void PML_WaveSolver::initSystem( REAL startTime )
 void PML_WaveSolver::initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval )
 {
 
-    if ( NULL == ic_eval ) 
+    if ( NULL == ic_eval )
     {
-        cout << "**WARNING** Initial condition evaluator not set! " << endl; 
-        return; 
+        cout << "**WARNING** Initial condition evaluator not set! " << endl;
+        return;
     }
 
-    Timer<false> initTimer; 
+    Timer<false> initTimer;
     initTimer.start();
 
     _currentTime = startTime;
     _timeIndex = 0;
 
-    initSystem( startTime ); 
+    initSystem( startTime );
 
-    const int N_pcell = _grid.numPressureCells(); 
+    const int N_pcell = _grid.numPressureCells();
 
     // If want to use smooth Gaussian initialization
-    for (int ii=0; ii<N_pcell; ii++) 
+    for (int ii=0; ii<N_pcell; ii++)
     {
-        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii ); 
-        _pFull(ii, 0) = ( *ic_eval )( fieldPosition ); 
+        const Vector3d fieldPosition = _grid.pressureFieldPosition( ii );
+        _pFull(ii, 0) = ( *ic_eval )( fieldPosition );
     }
 
-    initTimer.pause(); 
-    printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed()); 
+    initTimer.pause();
+    printf("Initialize system with ICs takes %f s.\n", initTimer.elapsed());
 }
 
-void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data) 
+void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data)
 {
-    const int N = listeningPoints.size(); 
-    if (N==0) return; 
+    const int N = listeningPoints.size();
+    if (N==0) return;
 
-    _writeTimer.start(); 
-    data.resize(N, 1); 
+    _writeTimer.start();
+    data.resize(N, 1);
 #ifdef USE_OPENMP
 #pragma omp parallel for schedule(static) default(shared)
 #endif
-    for (int pt_idx=0; pt_idx<N; ++pt_idx) 
+    for (int pt_idx=0; pt_idx<N; ++pt_idx)
     {
-        IntArray neighbours; 
-        T_MLS mls; 
-        std::vector<MLSPoint, P_ALLOCATOR> points; 
-        std::vector<MLSVal, V_ALLOCATOR> attributes; 
+        IntArray neighbours;
+        T_MLS mls;
+        std::vector<MLSPoint, P_ALLOCATOR> points;
+        std::vector<MLSVal, V_ALLOCATOR> attributes;
         const Vector3d &point = listeningPoints.at(pt_idx);
-        const MLSPoint evalPt = Conversions::ToEigen(point); 
-        field.enclosingNeighbours(point, neighbours); 
+        const MLSPoint evalPt = Conversions::ToEigen(point);
+        field.enclosingNeighbours(point, neighbours);
         for (IntArray::iterator it=neighbours.begin(); it!=neighbours.end();)
         {
             if (std::isnan(scalar(*it, 0)))
             {
-                it = neighbours.erase(it); 
+                it = neighbours.erase(it);
             }
             else
             {
-                const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it)); 
-                MLSVal val; 
+                const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it));
+                MLSVal val;
                 val << scalar(*it, 0);
-                points.push_back(pt); 
-                attributes.push_back(val); 
-                ++it; 
+                points.push_back(pt);
+                attributes.push_back(val);
+                ++it;
             }
         }
         if (neighbours.size() < 1) // this shouldn't happen
@@ -249,14 +249,14 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
         else if (neighbours.size() < 4)  // get nearest neighbours if linear MLS not possible
         {
             int best = -1;
-            REAL bestDistance = std::numeric_limits<REAL>::max(); 
+            REAL bestDistance = std::numeric_limits<REAL>::max();
             for (auto &nind : neighbours)
             {
-                const REAL distance = (field.cellPosition(nind) - point).lengthSqr(); 
+                const REAL distance = (field.cellPosition(nind) - point).lengthSqr();
                 if (distance < bestDistance)
                 {
-                    best = nind; 
-                    bestDistance = distance; 
+                    best = nind;
+                    bestDistance = distance;
                 }
             }
             assert(best != -1);
@@ -264,149 +264,149 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
         }
         else // linear MLS
         {
-            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes); 
+            const MLSVal mlsVal = mls.lookup(evalPt, points, attributes);
             data(pt_idx, 0) = mlsVal(0, 0);
         }
     }
-    _writeTimer.pause(); 
+    _writeTimer.pause();
 }
 
 void PML_WaveSolver::FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim)
 {
 #if 0
-    const int N = listeningPoints.size(); 
-    if (N==0) return; 
+    const int N = listeningPoints.size();
+    if (N==0) return;
 
-    _writeTimer.start(); 
-    const ScalarField &field = _grid.pressureField(); 
-    const int N_resultDimension = 1; 
-    data.resize(N, N_resultDimension); 
-    VECTOR output(N_resultDimension); 
-    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox(); 
-    for (int ii=0; ii<N; ++ii) 
+    _writeTimer.start();
+    const ScalarField &field = _grid.pressureField();
+    const int N_resultDimension = 1;
+    data.resize(N, N_resultDimension);
+    VECTOR output(N_resultDimension);
+    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox();
+    for (int ii=0; ii<N; ++ii)
     {
         if (!pressureBoundingBox.isInside(listeningPoints.at(ii)))
         {
-            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n"; 
-            continue; 
+            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n";
+            continue;
         }
 
-        if (dim == -1) 
+        if (dim == -1)
 #ifdef USE_COLLOCATED
-            field.interpolateVectorField(listeningPoints.at(ii), _pCollocated[_pCollocatedInd], output); 
+            field.interpolateVectorField(listeningPoints.at(ii), _pCollocated[_pCollocatedInd], output);
 #else
-            field.interpolateVectorField(listeningPoints.at(ii), _pFull, output); 
+            field.interpolateVectorField(listeningPoints.at(ii), _pFull, output);
 #endif
         else if (dim == 0)
-            field.interpolateVectorField(listeningPoints.at(ii), _p[0], output); 
+            field.interpolateVectorField(listeningPoints.at(ii), _p[0], output);
         else if (dim == 1)
-            field.interpolateVectorField(listeningPoints.at(ii), _p[1], output); 
+            field.interpolateVectorField(listeningPoints.at(ii), _p[1], output);
         else if (dim == 2)
-            field.interpolateVectorField(listeningPoints.at(ii), _p[2], output); 
+            field.interpolateVectorField(listeningPoints.at(ii), _p[2], output);
 
-        for (size_t jj=0; jj<N_resultDimension; ++jj) 
+        for (size_t jj=0; jj<N_resultDimension; ++jj)
             if (std::isnan(output(jj)))
-                throw std::runtime_error("**ERROR** interpolation outputs nan"); 
+                throw std::runtime_error("**ERROR** interpolation outputs nan");
             else
                 data(ii, jj) = output(jj);
     }
-    _writeTimer.pause(); 
+    _writeTimer.pause();
 #else
-    if (dim == -1) 
+    if (dim == -1)
 #ifdef USE_COLLOCATED
-        FetchScalarData(_pCollocated[_pCollocatedInd], _grid.pressureField(), listeningPoints, data); 
+        FetchScalarData(_pCollocated[_pCollocatedInd], _grid.pressureField(), listeningPoints, data);
 #else
-        FetchScalarData(_pFull, _grid.pressureField(), listeningPoints, data); 
+        FetchScalarData(_pFull, _grid.pressureField(), listeningPoints, data);
 #endif
     else if (dim == 0)
-        FetchScalarData(_p[0], _grid.pressureField(), listeningPoints, data); 
+        FetchScalarData(_p[0], _grid.pressureField(), listeningPoints, data);
     else if (dim == 1)
-        FetchScalarData(_p[1], _grid.pressureField(), listeningPoints, data); 
+        FetchScalarData(_p[1], _grid.pressureField(), listeningPoints, data);
     else if (dim == 2)
-        FetchScalarData(_p[2], _grid.pressureField(), listeningPoints, data); 
-#endif 
+        FetchScalarData(_p[2], _grid.pressureField(), listeningPoints, data);
+#endif
 }
 
 void PML_WaveSolver::FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data)
 {
-    const int N = listeningPoints.size(); 
-    if (N==0) return; 
+    const int N = listeningPoints.size();
+    if (N==0) return;
 
-    _writeTimer.start(); 
-    const ScalarField &field = _grid.velocityField(dimension); 
+    _writeTimer.start();
+    const ScalarField &field = _grid.velocityField(dimension);
     MATRIX &v = _v[dimension];
-    const int N_resultDimension = 1; 
-    data.resize(N, N_resultDimension); 
-    VECTOR output(N_resultDimension); 
-    BoundingBox velocityBoundingBox = _grid.VelocityBoundingBox(dimension); 
-    for (int ii=0; ii<N; ++ii) 
+    const int N_resultDimension = 1;
+    data.resize(N, N_resultDimension);
+    VECTOR output(N_resultDimension);
+    BoundingBox velocityBoundingBox = _grid.VelocityBoundingBox(dimension);
+    for (int ii=0; ii<N; ++ii)
     {
         if (!velocityBoundingBox.isInside(listeningPoints.at(ii)))
-            continue; 
+            continue;
 
-        field.interpolateVectorField(listeningPoints.at(ii), v, output); 
-        for (size_t jj=0; jj<N_resultDimension; ++jj) 
+        field.interpolateVectorField(listeningPoints.at(ii), v, output);
+        for (size_t jj=0; jj<N_resultDimension; ++jj)
             data(ii, jj) = output(jj);
     }
-    _writeTimer.pause(); 
+    _writeTimer.pause();
 }
 
 // get neareset neighbour cell type
 void PML_WaveSolver::FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const BoundingBox *sceneBox)
 {
-    const int N = listeningPoints.size(); 
-    if (N==0) return; 
+    const int N = listeningPoints.size();
+    if (N==0) return;
 
-    const ScalarField &field = _grid.pressureField(); 
-    const int N_resultDimension = 1; 
-    data.resize(N, N_resultDimension); 
+    const ScalarField &field = _grid.pressureField();
+    const int N_resultDimension = 1;
+    data.resize(N, N_resultDimension);
 
-    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox(); 
-    auto & grid = GetGrid(); 
-    for (int ii=0; ii<N; ++ii) 
+    BoundingBox pressureBoundingBox = _grid.PressureBoundingBox();
+    auto & grid = GetGrid();
+    for (int ii=0; ii<N; ++ii)
     {
         if (!pressureBoundingBox.isInside(listeningPoints.at(ii)))
         {
-            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n"; 
-            continue; 
+            std::cout << "**WARNING** Listening position " << listeningPoints.at(ii) << " is out of bounds. Skipping\n";
+            continue;
         }
 
         // grab the neighbour indices
-        IntArray neighbours; 
-        field.enclosingNeighbours(listeningPoints.at(ii), neighbours); 
+        IntArray neighbours;
+        field.enclosingNeighbours(listeningPoints.at(ii), neighbours);
 
         // find cell types
-        REAL distance = std::numeric_limits<REAL>::max(); 
-        int index = -1; 
+        REAL distance = std::numeric_limits<REAL>::max();
+        int index = -1;
         for (size_t nei_idx=0; nei_idx<neighbours.size(); ++nei_idx)
         {
             const REAL currentDistance = (field.cellPosition(neighbours.at(nei_idx)) - listeningPoints.at(ii)).lengthSqr();
             if ( currentDistance < distance)
             {
-                distance = currentDistance; 
-                index = neighbours.at(nei_idx); 
+                distance = currentDistance;
+                index = neighbours.at(nei_idx);
             }
         }
-        data(ii, 0) = grid.PressureCellType(index, sceneBox); 
+        data(ii, 0) = grid.PressureCellType(index, sceneBox);
     }
 }
 
-void PML_WaveSolver::FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const 
+void PML_WaveSolver::FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const
 {
-#ifdef USE_COLLOCATED 
-    _grid.GetCell(cellIndex, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, cell); 
-    cell.laplacian = _pLaplacian[_pLaplacianInd](cell.index, 0); 
+#ifdef USE_COLLOCATED
+    _grid.GetCell(cellIndex, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, cell);
+    cell.laplacian = _pLaplacian[_pLaplacianInd](cell.index, 0);
 #else
-    _grid.GetCell(cellIndex, _p, _pFull, _pGhostCellsFull, _v, cell); 
+    _grid.GetCell(cellIndex, _p, _pFull, _pGhostCellsFull, _v, cell);
 #endif
 }
 
 void PML_WaveSolver::SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const
 {
-#ifdef USE_COLLOCATED 
-    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, sampledCells); 
+#ifdef USE_COLLOCATED
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pCollocated[_pCollocatedInd], _pGhostCellsFull, _v, sampledCells);
 #else
-    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _pGhostCellsFull, _v, sampledCells); 
+    _grid.SampleAxisAlignedSlice(dim, offset, _p, _pFull, _pGhostCellsFull, _v, sampledCells);
 #endif
 }
 
@@ -415,39 +415,39 @@ void PML_WaveSolver::GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) con
     const BoundingBox bbox = _grid.PressureBoundingBox();
     for (int d=0; d<3; ++d)
     {
-        minBound[d] = bbox.axismin(d); 
-        maxBound[d] = bbox.axismax(d); 
+        minBound[d] = bbox.axismin(d);
+        maxBound[d] = bbox.axismax(d);
     }
 }
 
 const BoundingBox PML_WaveSolver::GetSolverBBox() const
 {
-    return _grid.PressureBoundingBox(); 
+    return _grid.PressureBoundingBox();
 }
 
 #ifdef USE_COLLOCATED
 
 void PML_WaveSolver::ScheduleMoveBox(const Tuple3i &offset)
 {
-    _boxMoveControl.Push(offset); 
+    _boxMoveControl.Push(offset);
 }
 
 void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
 {
-    const auto &field = _grid.pressureField(); 
-    const Tuple3i &div = field.cellDivisions(); 
-    const int &d0 =  dim; 
-    const int  d1 = (dim+1)%3; 
-    const int  d2 = (dim+2)%3; 
-    Tuple3i indices; 
+    const auto &field = _grid.pressureField();
+    const Tuple3i &div = field.cellDivisions();
+    const int &d0 =  dim;
+    const int  d1 = (dim+1)%3;
+    const int  d2 = (dim+2)%3;
+    Tuple3i indices;
     // clear data in i0
     for (int ii=0; ii<div[d1]; ++ii)
     for (int jj=0; jj<div[d2]; ++jj)
     {
-        indices[d0] = ind; 
+        indices[d0] = ind;
         indices[d1] = ii;
-        indices[d2] = jj; 
-        const int cell_idx = field.cellIndex(indices); 
+        indices[d2] = jj;
+        const int cell_idx = field.cellIndex(indices);
         for (int dd=0; dd<3; ++dd)
             _pCollocated[dd](cell_idx,0) = 0.0;
     }
@@ -455,24 +455,24 @@ void PML_WaveSolver::ClearCollocatedData(const int &dim, const int &ind)
 
 void PML_WaveSolver::FillBoundaryFreshCell(const int &dim, const int &ind)
 {
-    MATRIX &pm1 = _pCollocated[(_pCollocatedInd+2)%3]; 
-    MATRIX &pm0 = _pCollocated[ _pCollocatedInd     ]; 
-    MATRIX &pm2 = _pCollocated[(_pCollocatedInd+1)%3]; 
-    _grid.FillBoundaryFreshCellGrid(dim, ind, pm0, pm1); 
-    _grid.FillBoundaryFreshCellGrid(dim, ind, pm1, pm2); 
+    MATRIX &pm1 = _pCollocated[(_pCollocatedInd+2)%3];
+    MATRIX &pm0 = _pCollocated[ _pCollocatedInd     ];
+    MATRIX &pm2 = _pCollocated[(_pCollocatedInd+1)%3];
+    _grid.FillBoundaryFreshCellGrid(dim, ind, pm0, pm1);
+    _grid.FillBoundaryFreshCellGrid(dim, ind, pm1, pm2);
 }
 
 void PML_WaveSolver::GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind)
 {
     for (int dim=0; dim<3; ++dim)
     {
-        p_pml[dim] = _p[dim]; 
-        v_pml[dim] = _v[dim]; 
+        p_pml[dim] = _p[dim];
+        v_pml[dim] = _v[dim];
         p_collocated[dim] = _pCollocated[dim];
     }
-    p_pml_full = _pFull; 
+    p_pml_full = _pFull;
     p_gc = _pGhostCellsFull;
-    p_collocated_ind = _pCollocatedInd; 
+    p_collocated_ind = _pCollocatedInd;
 }
 #endif
 
@@ -480,34 +480,34 @@ void PML_WaveSolver::GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full
 bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 {
     _stepTimer.start();
-    bool restartStep = false; 
+    bool restartStep = false;
 
-    if (_timeIndex % N_restart == 0 && _timeIndex != 0) 
-        restartStep = true; 
+    if (_timeIndex % N_restart == 0 && _timeIndex != 0)
+        restartStep = true;
 
     if (_timeIndex % N_restart == N_restart - 1)  // need to cache the result for the next step, which is a restart step
     {
-        _pLastTimestep.parallelCopy(_pFull); 
+        _pLastTimestep.parallelCopy(_pFull);
     }
     else if (restartStep)  // cache the current step before stepping
     {
-        std::cout << " restart step\n"; 
-        _vThisTimestep[0].parallelCopy(_v[0]); 
-        _vThisTimestep[1].parallelCopy(_v[1]); 
-        _vThisTimestep[2].parallelCopy(_v[2]); 
-        _pThisTimestep.parallelCopy(_pFull); 
+        std::cout << " restart step\n";
+        _vThisTimestep[0].parallelCopy(_v[0]);
+        _vThisTimestep[1].parallelCopy(_v[1]);
+        _vThisTimestep[2].parallelCopy(_v[2]);
+        _pThisTimestep.parallelCopy(_pFull);
     }
 
     stepLeapfrog();  // now _pFull stores i+1 step pressure
 
-    if (restartStep) 
+    if (restartStep)
     {
-        _grid.SmoothFieldInplace(_pLastTimestep, _pThisTimestep, _pFull, 0.25, 0.5, 0.25); 
+        _grid.SmoothFieldInplace(_pLastTimestep, _pThisTimestep, _pFull, 0.25, 0.5, 0.25);
         // now the pressure at step i is smoothed, recover v and continue stepping
-        _v[0].parallelCopy(_vThisTimestep[0]); 
-        _v[1].parallelCopy(_vThisTimestep[1]); 
-        _v[2].parallelCopy(_vThisTimestep[2]); 
-        //stepLeapfrog(bcEvaluator); 
+        _v[0].parallelCopy(_vThisTimestep[0]);
+        _v[1].parallelCopy(_vThisTimestep[1]);
+        _v[2].parallelCopy(_vThisTimestep[2]);
+        //stepLeapfrog(bcEvaluator);
     }
 
     _timeIndex += 1;
@@ -528,14 +528,14 @@ bool PML_WaveSolver::stepSystemWithRestart(const int &N_restart)
 
 bool PML_WaveSolver::stepSystem(const BoundaryEvaluator &bcEvaluator)
 {
-    return false; 
+    return false;
 }
 
 bool PML_WaveSolver::stepSystem()
 {
     _stepTimer.start();
 #ifdef USE_COLLOCATED
-    stepCollocated(); 
+    stepCollocated();
 #else
     stepLeapfrog();
 #endif
@@ -551,7 +551,7 @@ bool PML_WaveSolver::stepSystem()
     printf( " - Velocity update     took %f sec\n", _gradientTimer.getMsPerCycle() );
     printf( " - Pressure update     took %f sec\n", _divergenceTimer.getMsPerCycle() );
 
-    if (_useGhostCellBoundary) 
+    if (_useGhostCellBoundary)
     {
         printf( " - Ghost-cell update   took %f sec\n",  _ghostCellTimer.getMsPerCycle() );
     }
@@ -568,10 +568,10 @@ bool PML_WaveSolver::stepSystemHalf(const int &flag)
     if (flag == 0) // step velocity
     {
         _grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);
         _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
@@ -584,7 +584,7 @@ bool PML_WaveSolver::stepSystemHalf(const int &flag)
         _grid.PML_pressureUpdate( _v[ 0 ], _p[ 0 ], _pFull, 0, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
         _grid.PML_pressureUpdate( _v[ 1 ], _p[ 1 ], _pFull, 1, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
         _grid.PML_pressureUpdate( _v[ 2 ], _p[ 2 ], _pFull, 2, _timeStep, _waveSpeed, _sourceEvaluator, _currentTime, _density );
-        _grid.UpdatePMLPressure(_p, _pFull); 
+        _grid.UpdatePMLPressure(_p, _pFull);
         _currentTime += _timeStep;
         _timeIndex += 1;
         if ( _endTime > 0.0 && _currentTime >= _endTime )
@@ -593,24 +593,24 @@ bool PML_WaveSolver::stepSystemHalf(const int &flag)
     return true;
 }
 
-void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) const 
+void PML_WaveSolver::vertexPressure( const Tuple3i &index, VECTOR &pressure ) const
 {
     if ( pressure.size() != _N )
         pressure.resizeAndWipe( _N );
 
 #ifdef USE_COLLOCATED
-    MATRIX::copy( pressure.data(), _pCollocated[_pCollocatedInd].data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
+    MATRIX::copy( pressure.data(), _pCollocated[_pCollocatedInd].data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N );
 #else
-    MATRIX::copy( pressure.data(), _pFull.data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N ); 
+    MATRIX::copy( pressure.data(), _pFull.data() + _grid.pressureFieldVertexIndex( index ) * _N, 1, _N );
 #endif
 }
 
-void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const 
+void PML_WaveSolver::vertexVelocity( const Tuple3i &index, const int &dim, VECTOR &velocity ) const
 {
     if ( velocity.size() != _N )
         velocity.resizeAndWipe( _N );
 
-    MATRIX::copy( velocity.data(), _v[dim].data() + _grid.velocityFieldVertexIndex( index, dim ) * _N, 1, _N ); 
+    MATRIX::copy( velocity.data(), _v[dim].data() + _grid.velocityFieldVertexIndex( index, dim ) * _N, 1, _N );
 }
 
 void PML_WaveSolver::writeWaveOutput() const
@@ -628,36 +628,36 @@ void PML_WaveSolver::MoveSimBox()
 {
     if (!_boxMoveControl.CanMove())
     {
-        _boxMoveControl.counter += 1; 
-        return; 
+        _boxMoveControl.counter += 1;
+        return;
     }
     std::cout << _boxMoveControl.queue.size() << std::endl;
-    const Tuple3i offset = _boxMoveControl.Pop(); 
+    const Tuple3i offset = _boxMoveControl.Pop();
     std::cout << offset << std::endl;
     _boxMoveControl.counter = 0;
-    auto &field = GetGrid().pressureField(); 
-    field.MoveCenter(offset); 
+    auto &field = GetGrid().pressureField();
+    field.MoveCenter(offset);
     _grid.velocityField(0).MoveCenter(offset);
-    _grid.velocityField(1).MoveCenter(offset); 
-    _grid.velocityField(2).MoveCenter(offset); 
-    _grid.initFieldRasterized(_waveSolverSettings->useMesh); 
-    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, 
-                               _v, _waveSolverSettings->useMesh, true); 
-    _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, 
+    _grid.velocityField(1).MoveCenter(offset);
+    _grid.velocityField(2).MoveCenter(offset);
+    _grid.initFieldRasterized(_waveSolverSettings->useMesh);
+    _grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells,
+                               _v, _waveSolverSettings->useMesh, true);
+    _grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells,
                           _v, _waveSolverSettings->useMesh, false);
     _grid.ResetCellHistory(true); // set all history to valid
-    _grid.ResetClassified(); 
-      
-    // clear/fill the new matrix elements. 
-    const Tuple3i &ind_origin = field.indexOffset(); 
-    const Tuple3i &div        = field.cellDivisions(); 
+    _grid.ResetClassified();
+
+    // clear/fill the new matrix elements.
+    const Tuple3i &ind_origin = field.indexOffset();
+    const Tuple3i &div        = field.cellDivisions();
     for (int dd=0; dd<3; ++dd)
     {
         // fill
         if (abs(offset[dd])==1)
         {
-            const int fillInd = (offset[dd]==1 ? div[dd]-1 : 0); 
-            FillBoundaryFreshCell(dd, fillInd); 
+            const int fillInd = (offset[dd]==1 ? div[dd]-1 : 0);
+            FillBoundaryFreshCell(dd, fillInd);
         }
     }
 }
@@ -665,44 +665,44 @@ void PML_WaveSolver::MoveSimBox()
 void PML_WaveSolver::stepLeapfrog()
 {
     // reclassify cells occupied by objects
-    _cellClassifyTimer.start(); 
+    _cellClassifyTimer.start();
     //_grid.classifyCellsDynamic(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, true);
     //_grid.classifyCellsDynamic_FAST(_pFull, _p, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-    _cellClassifyTimer.pause(); 
+    _cellClassifyTimer.pause();
 
     if (_useGhostCellBoundary)
     {
-        // interpolate fresh cells 
-        _freshCellTimer.start(); 
-        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        // interpolate fresh cells
+        _freshCellTimer.start();
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);
         _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
-        _freshCellTimer.pause(); 
-        
-        // update ghost cells 
-        _ghostCellTimer.start(); 
-        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density); 
-        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density); 
-        _grid.PML_pressureUpdateGhostCells_Coupled(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-        _ghostCellTimer.pause(); 
+        _freshCellTimer.pause();
+
+        // update ghost cells
+        _ghostCellTimer.start();
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[0], _pGhostCells[0], _timeStep, _waveSpeed, _currentTime, _density);
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[1], _pGhostCells[1], _timeStep, _waveSpeed, _currentTime, _density);
+        //_grid.PML_pressureUpdateGhostCells_Coupled(_p[2], _pGhostCells[2], _timeStep, _waveSpeed, _currentTime, _density);
+        _grid.PML_pressureUpdateGhostCells_Coupled(_pFull, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density);
+        _ghostCellTimer.pause();
     }
-    else 
+    else
     {
-        // interpolate fresh cells 
-        _freshCellTimer.start(); 
-        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);  
-        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);  
+        // interpolate fresh cells
+        _freshCellTimer.start();
+        _grid.InterpolateFreshPressureCell(_p[0], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[1], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_p[2], _timeStep, _currentTime, _density);
+        _grid.InterpolateFreshPressureCell(_pFull, _timeStep, _currentTime, _density);
         _grid.InterpolateFreshVelocityCell(_v[0], 0, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[1], 1, _timeStep, _currentTime);
         _grid.InterpolateFreshVelocityCell(_v[2], 2, _timeStep, _currentTime);
-        _freshCellTimer.pause(); 
+        _freshCellTimer.pause();
     }
 
     // Update velocity in each direction
@@ -721,7 +721,7 @@ void PML_WaveSolver::stepLeapfrog()
     _divergenceTimer.pause();
 
     _algebraTimer.start();
-    _grid.UpdatePMLPressure(_p, _pFull); 
+    _grid.UpdatePMLPressure(_p, _pFull);
     _algebraTimer.pause();
 
     _currentTime += _timeStep;
@@ -729,136 +729,136 @@ void PML_WaveSolver::stepLeapfrog()
 
 void PML_WaveSolver::stepCollocated()
 {
-    MATRIX &pLast   = _pCollocated[(_pCollocatedInd+2)%3]; 
-    MATRIX &pCurr   = _pCollocated[ _pCollocatedInd     ]; 
-    MATRIX &pNext   = _pCollocated[(_pCollocatedInd+1)%3]; 
-    MATRIX &lapLast = _pLaplacian [(_pLaplacianInd +1)%2]; 
-    MATRIX &lapCurr = _pLaplacian [ _pLaplacianInd      ]; 
+    MATRIX &pLast   = _pCollocated[(_pCollocatedInd+2)%3];
+    MATRIX &pCurr   = _pCollocated[ _pCollocatedInd     ];
+    MATRIX &pNext   = _pCollocated[(_pCollocatedInd+1)%3];
+    MATRIX &lapLast = _pLaplacian [(_pLaplacianInd +1)%2];
+    MATRIX &lapCurr = _pLaplacian [ _pLaplacianInd      ];
 
 #ifdef USE_FV
-    _cellClassifyTimer.start(); 
+    _cellClassifyTimer.start();
     //_grid.classifyCellsFV(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false); // FIXME debug
-    _cellClassifyTimer.pause(); 
+    _cellClassifyTimer.pause();
 
-    _ghostCellTimer.start(); 
+    _ghostCellTimer.start();
     _grid.UpdateGhostCells_FV(pCurr, _currentTime);
-    _ghostCellTimer.pause(); 
+    _ghostCellTimer.pause();
 
     _divergenceTimer.start();
-    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
-    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, lapCurr); 
-    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, lapCurr); 
-    _pCollocatedInd = (_pCollocatedInd + 1)%3; 
-    _pLaplacianInd = (_pLaplacianInd + 1)%2; 
+    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v);
+    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, lapCurr);
+    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, lapCurr);
+    _pCollocatedInd = (_pCollocatedInd + 1)%3;
+    _pLaplacianInd = (_pLaplacianInd + 1)%2;
     _divergenceTimer.pause();
 #else
     //_grid.PrintGhostCellTreeInfo();
     // reclassify cells occupied by objects
-    _cellClassifyTimer.start(); 
-    _grid.classifyCells_FAST(_pCollocated, false); 
+    _cellClassifyTimer.start();
+    _grid.classifyCells_FAST(_pCollocated, false);
     //_grid.classifyCellsDynamic_FAST(_pFull, _pCollocated, _pGhostCellsFull, _pGhostCells, _v, _waveSolverSettings->useMesh, false);
-    _cellClassifyTimer.pause(); 
-    _freshCellTimer.start(); 
-    _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);  
-    _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);  
-    _freshCellTimer.pause(); 
-    _ghostCellTimer.start(); 
-    //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-    _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density); 
-    _ghostCellTimer.pause(); 
+    _cellClassifyTimer.pause();
+    _freshCellTimer.start();
+    _grid.InterpolateFreshPressureCell(pLast, _timeStep, _currentTime, _density);
+    _grid.InterpolateFreshPressureCell(pCurr, _timeStep, _currentTime, _density);
+    _freshCellTimer.pause();
+    _ghostCellTimer.start();
+    //_grid.PML_pressureUpdateGhostCells_Coupled(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density);
+    _grid.PML_pressureUpdateGhostCells(pCurr, _pGhostCellsFull, _timeStep, _waveSpeed, _currentTime, _density);
+    _ghostCellTimer.pause();
 
     // Use the new velocity to update pressure
     _divergenceTimer.start();
-    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v); 
-    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, lapCurr); 
-    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, lapCurr, lapLast); 
-    _pCollocatedInd = (_pCollocatedInd + 1)%3; 
-    _pLaplacianInd = (_pLaplacianInd + 1)%2; 
+    _grid.PML_velocityUpdateCollocated(_currentTime, _p, pCurr, _v);
+    _grid.pressureFieldLaplacianGhostCell(pCurr, _pGhostCellsFull, lapCurr);
+    _grid.PML_pressureUpdateCollocated(_currentTime, _v, _p, pLast, pCurr, pNext, lapCurr, lapLast);
+    _pCollocatedInd = (_pCollocatedInd + 1)%3;
+    _pLaplacianInd = (_pLaplacianInd + 1)%2;
     _divergenceTimer.pause();
 #endif
-    MoveSimBox(); 
+    MoveSimBox();
     _currentTime += _timeStep;
 }
 
 
 REAL PML_WaveSolver::GetMaxCFL()
 {
-    const int N_vcellx = _grid.numVelocityCellsX(); 
-    const int N_vcelly = _grid.numVelocityCellsY(); 
-    const int N_vcellz = _grid.numVelocityCellsZ(); 
+    const int N_vcellx = _grid.numVelocityCellsX();
+    const int N_vcelly = _grid.numVelocityCellsY();
+    const int N_vcellz = _grid.numVelocityCellsZ();
     assert(N_vcellx==N_vcelly&&N_vcellx==N_vcellz);
-    const int &N = N_vcellx; 
+    const int &N = N_vcellx;
     REAL vmax = -1;  // should be positive
-    for (int ii=0; ii<N; ii++) 
+    for (int ii=0; ii<N; ii++)
     {
-        REAL vx, vy, vz, v; 
-        vx = _v[0](ii, 0); 
-        vy = _v[1](ii, 0); 
-        vz = _v[2](ii, 0); 
+        REAL vx, vy, vz, v;
+        vx = _v[0](ii, 0);
+        vy = _v[1](ii, 0);
+        vz = _v[2](ii, 0);
 
-        v = sqrt( vx*vx + vy*vy + vz*vz ); 
-        vmax = max(v, vmax); 
+        v = sqrt( vx*vx + vy*vy + vz*vz );
+        vmax = max(v, vmax);
     }
-    const REAL CFL = vmax * _timeStep / _cellSize; 
-    return CFL; 
+    const REAL CFL = vmax * _timeStep / _cellSize;
+    return CFL;
 }
 
 void PML_WaveSolver::PrintAllFieldExtremum()
 {
 #ifdef USE_COLLOCATED
-    _grid.PrintFieldExtremum(_pCollocated[_pCollocatedInd],"_pFull"); 
+    _grid.PrintFieldExtremum(_pCollocated[_pCollocatedInd],"_pFull");
 #else
-    _grid.PrintFieldExtremum(_pFull,"_pFull"); 
+    _grid.PrintFieldExtremum(_pFull,"_pFull");
 #endif
-    _grid.PrintFieldExtremum(_p[0],"_p[0]"); 
-    _grid.PrintFieldExtremum(_p[1],"_p[1]"); 
-    _grid.PrintFieldExtremum(_p[2],"_p[2]"); 
-    _grid.PrintFieldExtremum(_v[0],"_v[0]"); 
-    _grid.PrintFieldExtremum(_v[1],"_v[1]"); 
-    _grid.PrintFieldExtremum(_v[2],"_v[2]"); 
+    _grid.PrintFieldExtremum(_p[0],"_p[0]");
+    _grid.PrintFieldExtremum(_p[1],"_p[1]");
+    _grid.PrintFieldExtremum(_p[2],"_p[2]");
+    _grid.PrintFieldExtremum(_v[0],"_v[0]");
+    _grid.PrintFieldExtremum(_v[1],"_v[1]");
+    _grid.PrintFieldExtremum(_v[2],"_v[2]");
 }
 
 REAL PML_WaveSolver::ComputeFrobeniusPressure()
 {
 #ifdef USE_COLLOCATED
-    return _pCollocated[_pCollocatedInd].frobeniusNorm(); 
+    return _pCollocated[_pCollocatedInd].frobeniusNorm();
 #else
-    return _pFull.frobeniusNorm(); 
+    return _pFull.frobeniusNorm();
 #endif
 }
 
 std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver)
 {
-    const REAL CFL = solver._waveSpeed*solver._timeStep/solver._cellSize; 
-    os << "--------------------------------------------------------------------------------\n" 
-       << "Class PML_WaveSolver\n" 
+    const REAL CFL = solver._waveSpeed*solver._timeStep/solver._cellSize;
+    os << "--------------------------------------------------------------------------------\n"
+       << "Class PML_WaveSolver\n"
        << "--------------------------------------------------------------------------------\n"
        << " wave speed      : " << solver._waveSpeed << "\n"
        << " density         : " << solver._density << "\n"
        << " cell size       : " << solver._cellSize << "\n"
        << " save per steps  : " << solver._subSteps << "\n"
        << " start time      : " << solver._currentTime << "\n"
-       << " stop time       : " << solver._endTime << "\n" 
+       << " stop time       : " << solver._endTime << "\n"
        << " time step size  : " << solver._timeStep << "\n"
        << " CFL             : " << CFL << "\n"
        << " ghost cell boundary condition   : " << solver._useGhostCellBoundary << "\n"
-       << "--------------------------------------------------------------------------------" 
-       << std::flush; 
-    return os; 
+       << "--------------------------------------------------------------------------------"
+       << std::flush;
+    return os;
 }
 
 Tuple3i PML_WaveSolver::SimBoxMoveControl::Pop()
 {
-    Tuple3i tmp = queue.front(); 
-    queue.pop(); 
+    Tuple3i tmp = queue.front();
+    queue.pop();
     return tmp;
 }
 
 bool PML_WaveSolver::SimBoxMoveControl::CanMove()
 {
-    if (queue.empty()      || 
-        forceFix           || 
+    if (queue.empty()      ||
+        forceFix           ||
         counter<minInterval) // no need to move or can't move
-        return false; 
-    return true; 
+        return false;
+    return true;
 }

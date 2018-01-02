@@ -25,7 +25,7 @@
 
 #include "MAC_Grid.h"
 #include "WaveSolver.h"
-#include <wavesolver/PML_WaveSolver_Settings.h> 
+#include <wavesolver/PML_WaveSolver_Settings.h>
 
 #include <TYPES.h>
 
@@ -39,20 +39,20 @@
 // of the pressure and particle velocity equations.
 //
 //////////////////////////////////////////////////////////////////////
-class PML_WaveSolver : public Solver 
+class PML_WaveSolver : public Solver
 {
     public:
         typedef boost::function<void (const vector<vector<FloatArray> >&w)> WriteCallback;
 
     private:
         REAL                     _waveSpeed;
-        REAL                     _density; 
+        REAL                     _density;
 
         // Discretization for the domain
         MAC_Grid                 _grid;
 
         // Pretty self-explanatory
-        const REAL               _cellSize; 
+        const REAL               _cellSize;
         int                      _subSteps;
         REAL                     _endTime;
         REAL                     _timeStep;
@@ -67,14 +67,14 @@ class PML_WaveSolver : public Solver
         MATRIX                   _v[ 3 ];
         MATRIX                   _p[ 3 ];
         MATRIX                   _pFull;
-        FloatArray               _pGhostCells[ 3 ]; 
+        FloatArray               _pGhostCells[ 3 ];
         FloatArray               _pGhostCellsFull;
 
         MATRIX                   _pLastTimestep;      // for restarting
         MATRIX                   _pThisTimestep;      // for restarting
         MATRIX                   _vThisTimestep[ 3 ]; // for restarting
 
-        MATRIX                   _pLaplacian[2]; 
+        MATRIX                   _pLaplacian[2];
         int                      _pLaplacianInd;  // point to new
         MATRIX                   _pCollocated[3]; // rotating buffer for pressure: [old, current, new]
         int                      _pCollocatedInd; // point to new
@@ -99,28 +99,28 @@ class PML_WaveSolver : public Solver
         std::vector<std::vector<FloatArray> > _waveOutput;
 
         // if on then ghost cell boundary treatment, otherwise rasterized
-        bool                     _useGhostCellBoundary; 
+        bool                     _useGhostCellBoundary;
 
         // volumetric pressure point source
-        ExternalSourceEvaluator *_sourceEvaluator; 
+        ExternalSourceEvaluator *_sourceEvaluator;
 
-        // objects in the scene 
-        std::shared_ptr<FDTD_Objects> _objects; 
+        // objects in the scene
+        std::shared_ptr<FDTD_Objects> _objects;
         PML_WaveSolver_Settings_Ptr _waveSolverSettings;
 
         struct SimBoxMoveControl
         {
-            int counter = 0; 
-            int minInterval = 0; 
-            bool forceFix = false; 
-            std::queue<Tuple3i> queue; 
+            int counter = 0;
+            int minInterval = 0;
+            bool forceFix = false;
+            std::queue<Tuple3i> queue;
             inline void Push(const Tuple3i &offset){queue.push(offset);}
-            Tuple3i Pop();            
-            bool CanMove(); 
+            Tuple3i Pop();
+            bool CanMove();
         } _boxMoveControl;
 
-    public: 
-        PML_WaveSolver() 
+    public:
+        PML_WaveSolver()
             : _cellSize(0.0), _listeningPositions(nullptr), _outputFile(nullptr)
         {}
 
@@ -131,8 +131,8 @@ class PML_WaveSolver : public Solver
                         const BoundingBox &bbox, REAL cellSize,
                         const TriMesh &mesh,
                         const DistanceField &distanceField,
-                        REAL waveSpeed, 
-                        REAL density, 
+                        REAL waveSpeed,
+                        REAL density,
                         REAL distanceTolerance = 0.0,
                         bool useBoundary = true,
                         const Vector3Array *listeningPositions = NULL,
@@ -149,7 +149,7 @@ class PML_WaveSolver : public Solver
                         const BoundingBox &bbox, REAL cellSize,
                         std::vector<const TriMesh *> &meshes,
                         std::vector<const DistanceField *> &boundaryFields,
-                        REAL waveSpeed, 
+                        REAL waveSpeed,
                         REAL density,
                         REAL distanceTolerance = 0.0,
                         bool useBoundary = true,
@@ -163,20 +163,20 @@ class PML_WaveSolver : public Solver
 
         // initialize from settings parsed from xml and bounding box
         PML_WaveSolver(const BoundingBox &bbox,
-                       PML_WaveSolver_Settings_Ptr settings, 
+                       PML_WaveSolver_Settings_Ptr settings,
                        std::shared_ptr<FDTD_Objects> objects);
 
         // to prevent repeated lines in constructor.
-        void Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime); 
+        void Reinitialize_PML_WaveSolver(const bool &useBoundary, const REAL &startTime);
 
         // Destructor
         virtual ~PML_WaveSolver(){};
 
-        inline bool GetGhostCellBoundary() { return _useGhostCellBoundary; } 
+        inline bool GetGhostCellBoundary() { return _useGhostCellBoundary; }
         inline MAC_Grid &GetGrid() {return _grid;}
         inline void setPMLBoundaryWidth( REAL width, REAL strength ){ _grid.setPMLBoundaryWidth( width, strength ); }
         inline void setZSlice( int slice ) { _zSlice = slice; }
-        inline void SetExternalSource(ExternalSourceEvaluator *sourceEvaluator){ _sourceEvaluator = sourceEvaluator; } 
+        inline void SetExternalSource(ExternalSourceEvaluator *sourceEvaluator){ _sourceEvaluator = sourceEvaluator; }
 
         virtual inline int numCells() const { return _grid.numPressureCells(); }
         virtual inline int N() const { return _N; }
@@ -196,22 +196,22 @@ class PML_WaveSolver : public Solver
         void SetGhostCellBoundary(const bool &isOn);
 
         void initSystem( REAL startTime );
-        // Initialize the field data using non-zero initial conditions. 
-        void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval ); 
+        // Initialize the field data using non-zero initial conditions.
+        void initSystemNontrivial( const REAL startTime, const InitialConditionEvaluator * ic_eval );
 
         // fetch the pressure data using interpolation
-        void FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data); 
+        void FetchScalarData(const MATRIX &scalar, const ScalarField &field, const Vector3Array &listeningPoints, Eigen::MatrixXd &data);
         void FetchPressureData(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const int dim=-1);
         void FetchVelocityData(const Vector3Array &listeningPoints, const int &dimension, Eigen::MatrixXd &data);
         void FetchPressureCellType(const Vector3Array &listeningPoints, Eigen::MatrixXd &data, const BoundingBox *sceneBox=nullptr);
-        void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const; 
-        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const; 
+        void FetchCell(const int &cellIndex, MAC_Grid::Cell &cell) const;
+        void SampleAxisAlignedSlice(const int &dim, const REAL &offset, std::vector<MAC_Grid::Cell> &sampledCells) const;
         void GetSolverDomain(Vector3d &minBound, Vector3d &maxBound) const;
-        const BoundingBox GetSolverBBox() const; 
+        const BoundingBox GetSolverBBox() const;
 #ifdef USE_COLLOCATED
-        void ScheduleMoveBox(const Tuple3i &offset); 
-        void ClearCollocatedData(const int &dim, const int &ind); 
-        void FillBoundaryFreshCell(const int &dim, const int &ind); 
+        void ScheduleMoveBox(const Tuple3i &offset);
+        void ClearCollocatedData(const int &dim, const int &ind);
+        void FillBoundaryFreshCell(const int &dim, const int &ind);
         void GetAllSimulationData(MATRIX (&p_pml)[3], MATRIX &p_pml_full, MATRIX (&v_pml)[3], FloatArray &p_gc, MATRIX (&p_collocated)[3], int &p_collocated_ind);
 #endif
 
@@ -221,17 +221,17 @@ class PML_WaveSolver : public Solver
         virtual bool stepSystemHalf(const int &flag);
         // Takes a single time step with restarting steps controlled by
         // N_restart. internally, smoothing is done using weighted average
-        // method described in the paper: 
+        // method described in the paper:
         // L.F.Shampine, Stability of the leapfrog/midpoint method
         //
-        // The idea is if timeindex % N_restart == 0, then average operation is performed according 
+        // The idea is if timeindex % N_restart == 0, then average operation is performed according
         // to equation 8 in the paper
         //
         // p_i <- 1/4 * p_{i-1} + 1/2 * p_i + 1/4 * p_{i+1}
         //
         // TODO this currently produce bad results, maybe need to smooth velocity field as well
         //
-        virtual bool stepSystemWithRestart(const int &N_restart); 
+        virtual bool stepSystemWithRestart(const int &N_restart);
 
         // Get vertex pressure for each field
         virtual void vertexPressure( const Tuple3i &index, VECTOR &pressure ) const;
@@ -240,18 +240,18 @@ class PML_WaveSolver : public Solver
 
         void MoveSimBox();
         void SetSimBoxForceFix(const bool &set)
-        {_boxMoveControl.forceFix = set;} 
+        {_boxMoveControl.forceFix = set;}
 
         //// debugging/testing methods ////
         REAL GetMaxCFL();
         void PrintAllFieldExtremum();
-        REAL ComputeFrobeniusPressure(); 
+        REAL ComputeFrobeniusPressure();
 
     private:
         void stepLeapfrog();
         void stepCollocated();
 
-    friend std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver); 
+    friend std::ostream &operator <<(std::ostream &os, const PML_WaveSolver &solver);
 };
 
 #endif
