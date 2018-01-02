@@ -2,14 +2,14 @@
 #include <Eigen/Dense>
 #include "macros.h"
 #include "io/FDTD_ListenShell.hpp"
-#include "geometry/BoundingBox.h" 
+#include "geometry/BoundingBox.h"
 #include "wavesolver/SimWorld.h"
 
 //##############################################################################
 // Static member definition
 //##############################################################################
-SimWorld::WorldRasterizer SimWorld::rasterizer; 
-Vector3Array ListeningUnit::microphones; 
+SimWorld::WorldRasterizer SimWorld::rasterizer;
+Vector3Array ListeningUnit::microphones;
 std::shared_ptr<FDTD_ListenShell<REAL>> ListeningUnit::refShell;
 
 //##############################################################################
@@ -18,12 +18,12 @@ std::shared_ptr<FDTD_ListenShell<REAL>> ListeningUnit::refShell;
 std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> SimWorld::
 GetSolverBBoxs()
 {
-    std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> bboxs; 
+    std::vector<std::pair<ActiveSimUnit_Ptr,BoundingBox>> bboxs;
     for (const auto &m : _simUnits)
         bboxs.push_back(
                 std::pair<ActiveSimUnit_Ptr,BoundingBox>(
-                    m,m->simulator->GetSolver()->GetSolverBBox())); 
-    return bboxs; 
+                    m,m->simulator->GetSolver()->GetSolverBBox()));
+    return bboxs;
 }
 
 //##############################################################################
@@ -35,36 +35,36 @@ UpdateSpeakers()
     // straight line connecting boxcenter and speaker
     if (listen->mode == ListeningUnit::MODE::DELAY_LINE)
     {
-        const int N_mic = ListeningUnit::microphones.size(); 
-        const REAL &cellSize = simulator->GetSolverSettings()->cellSize; 
+        const int N_mic = ListeningUnit::microphones.size();
+        const REAL &cellSize = simulator->GetSolverSettings()->cellSize;
         if (listen->speakers.size() != N_mic)
-            listen->speakers.resize(N_mic); 
+            listen->speakers.resize(N_mic);
         for (int ii=0; ii<N_mic; ++ii)
         {
-            const auto &mic = ListeningUnit::microphones.at(ii); 
-            auto &spk = listen->speakers.at(ii); 
+            const auto &mic = ListeningUnit::microphones.at(ii);
+            auto &spk = listen->speakers.at(ii);
 
-                Vector3d v = mic - BoundingBoxCenter(); 
+                Vector3d v = mic - BoundingBoxCenter();
                 v.normalize();
-                const REAL r = lowerRadiusBound 
+                const REAL r = lowerRadiusBound
                              - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
-                v *= r; 
-                spk = BoundingBoxCenter() + v; 
+                v *= r;
+                spk = BoundingBoxCenter() + v;
         }
     }
     else if (listen->mode == ListeningUnit::MODE::SHELL)
     {
-        const int N1 = listen->outShell->N(); 
-        const int N2 = listen->innShell->N(); 
+        const int N1 = listen->outShell->N();
+        const int N2 = listen->innShell->N();
         if (listen->speakers.size() != (N1+N2))
-            listen->speakers.resize((N1+N2)); 
-        auto &outPoints = listen->outShell->Points(); 
-        auto &innPoints = listen->innShell->Points(); 
-        auto it = std::copy(outPoints.begin(), outPoints.end(), listen->speakers.begin()); 
-        it = std::copy(innPoints.begin(), innPoints.end(), it); 
-        assert(it == listen->speakers.end()); 
+            listen->speakers.resize((N1+N2));
+        auto &outPoints = listen->outShell->Points();
+        auto &innPoints = listen->innShell->Points();
+        auto it = std::copy(outPoints.begin(), outPoints.end(), listen->speakers.begin());
+        it = std::copy(innPoints.begin(), innPoints.end(), it);
+        assert(it == listen->speakers.end());
     }
-    return listen->speakers; 
+    return listen->speakers;
 }
 
 //##############################################################################
@@ -74,13 +74,13 @@ void SimWorld::
 Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
 {
     _objectCollections = std::make_shared<FDTD_Objects>();
-    _simulatorSettings = std::make_shared<PML_WaveSolver_Settings>(); 
+    _simulatorSettings = std::make_shared<PML_WaveSolver_Settings>();
 
     // parse settings and construct objects in the scene
-    parser->GetSolverSettings(_simulatorSettings); 
+    parser->GetSolverSettings(_simulatorSettings);
     _simulatorSettings->indTimeChunks = indTimeChunks;
-    parser->GetObjects(_simulatorSettings, _objectCollections); 
-    SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize; 
+    parser->GetObjects(_simulatorSettings, _objectCollections);
+    SimWorld::rasterizer.cellSize = _simulatorSettings->cellSize;
     // logic for Time Parallelism
     // This is the old logic for calculating startTime:
     // REAL simTime = _simulatorSettings->timeStepSize * _simulatorSettings->numberTimeSteps;
@@ -97,9 +97,9 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     // TODO adaptive start time
     if (_simulatorSettings->adaptiveStartTime)
     {
-        const REAL firstEventTime = _objectCollections->GetEarliestEventTime(startTime); 
+        const REAL firstEventTime = _objectCollections->GetEarliestEventTime(startTime);
         while (startTime < firstEventTime)
-            startTime += _simulatorSettings->timeStepSize; 
+            startTime += _simulatorSettings->timeStepSize;
     }
 
     if( _simulatorSettings->timeParallel )
@@ -112,146 +112,146 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
             _simulatorSettings->stopBoundaryAccTime += _simulatorSettings->timeStepSize;
         _simulatorSettings->numberTimeSteps += _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
     }
-    SetWorldTime(startTime);   
-    _simulatorSettings->fastForwardToEventTime = startTime;  
+    SetWorldTime(startTime);
+    _simulatorSettings->fastForwardToEventTime = startTime;
 
     // read and initialize animator if data exists
-    if (_simulatorSettings->kinFileExists) 
+    if (_simulatorSettings->kinFileExists)
     {
-        _objectCollections->InitializeAnimator(_simulatorSettings->objKinematicsMetadata); 
+        _objectCollections->InitializeAnimator(_simulatorSettings->objKinematicsMetadata);
     }
     else if (_simulatorSettings->rigidsimDataRead)
     {
-        _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement, 
-                                               _simulatorSettings->fileVelocity, 
+        _objectCollections->InitializeAnimator(_simulatorSettings->fileDisplacement,
+                                               _simulatorSettings->fileVelocity,
                                                _simulatorSettings->fileAcceleration);
     }
-    UpdateObjectState(_state.time); 
+    UpdateObjectState(_state.time);
 
-    std::map<ActiveSimUnit_Ptr, BoundingBox> candidateUnit; 
+    std::map<ActiveSimUnit_Ptr, BoundingBox> candidateUnit;
     assert(_simulatorSettings->solverControlPolicy);
     if (_simulatorSettings->solverControlPolicy->type == "dynamic")
     {
-        auto policy = std::dynamic_pointer_cast<Dynamic_Policy>(_simulatorSettings->solverControlPolicy); 
+        auto policy = std::dynamic_pointer_cast<Dynamic_Policy>(_simulatorSettings->solverControlPolicy);
         // assign a box to each object
         for (auto &m : _objectCollections->_rigidObjects)
         {
-            auto &obj = m.second; 
+            auto &obj = m.second;
             std::cout << "Construct Sim unit for object: " << obj->GetMeshName()
-                      << std::endl; 
-            const auto &bbox = obj->GetBBox(); 
-            ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
+                      << std::endl;
+            const auto &bbox = obj->GetBBox();
+            ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>();
             std::string *simulatorID = new std::string(std::to_string(m.first));
-            simUnit->objects = std::make_shared<FDTD_Objects>(); 
-            simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);  
+            simUnit->objects = std::make_shared<FDTD_Objects>();
+            simUnit->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
             simUnit->objects->AddConstraints(_objectCollections);
-            simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
-            simUnit->simulator->SetParser(parser); 
-            simUnit->simulator->SetSolverSettings(_simulatorSettings); 
-            simUnit->simulator->SetSceneObjects(simUnit->objects); 
-            simUnit->simulator->SetOwner(simUnit); 
-            
-            auto meshPtr = obj->GetMeshPtr(); 
+            simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID);
+            simUnit->simulator->SetParser(parser);
+            simUnit->simulator->SetSolverSettings(_simulatorSettings);
+            simUnit->simulator->SetSceneObjects(simUnit->objects);
+            simUnit->simulator->SetOwner(simUnit);
+
+            auto meshPtr = obj->GetMeshPtr();
             const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
             const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
             const Vector3d rastCentroid_w = SimWorld::rasterizer.cellCenter(
-                                            SimWorld::rasterizer.rasterize(meshCentroid_w)); 
+                                            SimWorld::rasterizer.rasterize(meshCentroid_w));
             const int divs = (int)std::ceil(
                     meshPtr->boundingSphereRadius(meshCentroid_o)/_simulatorSettings->cellSize
                     )*2 + policy->padding + (int)(_simulatorSettings->PML_width);
             const BoundingBox simUnitBox(
-                    _simulatorSettings->cellSize, divs, rastCentroid_w); 
-            simUnit->divisions = divs; 
-            simUnit->listen = std::make_unique<ListeningUnit>(); 
-            simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
-            simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
-            simUnit->unitID = simulatorID; 
+                    _simulatorSettings->cellSize, divs, rastCentroid_w);
+            simUnit->divisions = divs;
+            simUnit->listen = std::make_unique<ListeningUnit>();
+            simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0;
+            simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0;
+            simUnit->unitID = simulatorID;
 
             // make sure this object is not inside some other existed unit
-            bool createUnit = true; 
+            bool createUnit = true;
             for (auto &pair : candidateUnit)
             {
                 if (pair.second.isInside(meshCentroid_w))
                 {
-                    createUnit = false; 
+                    createUnit = false;
                     pair.first->objects->AddObject(std::stoi(obj->GetMeshName()), obj);
-                    break; 
+                    break;
                 }
             }
             if (createUnit)
             {
-                candidateUnit[simUnit] = simUnitBox; 
-                _simUnits.insert(std::move(simUnit)); 
+                candidateUnit[simUnit] = simUnitBox;
+                _simUnits.insert(std::move(simUnit));
             }
         }
     }
     else
     {
-        auto policy = std::dynamic_pointer_cast<Static_Policy>(_simulatorSettings->solverControlPolicy); 
-        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>(); 
+        auto policy = std::dynamic_pointer_cast<Static_Policy>(_simulatorSettings->solverControlPolicy);
+        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>();
         std::string *simulatorID = new std::string("0");
-        simUnit->objects = _objectCollections; 
-        simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID); 
-        simUnit->simulator->SetParser(parser); 
-        simUnit->simulator->SetSolverSettings(_simulatorSettings); 
-        simUnit->simulator->SetSceneObjects(simUnit->objects); 
-        simUnit->simulator->SetOwner(simUnit); 
+        simUnit->objects = _objectCollections;
+        simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID);
+        simUnit->simulator->SetParser(parser);
+        simUnit->simulator->SetSolverSettings(_simulatorSettings);
+        simUnit->simulator->SetSceneObjects(simUnit->objects);
+        simUnit->simulator->SetOwner(simUnit);
 
         const BoundingBox simUnitBox(
-                _simulatorSettings->cellSize, 
+                _simulatorSettings->cellSize,
                 policy->cellDivisions,
-                policy->domainCenter); 
-        simUnit->divisions = policy->cellDivisions; 
-        simUnit->listen = std::make_unique<ListeningUnit>(); 
-        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0; 
-        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0; 
-        simUnit->unitID = simulatorID; 
-        candidateUnit[simUnit] = simUnitBox; 
-        _simUnits.insert(std::move(simUnit)); 
+                policy->domainCenter);
+        simUnit->divisions = policy->cellDivisions;
+        simUnit->listen = std::make_unique<ListeningUnit>();
+        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0;
+        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0;
+        simUnit->unitID = simulatorID;
+        candidateUnit[simUnit] = simUnitBox;
+        _simUnits.insert(std::move(simUnit));
     }
 
     // initialize solver
     for (auto &pair : candidateUnit)
     {
-        pair.first->simulator->InitializeSolver(pair.second, _simulatorSettings); 
-        pair.first->simulator->GetGrid().grid_id = pair.first->unitID; 
+        pair.first->simulator->InitializeSolver(pair.second, _simulatorSettings);
+        pair.first->simulator->GetGrid().grid_id = pair.first->unitID;
     }
-    
+
     // build listening shell
 
     // setup filename for output
     char buffer[512];
-    std::string filename("all_audio.dat"); 
+    std::string filename("all_audio.dat");
     if(_simulatorSettings->timeParallel)
     {
         snprintf(buffer, 512, "%05d_all_audio.dat", _simulatorSettings->indTimeChunks);
         filename = std::string(buffer);
     }
-    snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
-             filename.c_str()); 
+    snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(),
+             filename.c_str());
     const int N_listen = (*_simUnits.begin())->listen->mode == ListeningUnit::SHELL ?
-        (*_simUnits.begin())->listen->outShell->N() + 
+        (*_simUnits.begin())->listen->outShell->N() +
         (*_simUnits.begin())->listen->innShell->N() :
-        _simulatorSettings->listeningPoints.size(); 
-    ListeningUnit::microphones = _simulatorSettings->listeningPoints; 
-    AudioOutput::instance()->SetBufferSize(N_listen); 
-    AudioOutput::instance()->OpenStream(std::string(buffer)); 
+        _simulatorSettings->listeningPoints.size();
+    ListeningUnit::microphones = _simulatorSettings->listeningPoints;
+    AudioOutput::instance()->SetBufferSize(N_listen);
+    AudioOutput::instance()->OpenStream(std::string(buffer));
 
     // write start time
     {
         filename = "start_time";
         if (_simulatorSettings->timeParallel)
         {
-            snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks, 
+            snprintf(buffer, 512, "%05d_%s", _simulatorSettings->indTimeChunks,
                      filename.c_str());
             filename = std::string(buffer);
         }
-        snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(), 
-                 filename.c_str()); 
-        std::ofstream stream(buffer); 
+        snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(),
+                 filename.c_str());
+        std::ofstream stream(buffer);
         if (stream)
             stream << std::setprecision(18) << std::fixed
-                   << _state.time << std::endl; 
+                   << _state.time << std::endl;
     }
 }
 
@@ -262,7 +262,7 @@ void SimWorld::
 UpdateObjectState(const REAL &time)
 {
     // update objects
-    _objectCollections->SetObjectStates(time); 
+    _objectCollections->SetObjectStates(time);
 
     if (_simulatorSettings->timeParallel && (time >= _simulatorSettings->stopBoundaryAccTime ) )
         if( !_objectCollections->AreEvalsDisabled() )
@@ -272,25 +272,25 @@ UpdateObjectState(const REAL &time)
         }
 
     if (_simulatorSettings->solverControlPolicy->type == "static")
-        return; 
+        return;
 
     // logic for updating bbox and determine whether to move simbox
     for (auto &unit : _simUnits)
     {
-        const auto &objects = unit->objects->GetRigidObjects(); 
-        if (objects.size() == 0) continue; 
-        Vector3d newCenter(0.,0.,0.); 
-        for (const auto &objpair : objects) 
+        const auto &objects = unit->objects->GetRigidObjects();
+        if (objects.size() == 0) continue;
+        Vector3d newCenter(0.,0.,0.);
+        for (const auto &objpair : objects)
         {
-            const auto &obj = objpair.second; 
-            auto meshPtr = obj->GetMeshPtr(); 
+            const auto &obj = objpair.second;
+            auto meshPtr = obj->GetMeshPtr();
             const Vector3d meshCentroid_o = meshPtr->ComputeCentroid();
             const Vector3d meshCentroid_w = obj->ObjectToWorldPoint(meshCentroid_o);
-            newCenter += meshCentroid_w; 
+            newCenter += meshCentroid_w;
         }
         newCenter /= (REAL)objects.size();
-        unit->simulator->SetFieldCenter(newCenter); 
-        unit->unitCenter = newCenter; 
+        unit->simulator->SetFieldCenter(newCenter);
+        unit->unitCenter = newCenter;
     }
 }
 
@@ -300,7 +300,7 @@ UpdateObjectState(const REAL &time)
 bool SimWorld::
 StepWorld()
 {
-    bool continueStepping = true; 
+    bool continueStepping = true;
     // update simulation
     std::cout << "================ Step START ================\n";
     bool changed = _objectCollections->UpdateSourceTimes(_state.time);
@@ -308,28 +308,28 @@ StepWorld()
     int count=0;
     for (auto &unit : _simUnits)
     {
-        std::cout << "-------- unit " << count 
-                  << " START -------- \n"; 
+        std::cout << "-------- unit " << count
+                  << " START -------- \n";
         if (changed)
         {
             std::cout << "Mesh changed" << std::endl;
             unit->simulator->GetGrid().setMeshChanged();
         }
 
-        continueStepping = (unit->simulator->RunForSteps(1) || continueStepping); 
+        continueStepping = (unit->simulator->RunForSteps(1) || continueStepping);
         // update speakers, interpolate pressure values and write to audio output
         const Vector3Array &spks = unit->UpdateSpeakers();
-        FloatArray pressures(spks.size()); 
-        Eigen::MatrixXd fetch; 
+        FloatArray pressures(spks.size());
+        Eigen::MatrixXd fetch;
         unit->simulator->GetSolver()->FetchPressureData(spks, fetch, -1);
         // scale the pressure, NOTE: ignoring the phase for now
         for (int ii=0; ii<spks.size(); ++ii)
         {
-            const auto &spk = spks.at(ii); 
+            const auto &spk = spks.at(ii);
             if (unit->listen->mode == ListeningUnit::DELAY_LINE)
             {
-                const auto &mic = ListeningUnit::microphones.at(ii); 
-                pressures.at(ii) = 
+                const auto &mic = ListeningUnit::microphones.at(ii);
+                pressures.at(ii) =
                     ListeningUnit::DelayLineScaling(spk, mic)* fetch(ii,0);
             }
             else if (unit->listen->mode == ListeningUnit::SHELL)
@@ -337,44 +337,44 @@ StepWorld()
                 pressures.at(ii) = fetch(ii,0);
             }
         }
-        AudioOutput::instance()->AccumulateBuffer(pressures); 
-        std::cout << "-------- unit " << count 
-                  << " STOP -------- \n"; 
-        count++; 
+        AudioOutput::instance()->AccumulateBuffer(pressures);
+        std::cout << "-------- unit " << count
+                  << " STOP -------- \n";
+        count++;
     }
-    AudioOutput::instance()->WriteAndResetBuffer(); 
+    AudioOutput::instance()->WriteAndResetBuffer();
 
     // update sim units topology
-    CheckSimUnitBoundaries(); 
+    CheckSimUnitBoundaries();
 
     // update time and object states
-    _state.time += _simulatorSettings->timeStepSize; 
+    _state.time += _simulatorSettings->timeStepSize;
 #if 1
     UpdateObjectState(_state.time);
 #else
     // simple translation
-    //auto objects = _objectCollections->GetRigidSoundObjects(); 
+    //auto objects = _objectCollections->GetRigidSoundObjects();
     //for (auto &m : objects)
     //{
     //    m.second->ApplyTranslation(0.0, -2.0E-5, 0.0);
     //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
     //}
     // monopole vibration
-    //const REAL omega = 2.0*M_PI*1500.0; 
-    //const REAL r0 = 0.05; 
-    //const REAL dr = 0.01; 
-    //auto objects = _objectCollections->GetRigidObjects(); 
+    //const REAL omega = 2.0*M_PI*1500.0;
+    //const REAL r0 = 0.05;
+    //const REAL dr = 0.01;
+    //auto objects = _objectCollections->GetRigidObjects();
     //for (auto &m : objects)
     //{
-    //    const REAL sdot = -dr*omega/r0*cos(omega*_state.time); 
+    //    const REAL sdot = -dr*omega/r0*cos(omega*_state.time);
     //    std::cout << "scaling = " << 1.0+sdot*_simulatorSettings->timeStepSize << std::endl;
     //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
-    //    m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize); 
+    //    m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize);
     //}
     // dipole vibration
-    const REAL omega = 2.0*M_PI*1500.0; 
+    const REAL omega = 2.0*M_PI*1500.0;
     const REAL scale = omega*omega*0.01;
-    auto objects = _objectCollections->GetRigidObjects(); 
+    auto objects = _objectCollections->GetRigidObjects();
     for (auto &m : objects)
     {
         m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
@@ -394,45 +394,45 @@ CheckSimUnitBoundaries()
 {
     // clear all stored interfaces
     for (auto &unit : _simUnits) // stored in Mac_Grid
-        unit->simulator->GetGrid().ClearBoundaryInterface(); 
+        unit->simulator->GetGrid().ClearBoundaryInterface();
 
     // establish interfaces
     for (auto it_a=_simUnits.begin(); it_a!=_simUnits.end(); ++it_a)
     {
-        auto it_b = it_a; 
-        std::advance(it_b, 1); 
+        auto it_b = it_a;
+        std::advance(it_b, 1);
         for (; it_b!=_simUnits.end(); ++it_b)
         {
-            const Vector3d centerDiff = 
-                (*it_a)->BoundingBoxCenter() - (*it_b)->BoundingBoxCenter(); 
+            const Vector3d centerDiff =
+                (*it_a)->BoundingBoxCenter() - (*it_b)->BoundingBoxCenter();
             const REAL maxDiff = std::max(
                     std::max(std::abs(centerDiff[0]), std::abs(centerDiff[1])),
-                    std::abs(centerDiff[2])); 
+                    std::abs(centerDiff[2]));
             const REAL thres = (REAL)((*it_a)->divisions + (*it_b)->divisions)
-                             / (REAL)2 * _simulatorSettings->cellSize; 
+                             / (REAL)2 * _simulatorSettings->cellSize;
             if (maxDiff < thres || EQUAL_FLOATS(maxDiff, thres)) // <=
             {
-                int interfaceDirection = -1; 
-                for (int ii=0; ii<3; ++ii) 
+                int interfaceDirection = -1;
+                for (int ii=0; ii<3; ++ii)
                     if (EQUAL_FLOATS(std::abs(centerDiff[ii]), thres))
-                        interfaceDirection = ii; 
-                std::cout << "found interface at direction: " 
+                        interfaceDirection = ii;
+                std::cout << "found interface at direction: "
                           << interfaceDirection << std::endl;
                 std::cout << "locking sim box move\n";
-                (*it_a)->simulator->GetSolver()->SetSimBoxForceFix(true); 
-                (*it_b)->simulator->GetSolver()->SetSimBoxForceFix(true); 
+                (*it_a)->simulator->GetSolver()->SetSimBoxForceFix(true);
+                (*it_b)->simulator->GetSolver()->SetSimBoxForceFix(true);
                 auto interface = std::make_shared<BoundaryInterface>(
-                        (*it_a), (*it_b), GetWorldTime(), interfaceDirection); 
-                bool exist = false; 
+                        (*it_a), (*it_b), GetWorldTime(), interfaceDirection);
+                bool exist = false;
                 for (auto &exist_int : _interfaces)
                     if (exist_int->Equal(*interface))
-                        exist = true; 
+                        exist = true;
                 if (!exist) // first time discover this interface
                 {
-                    (*it_a)->objects->Join((*it_b)->objects); 
-                    (*it_b)->objects->Join((*it_a)->objects); 
+                    (*it_a)->objects->Join((*it_b)->objects);
+                    (*it_b)->objects->Join((*it_a)->objects);
 #ifdef USE_MERGE_SIM_BOXES
-                    _interfaces.push_back(interface); 
+                    _interfaces.push_back(interface);
 #endif
                 }
             }
@@ -442,111 +442,111 @@ CheckSimUnitBoundaries()
     // establish cell neighbours
     for (auto &interface : _interfaces)
     {
-        auto unit_a = interface->GetSimUnit_a(); 
-        auto unit_b = interface->GetSimUnit_b(); 
-        auto &grid_a = unit_a->simulator->GetGrid(); 
-        auto &grid_b = unit_b->simulator->GetGrid(); 
-        const int dir = interface->GetDirection(); 
-        grid_a.AddBoundaryInterface(interface); 
-        grid_b.AddBoundaryInterface(interface); 
+        auto unit_a = interface->GetSimUnit_a();
+        auto unit_b = interface->GetSimUnit_b();
+        auto &grid_a = unit_a->simulator->GetGrid();
+        auto &grid_b = unit_b->simulator->GetGrid();
+        const int dir = interface->GetDirection();
+        grid_a.AddBoundaryInterface(interface);
+        grid_b.AddBoundaryInterface(interface);
         if (interface->initialized)
-            continue; 
+            continue;
 
-        const bool a_on_top_of_b = 
-            ((unit_a->BoundingBoxCenter() 
+        const bool a_on_top_of_b =
+            ((unit_a->BoundingBoxCenter()
              -unit_b->BoundingBoxCenter())[dir] > 0);
-        std::vector<int> bdIndices_a, bdIndices_b; 
-        std::vector<Vector3d> bdPositions_a, bdPositions_b; 
+        std::vector<int> bdIndices_a, bdIndices_b;
+        std::vector<Vector3d> bdPositions_a, bdPositions_b;
         if (a_on_top_of_b) // grab pos b and neg a
         {
-            grid_a.GetAllBoundaryCells(dir, -1, bdIndices_a, bdPositions_a); 
-            grid_b.GetAllBoundaryCells(dir,  1, bdIndices_b, bdPositions_b); 
+            grid_a.GetAllBoundaryCells(dir, -1, bdIndices_a, bdPositions_a);
+            grid_b.GetAllBoundaryCells(dir,  1, bdIndices_b, bdPositions_b);
         }
         else  // grab neg b and pos a
         {
-            grid_a.GetAllBoundaryCells(dir,  1, bdIndices_a, bdPositions_a); 
-            grid_b.GetAllBoundaryCells(dir, -1, bdIndices_b, bdPositions_b); 
+            grid_a.GetAllBoundaryCells(dir,  1, bdIndices_a, bdPositions_a);
+            grid_b.GetAllBoundaryCells(dir, -1, bdIndices_b, bdPositions_b);
         }
 
         struct ProjCounter
         {
-            int count = 0; 
-            int otherUnitCellIdx = -1; 
+            int count = 0;
+            int otherUnitCellIdx = -1;
         };
-        const bool a_smaller_than_b = (unit_a->divisions < unit_b->divisions); 
-        std::unordered_map<int,ProjCounter> counter; 
+        const bool a_smaller_than_b = (unit_a->divisions < unit_b->divisions);
+        std::unordered_map<int,ProjCounter> counter;
         const REAL offset = _simulatorSettings->cellSize;
         if (a_smaller_than_b)
         {
             for (const auto &ind : bdIndices_b)
-                counter[ind].count = 1; 
+                counter[ind].count = 1;
             // offset a's boundary to b and see what cell its in
             for (int ii=0; ii<bdPositions_a.size(); ++ii)
             {
-                const auto &pos = bdPositions_a.at(ii); 
+                const auto &pos = bdPositions_a.at(ii);
                 Vector3d posProj = pos;
-                posProj[dir] += (a_on_top_of_b ? -1.0 : 1.0)*offset; 
-                const int cellProj = grid_b.InPressureCell(posProj); 
+                posProj[dir] += (a_on_top_of_b ? -1.0 : 1.0)*offset;
+                const int cellProj = grid_b.InPressureCell(posProj);
                 if (counter.find(cellProj) != counter.end())
                 {
-                    counter[cellProj].count += 1; 
+                    counter[cellProj].count += 1;
                     counter[cellProj].otherUnitCellIdx = bdIndices_a.at(ii);
                 }
-                else 
+                else
                 {
-                    counter[cellProj].count = 1; 
+                    counter[cellProj].count = 1;
                     counter[cellProj].otherUnitCellIdx = bdIndices_a.at(ii);
                 }
             }
-            for (const auto &m : counter) 
+            for (const auto &m : counter)
             {
-                assert(m.second.count <= 2); 
-                if (m.second.count == 2) 
+                assert(m.second.count <= 2);
+                if (m.second.count == 2)
                 {
                     auto cellPair = std::make_pair(
-                        m.second.otherUnitCellIdx, 
-                        m.first); 
-                    interface->AddCellPair(cellPair); 
+                        m.second.otherUnitCellIdx,
+                        m.first);
+                    interface->AddCellPair(cellPair);
                 }
             }
         }
         else
         {
             for (const auto &ind : bdIndices_a)
-                counter[ind].count = 1; 
+                counter[ind].count = 1;
             // offset b's boundary to a and see what cell its in
             for (int ii=0; ii<bdPositions_b.size(); ++ii)
             {
-                const auto &pos = bdPositions_b.at(ii); 
+                const auto &pos = bdPositions_b.at(ii);
                 Vector3d posProj = pos;
-                posProj[dir] += (a_on_top_of_b ? 1.0 : -1.0)*offset; 
-                const int cellProj = grid_a.InPressureCell(posProj); 
+                posProj[dir] += (a_on_top_of_b ? 1.0 : -1.0)*offset;
+                const int cellProj = grid_a.InPressureCell(posProj);
                 if (counter.find(cellProj) != counter.end())
                 {
-                    counter[cellProj].count += 1; 
-                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii); 
+                    counter[cellProj].count += 1;
+                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii);
                 }
-                else 
+                else
                 {
-                    counter[cellProj].count = 1; 
-                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii); 
+                    counter[cellProj].count = 1;
+                    counter[cellProj].otherUnitCellIdx = bdIndices_b.at(ii);
                 }
             }
-            for (const auto &m : counter) 
+            for (const auto &m : counter)
             {
-                assert(m.second.count <= 2); 
-                if (m.second.count == 2) 
+                assert(m.second.count <= 2);
+                if (m.second.count == 2)
                 {
                     auto cellPair = std::make_pair(
                         m.first,
-                        m.second.otherUnitCellIdx); 
-                    interface->AddCellPair(cellPair); 
+                        m.second.otherUnitCellIdx);
+                    interface->AddCellPair(cellPair);
                 }
             }
         }
-        interface->initialized = true; 
+        interface->initialized = true;
     }
-    return (_interfaces.size() > 0); 
+    return (_interfaces.size() > 0);
 }
 
 //##############################################################################
@@ -560,19 +560,19 @@ PreviewStepping(const uint &previewSpeed)
     int count=0;
     for (auto &unit : _simUnits)
     {
-        std::cout << "-------- unit " << count 
-                  << " START -------- \n"; 
-        unit->simulator->PreviewStepping(previewSpeed); 
-        std::cout << "-------- unit " << count 
-                  << " STOP -------- \n"; 
-        count++; 
+        std::cout << "-------- unit " << count
+                  << " START -------- \n";
+        unit->simulator->PreviewStepping(previewSpeed);
+        std::cout << "-------- unit " << count
+                  << " STOP -------- \n";
+        count++;
     }
 
     // update sim units topology
-    CheckSimUnitBoundaries(); 
+    CheckSimUnitBoundaries();
 
     // update time and object states
-    _state.time += _simulatorSettings->timeStepSize*previewSpeed; 
+    _state.time += _simulatorSettings->timeStepSize*previewSpeed;
     UpdateObjectState(_state.time);
     std::cout << "================ Step STOP ================\n";
 }
@@ -584,7 +584,7 @@ void SimWorld::
 ResetStartTime(const REAL &startTime)
 {
     for (auto &unit : _simUnits)
-        unit->simulator->ResetStartTime(startTime); 
+        unit->simulator->ResetStartTime(startTime);
 }
 
 //##############################################################################
@@ -594,10 +594,10 @@ void SimWorld::
 ClearAllSources()
 {
     // pressure source
-    _objectCollections->GetPressureSources().clear(); 
+    _objectCollections->GetPressureSources().clear();
     // object sources
-    auto &objects = _objectCollections->GetRigidObjects(); 
+    auto &objects = _objectCollections->GetRigidObjects();
     for (auto &obj : objects)
-        obj.second->ClearVibrationalSources(); 
+        obj.second->ClearVibrationalSources();
 }
 //##############################################################################
