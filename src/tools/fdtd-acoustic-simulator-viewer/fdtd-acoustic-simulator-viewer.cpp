@@ -116,7 +116,9 @@ int TUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTi
         boost::timer::auto_cpu_timer timer("Run wall-clock time: %w sec\n");
         for (int ii=0; ii<numberSteps; ++ii)
         {
-            world->StepWorld();
+            const bool contStep = world->StepWorld();
+            if (!contStep)
+                break;
         }
         world->PostRunWrite();
     }

@@ -105,6 +105,7 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
         for( int i = 0; i < timeStepsPerChunk; i++)
             _simulatorSettings->stopBoundaryAccTime += _simulatorSettings->timeStepSize;
         _simulatorSettings->numberTimeSteps += _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
+        _terminationMonitor.r = _simulatorSettings->earlyTerminationRatio;
     }
 
     // if use adaptive start time, read chunk partition file and overwrite uniform chunk setup
@@ -123,11 +124,12 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
             iss >> N_c;
             assert(N_c > 0 && indTimeChunks < N_c);
             REAL T[2];
+            int cIndex;
             for (uint ii=0; ii<N_c; ++ii)
             {
                 std::getline(stream, line);
                 std::istringstream iss(line);
-                iss >> T[0] >> T[1];
+                iss >> cIndex >> T[0] >> T[1];
                 if (ii == indTimeChunks)
                     break;
             }
@@ -353,6 +355,7 @@ bool SimWorld::
 StepWorld()
 {
     bool continueStepping = true;
+    bool belowThres = false;
     // update simulation
     std::cout << "================ Step START ================\n";
     bool changed = _objectCollections->UpdateSourceTimes(_state.time);
@@ -375,6 +378,7 @@ StepWorld()
         Eigen::MatrixXd fetch;
         unit->simulator->GetSolver()->FetchPressureData(spks, fetch, -1);
         // scale the pressure, NOTE: ignoring the phase for now
+        REAL pAbsPeak = 0.0;
         for (int ii=0; ii<spks.size(); ++ii)
         {
             const auto &spk = spks.at(ii);
@@ -388,7 +392,37 @@ StepWorld()
             {
                 pressures.at(ii) = fetch(ii,0);
             }
+            pAbsPeak = std::max(pressures.at(ii), pAbsPeak);
         }
+
+        // update pressure peak for the termination criterion
+        const REAL simTime = unit->simulator->GetSimulationTime();
+        _terminationMonitor.p_chunk = std::max(_terminationMonitor.p_chunk,
+                                               pAbsPeak);
+        if (_simulatorSettings->timeParallel &&
+            simTime > _simulatorSettings->stopBoundaryAccTime)
+        {
+            if (pAbsPeak > _terminationMonitor.r * _terminationMonitor.p_chunk &&
+                pAbsPeak > _terminationMonitor.absLowerBound)
+            {
+                _terminationMonitor.lastTimeAboveThres = simTime;
+            }
+            // pressure has fallen below threshold for the last L steps, stop stepping
+            if ((simTime - _terminationMonitor.lastTimeAboveThres) > _terminationMonitor.windowSize)
+            {
+                belowThres = true;
+                std::cout << "Chunk termination condition triggered, will terminate after this step";
+                COUT_SDUMP(_terminationMonitor.lastTimeAboveThres);
+                COUT_SDUMP(simTime);
+                COUT_SDUMP(_terminationMonitor.windowSize);
+                COUT_SDUMP(_terminationMonitor.absLowerBound);
+                COUT_SDUMP(_terminationMonitor.r);
+                COUT_SDUMP(_terminationMonitor.p_chunk);
+                COUT_SDUMP(pAbsPeak);
+            }
+        }
+
+        // update audio output buffer
         AudioOutput::instance()->AccumulateBuffer(pressures);
         std::cout << "-------- unit " << count
                   << " STOP -------- \n";
@@ -435,7 +469,7 @@ StepWorld()
 #endif
     std::cout << "================ Step STOP ================\n";
 
-    return continueStepping;
+    return continueStepping && !belowThres;
 }
 
 //##############################################################################
@@ -894,9 +928,13 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t)
                    << "#\n"
                    << "#Partitions:\n";
             stream << S.size() << "\n";
+            int count=0;
             for (const auto &s : S)
+            {
                 stream << std::setprecision(16) << std::fixed
-                       << s.second[0] << " " << s.second[1] << "\n";
+                       << count << " " << s.second[0] << " " << s.second[1] << "\n";
+                ++count;
+            }
         }
     }
 }

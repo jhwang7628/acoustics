@@ -438,6 +438,7 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         settings->modalParallelErrorTol = queryOptionalReal(solverNode, "modal_parallel_error_tol", 1e-7);
         settings->modalMinDampingPeriods = queryOptionalInt(solverNode, "modal_min_damping_periods", "2");
         settings->overlapTime = queryOptionalReal(solverNode, "overlap_time", 6e-3);
+        settings->earlyTerminationRatio = queryOptionalReal(solverNode, "early_termination_ratio", 1E-3);
     }
 
     // Boundary settings

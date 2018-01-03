@@ -78,6 +78,7 @@ struct PML_WaveSolver_Settings
     REAL            modalMinDampingPeriods;// = 2;
     REAL            overlapTime; // = 6e-3
     REAL            stopBoundaryAccTime; // to be set
+    REAL            earlyTerminationRatio; // = 1E-3
 
     // ghost cell settings
     int FV_boundarySubdivision;

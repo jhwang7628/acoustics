@@ -30,6 +30,17 @@ class SimWorld
         REAL time = 0.0;
     } _state;
 
+    // terminate solver early if p_window/p_chunk < r for the last windowSize
+    // time
+    struct TerminationMonitor
+    {
+        const REAL windowSize = 0.05;
+        const REAL absLowerBound = 1E-10;
+        REAL r = 1E-3;
+        REAL p_chunk;
+        REAL lastTimeAboveThres = std::numeric_limits<REAL>::max();
+    } _terminationMonitor;
+
     //
     FDTD_Objects_Ptr             _objectCollections;
     std::set<ActiveSimUnit_Ptr>  _simUnits;
