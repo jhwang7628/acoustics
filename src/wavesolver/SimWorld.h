@@ -35,7 +35,7 @@ class SimWorld
     struct TerminationMonitor
     {
         const REAL windowSize = 0.05;
-        const REAL absLowerBound = 1E-10;
+        const REAL absLowerBound = 2E-5; // 20 micropascals (ref pres at 1kHz)
         REAL r = 1E-3;
         REAL p_chunk;
         REAL lastTimeAboveThres = std::numeric_limits<REAL>::max();
