@@ -22,32 +22,32 @@ using namespace qglviewer;
 void FDTD_AcousticSimulator_Viewer::
 SetAllKeyDescriptions()
 {
-    setKeyDescription(Qt::Key_W, "Toggle wireframe-only display"); 
-    setKeyDescription(Qt::Key_B, "Toggle simulation box display"); 
-    setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL"); 
-    setKeyDescription(Qt::Key_P, "Draw a sphere at given position"); 
-    setKeyDescription(Qt::Key_C, "Recenter camera"); 
-    setKeyDescription(Qt::Key_N, "Draw an arrow"); 
-    setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>"); 
-    setKeyDescription(Qt::Key_Y, "Draw slice for data display"); 
-    setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view"); 
-    setKeyDescription(Qt::Key_G, "Draw ground"); 
-    setKeyDescription(Qt::Key_S, "Set scene radius"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug sphere and arrows"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw debug arrows stored in FDTD_RigidObject class"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_D, "Change slice division (default: 80)"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Run half-step"); 
-    setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices"); 
-    setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file"); 
-    setKeyDescription(Qt::ControlModifier + Qt::Key_F, "Toggle fixed colormap"); 
-    setKeyDescription(Qt::ControlModifier + Qt::Key_R, "Read FBem solutions to BEM solver"); 
-    setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer forward"); 
-    setKeyDescription(Qt::ControlModifier + Qt::Key_Y, "Toggle slice data pointer backward"); 
-    setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file"); 
+    setKeyDescription(Qt::Key_W, "Toggle wireframe-only display");
+    setKeyDescription(Qt::Key_B, "Toggle simulation box display");
+    setKeyDescription(Qt::Key_R, "Run Simulator in the background of GL");
+    setKeyDescription(Qt::Key_P, "Draw a sphere at given position");
+    setKeyDescription(Qt::Key_C, "Recenter camera");
+    setKeyDescription(Qt::Key_N, "Draw an arrow");
+    setKeyDescription(Qt::Key_N, "Draw arrows from file <x, y, z, nx, ny, nz>");
+    setKeyDescription(Qt::Key_Y, "Draw slice for data display");
+    setKeyDescription(Qt::Key_T, "Toggle perspective/orthogonal view");
+    setKeyDescription(Qt::Key_G, "Draw ground");
+    setKeyDescription(Qt::Key_S, "Set scene radius");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_H, "Draw hashed cells");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_S, "Save slice data to file");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_C, "Clear all debug sphere and arrows");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_F, "Debug: execute some debug function");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_P, "Debug: draw debug arrows stored in FDTD_RigidObject class");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_W, "Toggle slice grid lines");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_D, "Change slice division (default: 80)");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_R, "Run half-step");
+    setKeyDescription(Qt::ControlModifier + Qt::Key_C, "Clear all slices");
+    setKeyDescription(Qt::ControlModifier + Qt::Key_P, "Draw arrows from file");
+    setKeyDescription(Qt::ControlModifier + Qt::Key_F, "Toggle fixed colormap");
+    setKeyDescription(Qt::ControlModifier + Qt::Key_R, "Read FBem solutions to BEM solver");
+    setKeyDescription(Qt::ShiftModifier + Qt::Key_Y, "Toggle slice data pointer forward");
+    setKeyDescription(Qt::ControlModifier + Qt::Key_Y, "Toggle slice data pointer backward");
+    setKeyDescription(Qt::AltModifier + Qt::Key_P, "Draw spheres from file");
 }
 
 //##############################################################################
@@ -56,12 +56,12 @@ void FDTD_AcousticSimulator_Viewer::
 init()
 {
     restoreStateFromFile();
-    RestoreDefaultDrawOptions(); 
+    RestoreDefaultDrawOptions();
     setSceneRadius(5.0);
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
     //setGridIsDrawn();
-    setBackgroundColor(QColor(102,153,255)); 
+    setBackgroundColor(QColor(102,153,255));
     SetAllKeyDescriptions();
 
     setAnimationPeriod(40); // in milliseconds
@@ -85,8 +85,8 @@ void FDTD_AcousticSimulator_Viewer::
 init_gl()
 {
     // fetch objects to set up for colors, material for gl rendering
-    const int N_objects = _simWorld->GetSceneObjects()->N(); 
-    _objectColors.resize(N_objects); 
+    const int N_objects = _simWorld->GetSceneObjects()->N();
+    _objectColors.resize(N_objects);
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
     {
         const float x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
@@ -108,7 +108,7 @@ init_gl()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-    LoadGround(); 
+    LoadGround();
 
     DrawLights();
 }
@@ -125,7 +125,7 @@ draw()
     DrawSelection();
     DrawDebugCin();
     if (_sliceWireframe.count() != 0)
-        DrawSlices(_sliceDataPointer); 
+        DrawSlices(_sliceDataPointer);
     DrawGround();
     if (_drawHashedCells)
         DrawHashedCells();
@@ -155,9 +155,9 @@ drawWithNames()
     // draw cell centroid near the slices
     for (auto &slice : _sliceCin)
     {
-        const REAL offset = slice.origin[slice.dim]; 
-        slice.intersectingUnit->simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, slice.cells); 
-        for (const auto &cell : slice.cells) 
+        const REAL offset = slice.origin[slice.dim];
+        slice.intersectingUnit->simulator->GetSolver()->SampleAxisAlignedSlice(slice.dim, offset, slice.cells);
+        for (const auto &cell : slice.cells)
         {
             const Vector3d &vertex = cell.centroidPosition;
             glPushMatrix();
@@ -175,13 +175,13 @@ drawWithNames()
 void FDTD_AcousticSimulator_Viewer::
 DrawMesh()
 {
-    const auto &sceneObjects = _simWorld->GetSceneObjects(); 
+    const auto &sceneObjects = _simWorld->GetSceneObjects();
     const auto &rigidObjects = sceneObjects->GetRigidObjects();
-    const int N_objects = rigidObjects.size(); 
+    const int N_objects = rigidObjects.size();
     for (int obj_idx=0; obj_idx<N_objects; ++obj_idx)
     {
         // draw rigid sound object mesh
-        auto &object = rigidObjects.at(obj_idx); 
+        auto &object = rigidObjects.at(obj_idx);
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
               std::vector<Point3<REAL> >   vertices  = meshPtr->vertices();
         const std::vector<Tuple3ui>       &triangles = meshPtr->triangles();
@@ -191,11 +191,11 @@ DrawMesh()
         const REAL offsetEpsilon = 1E-5;
 
         // if deformable shell, grab deformed vertex pos as well
-        if (object->Type() == SHELL_OBJ) 
+        if (object->Type() == SHELL_OBJ)
         {
-            auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object); 
+            auto shell_object = std::dynamic_pointer_cast<FDTD_ShellObject>(object);
             for (int ii=0; ii<vertices.size(); ++ii)
-                vertices.at(ii) = 
+                vertices.at(ii) =
                     shell_object->GetVertexPos(ii);
         }
 
@@ -247,9 +247,9 @@ DrawMesh()
             }
             curvatureColorMap->set_interpolation_range(minCurvature, maxCurvature);
         }
-        
+
         // get acceleration if needed
-        std::vector<REAL> accel(N_vertices); 
+        std::vector<REAL> accel(N_vertices);
         DipoleColorMap accelColorMap;
         REAL maxAccel = std::numeric_limits<REAL>::min();
         REAL minAccel = std::numeric_limits<REAL>::max();
@@ -257,12 +257,12 @@ DrawMesh()
         {
             for (int v_idx=0; v_idx<N_vertices; ++v_idx)
             {
-                Vector3<REAL> n = object->ObjectToWorldVector(normals.at(v_idx)); 
+                Vector3<REAL> n = object->ObjectToWorldVector(normals.at(v_idx));
                 accel.at(v_idx)  = object->EvaluateBoundaryAcceleration(v_idx, n, _simWorld->GetWorldTime());
                 maxAccel = std::max<REAL>(maxAccel, accel.at(v_idx));
                 minAccel = std::min<REAL>(minAccel, accel.at(v_idx));
             }
-            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel)); 
+            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel));
             const REAL scale = 0.8;
             accelColorMap.set_interpolation_range(-5E5, 5E5);
             std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
@@ -302,7 +302,7 @@ DrawMesh()
 //                maxAccel = std::max<REAL>(maxAccel, accel.at(t_idx));
 //                minAccel = std::min<REAL>(minAccel, accel.at(t_idx));
 //            }
-//            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel)); 
+//            REAL range = std::max<REAL>(fabs(maxAccel), fabs(minAccel));
 //            accelColorMap.set_interpolation_range(-range, range);
 //
 //            std::cout << "maxAccel: " << maxAccel << " minAccel: " << minAccel <<  std::endl;
@@ -380,75 +380,75 @@ DrawMesh()
             const auto &simUnits = _simWorld->GetActiveSimUnits();
             for (const auto &unit : simUnits)
             {
-                auto &grid = unit->simulator->GetGrid(); 
-                const auto &gcMap = grid.GetGhostCells(); 
-                glBegin(GL_QUADS); 
+                auto &grid = unit->simulator->GetGrid();
+                const auto &gcMap = grid.GetGhostCells();
+                glBegin(GL_QUADS);
                 for (const auto &m : gcMap)
                 {
-                    const int &cell_idx = m.second->ownerCell; 
+                    const int &cell_idx = m.second->ownerCell;
                     const int &nmldir = abs(m.second->topology) - 1; // 0:x; 1:y; 2:z
                     const Vector3d position = (grid.pressureFieldPosition(m.second->ownerCell)
-                                              +grid.pressureFieldPosition(m.second->neighbourCell))/2.0; 
+                                              +grid.pressureFieldPosition(m.second->neighbourCell))/2.0;
                     Vector3d lowerCorner = position;
-                    Vector3d upperCorner = position; 
-                    lowerCorner[(nmldir+1)%3] -= 0.5*_solverSettings->cellSize; 
-                    lowerCorner[(nmldir+2)%3] -= 0.5*_solverSettings->cellSize; 
-                    upperCorner[(nmldir+1)%3] += 0.5*_solverSettings->cellSize; 
-                    upperCorner[(nmldir+2)%3] += 0.5*_solverSettings->cellSize; 
+                    Vector3d upperCorner = position;
+                    lowerCorner[(nmldir+1)%3] -= 0.5*_solverSettings->cellSize;
+                    lowerCorner[(nmldir+2)%3] -= 0.5*_solverSettings->cellSize;
+                    upperCorner[(nmldir+1)%3] += 0.5*_solverSettings->cellSize;
+                    upperCorner[(nmldir+2)%3] += 0.5*_solverSettings->cellSize;
                     Vector3d nml(0,0,0);
-                    nml[nmldir] = (m.second->topology > 0 ? 1.0 : -1.0); 
+                    nml[nmldir] = (m.second->topology > 0 ? 1.0 : -1.0);
                     Tuple3f color(1.,0.,0.);
                     if (_sliceColorMap)
                         color = _sliceColorMap->get_interpolated_color(m.second->pressure);
                     glNormal3f(nml[0],nml[1],nml[2]);
-                    glColor3f(color[0],color[1],color[2]); 
+                    glColor3f(color[0],color[1],color[2]);
                     Vector3d lu = lowerCorner; lu[(nmldir+1)%3] = upperCorner[(nmldir+1)%3];
                     Vector3d ul = lowerCorner; ul[(nmldir+2)%3] = upperCorner[(nmldir+2)%3];
-                    glVertex3f(lowerCorner[0],lowerCorner[1],lowerCorner[2]); 
-                    glVertex3f(lu[0],lu[1],lu[2]); 
-                    glVertex3f(upperCorner[0],upperCorner[1],upperCorner[2]); 
-                    glVertex3f(ul[0],ul[1],ul[2]); 
-                    //const auto &cell_idx = m.second->ownerCell; 
-                    //MAC_Grid::Cell cell; 
-                    //unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
-                    //glColor3f(1.0f, 0.0f, 0.0f); 
-                    //GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+                    glVertex3f(lowerCorner[0],lowerCorner[1],lowerCorner[2]);
+                    glVertex3f(lu[0],lu[1],lu[2]);
+                    glVertex3f(upperCorner[0],upperCorner[1],upperCorner[2]);
+                    glVertex3f(ul[0],ul[1],ul[2]);
+                    //const auto &cell_idx = m.second->ownerCell;
+                    //MAC_Grid::Cell cell;
+                    //unit->simulator->GetSolver()->FetchCell(cell_idx, cell);
+                    //glColor3f(1.0f, 0.0f, 0.0f);
+                    //GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x));
                 }
                 glEnd();
-                const auto &bgcMap = unit->simulator->GetGrid().GetBoundaryGhostCells(); 
+                const auto &bgcMap = unit->simulator->GetGrid().GetBoundaryGhostCells();
                 for (const auto &m : bgcMap)
                 {
-                    const auto &cell_idx = m.second->ownerCell; 
-                    MAC_Grid::Cell cell; 
-                    unit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
-                    glColor3f(1.0f, 0.0f, 0.0f); 
-                    GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+                    const auto &cell_idx = m.second->ownerCell;
+                    MAC_Grid::Cell cell;
+                    unit->simulator->GetSolver()->FetchCell(cell_idx, cell);
+                    glColor3f(1.0f, 0.0f, 0.0f);
+                    GL_Wrapper::DrawBox(&(cell.lowerCorner.x), &(cell.upperCorner.x));
                 }
             }
         }
         glDisable(GL_LIGHTING);
 
-        // draw bounding box only 
+        // draw bounding box only
         if (_wireframe == 4)
         {
             // this draws bounding box in world space
-            const REAL maxValue = std::numeric_limits<REAL>::max(); 
-            const REAL minValue = std::numeric_limits<REAL>::lowest(); 
-            Point3d low(maxValue, maxValue, maxValue); 
-            Point3d  up(minValue, minValue, minValue); 
+            const REAL maxValue = std::numeric_limits<REAL>::max();
+            const REAL minValue = std::numeric_limits<REAL>::lowest();
+            Point3d low(maxValue, maxValue, maxValue);
+            Point3d  up(minValue, minValue, minValue);
             for (const auto &v : vertices)
             {
-                const Vector3<REAL> vv = object->ObjectToWorldPoint(v); 
-                low.x = min(low.x, vv.x); 
-                low.y = min(low.y, vv.y); 
-                low.z = min(low.z, vv.z); 
-                 up.x = max( up.x, vv.x); 
-                 up.y = max( up.y, vv.y); 
-                 up.z = max( up.z, vv.z); 
+                const Vector3<REAL> vv = object->ObjectToWorldPoint(v);
+                low.x = min(low.x, vv.x);
+                low.y = min(low.y, vv.y);
+                low.z = min(low.z, vv.z);
+                 up.x = max( up.x, vv.x);
+                 up.y = max( up.y, vv.y);
+                 up.z = max( up.z, vv.z);
             }
-            const auto &color = _objectColors.at(obj_idx); 
-            glColor3f(color.x, color.y, color.z); 
-            GL_Wrapper::DrawWireBox(&(low.x), &(up.x)); 
+            const auto &color = _objectColors.at(obj_idx);
+            glColor3f(color.x, color.y, color.z);
+            GL_Wrapper::DrawWireBox(&(low.x), &(up.x));
         }
     }
 }
@@ -459,18 +459,18 @@ void FDTD_AcousticSimulator_Viewer::
 DrawImpulses()
 {
     const REAL time = _simWorld->GetWorldTime();
-    const auto &sceneObjects = _simWorld->GetSceneObjects(); 
+    const auto &sceneObjects = _simWorld->GetSceneObjects();
     for (int obj_idx=0; obj_idx<sceneObjects->N(); ++obj_idx)
     {
-        const auto &object = sceneObjects->GetPtr(obj_idx); 
+        const auto &object = sceneObjects->GetPtr(obj_idx);
         if (object->Type() != RIGID_SOUND_OBJ)
             continue;
         std::shared_ptr<TriangleMesh<REAL> > meshPtr = object->GetMeshPtr();
-        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices(); 
-        std::vector<ImpulseSeriesObject::ImpactRecord> records; 
+        const std::vector<Point3<REAL> >  &vertices = meshPtr->vertices();
+        std::vector<ImpulseSeriesObject::ImpactRecord> records;
         std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object)
-            ->GetImpulseWithinSupport(time, records); 
-        for (const auto &imp : records) 
+            ->GetImpulseWithinSupport(time, records);
+        for (const auto &imp : records)
         {
             if (imp.supportLength < SMALL_NUM)
                 continue;
@@ -499,39 +499,39 @@ DrawImpulses()
 void FDTD_AcousticSimulator_Viewer::
 DrawBox()
 {
-    const auto bboxs = _simWorld->GetSolverBBoxs(); 
+    const auto bboxs = _simWorld->GetSolverBBoxs();
     for (const auto &p : bboxs)
     {
-        auto &unit = p.first; 
+        auto &unit = p.first;
         auto newBoxCenter = SimWorld::rasterizer.rasterize(
-                unit->unitCenter);  
+                unit->unitCenter);
         auto oldBoxCenter = SimWorld::rasterizer.rasterize(
                 unit->BoundingBoxCenter());
         if (!newBoxCenter.equals(oldBoxCenter))
         {
             unit->boxCenterChanged = true;
         }
-        const Vector3d &minBound = p.second.minBound(); 
-        const Vector3d &maxBound = p.second.maxBound(); 
+        const Vector3d &minBound = p.second.minBound();
+        const Vector3d &maxBound = p.second.maxBound();
         glColor3f(1.0f, 1.0f, 1.0f);
-        GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]); 
-        if (_sceneBox) 
+        GL_Wrapper::DrawWireBox(&minBound[0], &maxBound[0]);
+        if (_sceneBox)
         {
             glColor3f(1.0f, 0.0f, 1.0f);
-            GL_Wrapper::DrawWireBox(&(_sceneBox->minBound()[0]), 
-                                    &(_sceneBox->maxBound()[0])); 
+            GL_Wrapper::DrawWireBox(&(_sceneBox->minBound()[0]),
+                                    &(_sceneBox->maxBound()[0]));
         }
 
         // draw field center
         glEnable(GL_LIGHTING);
         glPushMatrix();
         const auto &center = unit->BoundingBoxCenter();
-        glTranslatef(center.x, 
-                     center.y, 
-                     center.z); 
+        glTranslatef(center.x,
+                     center.y,
+                     center.z);
         glColor3f(0.9f, 0.9f, 0.1f);
-        GL_Wrapper::DrawSphere(8E-4, 30, 30); 
-        glPopMatrix(); 
+        GL_Wrapper::DrawSphere(8E-4, 30, 30);
+        glPopMatrix();
         glDisable(GL_LIGHTING);
     }
 }
@@ -545,7 +545,7 @@ LoadGround()
     QImage glImg = QGLWidget::convertToGLFormat(QImage(textureMeta.name));
     glTexImage2D(GL_TEXTURE_2D, 0, 4, glImg.width(), glImg.height(), 0,
             GL_RGBA, GL_UNSIGNED_BYTE, glImg.bits());
-    textureMeta.groundLoaded = true; 
+    textureMeta.groundLoaded = true;
 }
 
 //##############################################################################
@@ -554,9 +554,9 @@ LoadGround()
 void FDTD_AcousticSimulator_Viewer::
 DrawGround()
 {
-    if (_drawGround == 0) 
+    if (_drawGround == 0)
     {
-        return; 
+        return;
     }
     else if (_drawGround == 1)
     {
@@ -576,8 +576,8 @@ DrawGround()
     }
     else if (textureMeta.groundLoaded && _drawGround == 2)
     {
-        const float floorsize = 2.0f; 
-        const float uvbound = floorsize/textureMeta.blockSizeUV; 
+        const float floorsize = 2.0f;
+        const float uvbound = floorsize/textureMeta.blockSizeUV;
         glEnable(GL_TEXTURE_2D);
         // Display the quad
         glColor3f(1.0, 1.0, 1.0);
@@ -589,7 +589,7 @@ DrawGround()
         glTexCoord2f( uvbound, -uvbound);	glVertex3f( floorsize, 0., -floorsize);
         glEnd();
         glDisable(GL_TEXTURE_2D);
-    } 
+    }
 }
 
 //##############################################################################
@@ -608,19 +608,19 @@ DrawListeningPoints()
         glPushMatrix();
         glTranslatef(vertex.x, vertex.y, vertex.z);
         glColor3f(0.9f, 0.1f, 0.1f);
-        GL_Wrapper::DrawSphere(1E-2, 30, 30); 
-        glPopMatrix(); 
+        GL_Wrapper::DrawSphere(1E-2, 30, 30);
+        glPopMatrix();
     }
     glDisable(GL_LIGHTING);
-    auto units = _simWorld->GetActiveSimUnits(); 
-    glPointSize(1.0); 
+    auto units = _simWorld->GetActiveSimUnits();
+    glPointSize(1.0);
     glColor3f(0.9f, 0.1f, 0.9f);
     glBegin(GL_POINTS);
     for (const auto &unit : units)
     {
-        const auto &spks = unit->listen->speakers; 
+        const auto &spks = unit->listen->speakers;
         for (const auto &spk : spks)
-            glVertex3f(spk.x,spk.y,spk.z); 
+            glVertex3f(spk.x,spk.y,spk.z);
     }
     glEnd();
 }
@@ -633,21 +633,21 @@ DrawSelection()
     if (selectedName() != -1 && _listenedUnit)
     {
         // draw box
-        const int cell_idx = selectedName(); 
-        MAC_Grid::Cell cell; 
+        const int cell_idx = selectedName();
+        MAC_Grid::Cell cell;
         auto &simulator = _listenedUnit->simulator;
-        simulator->GetSolver()->FetchCell(cell_idx, cell); 
-        glColor3f(1.0f, 1.0f, 1.0f); 
-        GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+        simulator->GetSolver()->FetchCell(cell_idx, cell);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x));
 
         // draw hashed triangles
-        const auto search = simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.find(cell_idx); 
+        const auto search = simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.find(cell_idx);
         if (search != simulator->GetSolver()->GetGrid().GetFVMetaData().cellMap.end())
         {
             for (std::vector<TriangleIdentifier>::const_iterator it=(search->second)->begin(); it!=(search->second)->end(); ++it)
             {
                 const auto &object = simulator->GetSceneObjects()->GetPtr(it->objectID);
-                const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices(); 
+                const std::vector<Point3<REAL> > &vertices = object->GetMeshPtr()->vertices();
                 const Tuple3ui &triangle = object->GetMeshPtr()->triangle_ids(it->triangleID);
                 const Vector3f &color = _objectColors.at(it->objectID);
                 Point3<REAL> x = vertices.at(triangle.x);
@@ -737,12 +737,12 @@ DrawSlices(const int &dataPointer)
         return;
 
     const int N_slices = _sliceCin.size();
-    // draw slices 
+    // draw slices
     ComputeAndCacheSliceData(dataPointer); // do-nothing if cached
-    for (int s_idx=0; s_idx<N_slices; ++s_idx) 
+    for (int s_idx=0; s_idx<N_slices; ++s_idx)
     {
-        auto &slice = _sliceCin.at(s_idx); 
-        const Eigen::MatrixXd &data = slice.data; 
+        auto &slice = _sliceCin.at(s_idx);
+        const Eigen::MatrixXd &data = slice.data;
         if (_sliceWireframe[0])
         {
             glLineWidth(1.0f);
@@ -762,33 +762,33 @@ DrawSlices(const int &dataPointer)
         if (_sliceWireframe[1] && data.rows()!=0 && data.cols()!=0)
         {
             glBegin(GL_QUADS);
-            const Tuple3i divisions = slice.N_sample_per_dim; 
-            const int dim_0 = (slice.dim + 1) %3; 
-            const int dim_1 = (slice.dim + 2) %3; 
+            const Tuple3i divisions = slice.N_sample_per_dim;
+            const int dim_0 = (slice.dim + 1) %3;
+            const int dim_1 = (slice.dim + 2) %3;
 
             for (int dim_0_idx=0; dim_0_idx<divisions[dim_0]-1; ++dim_0_idx)
                 for (int dim_1_idx=0; dim_1_idx<divisions[dim_1]-1; ++dim_1_idx)
                 {
-                    const int idx_0_0 =  dim_0_idx     *divisions[dim_1] + dim_1_idx; 
-                    const int idx_0_1 =  dim_0_idx     *divisions[dim_1] + dim_1_idx + 1; 
-                    const int idx_1_1 = (dim_0_idx + 1)*divisions[dim_1] + dim_1_idx; 
-                    const int idx_1_0 = (dim_0_idx + 1)*divisions[dim_1] + dim_1_idx + 1; 
-                    const Tuple3f c_0_0 = _sliceColorMap->get_interpolated_color(data(idx_0_0, 0)); 
-                    const Tuple3f c_0_1 = _sliceColorMap->get_interpolated_color(data(idx_0_1, 0)); 
-                    const Tuple3f c_1_0 = _sliceColorMap->get_interpolated_color(data(idx_1_0, 0)); 
-                    const Tuple3f c_1_1 = _sliceColorMap->get_interpolated_color(data(idx_1_1, 0)); 
-                    const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0); 
-                    const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1); 
-                    const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0); 
-                    const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1); 
-                    glColor3f(c_0_0.x, c_0_0.y, c_0_0.z); 
-                    glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z); 
-                    glColor3f(c_0_1.x, c_0_1.y, c_0_1.z); 
-                    glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z); 
-                    glColor3f(c_1_0.x, c_1_0.y, c_1_0.z); 
-                    glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z); 
-                    glColor3f(c_1_1.x, c_1_1.y, c_1_1.z); 
-                    glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z); 
+                    const int idx_0_0 =  dim_0_idx     *divisions[dim_1] + dim_1_idx;
+                    const int idx_0_1 =  dim_0_idx     *divisions[dim_1] + dim_1_idx + 1;
+                    const int idx_1_1 = (dim_0_idx + 1)*divisions[dim_1] + dim_1_idx;
+                    const int idx_1_0 = (dim_0_idx + 1)*divisions[dim_1] + dim_1_idx + 1;
+                    const Tuple3f c_0_0 = _sliceColorMap->get_interpolated_color(data(idx_0_0, 0));
+                    const Tuple3f c_0_1 = _sliceColorMap->get_interpolated_color(data(idx_0_1, 0));
+                    const Tuple3f c_1_0 = _sliceColorMap->get_interpolated_color(data(idx_1_0, 0));
+                    const Tuple3f c_1_1 = _sliceColorMap->get_interpolated_color(data(idx_1_1, 0));
+                    const Vector3d &vertex_0_0 = slice.samples.at(idx_0_0);
+                    const Vector3d &vertex_0_1 = slice.samples.at(idx_0_1);
+                    const Vector3d &vertex_1_0 = slice.samples.at(idx_1_0);
+                    const Vector3d &vertex_1_1 = slice.samples.at(idx_1_1);
+                    glColor3f(c_0_0.x, c_0_0.y, c_0_0.z);
+                    glVertex3f(vertex_0_0.x, vertex_0_0.y, vertex_0_0.z);
+                    glColor3f(c_0_1.x, c_0_1.y, c_0_1.z);
+                    glVertex3f(vertex_0_1.x, vertex_0_1.y, vertex_0_1.z);
+                    glColor3f(c_1_0.x, c_1_0.y, c_1_0.z);
+                    glVertex3f(vertex_1_0.x, vertex_1_0.y, vertex_1_0.z);
+                    glColor3f(c_1_1.x, c_1_1.y, c_1_1.z);
+                    glVertex3f(vertex_1_1.x, vertex_1_1.y, vertex_1_1.z);
                 }
             glEnd();
         }
@@ -822,21 +822,21 @@ DrawDebugCin()
     for (size_t arr_idx=0; arr_idx<_arrowCin.size(); ++arr_idx)
     {
         glLineWidth(5.0f);
-        const REAL &start_x = _arrowCin.at(arr_idx).start.x; 
-        const REAL &start_y = _arrowCin.at(arr_idx).start.y; 
-        const REAL &start_z = _arrowCin.at(arr_idx).start.z; 
-        const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x*arrowScale; 
-        const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y*arrowScale; 
-        const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z*arrowScale; 
-        glColor3f(1.0f, 1.0f, 0.0f); 
-        glVertex3f(start_x, start_y, start_z); 
-        glVertex3f(stop_x, stop_y, stop_z); 
+        const REAL &start_x = _arrowCin.at(arr_idx).start.x;
+        const REAL &start_y = _arrowCin.at(arr_idx).start.y;
+        const REAL &start_z = _arrowCin.at(arr_idx).start.z;
+        const REAL &stop_x = _arrowCin.at(arr_idx).start.x + _arrowCin.at(arr_idx).normal.x*arrowScale;
+        const REAL &stop_y = _arrowCin.at(arr_idx).start.y + _arrowCin.at(arr_idx).normal.y*arrowScale;
+        const REAL &stop_z = _arrowCin.at(arr_idx).start.z + _arrowCin.at(arr_idx).normal.z*arrowScale;
+        glColor3f(1.0f, 1.0f, 0.0f);
+        glVertex3f(start_x, start_y, start_z);
+        glVertex3f(stop_x, stop_y, stop_z);
 
         // end spheres
         //glEnable(GL_LIGHTING);
         //glPushMatrix();
-        //glTranslatef(start_x, start_y, start_z); 
-        //glColor3f(1.0f, 1.0f, 0.0f); 
+        //glTranslatef(start_x, start_y, start_z);
+        //glColor3f(1.0f, 1.0f, 0.0f);
         //GL_Wrapper::DrawSphere(2.5E-4, 10, 10);
         //glPopMatrix();
         //glDisable(GL_LIGHTING);
@@ -850,16 +850,16 @@ void FDTD_AcousticSimulator_Viewer::
 DrawHashedCells()
 {
     // FIXME debug
-    //typedef std::unordered_map<int, std::shared_ptr<std::vector<MAC_Grid::TriangleIdentifier> > >::const_iterator Iterator; 
+    //typedef std::unordered_map<int, std::shared_ptr<std::vector<MAC_Grid::TriangleIdentifier> > >::const_iterator Iterator;
     //const MAC_Grid::FVMetaData &fvMetaData = _simulator->GetSolver()->GetGrid().GetFVMetaData();
-    //const auto &cellMap = fvMetaData.cellMap; 
+    //const auto &cellMap = fvMetaData.cellMap;
     //for (Iterator it=cellMap.begin(); it!=cellMap.end(); ++it)
     //{
-    //    MAC_Grid::Cell cell; 
-    //    _simulator->GetSolver()->FetchCell(it->first, cell); 
+    //    MAC_Grid::Cell cell;
+    //    _simulator->GetSolver()->FetchCell(it->first, cell);
     //    const Vector3f &color = _objectColors.at(it->second->at(0).objectID);
     //    glColor3f(color.x, color.y, color.z);
-    //    GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x)); 
+    //    GL_Wrapper::DrawWireBox(&(cell.lowerCorner.x), &(cell.upperCorner.x));
     //}
 }
 
@@ -880,11 +880,11 @@ keyPressEvent(QKeyEvent *e)
     bool optionsChanged = false;
     bool handled = true;
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::NoButton)) {
-        _wireframe = (_wireframe+1)%6; 
+        _wireframe = (_wireframe+1)%6;
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_W) && (modifiers == Qt::ControlModifier)) {
-        _meshDataPointer = (_meshDataPointer+1)%3; 
+        _meshDataPointer = (_meshDataPointer+1)%3;
         optionsChanged = true;
     }
     if ((e->key() == Qt::Key_D) && (modifiers == Qt::ShiftModifier)) {
@@ -931,21 +931,21 @@ keyPressEvent(QKeyEvent *e)
       }
     }
     else if ((e->key() == Qt::Key_G) && (modifiers == Qt::NoButton)) {
-        _drawGround = (_drawGround + 1)%3; 
+        _drawGround = (_drawGround + 1)%3;
         optionsChanged = true;
     }
-    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton)) 
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::NoButton))
     {
-        std::string line; 
-        std::cout << "Enter new scene radius: " << std::flush; 
+        std::string line;
+        std::cout << "Enter new scene radius: " << std::flush;
         PRE_CIN_CLEAR;
-        std::getline(std::cin, line); 
+        std::getline(std::cin, line);
         POST_CIN_CLEAR;
         const REAL r = std::stod(line);
-        std::cout << "set scene radius to " << r << std::endl; 
+        std::cout << "set scene radius to " << r << std::endl;
         setSceneRadius(r);
     }
-    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier)) 
+    else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier))
     {
         setSnapshotFormat("JPEG");
         setSnapshotQuality(80);
@@ -995,8 +995,8 @@ keyPressEvent(QKeyEvent *e)
     else if ((e->key() == Qt::Key_F) && (modifiers == Qt::ShiftModifier)) {
         // print all velocity BC
         std::cout << "Debug: execute some debug function" << std::endl;
-        auto &sceneObjects = _simWorld->GetSceneObjects(); 
-        const auto &object = sceneObjects->GetPtr(0); 
+        auto &sceneObjects = _simWorld->GetSceneObjects();
+        const auto &object = sceneObjects->GetPtr(0);
         std::dynamic_pointer_cast<FDTD_RigidSoundObject>(object)
             ->PrintAllVelocity("allVelocityFDTD.txt", 0);
     }
@@ -1121,14 +1121,14 @@ keyPressEvent(QKeyEvent *e)
         SetAllSliceDataReady(false);
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::NoButton)) {
-        const auto bboxs = _simWorld->GetSolverBBoxs(); 
-        Vector3d camCenter; 
+        const auto bboxs = _simWorld->GetSolverBBoxs();
+        Vector3d camCenter;
         for (const auto &p : bboxs)
         {
-            auto &unit = p.first; 
+            auto &unit = p.first;
             camCenter += unit->BoundingBoxCenter();
         }
-        camCenter /= (REAL) bboxs.size(); 
+        camCenter /= (REAL) bboxs.size();
         camera()->setPivotPoint(qglviewer::Vec(camCenter.x, camCenter.y, camCenter.z));
     }
     else if ((e->key() == Qt::Key_C) && (modifiers == Qt::ShiftModifier)) {
@@ -1160,16 +1160,16 @@ keyPressEvent(QKeyEvent *e)
         DrawOneFrameForward();
     }
     else if ((e->key() == Qt::Key_Right) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, _solverSettings->cellSize*0.9); 
+        MoveSceneCenter(0, _solverSettings->cellSize*0.9);
     }
     else if ((e->key() == Qt::Key_Left) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(0, -_solverSettings->cellSize*0.9); 
+        MoveSceneCenter(0, -_solverSettings->cellSize*0.9);
     }
     else if ((e->key() == Qt::Key_Up) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(2, _solverSettings->cellSize*0.9); 
+        MoveSceneCenter(2, _solverSettings->cellSize*0.9);
     }
     else if ((e->key() == Qt::Key_Down) && (modifiers == Qt::NoButton)) {
-        MoveSceneCenter(2, -_solverSettings->cellSize*0.9); 
+        MoveSceneCenter(2, -_solverSettings->cellSize*0.9);
     }
     else {
         handled = false;
@@ -1204,8 +1204,8 @@ postSelection(const QPoint &point)
 {
     if (selectedName() != -1)
     {
-        const int cell_idx = selectedName(); 
-        bool found; 
+        const int cell_idx = selectedName();
+        bool found;
         qglviewer::Vec selectedPoint = camera()->pointUnderPixel(point, found);
         Vector3d x(selectedPoint[0],selectedPoint[1],selectedPoint[2]);
         _listenedUnit.reset();
@@ -1218,10 +1218,10 @@ postSelection(const QPoint &point)
         }
         if (_listenedUnit)
         {
-            MAC_Grid::Cell cell; 
-            _listenedUnit->simulator->GetSolver()->FetchCell(cell_idx, cell); 
-            std::cout << cell << std::endl; 
-            _listenedCell = cell; 
+            MAC_Grid::Cell cell;
+            _listenedUnit->simulator->GetSolver()->FetchCell(cell_idx, cell);
+            std::cout << cell << std::endl;
+            _listenedCell = cell;
         }
     }
     else
@@ -1238,10 +1238,10 @@ InitializeBEMSolver()
     //FIXME debug: 1) always set mesh id to 0; 2) hard-coded frequency and read
     //files
     if (!_bemSolver)
-        _bemSolver = std::make_shared<KirchhoffIntegralSolver>(); 
-    int bemMeshID = 0; 
-    //std::cout << "Input BEM solution mesh id in the simulator: " << std::flush; 
-    //std::cin >> bemMeshID; 
+        _bemSolver = std::make_shared<KirchhoffIntegralSolver>();
+    int bemMeshID = 0;
+    //std::cout << "Input BEM solution mesh id in the simulator: " << std::flush;
+    //std::cin >> bemMeshID;
     std::shared_ptr<TriangleMesh<REAL> > bemMesh = _simWorld->GetSceneObjects()->GetPtr(bemMeshID)->GetMeshPtr();
     _bemSolver->SetMesh(bemMesh);
     std::cout << " Set BEM solution corresponding mesh to " << _simWorld->GetSceneObjects()->GetMeshName(bemMeshID) << std::endl;
@@ -1258,20 +1258,20 @@ InitializeBEMSolver()
 void FDTD_AcousticSimulator_Viewer::
 AddSlice(const int &dim, const REAL &offset)
 {
-    const auto &simUnits = _simWorld->GetActiveSimUnits(); 
+    const auto &simUnits = _simWorld->GetActiveSimUnits();
     for (const auto &unit : simUnits)
     {
-        const BoundingBox &bbox = unit->GetBoundingBox(); 
+        const BoundingBox &bbox = unit->GetBoundingBox();
         if (offset>bbox.axismax(dim) && offset<bbox.axismin(dim))
             continue; // this plane not intersecting the box
-        Slice slice; 
-        slice.dim = dim; 
+        Slice slice;
+        slice.dim = dim;
         slice.origin.set(0, 0, 0);
-        slice.origin[dim] += offset; 
+        slice.origin[dim] += offset;
         slice.dataReady = false;
-        slice.intersectingUnit = unit; 
+        slice.intersectingUnit = unit;
         ConstructSliceSamples(slice);
-        _sliceCin.push_back(slice); 
+        _sliceCin.push_back(slice);
     }
 }
 
@@ -1280,27 +1280,27 @@ AddSlice(const int &dim, const REAL &offset)
 void FDTD_AcousticSimulator_Viewer::
 ConstructSliceSamples(Slice &slice)
 {
-    const int &dim = slice.dim; 
-    const Vector3d &origin = slice.origin; 
-    Vector3Array &samples = slice.samples; 
-    Vector3Array &gridLines = slice.gridLines; 
-    samples.clear(); 
-    gridLines.clear(); 
+    const int &dim = slice.dim;
+    const Vector3d &origin = slice.origin;
+    Vector3Array &samples = slice.samples;
+    Vector3Array &gridLines = slice.gridLines;
+    samples.clear();
+    gridLines.clear();
 
-    const auto &settings = _solverSettings; 
-    const auto &simulator = slice.intersectingUnit->simulator; 
-    const Tuple3i &divisions = simulator->GetGrid().pressureFieldDivisions(); 
-    const REAL cellSize = settings->cellSize; 
+    const auto &settings = _solverSettings;
+    const auto &simulator = slice.intersectingUnit->simulator;
+    const Tuple3i &divisions = simulator->GetGrid().pressureFieldDivisions();
+    const REAL cellSize = settings->cellSize;
 
-    //const REAL halfLength = (REAL)division*cellSize / 2.0; 
-    //const REAL minBound = -halfLength + cellSize/2.0; 
-    const BoundingBox pBBox = simulator->GetGrid().PressureBoundingBox(); 
+    //const REAL halfLength = (REAL)division*cellSize / 2.0;
+    //const REAL minBound = -halfLength + cellSize/2.0;
+    const BoundingBox pBBox = simulator->GetGrid().PressureBoundingBox();
     slice.minBound = pBBox.minBound() + 0.5*cellSize;
-    slice.maxBound = pBBox.maxBound() - 0.5*cellSize; 
-    slice.N_sample_per_dim = divisions; 
+    slice.maxBound = pBBox.maxBound() - 0.5*cellSize;
+    slice.N_sample_per_dim = divisions;
 
-    const int dim_0 = (dim + 1) % 3; 
-    const int dim_1 = (dim + 2) % 3; 
+    const int dim_0 = (dim + 1) % 3;
+    const int dim_1 = (dim + 2) % 3;
     for (int dim_0_idx=0; dim_0_idx<divisions[dim_0]; ++dim_0_idx)
         for (int dim_1_idx=0; dim_1_idx<divisions[dim_1]; ++dim_1_idx)
         {
@@ -1312,10 +1312,10 @@ ConstructSliceSamples(Slice &slice)
         }
 
     // horizontal grid lines
-    const REAL xStart = slice.minBound[dim_0] - 0.5*cellSize; 
-    const REAL xStop =  slice.maxBound[dim_0] + 0.5*cellSize; 
-    const REAL yStart = slice.minBound[dim_1] - 0.5*cellSize; 
-    const REAL yStop =  slice.maxBound[dim_1] + 0.5*cellSize; 
+    const REAL xStart = slice.minBound[dim_0] - 0.5*cellSize;
+    const REAL xStop =  slice.maxBound[dim_0] + 0.5*cellSize;
+    const REAL yStart = slice.minBound[dim_1] - 0.5*cellSize;
+    const REAL yStop =  slice.maxBound[dim_1] + 0.5*cellSize;
     for (int dim_0_idx=0; dim_0_idx<divisions[dim_0]+1; ++dim_0_idx)
     {
         Vector3d start;
@@ -1347,8 +1347,8 @@ ConstructSliceSamples(Slice &slice)
 
     // make colormap for this slice.
     if (!_sliceColorMap)
-        _sliceColorMap = std::make_shared<JetColorMap>(); 
-        //_sliceColorMap = std::make_shared<DipoleColorMap>(); 
+        _sliceColorMap = std::make_shared<JetColorMap>();
+        //_sliceColorMap = std::make_shared<DipoleColorMap>();
 }
 
 //##############################################################################
@@ -1363,28 +1363,28 @@ ComputeAndCacheSliceData(const int &dataPointer)
     // first fetch all data and compute min, max
     for (int s_idx=0; s_idx<N_slices; ++s_idx)
     {
-        auto &slice = _sliceCin.at(s_idx); 
-        auto &unit = slice.intersectingUnit; 
+        auto &slice = _sliceCin.at(s_idx);
+        auto &unit = slice.intersectingUnit;
         if (unit->boxCenterChanged)
         {
-            ConstructSliceSamples(slice); 
-            slice.dataReady = false; 
+            ConstructSliceSamples(slice);
+            slice.dataReady = false;
             unit->boxCenterChanged = false; // reset
         }
         if (slice.dataReady)
             continue;
         Eigen::MatrixXd &data = slice.data;
         data.setZero();
-        auto simulator = slice.intersectingUnit->simulator; 
+        auto simulator = slice.intersectingUnit->simulator;
         if (dataPointer == 0)
         {
             simulator->GetSolver()->FetchPressureData(slice.samples, data);
-        } 
+        }
         else if (dataPointer == 1)
         {
             // 0.0: bulk cell; 1: solid cell; -1: ghost cell
             simulator->GetSolver()->FetchPressureCellType(slice.samples, data, _sceneBox);
-        } 
+        }
         else if (dataPointer == 2)
         {
             simulator->GetSolver()->FetchVelocityData(slice.samples, 0, data);
@@ -1400,16 +1400,16 @@ ComputeAndCacheSliceData(const int &dataPointer)
         else if (dataPointer == 5)
         {
             simulator->GetSolver()->FetchPressureData(slice.samples, data, 0);
-        } 
+        }
         else if (dataPointer == 6)
         {
             simulator->GetSolver()->FetchPressureData(slice.samples, data, 1);
-        } 
+        }
         else if (dataPointer == 7)
         {
             simulator->GetSolver()->FetchPressureData(slice.samples, data, 2);
-        } 
-        else if (dataPointer == 8 || dataPointer == 9) 
+        }
+        else if (dataPointer == 8 || dataPointer == 9)
         {
             const int N_samples = slice.samples.size();
             data.resize(N_samples, 1);
@@ -1424,8 +1424,8 @@ ComputeAndCacheSliceData(const int &dataPointer)
                 else if (dataPointer == 9)
                 {
                     // if distance > threashold, computes transfer residual
-                    REAL transferResidual; 
-                    const REAL distance = simulator->GetSceneObjects()->LowestObjectDistance(slice.samples.at(d_idx)); 
+                    REAL transferResidual;
+                    const REAL distance = simulator->GetSceneObjects()->LowestObjectDistance(slice.samples.at(d_idx));
                     if (distance > 0.005)
                         _bemSolver->TestSolver(_bemModePointer, _bemSolver->GetMode_k(_bemModePointer), slice.samples.at(d_idx), transferResidual);
                     else
@@ -1475,10 +1475,10 @@ DrawOneFrameForward()
     if (_previewSpeed == 0)
     {
         _currentFrame++;
-        _simWorld->StepWorld(); 
+        _simWorld->StepWorld();
         if (_listenedCell.index >= 0 && _listenedUnit)
         {
-            _listenedUnit->simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell); 
+            _listenedUnit->simulator->GetSolver()->FetchCell(_listenedCell.index, _listenedCell);
             std::cout << _listenedCell << std::endl;
         }
 #if DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL > 0
@@ -1503,11 +1503,11 @@ DrawOneFrameForward()
 void FDTD_AcousticSimulator_Viewer::
 RestoreDefaultDrawOptions()
 {
-    _wireframe = (_remoteConnection ? 4 : 2); 
-    _sliceWireframe.reset(); 
+    _wireframe = (_remoteConnection ? 4 : 2);
+    _sliceWireframe.reset();
     _sliceWireframe.set(1); // draw face only
-    _drawBoxLis = true; 
-    _drawGround = (_remoteConnection ? 0 : 2); 
+    _drawBoxLis = true;
+    _drawGround = (_remoteConnection ? 0 : 2);
     _drawHashedCells = false;
     _sliceDataPointer = 0;
 }
@@ -1543,8 +1543,8 @@ PrintFrameInfo()
             break;
     //const std::string frameInfo("Current Frame: " + std::to_string(_currentFrame));
     _message = QString("");
-    _message += "Current Frame: " + QString::number(_currentFrame) + "; "; 
-    _message += "Current Time: " + QString::number(_simWorld->GetWorldTime()) + "; "; 
+    _message += "Current Frame: " + QString::number(_currentFrame) + "; ";
+    _message += "Current Time: " + QString::number(_simWorld->GetWorldTime()) + "; ";
     _message += "Current Data: " + dataString[p] + "; ";
 }
 
@@ -1553,7 +1553,7 @@ PrintFrameInfo()
 void FDTD_AcousticSimulator_Viewer::
 Push_Back_ReflectionArrows(const std::string &filename)
 {
-    auto &sceneObjects = _simWorld->GetSceneObjects(); 
+    auto &sceneObjects = _simWorld->GetSceneObjects();
     const int N = sceneObjects->N();
     sceneObjects->WriteFailedReflections(filename);
 
@@ -1576,31 +1576,31 @@ Push_Back_ReflectionArrows(const std::string &filename)
 //##############################################################################
 //##############################################################################
 void FDTD_AcousticSimulator_Viewer::
-MoveSceneCenter(const int &dim, const double &displacement) 
+MoveSceneCenter(const int &dim, const double &displacement)
 {
     // FIXME debug
-    ////if (!_sceneBox) 
+    ////if (!_sceneBox)
     ////{
     ////    const BoundingBox bbox = _simulator->GetGrid().PressureBoundingBox();
-    ////    _sceneBox = new BoundingBox(bbox.minBound(), bbox.maxBound()); 
+    ////    _sceneBox = new BoundingBox(bbox.minBound(), bbox.maxBound());
     ////}
-    ////(_sceneBox->minBound())[dim] += displacement; 
-    ////(_sceneBox->maxBound())[dim] += displacement; 
-    ////std::cout << _sceneBox->center() << std::endl; 
-    ////_simulator->GetGrid().UpdatePML(*_sceneBox); 
-    //Vector3d move; 
+    ////(_sceneBox->minBound())[dim] += displacement;
+    ////(_sceneBox->maxBound())[dim] += displacement;
+    ////std::cout << _sceneBox->center() << std::endl;
+    ////_simulator->GetGrid().UpdatePML(*_sceneBox);
+    //Vector3d move;
     //move[dim] = displacement;
-    //const bool changed = _simulator->MoveSimBox(move); 
+    //const bool changed = _simulator->MoveSimBox(move);
     //if (changed)
     //{
     //    // recompute slices
     //    for (auto &slice : _sliceCin)
     //    {
-    //        slice.samples.clear(); 
-    //        slice.gridLines.clear(); 
-    //        slice.cells.clear(); 
-    //        ConstructSliceSamples(slice); 
-    //        slice.dataReady = false; 
+    //        slice.samples.clear();
+    //        slice.gridLines.clear();
+    //        slice.cells.clear();
+    //        ConstructSliceSamples(slice);
+    //        slice.dataReady = false;
     //    }
     //    updateGL();
     //}
