@@ -13,10 +13,22 @@ ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
     using namespace boost::filesystem;
 
     // helper to parse the filename
-    auto ParseFileID = [](const path &a) {
-        std::vector<std::string> tokens;
-        boost::split(tokens, a.filename().string(), [](char c){return c == '_';});
-        return std::stoi(tokens.at(2));};
+    auto ParseFileID = [](const path &a)
+    {
+
+        if (a.string().find("James_test_") != std::string::npos)
+        {
+            std::vector<std::string> tokens;
+            boost::split(tokens, a.filename().string(), [](char c){return c == '_';});
+            return std::stoi(tokens.at(2));
+        }
+        else
+        {
+            std::vector<std::string> tokens;
+            boost::split(tokens, a.stem().string(), [](char c){return c == '_';});
+            return std::stoi(tokens.at(1));
+        }
+    };
 
     // iterate through directory and find main character obj series
     path p(dir.c_str());
@@ -52,10 +64,6 @@ ReadObjSeqMetaData(const std::string &dir, const std::string &objPrefix,
                     while (iss >> buf)
                         handles.push_back(buf);
                 }
-            }
-            else
-            {
-                std::cerr << "**WARNING** Cannot open handles file: "+handlesFile << std::endl;
             }
         }
 
@@ -101,7 +109,6 @@ Initialize(const std::string &speakerFile, const std::vector<int> &handleVIds)
 
     // create set of handles
     _handles.insert(handleVIds.begin(), handleVIds.end());
-    PrintHandlesTotalArea(); // FIXME debug
 }
 
 //##############################################################################
