@@ -41,6 +41,7 @@ parser.read(out_config)
 
 data_dir = ReqParse(parser, 'general', 'data_dir', 's')
 out_dir = ReqParse(parser, 'general', 'out_dir', 's')
+sampfreq = ReqParse(parser, 'general', 'sampfreq', 'i')
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
@@ -50,21 +51,35 @@ results.Set_Folder(data_dir)
 all_data = np.array([])
 NChunks = 1
 NStepsEachChunk = 0
-if(time_parallel):
-    NChunks = ReqParse(parser, 'general', 'time_chunks', 'i')
-    NStepsEachChunk = ReqParse(parser, 'general', 'time_steps_each_chunk', 'i')
+if time_parallel:
+    adaptive_parallel = OptParse(parser, 'parallel', 'adaptive', 'b', False)
+    if not adaptive_parallel:
+        NChunks = ReqParse(parser, 'general', 'time_chunks', 'i')
+        NStepsEachChunk = ReqParse(parser, 'general', 'time_steps_each_chunk', 'i')
     exclude_chunks = OptParse(parser, 'general', 'exclude_chunks', 'li')
-all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=exclude_chunks)
+if adaptive_parallel:
+    all_data = results.Read_All_Audio_Adaptive(sampfreq)
+else:
+    all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=exclude_chunks)
+
 
 ##
 N_points = all_data.shape[1]
 N_steps  = all_data.shape[0]
-sampfreq = ReqParse(parser, 'general', 'sampfreq', 'i')
 
-padTime = OptParse(parser, 'general', 'pad_time', 'f', 0)
-if padTime > 0:
-    pad_amount = int(round(padTime * sampfreq))
-    all_data = np.pad(all_data, [(pad_amount, 0), (0,0)], 'constant', constant_values=0)
+fPadTime = OptParse(parser, 'general', 'front_pad_time', 'f', 0)
+bPadTime = OptParse(parser, 'general', 'back_pad_time', 'f', 0)
+bPadTimeTo = OptParse(parser, 'general', 'back_pad_time_to', 'f', 0)
+if fPadTime > 0 or bPadTime > 0 or bPadTimeTo > 0:
+    fpad_amount = int(round(fPadTime * sampfreq))
+    bpad_amount = int(round(bPadTime * sampfreq))
+    if bPadTimeTo > 0:
+        diff = int(round(bPadTimeTo*sampfreq)) - all_data.shape[0]
+        print float(diff)/float(sampfreq)
+        print float(all_data.shape[0])/float(sampfreq)
+        if diff > 0:
+            bpad_amount = diff
+    all_data = np.pad(all_data, [(fpad_amount, bpad_amount), (0,0)], 'constant', constant_values=0)
     N_steps  = all_data.shape[0]
 
 limTime = OptParse(parser, 'general', 'lim_time', 'f', -1)
@@ -108,10 +123,12 @@ if ReqParse(parser, 'general', 'write_wav', 'b'):
         # scipy resample uses FFT, zero-pad it to make it fast
         outputdata = all_data[:,ii].copy()
         nextpow2 = int(np.power(2, np.floor(np.log2(len(outputdata)))+1))
+        T = float(outputdata.shape[0])/float(sampfreq)
         outputdata = np.pad(outputdata, (0, nextpow2-len(outputdata)), 'constant', constant_values=(0.,0.))
         outputdata = signal.resample(outputdata, int(float(len(outputdata))/rateRatio))
+        outputdata = outputdata[:int(round(T*wavfreq))]
         normalization = np.absolute(outputdata).max()
-        if wavformat == '32float': 
+        if wavformat == '32float':
             finaldata = outputdata/normalization
         elif wavformat == '16int':
             finaldata = ((outputdata/normalization*32767)).astype('int16')

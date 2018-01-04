@@ -116,6 +116,94 @@ class Wavesolver_Results:
                 #     all_data[row,:] = struct.unpack('d'*self.num_listening_points, buf)
             return all_data
 
+    def Read_All_Audio_Adaptive(self, sampfreq):
+        if (self.folder is None):
+            return
+        if (self.listening_points is None):
+            self.Read_Listening_Position(True)
+        dones = glob.glob('%s/%s_*_sim-done' %(self.folder, self.prefix))
+
+        idxset = set()
+        maxtime = 0.
+        for d in dones:
+            idx_s = d.split('/')[-1].split('_')[1]
+            f_time  = '%s/%s_%s_time_range' %(self.folder, self.prefix, idx_s)
+            with open(f_time, 'r') as stream:
+                lines = stream.readlines()
+                maxtime = max(float(lines[1]), maxtime)
+            idxset.add(idx_s)
+
+        dt = 1./float(sampfreq)
+        num_total_steps = int(np.ceil(maxtime/dt))
+        print 'total steps = ', num_total_steps
+        print 'self.num_listening_points = ', self.num_listening_points
+        # tall and skinny
+        all_data = np.zeros((num_total_steps, self.num_listening_points))
+
+        for idx_s in idxset:
+            print '\n\n'
+            f_audio = '%s/%s_%s_all_audio.dat' %(self.folder, self.prefix, idx_s)
+            f_time  = '%s/%s_%s_time_range'    %(self.folder, self.prefix, idx_s)
+            assert(os.path.isfile(f_audio))
+            # read time range
+            with open(f_time, 'r') as stream:
+                lines = stream.readlines()
+                t0 = float(lines[0])
+                t1 = float(lines[1])
+                t2 = float(lines[2])
+            # read audio data
+            print 'Reading audio file: %s' %(f_audio)
+            filesizebytes = os.path.getsize(f_audio)
+            with open(f_audio, 'rb') as stream:
+                num_steps = int(np.floor(filesizebytes/8/self.num_listening_points))
+                print '  reading %d steps' %(num_steps)
+                N = self.num_listening_points*num_steps
+                buf = stream.read(8*N)
+                data = np.array(struct.unpack('d'*N, buf))
+                data = data.reshape((num_steps, self.num_listening_points))
+                idx = int(idx_s)
+
+                post_process_change_termination = False
+                if not post_process_change_termination:
+                    row_0 = int(t0/dt)
+                    if (t2 < maxtime):
+                        row_1 = row_0 + data.shape[0]
+                        all_data[row_0:row_1,:] = data
+                    else: # last one
+                        n = all_data.shape[0] - row_0
+                        row_1 = row_0 + n
+                        all_data[row_0:,:] = data[:n,:]
+                else: # hack to post process early termination
+                    newAbsLowerBound = 2E-5
+                    newWindowLength = 0.025
+                    if t1 == maxtime:
+                        row_0 = int(t0/dt)
+                        if (t2 < maxtime):
+                            row_1 = row_0 + data.shape[0]
+                            all_data[row_0:row_1,:] = data
+                        else: # last one
+                            n = all_data.shape[0] - row_0
+                            row_1 = row_0 + n
+                            all_data[row_0:,:] = data[:n,:]
+                    else:
+                        t = t0
+                        count = 0
+                        while t < t1:
+                            count += 1
+                            t += dt
+                        last = t1
+                        while count < num_steps:
+                            if max(np.abs(data[count,:])) > newAbsLowerBound:
+                                last = t
+                            else:
+                                if (t - last > newWindowLength):
+                                    break
+                            t += dt
+                            count += 1
+                        row_0 = int(t0/dt)
+                        all_data[row_0:row_0+count,:] = data[:count,:]
+        return all_data
+
     @staticmethod
     def ComputeFFT(dt, y):
         N = len(y)
