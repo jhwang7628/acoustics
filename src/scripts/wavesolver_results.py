@@ -41,7 +41,7 @@ class Wavesolver_Results:
             if exclude_chunks is not None:
                 exclude_chunks = set(exclude_chunks)
             for i in range(NChunks):
-                if i in exclude_chunks:
+                if exclude_chunks is not None and i in exclude_chunks:
                     continue
                 filename = '%s/%s_%05d_all_audio.dat' %(self.folder, self.prefix, i)
                 if os.path.isfile(filename):
