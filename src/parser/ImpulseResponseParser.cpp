@@ -534,6 +534,16 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
         p->domainCenter.set(domainCenter_x, domainCenter_y, domainCenter_z);
         p->type = "static";
     }
+    else if (ptype == "markers")
+    {
+        settings->solverControlPolicy = std::make_shared<Markers_Policy>();
+        auto p = std::dynamic_pointer_cast<Markers_Policy>(settings->solverControlPolicy);
+        p->boxSizeMarker = queryRequiredReal(node, "box_size_each_marker");
+        p->markersDir    = queryRequiredAttr(node, "markers_dir"         );
+        p->frameRate     = queryRequiredReal(node, "markers_frame_rate"  );
+        p->startTime     = queryRequiredReal(node, "markers_start_time"  );
+        p->type = "markers";
+    }
     else
     {
         throw std::runtime_error("**ERRORR** solver control policy not understood");

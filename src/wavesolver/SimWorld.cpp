@@ -4,8 +4,10 @@
 #include <Eigen/Dense>
 #include "macros.h"
 #include "io/FDTD_ListenShell.hpp"
-#include "geometry/BoundingBox.h"
 #include "wavesolver/SimWorld.h"
+#include "igl/read_triangle_mesh.h"
+#include "boost/algorithm/string.hpp"
+#include "boost/filesystem.hpp"
 
 //##############################################################################
 // Static member definition
@@ -108,12 +110,12 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
         _terminationMonitor.r = _simulatorSettings->earlyTerminationRatio;
     }
 
-    // if use adaptive start time, read chunk partition file and overwrite uniform chunk setup
-    if (_simulatorSettings->adaptiveStartTime && _simulatorSettings->timeParallel)
+    // setup adaptive chunks if necessary
+    if (_simulatorSettings->timeParallel)
     {
         auto acParam = parser->GetChunkPartitionParam();
         std::ifstream stream(acParam->outFile.c_str());
-        if (stream)
+        if (acParam->adaptive && stream)
         {
             std::string line;
             while(std::getline(stream, line))
@@ -234,6 +236,27 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
                 _simUnits.insert(std::move(simUnit));
             }
         }
+    }
+    else if (_simulatorSettings->solverControlPolicy->type == "markers")
+    {
+        auto policy =
+            std::dynamic_pointer_cast<Markers_Policy>(_simulatorSettings->solverControlPolicy);
+        ActiveSimUnit_Ptr simUnit = std::make_shared<ActiveSimUnit>();
+        std::string *simulatorID = new std::string("0");
+        simUnit->objects = _objectCollections;
+        simUnit->simulator = std::make_shared<FDTD_AcousticSimulator>(simulatorID);
+        simUnit->simulator->SetParser(parser);
+        simUnit->simulator->SetSolverSettings(_simulatorSettings);
+        simUnit->simulator->SetSceneObjects(simUnit->objects);
+        simUnit->simulator->SetOwner(simUnit);
+
+        const BoundingBox simUnitBox = FindSolverBBoxWithMarkers(policy, simUnit->divisions);
+        simUnit->listen = std::make_unique<ListeningUnit>();
+        simUnit->lowerRadiusBound = simUnitBox.minlength()/2.0;
+        simUnit->upperRadiusBound = simUnitBox.maxlength()/2.0;
+        simUnit->unitID = simulatorID;
+        candidateUnit[simUnit] = simUnitBox;
+        _simUnits.insert(std::move(simUnit));
     }
     else
     {
@@ -928,6 +951,71 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t)
             }
         }
     }
+}
+
+//##############################################################################
+// Function FindSolverBBoxWithMarkers
+//##############################################################################
+BoundingBox SimWorld::
+FindSolverBBoxWithMarkers(std::shared_ptr<Markers_Policy> policy, int &divs)
+{
+    std::cout << "Find Solver bbox with markers\n";
+    using namespace boost::filesystem;
+    // iterate and find all marker files
+    path p(policy->markersDir.c_str());
+    std::vector<path> filenames;
+    for (directory_iterator it(p); it!=directory_iterator(); ++it)
+        if (it->path().extension().string() == ".obj")
+            filenames.push_back(it->path());
+    auto ParseFileID = [](const path &a)
+    {
+        std::vector<std::string> tokens;
+        boost::split(tokens, a.stem().string(), [](char c){return c == '_';});
+        return std::stoi(tokens.at(1));
+    };
+    std::sort(filenames.begin(), filenames.end(),
+            [&](const path &a, const path &b){
+                return ParseFileID(a) < ParseFileID(b);});
+
+    // bound the solver box
+    const REAL &h = _simulatorSettings->cellSize;
+    const REAL &H = policy->boxSizeMarker;
+    const REAL H_over_2 = H/2.0;
+    Vector3d minBound(F_MAX, F_MAX, F_MAX);
+    Vector3d maxBound(F_LOW, F_LOW, F_LOW);
+    for (const auto &f : filenames)
+    {
+        const int idx = ParseFileID(f);
+        const REAL t = policy->startTime + (REAL)idx/policy->frameRate;
+        if (t > _state.startTime &&
+            t < _simulatorSettings->stopBoundaryAccTime)
+        {
+            // compute centroid of marker
+            Eigen::MatrixXd V;
+            Eigen::MatrixXi F;
+            igl::read_triangle_mesh(f.string().c_str(), V, F);
+            const Eigen::Vector3d C = V.colwise().sum() / (REAL)V.rows();
+
+            // min/max the box
+            for (int dd=0; dd<3; ++dd)
+            {
+                minBound[dd] = std::min(minBound[dd], C[dd]-H_over_2);
+                maxBound[dd] = std::max(maxBound[dd], C[dd]+H_over_2);
+            }
+        }
+    }
+    const Vector3d center = (maxBound + minBound) / 2.0;
+    const Vector3d diff = (maxBound - minBound);
+    REAL l = 0.0;
+    for (int dd=0; dd<3; ++dd)
+        l = std::max(l, diff[dd]);
+    divs = (int)(l/h);
+    minBound = center - l/2.0;
+    maxBound = center + l/2.0;
+    BoundingBox bbox;
+    bbox.setMinBound(minBound);
+    bbox.setMaxBound(maxBound);
+    return bbox;
 }
 
 //##############################################################################

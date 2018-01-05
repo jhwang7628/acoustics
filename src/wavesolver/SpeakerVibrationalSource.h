@@ -8,6 +8,7 @@
 
 //##############################################################################
 // Speaker vibrations.
+#include <boost/algorithm/string.hpp>
 //##############################################################################
 class SpeakerVibrationalSource : public VibrationalSource
 {

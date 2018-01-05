@@ -94,6 +94,8 @@ public:
 
     // time-parallelization stuff
     void RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t);
+    // space-parallelization stuff
+    BoundingBox FindSolverBBoxWithMarkers(std::shared_ptr<Markers_Policy> p, int &divs);
 };
 using SimWorld_UPtr = std::unique_ptr<SimWorld>;
 

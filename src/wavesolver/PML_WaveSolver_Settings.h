@@ -121,4 +121,21 @@ struct Dynamic_Policy : public Solver_Control_Policy
 {
     int padding;
 };
+
+//##############################################################################
+// Struct Markers_Policy
+//##############################################################################
+struct Markers_Policy : public Solver_Control_Policy
+{
+    // parsed
+    std::string markersDir;
+    REAL startTime;
+    REAL frameRate; // Hz
+    REAL boxSizeMarker;
+
+    // constructed
+    int frame = 0;
+    Vector3d solverCenter;
+};
+
 #endif
