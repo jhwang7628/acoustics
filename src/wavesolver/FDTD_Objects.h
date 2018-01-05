@@ -143,6 +143,7 @@ class FDTD_Objects
         void DisableAllEvals();
         void EnableAllEvals();
         bool AreEvalsDisabled() { return _disableAllEvals; }
+        bool ShaderIsZero(const REAL t) const;
 
         //// debug methods ////
         std::ofstream *of_q;

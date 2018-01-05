@@ -13,6 +13,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/PressureSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/GaussianPressureSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/GaussianPressureSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpeakerPressureSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpeakerPressureSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/VibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp

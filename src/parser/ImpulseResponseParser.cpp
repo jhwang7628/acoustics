@@ -1,4 +1,5 @@
 #include <wavesolver/GaussianPressureSource.h>
+#include <wavesolver/SpeakerPressureSource.h>
 #include <parser/ImpulseResponseParser.h>
 #include <io/ImpulseSeriesReader.h>
 #include <wavesolver/VibrationalSource.h>
@@ -544,14 +545,13 @@ GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings)
 void ImpulseResponseParser::
 GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &pressureSources)
 {
-    // get the element nodes required
     TiXmlElement *root, *pressureSourceNode, *gaussianSourceNode;
     TiXmlDocument *document = &_document;
     GET_FIRST_CHILD_ELEMENT_GUARD(root, document, "impulse_response");
-    GET_FIRST_CHILD_ELEMENT_GUARD(pressureSourceNode, root, "pressure_source");
-    try
+    pressureSourceNode = root->FirstChildElement("pressure_source");
+    // parse gaussian src
     {
-        GET_FIRST_CHILD_ELEMENT_GUARD(gaussianSourceNode, pressureSourceNode, "gaussian_pressure_source");
+        gaussianSourceNode = pressureSourceNode->FirstChildElement("gaussian_pressure_source");
         while (gaussianSourceNode)
         {
             const REAL widthTime         = queryRequiredReal(gaussianSourceNode, "source_width_time");
@@ -572,9 +572,25 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
             gaussianSourceNode = gaussianSourceNode->NextSiblingElement("gaussian_pressure_source");
         }
     }
-    catch (const std::runtime_error &error)
+
+    // parse speaker src
     {
-        std::cout << "No pressure sources found\n";
+        TiXmlElement *node;
+        node = pressureSourceNode->FirstChildElement("speaker_pressure_source");
+        while (node)
+        {
+            const REAL t0 = queryRequiredReal(node, "start_time");
+            const REAL w  = queryRequiredReal(node, "width_space");
+            const std::string f = queryRequiredAttr(node, "speaker_file");
+            PressureSourcePtr src(new SpeakerPressureSource());
+            auto spksrc = std::dynamic_pointer_cast<SpeakerPressureSource>(src);
+            spksrc->SetStartTime(t0);
+            spksrc->SetWidthSpace(w);
+            spksrc->SetSoundSpeed(soundSpeed);
+            spksrc->Initialize(f);
+            pressureSources.push_back(std::move(src));
+            node = node->NextSiblingElement("speaker_pressure_source");
+        }
     }
 }
 

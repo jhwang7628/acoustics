@@ -771,16 +771,7 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t)
     for (int ii=0; ii<N_t; ++ii)
     {
         const REAL t = T[0] + (REAL)ii*dt;
-        bool isZero = true;
-        for (const auto &m : objs)
-        {
-            if (!m.second->ShaderIsZero(t))
-            {
-                isZero = false;
-                break;
-            }
-        }
-        if (isZero)
+        if (_objectCollections->ShaderIsZero(t))
         {
             q.push_back(t);
         }

@@ -615,6 +615,21 @@ EnableAllEvals()
 
 //##############################################################################
 //##############################################################################
+bool FDTD_Objects::
+ShaderIsZero(const REAL t) const
+{
+    const auto &objs = _rigidObjects;
+    for (const auto &m : objs)
+        if (!m.second->ShaderIsZero(t))
+            return false;
+    for (const auto &p : _pressureSources)
+        if (!p->IsZero(t))
+            return false;
+    return true;
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_Objects::
 TestObjectDistanceField(const size_t &ind)
 {
