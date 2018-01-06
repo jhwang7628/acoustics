@@ -597,7 +597,25 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
             spksrc->SetStartTime(t0);
             spksrc->SetWidthSpace(w);
             spksrc->SetSoundSpeed(soundSpeed);
+            const std::string type = queryOptionalAttr(node, "positioning_type", "static");
+            std::shared_ptr<SpeakerPressureSource::PositioningControl> control;
+            if (type == "markers")
+            {
+                control = std::make_shared<SpeakerPressureSource::MarkersPositioningControl>();
+                auto mControl =
+                    std::dynamic_pointer_cast<SpeakerPressureSource::MarkersPositioningControl>(control);
+                mControl->type      = type;
+                mControl->dir       = queryRequiredAttr(node, "markers_dir");
+                mControl->frameRate = queryRequiredReal(node, "markers_frame_rate");
+                mControl->startTime = queryRequiredReal(node, "markers_start_time");
+            }
+            else
+            {
+                control = std::make_shared<SpeakerPressureSource::PositioningControl>();
+            }
+            spksrc->SetPosControl(control);
             spksrc->Initialize(f);
+
             pressureSources.push_back(std::move(src));
             node = node->NextSiblingElement("speaker_pressure_source");
         }

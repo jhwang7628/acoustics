@@ -32,6 +32,8 @@ class Source : public FDTD_MovableObject
                             const Vector3d &minBound = Vector3d(),
                             const Vector3d &maxBound = Vector3d()) const
         {return false;}
+
+        virtual bool UpdateTime(const REAL time) {}; // default does nothing, bubbles object needs this to update the mesh
 };
 
 #endif

@@ -150,12 +150,12 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
             startTime = T_r[0];
             _simulatorSettings->stopBoundaryAccTime = T_r[1];
             _simulatorSettings->numberTimeSteps = steps
-                                                + _simulatorSettings->overlapTime / _simulatorSettings->timeStepSize;
+                                                + (int)(_simulatorSettings->overlapTime / _simulatorSettings->timeStepSize);
 
             std::cout << "Shader ON time-range for chunk " << indTimeChunks
                       << ": [" << T_r[0] << ", " << T_r[1] << "]\n";
             std::cout << "Solve time-range: [" << T_r[0] << ", "
-                      << (REAL)_simulatorSettings->numberTimeSteps*_simulatorSettings->timeStepSize << "]\n";
+                      << T_r[0] + (REAL)_simulatorSettings->numberTimeSteps*_simulatorSettings->timeStepSize << "]\n";
         }
         else
         {
@@ -348,7 +348,7 @@ UpdateObjectState(const REAL &time)
             _objectCollections->DisableAllEvals();
         }
 
-    if (_simulatorSettings->solverControlPolicy->type == "static")
+    if (_simulatorSettings->solverControlPolicy->type != "dynamic")
         return;
 
     // logic for updating bbox and determine whether to move simbox
@@ -665,15 +665,10 @@ void SimWorld::
 PreviewStepping(const uint &previewSpeed)
 {
     // update simulation
-    std::cout << "================ Step START ================\n";
     int count=0;
     for (auto &unit : _simUnits)
     {
-        std::cout << "-------- unit " << count
-                  << " START -------- \n";
         unit->simulator->PreviewStepping(previewSpeed);
-        std::cout << "-------- unit " << count
-                  << " STOP -------- \n";
         count++;
     }
 
@@ -683,6 +678,7 @@ PreviewStepping(const uint &previewSpeed)
     // update time and object states
     _state.time += _simulatorSettings->timeStepSize*previewSpeed;
     UpdateObjectState(_state.time);
+    _objectCollections->UpdateSourceTimes(_state.time);
     std::cout << "================ Step STOP ================\n";
 }
 
@@ -959,7 +955,7 @@ RunChunksAnalysis(const ChunkPartitionParam_Ptr &param, const int N_t)
 BoundingBox SimWorld::
 FindSolverBBoxWithMarkers(std::shared_ptr<Markers_Policy> policy, int &divs)
 {
-    std::cout << "Find Solver bbox with markers\n";
+    std::cout << "Find Solver bbox with markers ...\n";
     using namespace boost::filesystem;
     // iterate and find all marker files
     path p(policy->markersDir.c_str());
@@ -1015,6 +1011,7 @@ FindSolverBBoxWithMarkers(std::shared_ptr<Markers_Policy> policy, int &divs)
     BoundingBox bbox;
     bbox.setMinBound(minBound);
     bbox.setMaxBound(maxBound);
+    std::cout << " ... Done. Box = " << minBound << " " << maxBound << std::endl;
     return bbox;
 }
 

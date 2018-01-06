@@ -519,6 +519,11 @@ UpdateSourceTimes(const REAL time)
             changed = ptr->UpdateVibrationalSources(time) || changed;
         }
     }
+    // pressure sources will not emit a mesh changed signal
+    for (auto &p : _pressureSources)
+    {
+        p->UpdateTime(time);
+    }
 
     return changed;
 }
