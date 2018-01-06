@@ -71,32 +71,58 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
         ${INTERP_SRC}
         )
 
-    target_link_libraries(fdtd-acoustic-simulator-viewer
-        ${GLUT_LIBRARIES}       
-        ${QT_LIBRARIES}         
-        ${QGLViewer_LIBRARY}
-        ${OPENGL_LIBRARIES}     
-        ${MKL_LIBRARY}
-        ${BLAS_LAPACK_LIBS}             
-        ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES}               
-        ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  
-        ${LibConfig_LIBRARY}
-        ${VLFEAT_LIBRARY}
-        sndfile
-        boost_thread
-        boost_system                    
-        boost_timer
-        boost_filesystem
-        boost_regex
-        boost_program_options
-        meshfix
-        jmesh
-        jmeshext
-        nl
-        superlu
-        )
+    if (USE_MESHFIX)
+        target_link_libraries(fdtd-acoustic-simulator-viewer
+            ${GLUT_LIBRARIES}       
+            ${QT_LIBRARIES}         
+            ${QGLViewer_LIBRARY}
+            ${OPENGL_LIBRARIES}     
+            ${MKL_LIBRARY}
+            ${BLAS_LAPACK_LIBS}             
+            ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               
+            ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  
+            ${LibConfig_LIBRARY}
+            ${VLFEAT_LIBRARY}
+            sndfile
+            boost_thread
+            boost_system                    
+            boost_timer
+            boost_filesystem
+            boost_regex
+            boost_program_options
+            meshfix
+            jmesh
+            jmeshext
+            nl
+            superlu
+            )
+    else (USE_MESHFIX)
+        target_link_libraries(fdtd-acoustic-simulator-viewer
+            ${GLUT_LIBRARIES}       
+            ${QT_LIBRARIES}         
+            ${QGLViewer_LIBRARY}
+            ${OPENGL_LIBRARIES}     
+            ${MKL_LIBRARY}
+            ${BLAS_LAPACK_LIBS}             
+            ${GTS_LIBRARIES}
+            ${GLIB_LIBRARIES}               
+            ${CGAL_LIBRARIES}
+            ${GSL_LIBRARY}                  
+            ${LibConfig_LIBRARY}
+            ${VLFEAT_LIBRARY}
+            sndfile
+            boost_thread
+            boost_system                    
+            boost_timer
+            boost_filesystem
+            boost_regex
+            boost_program_options
+            )
+    endif (USE_MESHFIX)
+
+
 
     set_target_properties(fdtd-acoustic-simulator-viewer PROPERTIES AUTOMOC TRUE)
     set_target_properties(fdtd-acoustic-simulator-viewer PROPERTIES AUTOMOC_MOC_OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
