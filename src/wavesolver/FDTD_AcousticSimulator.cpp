@@ -101,13 +101,13 @@ _SetListeningPoints()
         _parser->GetListeningPoints(listeningPoints);
     }
 
-    _acousticSolverSettings->listeningFile = _CompositeFilename("listening_pressure_%6u.dat");
+    _acousticSolverSettings->listeningFile = CompositeFilename("listening_pressure_%6u.dat");
 }
 
 //##############################################################################
 //##############################################################################
 std::string FDTD_AcousticSimulator::
-_CompositeFilename(const std::string filename_)
+CompositeFilename(const std::string filename_)
 {
     char buffer[512];
     buffer[0] = 0;
@@ -134,7 +134,7 @@ _SaveSolverSettings(const std::string &filename)
     of << _acousticSolver->GetGrid() << std::endl;
     _sceneObjects->PrintAllSources(of);
 
-    std::string xmlFilename_s = _CompositeFilename("input_control_file.xml");
+    std::string xmlFilename_s = CompositeFilename("input_control_file.xml");
     IO::CopyFile(_configFile, xmlFilename_s);
 }
 
@@ -230,13 +230,13 @@ _SaveListeningPositions(const std::string &filename)
         _owner->listen->mode == ListeningUnit::MODE::SHELL)
     {
         std::string file_shell;
-        file_shell = _CompositeFilename("out_shell_config.txt");
+        file_shell = CompositeFilename("out_shell_config.txt");
         {
             std::ofstream ofs(file_shell.c_str());
             _owner->listen->outShell->WriteToFile(ofs);
             ofs.close();
         }
-        file_shell = _CompositeFilename("inn_shell_config.txt");
+        file_shell = CompositeFilename("inn_shell_config.txt");
         {
             std::ofstream ofs(file_shell.c_str());
             _owner->listen->innShell->WriteToFile(ofs);
@@ -393,15 +393,15 @@ _SaveSimulationSnapshot(const std::string &numbering)
     {
         std::ostringstream oss;
         oss << std::setw(1) << dim;
-        f_p_pml             = _CompositeFilename("snapshot_"+numbering+"_p_pml_"+oss.str()+".dat");
-        f_v_pml             = _CompositeFilename("snapshot_"+numbering+"_v_pml_"+oss.str()+".dat");
-        f_p_collocated      = _CompositeFilename("snapshot_"+numbering+"_p_collocated_"+oss.str()+".dat");
+        f_p_pml             = CompositeFilename("snapshot_"+numbering+"_p_pml_"+oss.str()+".dat");
+        f_v_pml             = CompositeFilename("snapshot_"+numbering+"_v_pml_"+oss.str()+".dat");
+        f_p_collocated      = CompositeFilename("snapshot_"+numbering+"_p_collocated_"+oss.str()+".dat");
         p_pml[dim].write(f_p_pml.c_str());
         v_pml[dim].write(f_v_pml.c_str());
         p_collocated[dim].write(f_p_collocated.c_str());
     }
-    f_p_pml_full        = _CompositeFilename("snapshot_"+numbering+"_p_pml_full.dat");
-    f_p_collocated_ind  = _CompositeFilename("snapshot_"+numbering+"_p_collocated_ind.dat");
+    f_p_pml_full        = CompositeFilename("snapshot_"+numbering+"_p_pml_full.dat");
+    f_p_collocated_ind  = CompositeFilename("snapshot_"+numbering+"_p_collocated_ind.dat");
     p_pml_full.write(f_p_pml_full.c_str());
     {
         std::ofstream of(f_p_collocated_ind.c_str());
@@ -591,17 +591,17 @@ PostStepping(const REAL &odeTime)
         const int timeIndex = _stepIndex/settings->timeSavePerStep;
         std::ostringstream oss;
         oss << std::setw(8) << std::setfill('0') << timeIndex;
-        const std::string filenameProbe = _CompositeFilename("data_listening_"+oss.str()+".dat");
+        const std::string filenameProbe = CompositeFilename("data_listening_"+oss.str()+".dat");
         // uncomment if want to write file for each step
         //_SaveListeningData(filenameProbe);
         //if (settings->writePressureFieldToDisk)
         //{
-        //    const std::string filenameField = _CompositeFilename("data_pressure_"+oss.str()+".dat");
+        //    const std::string filenameField = CompositeFilename("data_pressure_"+oss.str()+".dat");
         //    _SavePressureTimestep(filenameField);
         //    // uncomment if want to store velocities
         //    //for (int dim=0; dim<3; ++dim)
         //    //{
-        //    //    const std::string filenameVelocityField = _CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat");
+        //    //    const std::string filenameVelocityField = CompositeFilename("velocity_"+std::to_string(dim)+"_"+oss.str()+".dat");
         //    //    _SaveVelocityTimestep(filenameVelocityField, dim);
         //    //}
         //}
@@ -644,15 +644,15 @@ PreviewStepping(const uint &speed)
 void FDTD_AcousticSimulator::
 SaveSolverConfig()
 {
-    const std::string solverSettings_s = _CompositeFilename("solver_settings.txt");
-    const std::string vertexPosition_s = _CompositeFilename("pressure_vertex_position.dat");
-    const std::string listeningPosition_s = _CompositeFilename("listening_position.dat");
-    const std::string modalFrequencies_s = _CompositeFilename("modal_frequencies.txt");
+    const std::string solverSettings_s = CompositeFilename("solver_settings.txt");
+    const std::string vertexPosition_s = CompositeFilename("pressure_vertex_position.dat");
+    const std::string listeningPosition_s = CompositeFilename("listening_position.dat");
+    const std::string modalFrequencies_s = CompositeFilename("modal_frequencies.txt");
     _SaveSolverSettings(solverSettings_s);
     _SavePressureCellPositions(vertexPosition_s);
     for (int dim=0; dim<3; ++dim)
     {
-        const string velocityVertexPosition_s = _CompositeFilename("velocity_"+std::to_string(dim)+"_vertex_position.dat");
+        const string velocityVertexPosition_s = CompositeFilename("velocity_"+std::to_string(dim)+"_vertex_position.dat");
         _SaveVelocityCellPositions(velocityVertexPosition_s, dim);
     }
     _SaveListeningPositions(listeningPosition_s);

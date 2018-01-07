@@ -47,13 +47,48 @@ UpdateSpeakers()
         {
             const auto &mic = ListeningUnit::microphones.at(ii);
             auto &spk = listen->speakers.at(ii);
+            Vector3d v = mic - BoundingBoxCenter();
+            v.normalize();
+            const REAL r = lowerRadiusBound
+                - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
+            v *= r;
+            spk = BoundingBoxCenter() + v;
+        }
+    }
+    else if (listen->mode == ListeningUnit::MODE::DELAY_LINE_2ND)
+    {
+        const int N_mic = ListeningUnit::microphones.size();
+        const int N_spk = N_mic*2;
+        if (listen->speakers.size() != N_spk)
+            listen->speakers.resize(N_spk);
+        const BoundingBox bbox = GetBoundingBox();
+        const REAL dt = simulator->GetSolverSettings()->timeStepSize;
+        const REAL h = simulator->GetSolverSettings()->cellSize;
+        // for each delay line, find x_b at the box boundary
+        for (int ii=0; ii<N_mic; ++ii)
+        {
+            const Vector3d &x_l = ListeningUnit::microphones.at(ii);
+            const Vector3d  x_c = bbox.center();
+            const Vector3d v = (x_l - x_c).normalized();
+            REAL t_min = std::numeric_limits<REAL>::max();
+            for (int dd=0; dd<3; ++dd)
+            {
+                if (fabs(v[dd]) < 1E-16)
+                    continue;
+                const REAL pad = (0.5+simulator->GetSolverSettings()->PML_width);
+                const REAL l = bbox.axislength(dd)/2.0
+                             - sqrt(3.0)*h*pad;
+                t_min = std::min(t_min, l/fabs(v[dd]));
+            }
 
-                Vector3d v = mic - BoundingBoxCenter();
-                v.normalize();
-                const REAL r = lowerRadiusBound
-                             - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
-                v *= r;
-                spk = BoundingBoxCenter() + v;
+            const REAL dr = sqrt(3.0)*h;
+            const REAL ct = simulator->GetSolverSettings()->soundSpeed*dt;
+            const Vector3d xb = x_c + v*t_min;
+            const Vector3d x0 = x_c + v*(ct*std::floor((xb-x_c).length()/ct));
+            const Vector3d x1 = x0  - v*(ct*std::ceil(dr/ct));
+            // first write the outer, then the inner
+            listen->speakers.at(ii*2  ) = x0;
+            listen->speakers.at(ii*2+1) = x1;
         }
     }
     else if (listen->mode == ListeningUnit::MODE::SHELL)
@@ -292,7 +327,7 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
 
     // build listening shell
 
-    // setup filename for output
+    // setup listening models
     char buffer[512];
     std::string filename("all_audio.dat");
     if(_simulatorSettings->timeParallel)
@@ -302,11 +337,29 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
     }
     snprintf(buffer, 512, _simulatorSettings->outputPattern.c_str(),
              filename.c_str());
-    const int N_listen = (*_simUnits.begin())->listen->mode == ListeningUnit::SHELL ?
-        (*_simUnits.begin())->listen->outShell->N() +
-        (*_simUnits.begin())->listen->innShell->N() :
-        _simulatorSettings->listeningPoints.size();
+    int N_listen;
+    switch ((*_simUnits.begin())->listen->mode)
+    {
+        case ListeningUnit::SHELL:
+        {
+            N_listen = (*_simUnits.begin())->listen->outShell->N() +
+                       (*_simUnits.begin())->listen->innShell->N();
+            break;
+        }
+        case ListeningUnit::DELAY_LINE:
+        {
+            N_listen = _simulatorSettings->listeningPoints.size();
+            break;
+        }
+        case ListeningUnit::DELAY_LINE_2ND:
+        {
+            N_listen = _simulatorSettings->listeningPoints.size()*2;
+            break;
+        }
+    }
     ListeningUnit::microphones = _simulatorSettings->listeningPoints;
+    for (auto &p : _simUnits)
+        p->UpdateSpeakers();
     AudioOutput::instance()->SetBufferSize(N_listen);
     AudioOutput::instance()->OpenStream(std::string(buffer));
 
@@ -328,6 +381,52 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
             stream << std::setprecision(18) << std::fixed
                    << _state.startTime << std::endl;
             stream.close();
+        }
+    }
+
+    // write listening models metadata
+    {
+        for (auto &unit : _simUnits)
+        {
+            const std::string filename =
+                unit->simulator->CompositeFilename("listening_model_metadata");
+            std::ofstream stream(filename.c_str());
+            if (stream)
+            {
+                std::string mode;
+                switch (unit->listen->mode)
+                {
+                    case ListeningUnit::MODE::DELAY_LINE:
+                    {
+                        mode = "delay_line";
+                        break;
+                    }
+                    case ListeningUnit::MODE::DELAY_LINE_2ND:
+                    {
+                        mode = "delay_line_2nd";
+                        break;
+                    }
+                    case ListeningUnit::MODE::SHELL:
+                    {
+                        mode = "shell";
+                        break;
+                    }
+                }
+                stream << "# Listening model metadata\n"
+                       << "# Listening model: " << mode << "\n"
+                       << "# Number of far-field listening points: "
+                       << ListeningUnit::microphones.size() << "\n"
+                       << "# Number of near-field (in-box) sample points: "
+                       << unit->listen->speakers.size() << "\n";
+                stream << std::setprecision(16) << std::fixed;
+                stream << ListeningUnit::microphones.size() << "\n";
+                for (const auto &v : ListeningUnit::microphones)
+                    stream << v[0] << " " << v[1] << " " << v[2] << "\n";
+                stream << unit->listen->speakers.size() << "\n";
+                for (const auto &v : unit->listen->speakers)
+                    stream << v[0] << " " << v[1] << " " << v[2] << "\n";
+                stream.close();
+            }
         }
     }
 }
@@ -414,6 +513,14 @@ StepWorld()
             else if (unit->listen->mode == ListeningUnit::SHELL)
             {
                 pressures.at(ii) = fetch(ii,0);
+            }
+            else if (unit->listen->mode == ListeningUnit::DELAY_LINE_2ND)
+            {
+                pressures.at(ii) = fetch(ii,0);
+            }
+            else
+            {
+                assert(false); // should not happen
             }
             pAbsPeak = std::max(pressures.at(ii), pAbsPeak);
         }

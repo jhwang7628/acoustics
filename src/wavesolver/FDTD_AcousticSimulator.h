@@ -54,7 +54,6 @@ class FDTD_AcousticSimulator
         void _SetBoundaryConditions();
         void _SetPressureSources();
         void _SetListeningPoints();
-        std::string _CompositeFilename(const std::string filename); // composite output path and prefix
         void _SaveSolverSettings(const std::string &filename);
         void _SavePressureCellPositions(const std::string &filename);
         void _SaveVelocityCellPositions(const std::string &filename, const int &dim);
@@ -107,6 +106,7 @@ class FDTD_AcousticSimulator
         void Pause();
         void SaveSolverConfig();
         void LoadSolverResult(const std::string &dataDirectory);
+        std::string CompositeFilename(const std::string filename); // composite output path and prefix
 
         // scene and simbox kinematics
         void AnimateObjects(const REAL newTime);

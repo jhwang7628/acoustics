@@ -613,7 +613,7 @@ DrawListeningPoints()
     }
     glDisable(GL_LIGHTING);
     auto units = _simWorld->GetActiveSimUnits();
-    glPointSize(1.0);
+    glPointSize(4.0);
     glColor3f(0.9f, 0.1f, 0.9f);
     glBegin(GL_POINTS);
     for (const auto &unit : units)
