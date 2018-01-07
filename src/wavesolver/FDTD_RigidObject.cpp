@@ -7,7 +7,6 @@
 #include <utils/SimpleTimer.h>
 #include <utils/Conversions.h>
 
-
 //##############################################################################
 //##############################################################################
 void FDTD_RigidObject::
@@ -170,7 +169,8 @@ Initialize(const bool &buildFromTetMesh, bool needsCurvature)
     const double knnradius = d_max + t_max;
     const std::string meshGraphFile = IO::AssembleFilePath(_workingDirectory, _objectPrefix) +
         "." + std::to_string(knnradius) + ".meshgraph";
-    _meshGraph->BuildGraph(meshGraphFile, knnradius);
+    if (!_solverSettings->isPreviewMode)
+        _meshGraph->BuildGraph(meshGraphFile, knnradius);
     UpdateBoundingBox();
 }
 

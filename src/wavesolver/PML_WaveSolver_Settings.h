@@ -91,6 +91,8 @@ struct PML_WaveSolver_Settings
         FULLY_COUPLED = 1
     } boundaryHandlingType;
 
+    bool isPreviewMode = false;
+
     std::shared_ptr<Solver_Control_Policy> solverControlPolicy;
 };
 using PML_WaveSolver_Settings_Ptr = std::shared_ptr<PML_WaveSolver_Settings>;
