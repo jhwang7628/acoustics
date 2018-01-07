@@ -55,6 +55,12 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(obj_centroid
         obj_centroid.cpp)
 
+    add_executable(read_write_test
+        read_write_test.cpp)
+
+    add_executable(upsample_poser
+        upsample_poser.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}
@@ -75,4 +81,12 @@ if ( BUILD_WAVESOLVER_TOOLS )
         boost_system
         boost_filesystem
         boost_regex)
+
+    target_link_libraries(upsample_poser
+        boost_thread
+        boost_timer
+        boost_system
+        boost_filesystem
+        boost_regex)
+
 endif ( BUILD_WAVESOLVER_TOOLS )
