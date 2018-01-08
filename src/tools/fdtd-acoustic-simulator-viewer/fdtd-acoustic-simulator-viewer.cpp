@@ -112,6 +112,7 @@ int TUI_Run(int argc, char **argv, const std::string &xmlFile, const uint &indTi
     SimWorld_UPtr world(new SimWorld());
     world->Build(parser, indTimeChunks);
     const int numberSteps = world->GetSolverSettings()->numberTimeSteps;
+    std::cout << "Run number of steps: " << numberSteps << std::endl;
     {
         boost::timer::auto_cpu_timer timer("Run wall-clock time: %w sec\n");
         for (int ii=0; ii<numberSteps; ++ii)

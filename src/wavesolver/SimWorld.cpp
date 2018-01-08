@@ -412,19 +412,28 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
                         break;
                     }
                 }
+
                 stream << "# Listening model metadata\n"
                        << "# Listening model: " << mode << "\n"
                        << "# Number of far-field listening points: "
                        << ListeningUnit::microphones.size() << "\n"
                        << "# Number of near-field (in-box) sample points: "
-                       << unit->listen->speakers.size() << "\n";
+                       << unit->listen->speakers.size() << "\n"
+                       << "# Number of box center points: 1\n";
                 stream << std::setprecision(16) << std::fixed;
+                // microphone pos (far-field)
                 stream << ListeningUnit::microphones.size() << "\n";
                 for (const auto &v : ListeningUnit::microphones)
                     stream << v[0] << " " << v[1] << " " << v[2] << "\n";
+                // speakers pos (in-box)
                 stream << unit->listen->speakers.size() << "\n";
                 for (const auto &v : unit->listen->speakers)
                     stream << v[0] << " " << v[1] << " " << v[2] << "\n";
+                // sim box center
+                stream << "1\n"
+                       << unit->BoundingBoxCenter().x << " "
+                       << unit->BoundingBoxCenter().y << " "
+                       << unit->BoundingBoxCenter().z << "\n";
                 stream.close();
             }
         }

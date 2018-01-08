@@ -1995,6 +1995,10 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
                 distance = fabs(d);
                 objectID = oid;
             }
+            if (d < 0.0) // inside the enclosed thin structure, abort fresh cell
+            {
+                continue;
+            }
         }
 
         if (distance < DISTANCE_TOLERANCE)
