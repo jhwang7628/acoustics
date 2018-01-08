@@ -194,7 +194,8 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
         }
         else
         {
-            std::cerr << "**WARNING** Adaptive start time is used but no partition config file found. Run chunk analysis first.\n";
+            if (acParam->adaptive)
+                std::cerr << "**WARNING** Adaptive start time is used but no partition config file found. Run chunk analysis first.\n";
         }
     }
 

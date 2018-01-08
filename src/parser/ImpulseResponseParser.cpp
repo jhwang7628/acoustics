@@ -702,16 +702,22 @@ GetChunkPartitionParam()
     if (!document2)
         throw std::runtime_error("**ERROR** document null");
 
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response");
-    GET_FIRST_CHILD_ELEMENT_GUARD(node, root, "time_parallelization");
-    GET_FIRST_CHILD_ELEMENT_GUARD(node, node, "chunk_partition");
-
     auto param = std::make_shared<ChunkPartitionParam>();
-    param->adaptive = queryRequiredBool(node, "adaptive");
-    param->L_z      = queryRequiredReal(node, "L_z"     );
-    param->N_0      = queryRequiredInt (node, "N_0"     );
-    param->N_maxc   = queryRequiredInt (node, "N_maxc"  );
-    param->outFile  = queryRequiredAttr(node, "out_file");
+    try
+    {
+        GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response");
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, root, "time_parallelization");
+        GET_FIRST_CHILD_ELEMENT_GUARD(node, node, "chunk_partition");
 
+        param->adaptive = queryRequiredBool(node, "adaptive");
+        param->L_z      = queryRequiredReal(node, "L_z"     );
+        param->N_0      = queryRequiredInt (node, "N_0"     );
+        param->N_maxc   = queryRequiredInt (node, "N_maxc"  );
+        param->outFile  = queryRequiredAttr(node, "out_file");
+    }
+    catch (std::runtime_error &e)
+    {
+        std::cout << "adaptive time-parallel = false\n";
+    }
     return param;
 }

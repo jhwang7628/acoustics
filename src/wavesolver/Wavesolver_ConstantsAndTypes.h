@@ -108,7 +108,7 @@ struct KinematicsMetadata
 
 struct ChunkPartitionParam
 {
-    bool adaptive;
+    bool adaptive = false;
     int N_0;
     int N_maxc;
     REAL L_z;
