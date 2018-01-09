@@ -609,9 +609,17 @@ GetPressureSources(const REAL &soundSpeed, std::vector<PressureSourcePtr> &press
                 mControl->frameRate = queryRequiredReal(node, "markers_frame_rate");
                 mControl->startTime = queryRequiredReal(node, "markers_start_time");
             }
-            else
+            else if (type == "static")
             {
                 control = std::make_shared<SpeakerPressureSource::PositioningControl>();
+                Vector3d &pos = control->position;
+                pos.x = queryRequiredReal(node, "position_x");
+                pos.y = queryRequiredReal(node, "position_y");
+                pos.z = queryRequiredReal(node, "position_z");
+            }
+            else
+            {
+                throw std::runtime_error("**ERROR** speaker position type not understood");
             }
             spksrc->SetPosControl(control);
             spksrc->Initialize(f);
