@@ -2,8 +2,8 @@
 CMakeFiles*
 CMakeCache.txt
 *.pyc
-*.swp 
-*.swo 
+*.swp
+*.swo
 .*.sw?
 .qglviewer.xml
 
@@ -32,6 +32,7 @@ src/scripts/rendering/old
 src/scripts/db_gdrive/index.html
 src/scripts/db_gdrive/client_secret.json
 src/scripts/db_gdrive/downloaded
+src/scripts/google_cloud
 
 src/tools/diff\.txt
 
