@@ -58,7 +58,8 @@ UpdateSpeakers()
     else if (listen->mode == ListeningUnit::MODE::DELAY_LINE_2ND)
     {
         const int N_mic = ListeningUnit::microphones.size();
-        const int N_spk = N_mic*2;
+        const int n = simulator->GetSolverSettings()->N_speakersAlongRay;
+        const int N_spk = N_mic*n;
         if (listen->speakers.size() != N_spk)
             listen->speakers.resize(N_spk);
         const BoundingBox bbox = GetBoundingBox();
@@ -85,10 +86,13 @@ UpdateSpeakers()
             const REAL ct = simulator->GetSolverSettings()->soundSpeed*dt;
             const Vector3d xb = x_c + v*t_min;
             const Vector3d x0 = x_c + v*(ct*std::floor((xb-x_c).length()/ct));
-            const Vector3d x1 = x0  - v*(ct*std::ceil(dr/ct));
+            listen->speakers.at(ii*n  ) = x0;
+            for (int jj=0; jj<n; ++jj)
+            {
+                const Vector3d x1 = x0  - v*(ct*std::ceil(jj*dr/ct));
+                listen->speakers.at(ii*n+jj) = x1;
+            }
             // first write the outer, then the inner
-            listen->speakers.at(ii*2  ) = x0;
-            listen->speakers.at(ii*2+1) = x1;
         }
     }
     else if (listen->mode == ListeningUnit::MODE::SHELL)
@@ -354,7 +358,7 @@ Build(ImpulseResponseParser_Ptr &parser, const uint &indTimeChunks)
         }
         case ListeningUnit::DELAY_LINE_2ND:
         {
-            N_listen = _simulatorSettings->listeningPoints.size()*2;
+            N_listen = _simulatorSettings->listeningPoints.size()*_simulatorSettings->N_speakersAlongRay;
             break;
         }
     }
