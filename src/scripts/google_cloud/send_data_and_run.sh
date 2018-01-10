@@ -1,14 +1,14 @@
 #!/bin/bash
 
 declare -a essential_files=(
-    "assets"
-    "chunks.txt"
-    "config.xml"
-    "launch_parallel_chunk.sh"
+    # "assets"
+    # "chunks.txt"
+    "config_static.xml"
+    # "launch_parallel_chunk.sh"
 )
 
 dest_dir="/home/jui-hsien/code/acoustics/work/demo/character_poser_2"
-create_dir="data"
+create_dir="data_static"
 
 echo -e "\n=== Sending files/dirs START ==="
 for i in "${essential_files[@]}"; do
@@ -16,22 +16,22 @@ for i in "${essential_files[@]}"; do
 done
 echo -e "=== Sending files/dirs END ==="
 
-for ii in `seq 8 24`; do
+for ii in `seq 7 24`; do
     p="instance-${ii}"
     chunk_index=`expr ${ii} - 7`
     echo -e "\n\nSending data to ${p} and run wavesolver\n"
-    gcloud compute ssh $p -- -t "mkdir -p ${dest_dir}; rm -r ${dest_dir}/${create_dir}; rm -r ${dest_dir}/models/*;"
+    gcloud compute ssh $p -- -t "mkdir -p ${dest_dir};"
     for file in "${essential_files[@]}"; do
         gcloud compute scp --recurse ${file} $p:${dest_dir}/
     done
     gcloud compute ssh $p -- -t "
         cd ${dest_dir};
         pushd assets/Dilo01;
-        if [ ! -d processed ]; then unzip processed.zip; fi;
-        if [ ! -d sphere ]; then unzip sphere.zip; fi;
+        if [ ! -d geom_interp ]; then unzip geom_interp.zip; fi;
+        if [ ! -d sphere_interp ]; then unzip sphere_interp.zip; fi;
         popd;
-        if [ -d ${create_dir} ]; then mv ${create_dir} ${create_dir}_old; fi;
+        if [ -d ${create_dir} ]; then rm -r ${create_dir}_old; mv ${create_dir} ${create_dir}_old; fi;
         mkdir -p ${create_dir};
-        tmux new -d \". ~/.zshrc;. ./launch_parallel_chunk.sh 32 config.xml ${chunk_index} run.log;\" "
+        tmux new -d \". ~/.zshrc;. ./launch_parallel_chunk.sh 32 config_static.xml ${chunk_index} run_${chunk_index}.log;\" "
 done
 
