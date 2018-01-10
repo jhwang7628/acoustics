@@ -72,8 +72,9 @@ int main(int argc, char **argv)
     std::cout << "\nReading all objs to find max vertex speed ...\n";
     int N_V, N_F;
     Eigen::MatrixXd V_old;
-    Eigen::MatrixXd vel;
+    Eigen::MatrixXd vel,dis;
     double velmax = std::numeric_limits<double>::lowest();
+    double dismax = std::numeric_limits<double>::lowest();
     for (int ii=0; ii<filenames.size(); ++ii)
     {
         const auto &f = filenames.at(ii);
@@ -99,10 +100,15 @@ int main(int argc, char **argv)
 
         if (ii>0)
         {
-            vel = (V - V_old) / dt;
+            dis = (V - V_old);
+            vel = dis / dt;
             for (int jj=0; jj<vel.rows(); ++jj)
+            {
+                dismax = std::max(dismax, dis.row(jj).norm());
                 velmax = std::max(velmax, vel.row(jj).norm());
+            }
             std::cout << "    Max vel = " << velmax << std::endl;
+            std::cout << "    Max dis = " << dismax << std::endl;
         }
         V_old = V;
     }
