@@ -1,4 +1,4 @@
-#include <wavesolver/HarmonicVibrationalSource.h> 
+#include <wavesolver/HarmonicVibrationalSource.h>
 
 //##############################################################################
 //##############################################################################
@@ -9,16 +9,17 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         return 0.0;
     // monopole vibration consistent source
     //const REAL scale = _omega*_omega*0.01;
-    //const REAL val = sin(_omega*time + _phase) * scale;
+    const REAL scale = sqrt(pow(_omega,2.5));
+    const REAL val = sin(_omega*time + _phase) * scale;
 
     // dipole vibration consistent source
-    const REAL scale = _omega*_omega*0.01;
-    const REAL val = sin(_omega*time + _phase) *scale*normal[1];
-      
+    //const REAL scale = _omega*_omega*0.01;
+    //const REAL val = sin(_omega*time + _phase) *scale*normal[1];
+
     // normal harmonic vibration
     //const REAL val = sin(_omega*time + _phase);
     if (_decayRate < 0)
-        return val; 
+        return val;
     else
         return decayFactor(time) * val;
 }
@@ -37,8 +38,8 @@ Evaluate(const int &vertexID, const Vector3d &normal, const REAL &time)
 Vector3d HarmonicVibrationalSource::
 Evaluate(const int &vertexID, const REAL &time)
 {
-    Vector3d n = _owner->GetMeshPtr()->normal(vertexID); 
-    n = _owner->ObjectToWorldVector(n); 
+    Vector3d n = _owner->GetMeshPtr()->normal(vertexID);
+    n = _owner->ObjectToWorldVector(n).normalized();
     const REAL an = Evaluate(vertexID, n, time);
     return n*an;
 }
@@ -48,7 +49,7 @@ Evaluate(const int &vertexID, const REAL &time)
 REAL HarmonicVibrationalSource::
 EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    throw std::runtime_error("**ERROR** not implemented"); 
+    throw std::runtime_error("**ERROR** not implemented");
 }
 
 //##############################################################################
@@ -56,5 +57,5 @@ EvaluateVelocity(const Vector3d &position, const Vector3d &normal, const REAL &t
 REAL HarmonicVibrationalSource::
 EvaluateDisplacement(const Vector3d &position, const Vector3d &normal, const REAL &time)
 {
-    throw std::runtime_error("**ERROR** not implemented"); 
+    throw std::runtime_error("**ERROR** not implemented");
 }

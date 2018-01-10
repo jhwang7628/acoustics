@@ -169,6 +169,8 @@ UpdateTime(const REAL time)
             igl::read_triangle_mesh(p.string().c_str(), V, F);
             const Eigen::Vector3d C = V.colwise().sum() / (REAL)V.rows();
             control->position.set(C[0], C[1], C[2]);
+            std::cout << "new pressure source pos = "
+                      << C.transpose() << std::endl;
             changed = true;
         }
     }

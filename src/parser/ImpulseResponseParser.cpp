@@ -5,6 +5,7 @@
 #include <wavesolver/VibrationalSource.h>
 #include <wavesolver/ModalVibrationalSource.h>
 #include <wavesolver/AccelerationNoiseVibrationalSource.h>
+#include <wavesolver/HarmonicVibrationalSource.h>
 #include <wavesolver/ShellVibrationalSource.h>
 #include <wavesolver/WaterVibrationalSource.h>
 #include <wavesolver/FDTD_PlaneConstraint.h>
@@ -200,6 +201,17 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
             meta.stepSize = stepSize;
             solverSettings->objKinematicsMetadata[meshName] = meta;
             object->SetAnimated(true);
+        }
+
+        // get harmonic source if any
+        const bool has_harmonic_source  = queryOptionalReal(rigidObjectNode, "has_harmonic_source", 0.0);
+        if (has_harmonic_source)
+        {
+            std::cout << "has harmonic source\n";
+            const REAL harmonic_source_f = queryRequiredReal(rigidObjectNode, "harmonic_source_f");
+            const REAL omega = 2.0*M_PI*harmonic_source_f;
+            VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(object, omega, 0.0));
+            object->AddVibrationalSource(sourcePtr);
         }
 
         objects->AddObject(std::stoi(meshName), object);

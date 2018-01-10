@@ -54,6 +54,8 @@ struct PML_WaveSolver_Settings
     std::string     listeningFile;
     Vector3Array    listeningPoints;
 
+    int             N_speakersAlongRay = 30;
+
     bool            writePressureFieldToDisk;
 
     // rigidsim data files, used to animate objects
