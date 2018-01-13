@@ -1232,13 +1232,26 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         // rasterization is used
         const REAL &h = _waveSolverSettings->cellSize;
         Vector3d grad_p;
-        for (int ii=0; ii<3; ++ii)
-            grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime);
-        grad_p *= (-density/3.0);
+        // piecewise constant
+        //{
+        //for (int ii=0; ii<3; ++ii)
+        //    grad_p += object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime);
+        //grad_p *= (-density/3.0);
+        //}
+        // linear interpolation
+        {
+            Vector3d uv;
+            object->GetMeshPtr()->BaryCentricCoordinates(
+                    boundaryPoint, closestTriangle, uv);
+            for (int ii=0; ii<3; ++ii)
+                grad_p += uv[ii]*object->EvaluateBoundaryAcceleration(triangle[ii], simulationTime);
+            grad_p *= (-density);
+        }
+
         const Vector3d cell_n = gc->CellNormal();
         const REAL grad_p_nr = grad_p.dotProduct(cell_n);
         const REAL grad_p_ne = grad_p.dotProduct(erectedNormal);
-        const REAL pg = p_neig - h*grad_p_nr;
+        const REAL pg = p_neig - 0.75*h*grad_p_nr;
 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ?
                 -2.0*fabs(distance) : -fabs(distance));  // finite-difference weight
@@ -1980,7 +1993,8 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
             std::set<TriangleIdentifier, TIComp> triangles;
             for (const auto &cell : cell_list)
                 for (const auto tri_id : _cellTriangles.at(cell))
-                    if (!_objects->GetPtr(tri_id.objectID)->HasDistanceField())
+                    if (_objects->GetPtr(tri_id.objectID)->IsThinStructure() &&
+                        !_objects->GetPtr(tri_id.objectID)->HasDistanceField())
                         triangles.insert(tri_id);
             REAL d;
             int oid;

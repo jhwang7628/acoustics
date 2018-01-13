@@ -315,7 +315,7 @@ ReadNextBuffer()
             }
             if (has_constraint_dis && has_constraint_acc)
             {
-                assert(N_constrained_dof = N_constrained_v*3);
+                assert(N_constrained_dof == N_constrained_v*3);
                 for (int jj=N_unconstrained_v; jj<N_total_v; ++jj)
                 {
                     const int o_v = owner->_i2oMap.at(jj); 

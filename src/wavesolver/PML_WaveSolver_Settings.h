@@ -54,7 +54,7 @@ struct PML_WaveSolver_Settings
     std::string     listeningFile;
     Vector3Array    listeningPoints;
 
-    int             N_speakersAlongRay = 30;
+    int             N_speakersAlongRay = 6;
 
     bool            writePressureFieldToDisk;
 
