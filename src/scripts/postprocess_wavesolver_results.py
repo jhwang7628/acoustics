@@ -46,6 +46,7 @@ if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
 time_parallel = OptParse(parser, 'general', 'time_parallel', 'b', False)
+use_delay_line_2nd = OptParse(parser, 'general', 'delay_line_2nd', 'b', False)
 results = Wavesolver_Results()
 results.Set_Folder(data_dir)
 all_data = np.array([])
@@ -57,10 +58,14 @@ if time_parallel:
         NChunks = ReqParse(parser, 'general', 'time_chunks', 'i')
         NStepsEachChunk = ReqParse(parser, 'general', 'time_steps_each_chunk', 'i')
     exclude_chunks = OptParse(parser, 'general', 'exclude_chunks', 'li')
-if adaptive_parallel:
-    all_data = results.Read_All_Audio_Adaptive(sampfreq)
+
+if time_parallel and adaptive_parallel:
+    if use_delay_line_2nd:
+        all_data = results.Read_All_Audio_Adaptive_Delay_Line_2nd(sampfreq)
+    else:
+        all_data = results.Read_All_Audio_Adaptive(sampfreq)
 else:
-    all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=exclude_chunks)
+    all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=None)
 
 
 ##

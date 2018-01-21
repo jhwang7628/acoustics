@@ -61,6 +61,9 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(upsample_poser
         upsample_poser.cpp)
 
+    add_executable(map_list_of_points_to_triangle_mesh
+        map_list_of_points_to_triangle_mesh.cpp)
+
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
         ${BLAS_LAPACK_LIBS}             ${GTS_LIBRARIES}

@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 import numpy as np
 
-r = 1.0
-offset = 0.716
+r = 2.0
+offset = 1.78
 N = 36
+dim = 1
 
 t = 0.0
 dt = 2.0*np.pi/float(N)
 for ii in range(N):
-    x = r*np.cos(t)
-    z = r*np.sin(t)
-    y = offset
-    print '<listening_point x="%f" y="%f" z="%f"/>' %(x,y,z)
+    vec = [0.0, 0.0, 0.0]
+    vec[dim] = offset
+    vec[(dim+1)%3] = r*np.cos(t)
+    vec[(dim+2)%3] = r*np.sin(t)
+    print '<listening_point x="%f" y="%f" z="%f"/>' %(vec[0], vec[1], vec[2])
     t += dt
 
