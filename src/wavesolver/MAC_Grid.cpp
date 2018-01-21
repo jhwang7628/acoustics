@@ -31,7 +31,7 @@
 
 //#define ENGQUIST_ORDER 1
 #define ENGQUIST_ORDER 2
-#define ENABLE_FAST_RASTERIZATION
+//#define ENABLE_FAST_RASTERIZATION
 //#define DISABLE_CAVITY_FIX
 
 //##############################################################################
