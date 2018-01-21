@@ -465,6 +465,8 @@ class MAC_Grid
         inline const bool IsPressureCellSolid(const int &cell_idx) const {return !_isBulkCell.at(cell_idx) && !_isGhostCell.at(cell_idx);}
         inline const FVMetaData &GetFVMetaData(){return _fvMetaData;}
         inline const auto &GetGhostCells(){return _ghostCells;}
+        inline const auto &GetGhostCell(const GhostCell_Key &key) const {return _ghostCells.at(key);}
+        inline const auto &GetGhostCellChildren(const int owner) const {return _ghostCellsTree.at(owner);}
         inline const auto &GetBoundaryGhostCells(){return _boundaryGhostCells;}
         inline void ClearGhostCellPreviousTriangles(){_ghostCellPreviousTriangles.clear();}
 

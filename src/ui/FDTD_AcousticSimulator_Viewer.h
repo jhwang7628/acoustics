@@ -79,7 +79,7 @@ class FDTD_AcousticSimulator_Viewer : public QGLViewer
         int                         _sliceDataPointer; // 0: pressure; 1: cell id; 2: vx; 3: vy; 4:vz; 5: p_x; 6: p_y; 7: p_z; 8: frequency transfer; 9: frequency transfer residual
         std::shared_ptr<ColorMap>   _sliceColorMap;
         Vector2d                    _sliceColorMapRange;
-        int                         _sliceDivision = 80;
+        int                         _sliceDivision = -1;
         bool                        _fixedSliceColorMapRange = false;
         int                         _meshDataPointer = 0; // 0: nothing; 1: curvature; 2: surface acceleration
 

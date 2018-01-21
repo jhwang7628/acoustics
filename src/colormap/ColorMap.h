@@ -7,6 +7,7 @@
 #include "JET.h"
 #include "AUTUMN.h"
 #include "BONE.h"
+#include "ERDC_ICEFIRE_L.h"
 #include <assert.h>
 
 //! Map a scalar (int) value to a tuple which represent a color.
@@ -82,6 +83,20 @@ class JetColorMap : public ColorMap
         }
 
         ~JetColorMap()
+        {
+            mp_colors = NULL;
+        }
+};
+
+class IcefireColorMap : public ColorMap
+{
+    public:
+        IcefireColorMap():ColorMap(256)
+        {
+            mp_colors = (Tuple3f*)colormap_erdc_icefire_l;
+        }
+
+        ~IcefireColorMap()
         {
             mp_colors = NULL;
         }

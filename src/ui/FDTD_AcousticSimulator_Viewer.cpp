@@ -61,8 +61,10 @@ init()
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
     //setGridIsDrawn();
-    setBackgroundColor(QColor(102,153,255));
+    //setBackgroundColor(QColor(102,153,255));
+    setBackgroundColor(QColor(0,0,0));
     SetAllKeyDescriptions();
+    //camera()->setFieldOfView(18./180.*M_PI);
 
     setAnimationPeriod(40); // in milliseconds
     init_gl();
@@ -92,7 +94,8 @@ init_gl()
         const float x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
         const float y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
         const float z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
-        _objectColors[obj_idx] = Vector3f(x, y, z);
+        //_objectColors[obj_idx] = Vector3f(x, y, z);
+        _objectColors[obj_idx] = Vector3f(250./255., 250./255., 250./255.);
     }
 
     // antialiasing
@@ -101,6 +104,7 @@ init_gl()
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_MULTISAMPLE);
 
     // Enable GL textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -131,12 +135,12 @@ draw()
         DrawHashedCells();
 
     // for some reason drawText causes bug if run remotely
-    if (!_remoteConnection)
-    {
-        glColor3f(1.0, 1.0, 1.0);
-        drawText(10, height()-20, _message);
-        drawText(10, height()-40, _messageColormap);
-    }
+    //if (!_remoteConnection)
+    //{
+    //    glColor3f(1.0, 1.0, 1.0);
+    //    drawText(10, height()-20, _message);
+    //    drawText(10, height()-40, _messageColormap);
+    //}
 
     glLineWidth(3.0f);
     if (_drawBoxLis)
@@ -202,7 +206,7 @@ DrawMesh()
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
         {
-            glLineWidth(1.0f);
+            glLineWidth(0.5f);
             glBegin(GL_LINES);
             glColor3f(0.6f, 0.6f, 0.6f);
             for (int t_idx=0; t_idx<N_triangles; ++t_idx)
@@ -715,7 +719,7 @@ DrawLights()
     glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
     glLightfv(GL_LIGHT0, GL_POSITION, position);
 
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 10.);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, SPECULAR_COLOR);
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
@@ -947,8 +951,8 @@ keyPressEvent(QKeyEvent *e)
     }
     else if ((e->key() == Qt::Key_S) && (modifiers == Qt::ControlModifier))
     {
-        setSnapshotFormat("JPEG");
-        setSnapshotQuality(80);
+        setSnapshotFormat("PNG");
+        setSnapshotQuality(100);
         setSnapshotFileName("frames/test");
         _takeSnapshots = !_takeSnapshots;
         std::cout << "takeSnapshots: " << std::boolalpha << _takeSnapshots << std::endl;
@@ -1289,8 +1293,15 @@ ConstructSliceSamples(Slice &slice)
 
     const auto &settings = _solverSettings;
     const auto &simulator = slice.intersectingUnit->simulator;
-    const Tuple3i &divisions = simulator->GetGrid().pressureFieldDivisions();
-    const REAL cellSize = settings->cellSize;
+    Tuple3i divisions = simulator->GetGrid().pressureFieldDivisions();
+    REAL cellSize = settings->cellSize;
+    if (_sliceDivision != -1)
+    {
+        for (int dd=0; dd<3; ++dd)
+            divisions[dd] = _sliceDivision;
+        auto bbox = simulator->GetGrid().PressureBoundingBox();
+        cellSize = bbox.maxlength() / (REAL)_sliceDivision;
+    }
 
     //const REAL halfLength = (REAL)division*cellSize / 2.0;
     //const REAL minBound = -halfLength + cellSize/2.0;
@@ -1347,7 +1358,8 @@ ConstructSliceSamples(Slice &slice)
 
     // make colormap for this slice.
     if (!_sliceColorMap)
-        _sliceColorMap = std::make_shared<JetColorMap>();
+        _sliceColorMap = std::make_shared<IcefireColorMap>();
+        //_sliceColorMap = std::make_shared<JetColorMap>();
         //_sliceColorMap = std::make_shared<DipoleColorMap>();
 }
 

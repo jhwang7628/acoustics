@@ -234,11 +234,56 @@ void PML_WaveSolver::FetchScalarData(const MATRIX &scalar, const ScalarField &fi
             }
             else
             {
-                const MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it));
+                MLSPoint pt = Conversions::ToEigen(field.cellPosition(*it));
                 MLSVal val;
-                val << scalar(*it, 0);
-                points.push_back(pt);
-                attributes.push_back(val);
+                if (!_grid.IsPressureCellGhost(*it))
+                //if (true)
+                {
+                    val << scalar(*it, 0);
+                    points.push_back(pt);
+                    attributes.push_back(val);
+                }
+                else // interpolate across all ghost cells in this cell
+                {
+                    const auto &gcs = _grid.GetGhostCellChildren(*it);
+                    for (const auto &gckey : gcs)
+                    {
+                        const auto &gc = _grid.GetGhostCell(gckey);
+                        val << (gc->pressure);
+                        pt = Conversions::ToEigen(gc->position);
+                        points.push_back(pt);
+                        attributes.push_back(val);
+                    }
+                }
+                //else // direction dependent
+                //{
+                //    const auto &gcs = _grid.GetGhostCellChildren(*it);
+                //    assert(gcs.size() > 0);
+                //    // NOTE: hack for the (last-minute) cymbal rendering...
+                //    // first find +y then +z, if both not found then use 0
+                //    bool valSet = false;
+                //    for (const auto &gckey : gcs)
+                //    {
+                //        const auto &gc = _grid.GetGhostCell(gckey);
+                //        if (gc->topology == 2 || gc->topology == 3 || gc->topology == -1)
+                //        {
+                //            val << (gc->pressure);
+                //            pt = Conversions::ToEigen(gc->position);
+                //            points.push_back(pt);
+                //            attributes.push_back(val);
+                //            valSet = true;
+                //            //break;
+                //        }
+                //    }
+                //    if (!valSet)
+                //    {
+                //        const auto &gc = _grid.GetGhostCell(*(gcs.begin()));
+                //        val << gc->pressure;
+                //        pt = Conversions::ToEigen(gc->position);
+                //        points.push_back(pt);
+                //        attributes.push_back(val);
+                //    }
+                //}
                 ++it;
             }
         }
