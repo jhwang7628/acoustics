@@ -61,8 +61,8 @@ init()
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
     //setGridIsDrawn();
-    //setBackgroundColor(QColor(102,153,255));
-    setBackgroundColor(QColor(0,0,0));
+    setBackgroundColor(QColor(102,153,255));
+    //setBackgroundColor(QColor(0,0,0));
     SetAllKeyDescriptions();
     camera()->setFieldOfView(18./180.*M_PI);
 
@@ -94,9 +94,9 @@ init_gl()
         const float x = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
         const float y = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
         const float z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
-        //_objectColors[obj_idx] = Vector3f(x, y, z);
+        _objectColors[obj_idx] = Vector3f(x, y, z);
         //_objectColors[obj_idx] = Vector3f(250./255., 250./255., 250./255.);
-        _objectColors[obj_idx] = Vector3f(173./255., 139./255., 95./255.);
+        //_objectColors[obj_idx] = Vector3f(173./255., 139./255., 95./255.);
     }
 
     // antialiasing
