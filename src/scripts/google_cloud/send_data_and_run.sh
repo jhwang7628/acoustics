@@ -1,14 +1,13 @@
 #!/bin/bash
 
 declare -a essential_files=(
-    # "assets"
-    # "chunks.txt"
-    "config_static.xml"
-    # "launch_parallel_chunk.sh"
+    "assets"
+    "imp_fullspace_sim-014.06.51.tar"
+    "fdtd-transfer-cloud"
 )
 
-dest_dir="/home/jui-hsien/code/acoustics/work/demo/character_poser_2"
-create_dir="data_static"
+dest_dir="/home/jui-hsien/code/shells/work/cymbal_drum_stick_2"
+create_dir="data_14"
 
 echo -e "\n=== Sending files/dirs START ==="
 for i in "${essential_files[@]}"; do
@@ -16,9 +15,9 @@ for i in "${essential_files[@]}"; do
 done
 echo -e "=== Sending files/dirs END ==="
 
-for ii in `seq 7 24`; do
+for ii in `seq 11 19`; do
     p="instance-${ii}"
-    chunk_index=`expr ${ii} - 7`
+    chunk_index=`expr ${ii} - 10`
     echo -e "\n\nSending data to ${p} and run wavesolver\n"
     gcloud compute ssh $p -- -t "mkdir -p ${dest_dir};"
     for file in "${essential_files[@]}"; do
@@ -26,12 +25,10 @@ for ii in `seq 7 24`; do
     done
     gcloud compute ssh $p -- -t "
         cd ${dest_dir};
-        pushd assets/Dilo01;
-        if [ ! -d geom_interp ]; then unzip geom_interp.zip; fi;
-        if [ ! -d sphere_interp ]; then unzip sphere_interp.zip; fi;
-        popd;
+        tar -xvf imp_fullspace_sim-014.06.51.tar;
+        cd fdtd-transfer-cloud;
         if [ -d ${create_dir} ]; then rm -r ${create_dir}_old; mv ${create_dir} ${create_dir}_old; fi;
         mkdir -p ${create_dir};
-        tmux new -d \". ~/.zshrc;. ./launch_parallel_chunk.sh 32 config_static.xml ${chunk_index} run_${chunk_index}.log;\" "
+        tmux new -d \". ~/.zshrc;. ./launch_parallel_chunk.sh 32 config.xml ${chunk_index} run_${chunk_index}.log;\" "
 done
 
