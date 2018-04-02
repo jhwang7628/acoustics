@@ -130,6 +130,7 @@ class FDTD_RigidObject : public FDTD_MovableObject
         virtual void UpdateBoundingBox();
         virtual void ResetUnionBox();
         virtual void ApplyScale(const REAL scale);
+        virtual void ClearTransform();
         // in-place query for object sdf distance from world x,y,z
         virtual REAL DistanceToMesh(const double &x, const double &y, const double &z);
         virtual REAL DistanceToMesh(const Vector3d &position);
