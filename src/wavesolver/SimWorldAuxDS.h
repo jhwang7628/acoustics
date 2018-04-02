@@ -15,7 +15,7 @@ struct ListeningUnit
     {
         DELAY_LINE=0,
         DELAY_LINE_2ND=2,
-        SHELL=1
+        SHELL=1,
     } mode = DELAY_LINE_2ND;
 
     // speaker/mics

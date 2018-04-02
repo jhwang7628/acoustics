@@ -52,7 +52,14 @@ UpdateSpeakers()
             const REAL r = lowerRadiusBound
                 - (0.5 + simulator->GetSolverSettings()->PML_width)*cellSize;
             v *= r;
-            spk = BoundingBoxCenter() + v;
+            if (GetBoundingBox().isInside(mic))
+            {
+                spk = mic;
+            }
+            else
+            {
+                spk = BoundingBoxCenter() + v;
+            }
         }
     }
     else if (listen->mode == ListeningUnit::MODE::DELAY_LINE_2ND)
@@ -69,30 +76,40 @@ UpdateSpeakers()
         for (int ii=0; ii<N_mic; ++ii)
         {
             const Vector3d &x_l = ListeningUnit::microphones.at(ii);
-            const Vector3d  x_c = bbox.center();
-            const Vector3d v = (x_l - x_c).normalized();
-            REAL t_min = std::numeric_limits<REAL>::max();
-            for (int dd=0; dd<3; ++dd)
+            if (bbox.isInside(x_l))
             {
-                if (fabs(v[dd]) < 1E-16)
-                    continue;
-                const REAL pad = (0.5+simulator->GetSolverSettings()->PML_width);
-                const REAL l = bbox.axislength(dd)/2.0
-                             - sqrt(3.0)*h*pad;
-                t_min = std::min(t_min, l/fabs(v[dd]));
+                for (int jj=0; jj<n; ++jj)
+                {
+                    listen->speakers.at(ii*n+jj) = x_l;
+                }
             }
+            else
+            {
+                const Vector3d  x_c = bbox.center();
+                const Vector3d v = (x_l - x_c).normalized();
+                REAL t_min = std::numeric_limits<REAL>::max();
+                for (int dd=0; dd<3; ++dd)
+                {
+                    if (fabs(v[dd]) < 1E-16)
+                        continue;
+                    const REAL pad = (0.5+simulator->GetSolverSettings()->PML_width);
+                    const REAL l = bbox.axislength(dd)/2.0
+                        - sqrt(3.0)*h*pad;
+                    t_min = std::min(t_min, l/fabs(v[dd]));
+                }
 
-            const REAL dr = sqrt(3.0)*h;
-            const REAL ct = simulator->GetSolverSettings()->soundSpeed*dt;
-            const Vector3d xb = x_c + v*t_min;
-            const Vector3d x0 = x_c + v*(ct*std::floor((xb-x_c).length()/ct));
-            listen->speakers.at(ii*n  ) = x0;
-            for (int jj=0; jj<n; ++jj)
-            {
-                const Vector3d x1 = x0  - v*(ct*std::ceil(jj*dr/ct));
-                listen->speakers.at(ii*n+jj) = x1;
+                const REAL dr = sqrt(3.0)*h;
+                const REAL ct = simulator->GetSolverSettings()->soundSpeed*dt;
+                const Vector3d xb = x_c + v*t_min;
+                const Vector3d x0 = x_c + v*(ct*std::floor((xb-x_c).length()/ct));
+                listen->speakers.at(ii*n  ) = x0;
+                for (int jj=0; jj<n; ++jj)
+                {
+                    const Vector3d x1 = x0  - v*(ct*std::ceil(jj*dr/ct));
+                    listen->speakers.at(ii*n+jj) = x1;
+                }
+                // first write the outer, then the inner
             }
-            // first write the outer, then the inner
         }
     }
     else if (listen->mode == ListeningUnit::MODE::SHELL)
@@ -602,13 +619,34 @@ StepWorld()
     //    m.second->ApplyScale(1.0+sdot*_simulatorSettings->timeStepSize);
     //}
     // dipole vibration
-    const REAL omega = 2.0*M_PI*1500.0;
-    const REAL scale = omega*omega*0.01;
-    auto objects = _objectCollections->GetRigidObjects();
-    for (auto &m : objects)
+    //const REAL omega = 2.0*M_PI*1500.0;
+    //const REAL scale = omega*omega*0.01;
+    //auto objects = _objectCollections->GetRigidObjects();
+    //for (auto &m : objects)
+    //{
+    //    m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
+    //    std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+    //}
+    // monopole chirp vibration
+    const REAL f[2] = {440., 1500};
+    const REAL o[2] = {2.0*M_PI*f[0], 2.0*M_PI*f[1]};
+    const REAL a[2] = {1.0, 1.0};
+    const REAL t[2] = {0.0, 5.0};
+    const REAL r0 = 0.05;
+    const REAL dr = 0.01;
+    if (_state.time > t[0] && _state.time <= t[1])
     {
-        m.second->ApplyTranslation(0., -1./omega*cos(omega*_state.time)*_simulatorSettings->timeStepSize*scale, 0.);
-        std::cout << "center = " << m.second->GetBBox().Center() <<std::endl;
+        const REAL alpha = (_state.time - t[0])/(t[1] - t[0]);
+        const REAL ampli = (1.0-alpha)*a[0] + alpha*a[1];
+        const REAL omega = (1.0-alpha)*o[0] + alpha*o[1];
+        auto objects = _objectCollections->GetRigidObjects();
+        for (auto &m : objects)
+        {
+            const REAL s = 1.0 + dr/r0*(-ampli*sin(omega*_state.time));
+            std::cout << "applying scaling: " << s << std::endl; // FIXME debug
+            m.second->ClearTransform();
+            m.second->ApplyScale(s);
+        }
     }
 #endif
     std::cout << "================ Step STOP ================\n";
