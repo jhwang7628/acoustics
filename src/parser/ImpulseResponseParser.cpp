@@ -6,6 +6,7 @@
 #include <wavesolver/ModalVibrationalSource.h>
 #include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <wavesolver/HarmonicVibrationalSource.h>
+#include <wavesolver/ChirpVibrationalSource.h>
 #include <wavesolver/ShellVibrationalSource.h>
 #include <wavesolver/WaterVibrationalSource.h>
 #include <wavesolver/FDTD_PlaneConstraint.h>
@@ -211,6 +212,24 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
             const REAL harmonic_source_f = queryRequiredReal(rigidObjectNode, "harmonic_source_f");
             const REAL omega = 2.0*M_PI*harmonic_source_f;
             VibrationalSourcePtr sourcePtr(new HarmonicVibrationalSource(object, omega, 0.0));
+            object->AddVibrationalSource(sourcePtr);
+        }
+
+        // get chirp source if any
+        const bool has_chirp_source = queryOptionalReal(rigidObjectNode, "has_chirp_source", 0.0);
+        if (has_chirp_source)
+        {
+            std::cout << "object has chirp source\n";
+            const REAL f_0 = queryRequiredReal(rigidObjectNode, "chirp_frequency_0");
+            const REAL f_1 = queryRequiredReal(rigidObjectNode, "chirp_frequency_1");
+            const REAL t_0 = queryRequiredReal(rigidObjectNode, "chirp_time_0");
+            const REAL t_1 = queryRequiredReal(rigidObjectNode, "chirp_time_1");
+            const REAL a_0 = queryRequiredReal(rigidObjectNode, "chirp_amplitude_0");
+            const REAL a_1 = queryRequiredReal(rigidObjectNode, "chirp_amplitude_1");
+            VibrationalSourcePtr sourcePtr(new ChirpVibrationalSource(object,
+                        2.0*M_PI*f_0, 2.0*M_PI*f_1,
+                        t_0, t_1,
+                        a_0, a_1));
             object->AddVibrationalSource(sourcePtr);
         }
 

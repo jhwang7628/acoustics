@@ -18,6 +18,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/VibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/HarmonicVibrationalSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ChirpVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ChirpVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.h
