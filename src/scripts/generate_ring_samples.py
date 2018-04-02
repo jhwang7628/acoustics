@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import numpy as np
 
-r = 2.0
-offset = 1.78
-N = 36
-dim = 1
+r = 0.225
+offset = 0.0
+N = 72
+dim = 2
 
 t = 0.0
 dt = 2.0*np.pi/float(N)
