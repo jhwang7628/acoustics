@@ -32,6 +32,7 @@
 //#define ENGQUIST_ORDER 1
 #define ENGQUIST_ORDER 2
 #define ENABLE_FAST_RASTERIZATION
+//#define NO_FRESH_CELL_INTERP
 //#define DISABLE_CAVITY_FIX
 
 //##############################################################################
@@ -1979,6 +1980,11 @@ void MAC_Grid::InterpolateFreshPressureCell(MATRIX &p, const REAL &timeStep, con
         // if has valid history or if its not bulk, then no interpolation needed
         if (_pressureCellHasValidHistory.at(cell_idx) || !_isBulkCell.at(cell_idx))
             continue;
+
+#ifdef NO_FRESH_CELL_INTERP
+        p(cell_idx, 0) = 0.0;
+        continue;
+#endif
 
         const Vector3d cellPosition = _pressureField.cellPosition(cell_idx);
         REAL distance;
