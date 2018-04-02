@@ -7,20 +7,6 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
 {
     if (time<_time[0])
         return 0.0;
-    const REAL alpha = (time<_time[1] ? (time - _time[0])/(_time[1] - _time[0]) :
-                                        1.0);
-    const REAL omega =  (1.0 - alpha)*_omega[0] + alpha*_omega[1];
-    //const REAL amp   = ((1.0 - alpha)*_amp[0]   + alpha*_amp[1])*pow(omega,2);
-    const REAL amp = 1.0;
-    //COUT_SDUMP(omega/2.0/M_PI);
-    return sin(omega*time)*amp;
-}
-
-REAL ChirpVibrationalSource::
-Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, const int &hintTriangle)
-{
-    if (time<_time[0])
-        return 0.0;
     const REAL alpha = (time<_time[1] ?
             0.5 * (time - _time[0])/(_time[1] - _time[0]) :
             1.0);
