@@ -46,6 +46,7 @@ if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
 time_parallel = OptParse(parser, 'general', 'time_parallel', 'b', False)
+N_speakers_along_ray = OptParse(parser, 'general', 'N_speakers_along_ray', 'i', 1)
 use_delay_line_2nd = OptParse(parser, 'general', 'delay_line_2nd', 'b', False)
 results = Wavesolver_Results()
 results.Set_Folder(data_dir)
@@ -63,9 +64,9 @@ if time_parallel and adaptive_parallel:
     if use_delay_line_2nd:
         all_data = results.Read_All_Audio_Adaptive_Delay_Line_2nd(sampfreq)
     else:
-        all_data = results.Read_All_Audio_Adaptive(sampfreq)
+        all_data = results.Read_All_Audio_Adaptive(sampfreq, N_speakers_along_ray=N_speakers_along_ray)
 else:
-    all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=None)
+    all_data = results.Read_All_Audio(time_parallel, NChunks, NStepsEachChunk, exclude_chunks=None, N_speakers_along_ray=N_speakers_along_ray)
 
 
 ##
