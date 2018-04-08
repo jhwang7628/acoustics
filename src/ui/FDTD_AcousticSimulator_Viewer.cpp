@@ -144,11 +144,8 @@ draw()
     //}
 
     glLineWidth(3.0f);
-    if (_drawBoxLis)
-    {
-        DrawListeningPoints();
-        DrawBox();
-    }
+    if (_drawBox) DrawBox();
+    if (_drawLis) DrawListeningPoints();
 }
 
 //##############################################################################
@@ -910,7 +907,11 @@ keyPressEvent(QKeyEvent *e)
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_B) && (modifiers == Qt::NoButton)) {
-        _drawBoxLis = !_drawBoxLis;
+        _drawBox = !_drawBox;
+        optionsChanged = true;
+    }
+    else if ((e->key() == Qt::Key_B) && (modifiers == Qt::ShiftModifier)) {
+        _drawLis = !_drawLis;
         optionsChanged = true;
     }
     else if ((e->key() == Qt::Key_BracketRight) && (modifiers == Qt::NoButton)) {
@@ -1519,7 +1520,8 @@ RestoreDefaultDrawOptions()
     _wireframe = (_remoteConnection ? 4 : 2);
     _sliceWireframe.reset();
     _sliceWireframe.set(1); // draw face only
-    _drawBoxLis = true;
+    _drawBox = true;
+    _drawLis = true;
     _drawGround = (_remoteConnection ? 0 : 2);
     _drawHashedCells = false;
     _sliceDataPointer = 0;
@@ -1533,7 +1535,8 @@ PrintDrawOptions()
     std::cout << "\n" << std::boolalpha
               << "Draw Options \n"
               << "------------\n"
-              << " Draw simulation box      : " << _drawBoxLis << "\n"
+              << " Draw simulation box      : " << _drawBox << "\n"
+              << " Draw listening points    : " << _drawLis << "\n"
               << " Draw ground              : " << _drawGround << "\n"
               << " Draw wireframe only      : " << _wireframe << "\n"
               << " Draw hashed cells        : " << _drawHashedCells << "\n"
