@@ -123,11 +123,16 @@ if ReqParse(parser, 'general', 'write_wav', 'b'):
     wavfreq  = ReqParse(parser, 'wav', 'wavfreq' , 'i')
     prefix   = ReqParse(parser, 'wav', 'prefix'  , 's')
     wavformat= OptParse(parser, 'wav', 'format'  , 's', '32float')
+    xmax     = OptParse(parser, 'wav', 'xmax'    , 'f')
     rateRatio = float(sampfreq) / float(wavfreq)
     for ii in range(N_points):
         print 'point %u' %(ii)
         # scipy resample uses FFT, zero-pad it to make it fast
-        outputdata = all_data[:,ii].copy()
+        if xmax is not None:
+            end = int(xmax*float(sampfreq))
+        else:
+            end = -1
+        outputdata = all_data[:end,ii].copy()
         nextpow2 = int(np.power(2, np.floor(np.log2(len(outputdata)))+1))
         T = float(outputdata.shape[0])/float(sampfreq)
         outputdata = np.pad(outputdata, (0, nextpow2-len(outputdata)), 'constant', constant_values=(0.,0.))
