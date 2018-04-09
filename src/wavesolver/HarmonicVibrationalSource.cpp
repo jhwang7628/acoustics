@@ -9,7 +9,10 @@ Evaluate(const Vector3d &position, const Vector3d &normal, const REAL &time, con
         return 0.0;
     // monopole vibration consistent source
     //const REAL scale = _omega*_omega*0.01;
-    const REAL scale = sqrt(pow(_omega,2.5));
+    //const REAL scale = sqrt(pow(_omega,2.5));
+    // for verifying the analytical soln
+    const REAL v_bar = 1.0; // amplitude of pulsation velocity
+    const REAL scale = v_bar*_omega;
     const REAL val = sin(_omega*time + _phase) * scale;
 
     // dipole vibration consistent source
