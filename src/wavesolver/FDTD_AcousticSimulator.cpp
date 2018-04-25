@@ -135,6 +135,8 @@ _SaveSolverSettings(const std::string &filename)
     _sceneObjects->PrintAllSources(of);
 
     std::string xmlFilename_s = CompositeFilename("input_control_file.xml");
+    std::cout << "copy file from " << _configFile
+              << " to " << xmlFilename_s << std::endl;
     IO::CopyFile(_configFile, xmlFilename_s);
 }
 

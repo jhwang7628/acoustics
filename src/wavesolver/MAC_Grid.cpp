@@ -244,6 +244,27 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0));
 #else
+#ifdef ONLY_SAMPLE_CENTER
+            if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
+            {
+                laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
+                                           + _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iNeg))->pressure
+                                           - 2.0*value(cell_idx, 0));
+                ++surroundedDims;
+            }
+            else if (_isGhostCell.at(buf_iPos) && !_isGhostCell.at(buf_iNeg)) // only right side is ghost cell
+                laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
+                                           + value(buf_iNeg, 0)
+                                           - 2.0*value(cell_idx, 0));
+            else if (!_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // only left side is ghost cell
+                laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
+                                           + _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iNeg))->pressure
+                                           - 2.0*value(cell_idx, 0));
+            else // both side is bulk
+                laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
+                                           + value(buf_iNeg, 0)
+                                           - 2.0*value(cell_idx, 0));
+#else
             if (_isGhostCell.at(buf_iPos) && _isGhostCell.at(buf_iNeg)) // both sides are ghost cell
             {
                 laplacian(cell_idx, 0) += (  _ghostCells.at(GhostCell::MakeKey(cell_idx,buf_iPos))->pressure
@@ -263,6 +284,7 @@ void MAC_Grid::pressureFieldLaplacianGhostCell(const MATRIX &value, const FloatA
                 laplacian(cell_idx, 0) += (  value(buf_iPos, 0)
                                            + value(buf_iNeg, 0)
                                            - 2.0*value(cell_idx, 0));
+#endif
 #endif
             if (isBoundaryFace!=+1) // v_i+1 if exists, otherwise v_i
                 bufPos[dim] -= 1;
@@ -1252,7 +1274,11 @@ void MAC_Grid::PML_pressureUpdateGhostCells(MATRIX &p, FloatArray &pGC, const RE
         const Vector3d cell_n = gc->CellNormal();
         const REAL grad_p_nr = grad_p.dotProduct(cell_n);
         const REAL grad_p_ne = grad_p.dotProduct(erectedNormal);
+#ifdef ONLY_SAMPLE_CENTER
+        const REAL pg = p_neig - h*grad_p_nr;
+#else
         const REAL pg = p_neig - 0.75*h*grad_p_nr;
+#endif
 
         const REAL weights = (object->DistanceToMesh(cellPosition) < DISTANCE_TOLERANCE ?
                 -2.0*fabs(distance) : -fabs(distance));  // finite-difference weight
@@ -3529,6 +3555,14 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
                                    bbox_rast[0]);
 #endif
     // helper lambdas
+#ifdef ONLY_SAMPLE_CENTER
+    auto isFluid = [&,this](const Vector3d &pos, int &type){
+        const bool isfluid = !(_objects->OccupyByConstraint(pos))
+            && _objects->OccupyByObject(pos)<0;
+        if      (!isfluid &&   _objects->OccupyByConstraint(pos))  type = 1;
+        else if (!isfluid && !(_objects->OccupyByConstraint(pos))) type = 0;
+        return isfluid;};
+#else
     auto isFluid = [&,this](const Vector3d &pos, int &type){
         const bool isfluid = !(_objects->OccupyByConstraint(pos))
             && _objects->OccupyByObject(pos)<0
@@ -3541,6 +3575,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         if      (!isfluid &&   _objects->OccupyByConstraint(pos))  type = 1;
         else if (!isfluid && !(_objects->OccupyByConstraint(pos))) type = 0;
         return isfluid;};
+#endif
 
     // initialize threading containers
 #ifdef USE_OPENMP
@@ -4284,8 +4319,14 @@ MakeGhostCell(const int cell, const int neighbour,
     gc->pressure = 0.0;
     gc->position = _pressureField.cellPosition(cell);
     const int dim = abs(topology)-1;
+#ifndef ONLY_SAMPLE_CENTER
     gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
                       *  0.25*_waveSolverSettings->cellSize;
+#endif
+    // FIXME debug START
+    //gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
+    //                  *  0.5*_waveSolverSettings->cellSize;
+    // FIXME debug END
     auto key = gc->MakeKey();
     auto it = _ghostCellsCached.find(key);
     if (it != _ghostCellsCached.end())
