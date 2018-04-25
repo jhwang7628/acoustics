@@ -82,7 +82,8 @@ if __name__ == '__main__':
     nfft = 2048
     nover = round(0.5 * nfft)
 
-    plt.figure(figsize=[12,2*len(files)])
+    # plt.figure(figsize=[12,2*len(files)])
+    plt.figure(figsize=[24,6],dpi=300)
     for idx, a in enumerate(files):
 
         N_a, data_a = scipy.io.wavfile.read(a)
@@ -95,14 +96,15 @@ if __name__ == '__main__':
 
         myNorm = Normalize(None, None, Range)
 
-        plt.subplot(len(files),1,idx+1)
+        # plt.subplot(len(files),1,idx+1)
+        plt.subplot(1,len(files),idx+1)
         plt.specgram(data_a, NFFT=nfft, noverlap=nover, Fs=N_a, cmap=cma, norm=myNorm)
         plt.xlim([0,max(t_a)])
-        plt.ylim([0,20000])
+        plt.ylim([0,10000])
         plt.ylabel('Frequency (Hz)')
         # plt.plot(t_a, data_a)
         # plt.ylim([-1,1])
 
-    plt.savefig('spectrogram_comparison.pdf')
+    plt.savefig('spectrogram_comparison.pdf',dpi=300)
     plt.show()
     sys.exit()
