@@ -1,9 +1,9 @@
-#ifndef FDTD_RIGID_SOUND_OBJECT_H 
-#define FDTD_RIGID_SOUND_OBJECT_H 
+#ifndef FDTD_RIGID_SOUND_OBJECT_H
+#define FDTD_RIGID_SOUND_OBJECT_H
 #include <iostream>
 #include <Eigen/Dense>
-#include <modal_model/ModalAnalysisObject.h> 
-#include <modal_model/ImpulseSeriesObject.h> 
+#include <modal_model/ModalAnalysisObject.h>
+#include <modal_model/ImpulseSeriesObject.h>
 #include <wavesolver/FDTD_RigidObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/AccelerationNoiseVibrationalSource.h>
@@ -11,8 +11,8 @@
 
 //##############################################################################
 // Class that manages object that is characterized by surface mesh, level-set
-// functions (FDTD_RigidObject) and has impulse (ImpulseSeriesObject) 
-// prescribed by the rigidsim tool. 
+// functions (FDTD_RigidObject) and has impulse (ImpulseSeriesObject)
+// prescribed by the rigidsim tool.
 //
 // Note: be careful when fetching velocity and acceleration data, see comments
 // below.
@@ -33,19 +33,19 @@
 //
 // After the acoustic time stepping, call UpdateQPointers() so that the
 // internal timestamps for ODE solvers are updated and pointers for q arrays
-// are shifted properly. 
+// are shifted properly.
 //
 // For safety, I limit the timestamp access when sampling velocity and
-// acceleration to make sure its called correctly. See individual functions. 
+// acceleration to make sure its called correctly. See individual functions.
 //##############################################################################
 class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObject, public ImpulseSeriesObject
 {
-    public: 
+    public:
         struct ModeAttribute{ REAL modeMax; REAL modeMin; REAL absMax; };
 
-    private: 
-        Eigen::VectorXd _activeModeValues; 
-        ModeAttribute   _activeModeAttributes; 
+    private:
+        Eigen::VectorXd _activeModeValues;
+        ModeAttribute   _activeModeAttributes;
 
         Eigen::VectorXd _q_p;  // previous displacement
         Eigen::VectorXd _q_c;  // current displacement
@@ -63,16 +63,16 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         // Timers
         SimpleTimer _timer_mainstep[3];  // advance, q->u, IO
         SimpleTimer _timer_substep_advanceODE[3]; // interpolate force, transform force, step system
-        SimpleTimer _timer_substep_q2u[1]; 
+        SimpleTimer _timer_substep_q2u[1];
 
         // cached properties
-        bool _invInertiaTensorCached=false; 
-        Matrix3<REAL> _invInertiaTensor; 
+        bool _invInertiaTensorCached=false;
+        Matrix3<REAL> _invInertiaTensor;
 
-    public: 
+    public:
         // build object
         FDTD_RigidSoundObject()
-            : FDTD_RigidObject(RIGID_SOUND_OBJ), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ),
               ModalAnalysisObject(),
               ImpulseSeriesObject()
         {
@@ -80,22 +80,22 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
 
         // build object with mesh, sdf
         FDTD_RigidSoundObject(const std::string &workingDirecotry, const int &resolution, const std::string &objectPrefix, const bool &buildFromTetMesh, const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, const std::string &meshName="NOT_IDENTIFIED", const int &scale=1.0, bool needsCurvature = true)
-            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale, needsCurvature), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale, needsCurvature),
               ModalAnalysisObject(),
               ImpulseSeriesObject(GetMeshPtr())
         {
         }
 
         // build object with mesh, sdf, modes
-        FDTD_RigidSoundObject(const std::string &workingDirecotry, 
-                              const int &resolution, 
-                              const std::string &objectPrefix, 
-                              const std::string &modeFile, 
-                              const bool &buildFromTetMesh, 
-                              const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, 
-                              const std::string &meshName="NOT_IDENTIFIED", 
+        FDTD_RigidSoundObject(const std::string &workingDirecotry,
+                              const int &resolution,
+                              const std::string &objectPrefix,
+                              const std::string &modeFile,
+                              const bool &buildFromTetMesh,
+                              const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings,
+                              const std::string &meshName="NOT_IDENTIFIED",
                               const int &scale=1.0)
-            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale), 
+            : FDTD_RigidObject(RIGID_SOUND_OBJ, workingDirecotry, resolution, objectPrefix, buildFromTetMesh, solverSettings, meshName, scale),
               ModalAnalysisObject(modeFile),
               ImpulseSeriesObject(GetMeshPtr())
         {
@@ -105,16 +105,16 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         inline bool IsModalObject(){return N_Modes()>0;}
         inline Vector3d PremultiplyInvInertiaTensor(const Vector3d &x){return _invInertiaTensor * x;}
 
-        void Initialize(); 
-        void InitializeModeVectors(); 
-        void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues); 
-        void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace); 
+        void Initialize();
+        void InitializeModeVectors();
+        void GetVertexModeValuesNormalized(const int &modeIndex, Eigen::VectorXd &modeValues);
+        void GetForceInModalSpace(const ImpactRecord &record, Eigen::VectorXd &forceInModalSpace);
         void GetModalDisplacementAux(const int &mode, Eigen::VectorXd &displacement);
         void GetModalDisplacement(const int &mode, Eigen::VectorXd &displacement);  // only transform the mode quried
         void GetModalDisplacement(Eigen::VectorXd &displacement); // transform all the mode displacements
         REAL AdvanceModalODESolvers(const int &N_steps, const bool encodeIfPossible = true, const Eigen::VectorXd *debugForce=nullptr);
         REAL AdvanceModalODESolvers(const int &N_steps, const int &mode, std::ofstream &of_displacement, std::ofstream &of_q);
-        void UpdateQPointers(); 
+        void UpdateQPointers();
         bool UpdateVibrationalSources(const REAL time)
         {
             bool changed = false;
@@ -126,30 +126,30 @@ class FDTD_RigidSoundObject : public FDTD_RigidObject, public ModalAnalysisObjec
         }
 
         const Point3d &CenterOfMass() const {return _volumeCenter;} // volume center = mass center
-        REAL Mass() const; 
-        void InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute=false); 
-        REAL EffectiveMass(const Vector3d &x, const Vector3d &n); 
-        // Since velocity and acceleration are estimated using central difference, their values correspond to qOld 
-        // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize. 
-        REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
-        REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
-        REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime, const int &hintTriangle); 
-        REAL SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &sampleTime); 
-        Vector3d SampleModalAcceleration(const int &vertexID, const REAL &sampleTime); 
+        REAL Mass() const;
+        void InvInertiaTensor(Matrix3<REAL> &I_inv, const bool &compute=false);
+        REAL EffectiveMass(const Vector3d &x, const Vector3d &n);
+        // Since velocity and acceleration are estimated using central difference, their values correspond to qOld
+        // and thus when fetching, we should be getting solution values at time t=_time - _ODEStepSize.
+        REAL SampleModalDisplacement(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime);
+        REAL SampleModalVelocity(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime);
+        REAL SampleModalAcceleration(const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime, const int &hintTriangle);
+        REAL SampleModalAcceleration(const int &vertexID, const Vector3d &vertexNormal, const REAL &sampleTime);
+        Vector3d SampleModalAcceleration(const int &vertexID, const REAL &sampleTime);
 
-        REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a); 
-        REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a); 
+        REAL EstimateContactTimeScale(const int &vertex_a, const REAL &contactSpeed, const Vector3d &impulse_a);
+        REAL EstimateContactTimeScale(const std::shared_ptr<FDTD_RigidSoundObject> &object_b, const int &vertex_a, const int &vertex_b, const REAL &contactSpeed, const Vector3d &impulse_a);
 
         ///// debug methods /////
 
         // Perfect harmonics: q(t) = cos(omega * t), omega is angular frequency
         // of mode
-        REAL PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
-        REAL PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime); 
+        REAL PerfectHarmonics_SampleModalVelocity(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime);
+        REAL PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &samplePoint, const Vector3d &samplePointNormal, const REAL &sampleTime);
         void PrintAllVelocity(const std::string &filename, const int &mode) const;
 
         REAL GetODEStepSize() { return _ODEStepSize; }
-    friend class AccelerationNoiseVibrationalSource; 
+    friend class AccelerationNoiseVibrationalSource;
 };
 
 #endif
