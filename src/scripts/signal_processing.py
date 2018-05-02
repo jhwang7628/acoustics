@@ -14,10 +14,8 @@ def ComputeAverageFFT(dt, y, N=1024, overlap_ratio=0.5):
 
     ii = 0
     N_accum = 0
-    while ii<len(y): 
-        ii_m = ii+N
-        if (ii_m >= len(y)-1):
-            break
+    while ii+N<=len(y):
+        ii_m = min(ii+N,len(y))
         N_windowed = ii_m - ii
         y_windowed = np.multiply(y[ii:ii_m], np.hanning(N))
         assert(len(y_windowed) == N_windowed)
