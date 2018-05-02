@@ -10,6 +10,12 @@
             />
     </material_list>
     <scene>
+        <acoustic_shaders>
+            <id value = "modal_transfer_1"/>
+            <modal_transfer_shader
+                modes = "0 1 2 3"
+            />
+        </acoustic_shaders>
         <object_rigidsim_data
             file_displacement="displace.bin"
             file_velocity="velocity.bin"
@@ -31,8 +37,9 @@
             mode_file="/home/jui-hsien/code/acoustics/work/two_sphere_collide/sphere_d10cm.modes"
             modal_ODE_step_frequency="176400"
 
-            has_modal_source = "1"
-            has_acc_noise_source = "1"
+            has_modal_source = "0"
+            has_acc_noise_source = "0"
+            add_shader_by_id = "modal_transfer_1"
             />
         <rigid_object_sequence
             working_directory="assets/processed/Pipe"

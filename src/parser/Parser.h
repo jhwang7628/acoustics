@@ -472,6 +472,17 @@ class Parser
             }
             return list; 
         }
+        // int list format example: <... int_list="0 1 2 5"/>
+        static std::vector<REAL> queryRequiredRealList(TiXmlElement *node, const std::string &attr)
+        {
+            const std::string line = queryRequiredAttr(node, attr); 
+            std::istringstream iss(line);
+            REAL buf; 
+            std::vector<REAL> list; 
+            while(iss >> buf) 
+                list.push_back(buf); 
+            return list; 
+        }
         static bool queryOptionalBool(TiXmlElement* node, const std::string &attr, const std::string &defaultBool)
         {
             std::string flag = queryOptionalAttr(node, attr, defaultBool); 

@@ -22,6 +22,8 @@ set(WAVESOLVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/ChirpVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ModalVibrationalSource.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ModalTransferVibrationalSource.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ModalTransferVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.h
     ${CMAKE_CURRENT_SOURCE_DIR}/AccelerationNoiseVibrationalSource.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ShellVibrationalSource.h

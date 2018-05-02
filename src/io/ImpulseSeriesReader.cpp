@@ -39,7 +39,11 @@ LoadImpulses(const int &loadObjectID, ImpulseSeriesObjectPtr object, std::shared
 {
     std::ifstream inFile(_impulseFile);
     if (!inFile)
-        throw std::runtime_error("**ERROR** Cannot open impulse file: " + _impulseFile);
+    {
+        std::cout << "**WARNING** Cannot open impulse file: " + _impulseFile
+                  << std::endl << "Skipping..\n";
+        return;
+    }
 
     RigidSoundObjectPtr soundObject =
         std::dynamic_pointer_cast<FDTD_RigidSoundObject>(objects->GetPtr(loadObjectID));

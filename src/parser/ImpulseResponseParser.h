@@ -16,6 +16,7 @@
 #include <modal_model/ModalAnalysisObject.h>
 #include <wavesolver/Wavesolver_ConstantsAndTypes.h>
 #include <wavesolver/PML_WaveSolver_Settings.h>
+#include <wavesolver/VibrationalSource.h>
 
 //##############################################################################
 // Parameters for impulse response wave solve
@@ -67,6 +68,8 @@ class ImpulseResponseParser : public Parser
 
     private:
         TiXmlDocument _document;
+        bool _shaderParsed = false;
+        std::map<std::string, std::vector<VibrationalSourcePtr>> _cachedShaders;
 
     public:
         ImpulseResponseParser(){}
@@ -77,6 +80,7 @@ class ImpulseResponseParser : public Parser
 
         inline void SetDocument(const TiXmlDocument &document){this->_document = document;}
         inline TiXmlDocument &GetDocument(){return _document;}
+        void ParseAndCacheShaders(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings);
         void GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::shared_ptr<FDTD_Objects> &objects);
         //void GetSources(std::shared_ptr<PML_WaveSolver_Settings> settings);
         void GetSolverSettings(std::shared_ptr<PML_WaveSolver_Settings> &settings);

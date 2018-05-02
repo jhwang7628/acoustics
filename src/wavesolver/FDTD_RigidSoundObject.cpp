@@ -655,6 +655,40 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &sample
 
 //##############################################################################
 //##############################################################################
+REAL FDTD_RigidSoundObject::
+PerfectHarmonics_SampleModalAcceleration(const int &mode, const int &vertexID,
+                                         const Vector3d &vertexNormal,
+                                         const REAL &sampleTime)
+{
+    // compute interpolated normal modal displacement
+    const REAL normalModalDisplacement = _eigenVectorsNormal(vertexID, mode);
+    // estimate modal acceleration
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode);
+    if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    return sampledValue;
+}
+
+//##############################################################################
+//##############################################################################
+Vector3d FDTD_RigidSoundObject::
+PerfectHarmonics_SampleModalAcceleration(const int &mode, const int &vertexID,
+                                         const REAL &sampleTime)
+{
+    // compute interpolated normal modal displacement
+    const REAL normalModalDisplacement = _eigenVectorsNormal(vertexID, mode);
+    const Vector3d n = ObjectToWorldVector(_mesh->normal(vertexID));
+    // estimate modal acceleration
+    const REAL omega = 2.0 * M_PI * GetModeFrequency(mode);
+    if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
+        throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
+    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    return n*sampledValue;
+}
+
+//##############################################################################
+//##############################################################################
 void FDTD_RigidSoundObject::
 PrintAllVelocity(const std::string &filename, const int &mode) const
 {

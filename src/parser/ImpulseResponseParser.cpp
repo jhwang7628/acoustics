@@ -4,6 +4,7 @@
 #include <io/ImpulseSeriesReader.h>
 #include <wavesolver/VibrationalSource.h>
 #include <wavesolver/ModalVibrationalSource.h>
+#include <wavesolver/ModalTransferVibrationalSource.h>
 #include <wavesolver/AccelerationNoiseVibrationalSource.h>
 #include <wavesolver/HarmonicVibrationalSource.h>
 #include <wavesolver/ChirpVibrationalSource.h>
@@ -13,6 +14,35 @@
 #include <wavesolver/WaterVibrationalSourceBubbles.h>
 #include <wavesolver/SpeakerVibrationalSource.h>
 #include <modal_model/SparseModalEncoder.h>
+//##############################################################################
+// parse meshes from xml into objects
+//##############################################################################
+void ImpulseResponseParser::
+ParseAndCacheShaders(const std::shared_ptr<PML_WaveSolver_Settings> &settings)
+{
+    // get the root node
+    TiXmlDocument *document2 = &_document;
+    TiXmlElement *root, *node;
+    if (!document2)
+        throw std::runtime_error("**ERROR** document null");
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response");
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "scene");
+    GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "acoustic_shaders");
+
+    node = root->FirstChildElement("id");
+    const std::string id = queryRequiredAttr(node, "value");
+
+    node = root->FirstChildElement("modal_transfer_shader");
+    while (node)
+    {
+        const std::vector<int> modes  = queryRequiredIntList( node, "modes");
+        VibrationalSourcePtr ptr =
+            std::make_shared<ModalTransferVibrationalSource>(nullptr, modes);
+        _cachedShaders[id].push_back(ptr);
+        node = node->NextSiblingElement("modal_transfer_shader");
+    }
+    _shaderParsed = true;
+}
 
 //##############################################################################
 // parse meshes from xml into objects
@@ -24,6 +54,11 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
     {
         std::cerr << "**MESSAGE** passed in pointer null for GetObjects. Initialize new object.\n";
         objects = std::make_shared<FDTD_Objects>();
+    }
+
+    if (!_shaderParsed)
+    {
+        ParseAndCacheShaders(solverSettings);
     }
 
     // get the root node
@@ -73,8 +108,8 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->SetOptionalAttributes(attr);
         object->SetAnimated(true);
         // load impulse from file
-        const std::string impulseFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_file");
-        const std::string rigidsimConfigFile = queryRequiredAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file");
+        const std::string impulseFile = queryOptionalAttr(rigidSoundObjectNode, "impulse_file", "__NO_FILE");
+        const std::string rigidsimConfigFile = queryOptionalAttr(rigidSoundObjectNode, "impulse_rigidsim_config_file", "__NO_FILE");
         ImpulseSeriesReader reader(impulseFile, rigidsimConfigFile);
         std::shared_ptr<ImpulseSeriesObject> objectPtr = std::static_pointer_cast<ImpulseSeriesObject>(object);
         readers.push_back(reader);
@@ -115,6 +150,22 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
             object->AddVibrationalSource(sourcePtr);
         }
 
+        // query shaders
+        {
+            const std::string shaderID = queryOptionalAttr(rigidSoundObjectNode, "add_shader_by_id", "__NO_SHADER");
+            if (_cachedShaders.find(shaderID) != _cachedShaders.end())
+            {
+                const auto &shaders = _cachedShaders.at(shaderID);
+                for (auto shader : shaders)
+                {
+                    auto o = std::dynamic_pointer_cast<ModalTransferVibrationalSource>(shader);
+                    if (o)
+                        o->SetOwner(object);
+                    object->AddVibrationalSource(shader);
+                }
+            }
+        }
+
         objects->AddObject(std::stoi(meshName), object_r);
         rigidSoundObjectNode = rigidSoundObjectNode->NextSiblingElement(rigidSoundObjectNodeName.c_str());
     }
@@ -128,12 +179,15 @@ GetObjects(const std::shared_ptr<PML_WaveSolver_Settings> &solverSettings, std::
         object->GetRangeOfImpulses(impulseRangeStart, impulseRangeStop);
 #ifdef DEBUG_PRINT
         std::cout << static_cast<ModalAnalysisObject>(*(object.get())) << std::endl;
-        std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
-                  << " Number of impulses: " << object->N_Impulses() << "\n"
-                  << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
-                  << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
-                  << "\n";
-        object->PrintAllImpulses();
+        if (object->N_Impulses() > 0)
+        {
+            std::cout << "Impulses Read for object " << objects->GetMeshName(o_idx) << ":\n"
+                      << " Number of impulses: " << object->N_Impulses() << "\n"
+                      << " Time step size for rigid sim: " << object->GetRigidsimTimeStepSize() << "\n"
+                      << " Time range of impulses: [" << impulseRangeStart << ", " << impulseRangeStop << "]\n"
+                      << "\n";
+            object->PrintAllImpulses();
+        }
 #endif
     }
 
