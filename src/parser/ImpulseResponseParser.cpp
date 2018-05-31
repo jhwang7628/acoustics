@@ -25,9 +25,14 @@ ParseAndCacheShaders(const std::shared_ptr<PML_WaveSolver_Settings> &settings)
     TiXmlElement *root, *node;
     if (!document2)
         throw std::runtime_error("**ERROR** document null");
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response");
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "scene");
-    GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "acoustic_shaders");
+    try{
+        GET_FIRST_CHILD_ELEMENT_GUARD(root, document2, "impulse_response");
+        GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "scene");
+        GET_FIRST_CHILD_ELEMENT_GUARD(root, root, "acoustic_shaders");
+    }
+    catch (std::runtime_error &e) {
+        return;
+    }
 
     node = root->FirstChildElement("id");
     const std::string id = queryRequiredAttr(node, "value");

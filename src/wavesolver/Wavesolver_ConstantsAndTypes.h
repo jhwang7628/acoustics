@@ -123,7 +123,7 @@ using ChunkPartitionParam_Ptr =
 #define DEBUG_ANALYTICAL_ACC_NOISE 0
 #define DEBUG_PERFECT_MODAL_HARMONICS 1 // replace q(t) by cos(omega t)
 #define DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL -1
-#define ONLY_SAMPLE_CENTER
+//#define ONLY_SAMPLE_CENTER
 
 //##############################################################################
 #endif
