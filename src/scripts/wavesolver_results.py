@@ -102,6 +102,7 @@ class Wavesolver_Results:
                 filename = '%s/%s_all_audio.dat' %(self.folder, self.prefix)
             if os.path.isfile(filename):
                 filesizebytes = os.path.getsize(filename)
+                print 'file is %u bytes' %(filesizebytes)
             else:
                 print '**WARNING** File %s does not exist' %(filename)
                 return None
@@ -112,9 +113,9 @@ class Wavesolver_Results:
                 print '  reading %d steps' %(num_steps)
                 N = self.num_listening_points*num_steps
                 print 'step 0'
-                buf = stream.read(8*N)
+                buf = struct.unpack('d'*N, stream.read(8*N))
                 print 'step 1'
-                all_data = np.array(struct.unpack('d'*N, buf))
+                all_data = np.array(buf)
                 print 'step 2'
                 all_data = all_data.reshape((num_steps, self.num_listening_points))
                 print all_data

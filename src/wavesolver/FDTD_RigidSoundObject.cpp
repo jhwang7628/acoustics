@@ -608,7 +608,8 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const Vector3d &sample
     const REAL omega = 2.0 * M_PI * GetModeFrequency(mode);
     if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    //const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    const REAL sampledValue = normalModalDisplacement * cos(omega * sampleTime);
     return sampledValue;
 #else
     // nearest neighbour lookup
@@ -666,7 +667,7 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const int &vertexID,
     const REAL omega = 2.0 * M_PI * GetModeFrequency(mode);
     if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    const REAL sampledValue = normalModalDisplacement * cos(omega * sampleTime);
     return sampledValue;
 }
 
@@ -683,7 +684,7 @@ PerfectHarmonics_SampleModalAcceleration(const int &mode, const int &vertexID,
     const REAL omega = 2.0 * M_PI * GetModeFrequency(mode);
     if (!EQUAL_FLOATS(sampleTime, _time-_ODEStepSize) && !EQUAL_FLOATS(sampleTime, _time-0.5*_ODEStepSize))
         throw std::runtime_error("**ERROR** Queried timestamp unexpected for modal acceleration sampling. Double check.");
-    const REAL sampledValue = normalModalDisplacement * (-omega*omega * cos(omega * sampleTime));
+    const REAL sampledValue = normalModalDisplacement * cos(omega * sampleTime);
     return n*sampledValue;
 }
 

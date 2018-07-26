@@ -4322,6 +4322,13 @@ MakeGhostCell(const int cell, const int neighbour,
 #ifndef ONLY_SAMPLE_CENTER
     gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
                       *  0.25*_waveSolverSettings->cellSize;
+#else
+#ifdef STAGGER_ACC_SAMPLE
+    if (_waveSolverSettings->boundaryHandlingType == PML_WaveSolver_Settings::BoundaryHandling::RASTERIZE) {
+        gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
+                          *  0.5*_waveSolverSettings->cellSize;
+    }
+#endif
 #endif
     // FIXME debug START
     //gc->position[dim] += (topology > 0 ? 1.0 : -1.0)

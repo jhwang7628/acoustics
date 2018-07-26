@@ -70,8 +70,8 @@ if __name__ == '__main__':
     files = sys.argv[1:]
     print files
 
+    Range = 40.0 #dB
     # Range = 80.0 #dB
-    Range = 95.0 #dB
 
     #cma = cm.get_cmap('gnuplot')
     # cma = cm.get_cmap('afmhot')
@@ -82,9 +82,14 @@ if __name__ == '__main__':
     # cma = cm.get_cmap('BuGn')
     nfft = 1024
     # nfft = 2048
-    nover = round(0.5 * nfft)
+    # nover = round(0.5 * nfft)
+    nover = round(0.9 * nfft)
+    # nover = round(0.5 * nfft)
 
-    plt.figure(figsize=[12,2*len(files)])
+    plt.style.use('dark_background')
+
+    plt.figure(figsize=[24,4])
+    # plt.figure(figsize=[12,2*len(files)])
     # plt.figure(figsize=[24,6],dpi=300)
     for idx, a in enumerate(files):
 
@@ -98,16 +103,18 @@ if __name__ == '__main__':
 
         myNorm = Normalize(None, None, Range)
 
-        plt.subplot(len(files),1,idx+1)
-        # plt.subplot(1,len(files),idx+1)
+        # plt.subplot(len(files),1,idx+1)
+        plt.subplot(1,len(files),idx+1)
         plt.specgram(data_a, NFFT=nfft, noverlap=nover, Fs=N_a, cmap=cma, norm=myNorm)
         plt.xlim([0,max(t_a)])
-        plt.xlim([0,10])
-        plt.ylim([0,20000])
-        plt.ylabel('Frequency (kHz)')
+        plt.xlim([0,2.25])
+        # plt.ylim([0,14000])
+        plt.ylim([0,1400])
+        # plt.ylabel('Frequency (kHz)')
         # plt.plot(t_a, data_a)
         # plt.ylim([-1,1])
 
     plt.savefig('spectrogram_comparison.pdf',dpi=300)
+    plt.savefig('spectrogram_comparison.jpg',dpi=300)
     plt.show()
     sys.exit()

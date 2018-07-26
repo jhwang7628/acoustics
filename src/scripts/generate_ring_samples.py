@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import numpy as np
 
-r = 0.225
+r = 0.135
 offset = 0.0
+center = [-0.2667, 0.6317, -0.1299]
 N = 72
 dim = 2
 
