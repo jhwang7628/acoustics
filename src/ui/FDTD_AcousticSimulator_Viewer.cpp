@@ -61,8 +61,8 @@ init()
     glDisable(GL_LIGHTING);
     glPointSize(3.0);
     //setGridIsDrawn();
-    setBackgroundColor(QColor(102,153,255));
-    //setBackgroundColor(QColor(0,0,0));
+    //setBackgroundColor(QColor(102,153,255));
+    setBackgroundColor(QColor(0,0,0));
     SetAllKeyDescriptions();
     camera()->setFieldOfView(18./180.*M_PI);
 
@@ -96,16 +96,17 @@ init_gl()
         const float z = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) *0.6f + 0.4f;
         //_objectColors[obj_idx] = Vector3f(x, y, z);
         //_objectColors[obj_idx] = Vector3f(250./255., 250./255., 250./255.);
-        _objectColors[obj_idx] = Vector3f(173./255., 139./255., 95./255.);
+        //_objectColors[obj_idx] = Vector3f(173./255., 139./255., 95./255.);
+        _objectColors[obj_idx] = Vector3f(162./255., 201./255., 66./255.);
     }
 
     // antialiasing
+    glDisable(GL_MULTISAMPLE);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_MULTISAMPLE);
 
     // Enable GL textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -204,9 +205,9 @@ DrawMesh()
         // draw edges of the triangles
         if (_wireframe == 0 || _wireframe == 1)
         {
-            glLineWidth(0.5f);
+            glLineWidth(0.25f);
             glBegin(GL_LINES);
-            glColor3f(0.6f, 0.6f, 0.6f);
+            glColor3f(0.7f, 0.7f, 0.7f);
             for (int t_idx=0; t_idx<N_triangles; ++t_idx)
             {
                 const Tuple3ui &triangle = triangles.at(t_idx);

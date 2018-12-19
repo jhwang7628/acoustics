@@ -3604,7 +3604,7 @@ void MAC_Grid::classifyCells_FAST(MATRIX (&pCollocated)[3], const bool &verbose)
         const Vector3i &start = bbox.startIndex;
         const Vector3i &range = bbox.dimensionIteration;
 #ifdef USE_OPENMP
-#pragma omp parallel for schedule(static) default(shared)
+#pragma omp parallel for schedule(static) default(shared) collapse(3)
 #endif
         for (int ii=start.x; ii<start.x+range.x; ++ii)
         for (int jj=start.y; jj<start.y+range.y; ++jj)
@@ -4330,10 +4330,6 @@ MakeGhostCell(const int cell, const int neighbour,
     }
 #endif
 #endif
-    // FIXME debug START
-    //gc->position[dim] += (topology > 0 ? 1.0 : -1.0)
-    //                  *  0.5*_waveSolverSettings->cellSize;
-    // FIXME debug END
     auto key = gc->MakeKey();
     auto it = _ghostCellsCached.find(key);
     if (it != _ghostCellsCached.end())

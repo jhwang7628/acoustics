@@ -39,6 +39,15 @@ class PML_WaveSolver_Settings;
 //#define USE_FV
 //#define USE_MERGE_SIM_BOXES // TODO this does not work well, instability grows
 
+// disable the sharp interface and use fully rasterized approach with
+// staggered acceleration sampling. Seems to give better stability in some cases
+//#define FULL_RASTERIZE
+#ifdef FULL_RASTERIZE
+#define ONLY_SAMPLE_CENTER
+#define STAGGER_ACC_SAMPLE
+#endif
+
+
 //##############################################################################
 // Typedefs
 //##############################################################################
@@ -123,8 +132,5 @@ using ChunkPartitionParam_Ptr =
 #define DEBUG_ANALYTICAL_ACC_NOISE 0
 #define DEBUG_PERFECT_MODAL_HARMONICS 1 // replace q(t) by cos(omega t)
 #define DEBUG_WRITE_REFLECTION_ARROWS_INTERVAL -1
-#define ONLY_SAMPLE_CENTER
-#define STAGGER_ACC_SAMPLE
-
 //##############################################################################
 #endif

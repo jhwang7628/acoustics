@@ -9,14 +9,14 @@ from get_paths import *
 
 ################################################################################
 ################################################################################
-def ReadMaterialFile(filename): 
+def ReadMaterialFile(filename):
     lines = open(filename, 'r').readlines()
-    for l in lines: 
+    for l in lines:
         tokens = l.split()
         if tokens[0] == '#':
-            if tokens[1] == 'MATERIAL_PROPERTIES': 
+            if tokens[1] == 'MATERIAL_PROPERTIES':
                 name = tokens[-1]
-        else: 
+        else:
             rho = float(tokens[0])
             youngs = float(tokens[1])
             poisson = float(tokens[2])
@@ -28,17 +28,17 @@ def ReadMaterialFile(filename):
 
 ################################################################################
 ################################################################################
-if __name__ == '__main__': 
-    if len(sys.argv) != 4: 
-        print '**Usage: %s <obj_prefix> <material_file> <num_eigenvalues>' %(sys.argv[0])
+if __name__ == '__main__':
+    if len(sys.argv) != 5:
+        print '**Usage: %s <obj_prefix> <material_file> <num_eigenvalues> <output_file>' %(sys.argv[0])
         sys.exit()
-    
+
     ## User defined settings
     installPath = projectPath()
     binPath = '%s/build_release/bin' %(installPath)
     redirect = '/dev/stdout';
-               
-    ## Automatic 
+
+    ## Automatic
     print '################################################################################'
     print '## Initialization'
     print '################################################################################'
@@ -49,10 +49,10 @@ if __name__ == '__main__':
     bin_elasticity='%s/elasticity_solver' %(binPath)
     bin_arpack_eigensolver='%s/arpack-eigensolver' %(binPath)
     density, youngsModulus, poissonRatio = ReadMaterialFile(matName)
-    if not os.path.isfile(bin_elasticity) or not os.path.isfile(bin_arpack_eigensolver): 
+    if not os.path.isfile(bin_elasticity) or not os.path.isfile(bin_arpack_eigensolver):
         print '**ERROR** some binaries required are not found in path %s' %(binPath)
     print '\n\n'
-    
+
     ## Pipeline starts
     print '################################################################################'
     print '## Generate mass and stiff matrix'
@@ -62,15 +62,15 @@ if __name__ == '__main__':
     print '........................................'
     os.system('%s > %s' %(cmd, redirect));
     print '\n\n'
-    
+
     # This step also generates <objName>.tet.geo.txt, but we want to rename this
     os.system('mv -f %s.geo.txt %s.geo.txt' %(tetFile, objName));
-    
+
     print '################################################################################'
     print '## Linear modal analysis'
     print '################################################################################'
     # Using a threshold of 1.0 here seems to work
-    cmd = ("%s -n %d -t 1.0 -s %s_stiffness.mat -m %s_mass.mat -o %s.modes -v") %(bin_arpack_eigensolver, numEigs, tetFile, tetFile, objName);
+    cmd = ("%s -n %d -t 1.0 -s %s_stiffness.mat -m %s_mass.mat -o %s -v") %(bin_arpack_eigensolver, numEigs, tetFile, tetFile, sys.argv[4]);
     print cmd;
     print '........................................'
     os.system('%s > %s' %(cmd, redirect));

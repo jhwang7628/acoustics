@@ -32,6 +32,34 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${DEFORMABLE_SRC}
         ${MESH_UTILS_SRC}
         ${SND_IO_SRC}
+        ${DISTANCEFIELD_SRC}              
+        ${WAVESOLVER_SRC} 
+        ${MESH_UTILS_SRC}
+        ${GENERAL_TESTING_SRCS} 
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
+        ${GENERIC_SRC}                    
+        ${IO_SRC} 
+        ${LOGGING_SRC}                    
+        ${LINEARALGEBRA_SRC} 
+        ${MATH_SRC} 
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${GEOMETRY_SRC} 
+        ${FIELD_SRC}                      
+        ${UTILS_SRC}                      
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${MODAL_MODEL_SRC}
+        ${MODAL_MATERIAL_SRC}
+        ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
+        ${RIGID_PARSER_SRC}
+        ${SND_IO_SRC}
         convert_dat_vtk.cpp)
 
     add_executable(convert-dat-vtk-nonuniform
@@ -61,8 +89,46 @@ if ( BUILD_WAVESOLVER_TOOLS )
     add_executable(upsample_poser
         upsample_poser.cpp)
 
+    add_executable(extract_surface_mesh
+        ${DISTANCEFIELD_SRC}              
+        ${WAVESOLVER_SRC} 
+        ${MESH_UTILS_SRC}
+        ${GENERAL_TESTING_SRCS} 
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
+        ${GENERIC_SRC}                    
+        ${IO_SRC} 
+        ${LOGGING_SRC}                    
+        ${LINEARALGEBRA_SRC} 
+        ${MATH_SRC} 
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
+        ${GEOMETRY_SRC} 
+        ${FIELD_SRC}                      
+        ${UTILS_SRC}                      
+        ${PARSER_SRC} 
+        ${GTS_GEOMETRY_SRC}               
+        ${CGAL_GEOMETRY_SRC} 
+        ${TRANSFER_SRC}                   
+        ${WAVELET_TRANSFER_SRC} 
+        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${MODAL_MODEL_SRC}
+        ${MODAL_MATERIAL_SRC}
+        ${DEFORMABLE_SRC} 
+        ${RIGID_SRC}
+        ${RIGID_IO_SRC} 
+        ${IMPULSE_SERIES_SRC} 
+        ${RIGID_PARSER_SRC}
+        ${SND_IO_SRC}
+        extract_surface_mesh.cpp)
+
     add_executable(map_list_of_points_to_triangle_mesh
         map_list_of_points_to_triangle_mesh.cpp)
+
+    add_executable(extract_surf_modes
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../geometry/TetMeshIndexToSurfaceMesh.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../geometry/TetMeshIndexToSurfaceMesh.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../deformable/ModeData.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../deformable/ModeData.cpp
+        extract_surf_modes.cpp)
 
     target_link_libraries(convert-dat-vtk
         ${MKL_LIBRARY}
@@ -91,5 +157,21 @@ if ( BUILD_WAVESOLVER_TOOLS )
         boost_system
         boost_filesystem
         boost_regex)
+
+    target_link_libraries(extract_surface_mesh
+        ${MKL_LIBRARY}
+        ${BLAS_LAPACK_LIBS}             
+        ${GTS_LIBRARIES}
+        ${GLIB_LIBRARIES}               
+        ${CGAL_LIBRARIES}
+        ${GSL_LIBRARY}                  
+        ${LibConfig_LIBRARY}
+        ${VLFEAT_LIBRARY}
+        sndfile
+        boost_thread
+        boost_system                    
+        boost_timer
+        boost_filesystem
+        boost_regex) 
 
 endif ( BUILD_WAVESOLVER_TOOLS )

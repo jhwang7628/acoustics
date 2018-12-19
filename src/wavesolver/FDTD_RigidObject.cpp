@@ -490,15 +490,20 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
     else
     {
         const bool insideBoundary = (distanceTravelled < 0 ? true : false);
-        if (insideBoundary)
-        {
-            erectedNormal = boundaryPoint - originalPoint; // world space
-            reflectedPoint = boundaryPoint + erectedNormal;
-        }
-        else
-        {
-            erectedNormal =-boundaryPoint + originalPoint; // world space
-            reflectedPoint = originalPoint + erectedNormal;
+        if ((boundaryPoint - originalPoint).norm() > EPS) {
+            if (insideBoundary)
+            {
+                erectedNormal = boundaryPoint - originalPoint; // world space
+                reflectedPoint = boundaryPoint + erectedNormal;
+            }
+            else
+            {
+                erectedNormal =-boundaryPoint + originalPoint; // world space
+                reflectedPoint = originalPoint + erectedNormal;
+            }
+        } else { // in case sample point lies right on the triangle already
+            erectedNormal = _mesh->triangle_normal(closestTriangleIndex);
+            reflectedPoint = originalPoint;
         }
         erectedNormal.normalize();
         // check the normal compared to the triangle normal, they should always be pointing
@@ -507,6 +512,10 @@ ReflectAgainstBoundary(const Vector3d &originalPoint, Vector3d &reflectedPoint, 
         const REAL sgn = erectedNormal.dotProduct(t_normal)/t_normal.norm();
         if (sgn <= 0.0)
         {
+            std::cout << t_normal << " " << sgn << std::endl;
+            std::cout << originalPoint << std::endl;
+            std::cout << boundaryPoint << std::endl;
+            std::cout << reflectedPoint << std::endl;
             throw std::runtime_error("**ERROR** triangle normal and erected normal are in the opposite direction.");
         }
     }

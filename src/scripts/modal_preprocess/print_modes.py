@@ -3,8 +3,8 @@ import struct,sys,math
 from mode_data_structures import Modes
 ################################################################################
 ################################################################################
-if __name__ == "__main__": 
-    if len(sys.argv) != 3: 
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
         print '**Usage: %s <modes_file> <density>' %(sys.argv[0])
         sys.exit(1)
 

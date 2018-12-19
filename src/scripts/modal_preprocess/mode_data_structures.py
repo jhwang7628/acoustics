@@ -11,10 +11,11 @@ class Modes:
         self.eigenvalues = None
         self.eigenvectors = None
 
-    def Get_All_Frequencies(self, density):
+    def Get_All_Frequencies(self, density, geometry_scale=1.0):
         frequencies = np.zeros(self.num_modes)
         for i in range(self.num_modes):
             frequencies[i] = np.sqrt(self.eigenvalues[i]/density)/(2.0*np.pi)
+            frequencies[i] /= geometry_scale
         return frequencies
 
     def Has_Modes(self):

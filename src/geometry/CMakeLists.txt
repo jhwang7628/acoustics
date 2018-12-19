@@ -20,6 +20,11 @@ set(MESH_UTILS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/TriangleMeshGraph.cpp
     CACHE FILE "Mesh Utils sources")
 
+set(TETMESH_UTILS_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/TetMeshIndexToSurfaceMesh.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/TetMeshIndexToSurfaceMesh.cpp
+    CACHE FILE "TetMesh Utils sources")
+
 if (USE_VLFEAT)
     set(MESH_UTILS_SRC
         ${MESH_UTILS_SRC}
