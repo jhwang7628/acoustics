@@ -143,6 +143,9 @@ int main(int argc, char* argv[])
     mass *= 6983.0;
 #endif
 
+    std::cout << "mass center = " << x0 << std::endl;
+    std::cout << "mass = " << mass << std::endl;
+
     writeMassCenter( x0, outputFilePrefix.c_str() );
     writeMass( mass, outputFilePrefix.c_str() );
 

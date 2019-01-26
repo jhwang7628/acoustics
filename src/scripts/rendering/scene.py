@@ -72,6 +72,8 @@ class Translation:
     @staticmethod
     def Lerp(trans1, trans2, alpha):
         ''' Linear interpolation between 2 translations. '''
+        print 'trans1 = ', trans1
+        print 'trans2 = ', trans2
         interp_trans = np.array(trans1)*(1.0 - alpha) + np.array(trans2)*alpha
         return interp_trans.tolist()
 
@@ -98,6 +100,28 @@ class Rigid_Frame:
         else:
             string_transforms = ''
         return string_transforms
+    @staticmethod
+    def Interpolate(frame1, frame2, alpha):
+        transform1 = frame1.transforms
+        transform2 = frame2.transforms
+        assert len(transform1) == len(transform2)
+        frame = Rigid_Frame(frame1.ID)
+        for ii in range(len(transform1)):
+            if isinstance(transform1[ii], Translation):
+                assert isinstance(transform2[ii], Translation)
+                frame.Add_Translation(Translation.Lerp(
+                    transform1[ii].values,
+                    transform2[ii].values,
+                    alpha))
+            if isinstance(transform1[ii], Rotation):
+                assert isinstance(transform2[ii], Rotation)
+                rot = Rotation.Quaternion_Slerp(
+                                    transform1[ii].values,
+                                    transform2[ii].values,
+                                    alpha)
+                axis, deg = Rotation.Quaternion_To_Axis_Rotation_Degree(rot)
+                frame.Add_Rotation(axis, deg)
+        return frame
 
 ################################################################################
 ################################################################################
@@ -135,6 +159,22 @@ class Rigid_Wavefront_Obj(Object):
             material_string = self.material_format_string
         if (frame != -1):
             frame_string = self.frames[frame].Format_String()
+        else:
+            frame_string = ''
+        s = """
+    <shape type="obj">
+        <string name="filename" value="%s"/> %s %s
+    </shape> """ %(self.filename, frame_string, material_string)
+        return s
+    def Format_String_Interpolate(self, frame_time, material_string=''):
+        if (self.material_format_string is not None):
+            material_string = self.material_format_string
+        if (frame_time != -1):
+            print 'format interpolate'
+            f1 = int(math.floor(frame_time))
+            f2 = min(f1 + 1, len(self.frames))
+            frame = Rigid_Frame.Interpolate(self.frames[f1], self.frames[f2], 1. - (frame_time - float(f1)))
+            frame_string = frame.Format_String()
         else:
             frame_string = ''
         s = """

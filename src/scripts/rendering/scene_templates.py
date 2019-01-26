@@ -6,9 +6,11 @@ def Simple_3PointLight_Diffuse_Mts_Scene(frame_string, definition='test', resolu
     ## default settings
     if resolution is None:
         aspect_ratio=16.0/9.0
-        definitions={'test': [960. ,int(960./aspect_ratio)],
-                     '4k'  : [3840.,int(3840./aspect_ratio)],
-                     'HD'  : [1920.,int(1920./aspect_ratio)]}
+        definitions={'480p' : [480. ,int(480./aspect_ratio)],
+                     'test' : [960. ,int(960./aspect_ratio)],
+                     '4k'   : [3840.,int(3840./aspect_ratio)],
+                     '1080p': [1080.,int(1080./aspect_ratio)],
+                     'HD'   : [1920.,int(1920./aspect_ratio)]}
         resolution = definitions[definition]
     if ground_material == 'diffuse_white':
         ground_material_id = 'diffuse_white_ground'

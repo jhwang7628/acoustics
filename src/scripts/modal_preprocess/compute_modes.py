@@ -29,13 +29,15 @@ def ReadMaterialFile(filename):
 ################################################################################
 ################################################################################
 if __name__ == '__main__':
-    if len(sys.argv) != 5:
-        print '**Usage: %s <obj_prefix> <material_file> <num_eigenvalues> <output_file>' %(sys.argv[0])
+    if len(sys.argv) != 6:
+        print '**Usage: %s <obj_prefix> <material_file> <num_eigenvalues> <output_folder> <output_file>' %(sys.argv[0])
         sys.exit()
+    print '**NOTE** Make sure you run this in the directory of obj/tet files'
 
     ## User defined settings
     installPath = projectPath()
-    binPath = '%s/build_release/bin' %(installPath)
+    binPath = '%s/build_modal_mkl/bin' %(installPath)
+    # binPath = '%s/build_release/bin' %(installPath)
     redirect = '/dev/stdout';
 
     ## Automatic
@@ -45,6 +47,8 @@ if __name__ == '__main__':
     objName = sys.argv[1]
     matName = sys.argv[2]
     numEigs = int(sys.argv[3])
+    outdir = sys.argv[4]
+    outfile = sys.argv[5] # no path
     tetFile = '%s.tet' %(objName)
     bin_elasticity='%s/elasticity_solver' %(binPath)
     bin_arpack_eigensolver='%s/arpack-eigensolver' %(binPath)
@@ -70,8 +74,12 @@ if __name__ == '__main__':
     print '## Linear modal analysis'
     print '################################################################################'
     # Using a threshold of 1.0 here seems to work
-    cmd = ("%s -n %d -t 1.0 -s %s_stiffness.mat -m %s_mass.mat -o %s -v") %(bin_arpack_eigensolver, numEigs, tetFile, tetFile, sys.argv[4]);
+    cmd = ("%s -n %d -t 1.0 -s %s_stiffness.mat -m %s_mass.mat -o %s/%s -v") %(bin_arpack_eigensolver, numEigs, tetFile, tetFile, outdir, outfile);
     print cmd;
     print '........................................'
     os.system('%s > %s' %(cmd, redirect));
+    cmd = 'mv %s.geo.txt %s*_mass.mat %s*_mass.bcsm %s*_stiffness.mat %s*_stiffness.bcsm %s' %(objName, tetFile, tetFile, tetFile, tetFile, outdir)
+    print cmd
+    os.system('%s > %s' %(cmd, redirect));
+
     print '\n\n'

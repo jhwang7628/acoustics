@@ -17,12 +17,13 @@ LoadRigidsimConfig(ImpulseSeriesObjectPtr object)
 //##############################################################################
 // Load the impulses from file for object identified. The format is the following:
 //
-//  <timestamp>  <object id(0-based)>  <vertex ID>  <relative speed> <impulse.x>  <impulse.y>
-//  <impulse.z>  <T/S> <C/P>
+//  <timestamp>  <object id(0-based)>  <vertex ID>  <relative speed> <impulse.x>
+//  <impulse.y> <impulse.z>  <T/S> <C/P>
 //
-//  There are two types of impulse ("C/P"): contraint impulse (C) that records impulses
-//  when object hit the ground (a constraint), and pair impulse (P) that
-//  records impulses between two interacting objects.
+//  There are two types of impulse ("C/P"): contraint impulse (C) that records
+//  impulses when object hit the ground (a constraint), and pair impulse (P)
+//  that records impulses between two interacting objects. Impulses are defined
+//  in the object frame of reference.
 //
 //  The letter "T/S" is used to designate the different object in the pair
 //  impulse case. "S" is used for the rigid body of class TRigidBody ba in
