@@ -1,6 +1,15 @@
 # =============================================================================
 #   Builds tools for writing rigid-body data to disk (inertia and mass)
 # =============================================================================
+if ( BUILD_KLEINPAT_TOOLS )
+    add_executable(write-mass-center
+        write_mass_center.cpp
+        ${GENERIC_SRC}
+        ${IO_SRC})
+    target_link_libraries(write-mass-center PUBLIC
+        igl::core)
+endif ()
+
 if ( BUILD_INIT_RIGID_TOOLS )
     add_executable(write-inertia
         write_inertia.cpp

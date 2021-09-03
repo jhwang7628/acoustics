@@ -1,5 +1,6 @@
-find_path(IGL_INCLUDE_ROOT libigl/include
-  HINTS $ENV{LIBIGL_ROOT}
+find_path(IGL_INCLUDE_ROOT libigl/include HINTS
+    $ENV{LIBIGL_ROOT}
+    ${CMAKE_SOURCE_DIR}/external/libigl-src
   DOC "The directory where libigl resides"
 )
 set(IGL_INCLUDE_DIR "${IGL_INCLUDE_ROOT}/libigl/include")

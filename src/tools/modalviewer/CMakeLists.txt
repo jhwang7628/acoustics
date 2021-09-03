@@ -7,6 +7,9 @@
 # ===================
 # Dependencies
 # ===================
+if (BUILD_KLEINPAT_TOOLS)
+    return ()
+endif ()
 
     if (NOT USE_QT5) 
         message(FATAL_ERROR "Need to use Qt5 to build this target.")

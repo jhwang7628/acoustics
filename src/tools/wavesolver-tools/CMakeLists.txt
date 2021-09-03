@@ -1,6 +1,70 @@
 # =============================================================================
 #   Builds tools for processing FDTD wavesolver data
 # =============================================================================
+
+if ( BUILD_KLEINPAT_TOOLS )
+    add_executable(extract_surface_mesh
+        ${GENERIC_SRC}
+        ${MATH_SRC}
+        ${IO_SRC}
+        ${LINEARALGEBRA_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}
+        ${GEOMETRY_SRC})
+    message("FIXME debug BLAS_LAPACK_LIBS = ${BLAS_LAPACK_LIBS}")
+    target_link_libraries(extract_surface_mesh PUBLIC
+        ${BLAS_LAPACK_LIBS}
+        #mkl::mkl
+        igl::core)
+
+    #add_executable(extract_surface_mesh
+    #    ${DISTANCEFIELD_SRC}
+    #    ${WAVESOLVER_SRC}
+    #    ${MESH_UTILS_SRC}
+    #    ${GENERAL_TESTING_SRCS}
+    #    ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS}
+    #    ${GENERIC_SRC}
+    #    ${IO_SRC}
+    #    ${LOGGING_SRC}
+    #    ${LINEARALGEBRA_SRC}
+    #    ${MATH_SRC}
+    #    ${LINEARALGEBRA_BLAS_LAPACK_SRC}
+    #    ${GEOMETRY_SRC}
+    #    ${FIELD_SRC}
+    #    ${UTILS_SRC}
+    #    ${PARSER_SRC}
+    #    ${GTS_GEOMETRY_SRC}
+    #    ${CGAL_GEOMETRY_SRC}
+    #    ${TRANSFER_SRC}
+    #    ${WAVELET_TRANSFER_SRC}
+    #    ${SPARSE_LINEAR_ALGEBRA_SRC}
+    #    ${MODAL_MODEL_SRC}
+    #    ${MODAL_MATERIAL_SRC}
+    #    ${DEFORMABLE_SRC}
+    #    ${RIGID_SRC}
+    #    ${RIGID_IO_SRC}
+    #    ${IMPULSE_SERIES_SRC}
+    #    ${RIGID_PARSER_SRC}
+    #    ${SND_IO_SRC}
+    #    extract_surface_mesh.cpp)
+
+    #target_link_libraries(extract_surface_mesh
+    #    ${MKL_LIBRARY}
+    #    ${BLAS_LAPACK_LIBS}
+    #    ${GTS_LIBRARIES}
+    #    ${GLIB_LIBRARIES}
+    #    ${CGAL_LIBRARIES}
+    #    ${GSL_LIBRARY}
+    #    ${LibConfig_LIBRARY}
+    #    ${VLFEAT_LIBRARY}
+    #    sndfile
+    #    boost_thread
+    #    boost_system
+    #    boost_timer
+    #    boost_filesystem
+    #    boost_regex)
+endif ()
+
+
 if ( BUILD_WAVESOLVER_TOOLS )
 
     # ===================
@@ -32,32 +96,32 @@ if ( BUILD_WAVESOLVER_TOOLS )
         ${DEFORMABLE_SRC}
         ${MESH_UTILS_SRC}
         ${SND_IO_SRC}
-        ${DISTANCEFIELD_SRC}              
-        ${WAVESOLVER_SRC} 
+        ${DISTANCEFIELD_SRC}
+        ${WAVESOLVER_SRC}
         ${MESH_UTILS_SRC}
-        ${GENERAL_TESTING_SRCS} 
-        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
-        ${GENERIC_SRC}                    
-        ${IO_SRC} 
-        ${LOGGING_SRC}                    
-        ${LINEARALGEBRA_SRC} 
-        ${MATH_SRC} 
-        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
-        ${GEOMETRY_SRC} 
-        ${FIELD_SRC}                      
-        ${UTILS_SRC}                      
-        ${PARSER_SRC} 
-        ${GTS_GEOMETRY_SRC}               
-        ${CGAL_GEOMETRY_SRC} 
-        ${TRANSFER_SRC}                   
-        ${WAVELET_TRANSFER_SRC} 
-        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${GENERAL_TESTING_SRCS}
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS}
+        ${GENERIC_SRC}
+        ${IO_SRC}
+        ${LOGGING_SRC}
+        ${LINEARALGEBRA_SRC}
+        ${MATH_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}
+        ${GEOMETRY_SRC}
+        ${FIELD_SRC}
+        ${UTILS_SRC}
+        ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}
+        ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}
+        ${WAVELET_TRANSFER_SRC}
+        ${SPARSE_LINEAR_ALGEBRA_SRC}
         ${MODAL_MODEL_SRC}
         ${MODAL_MATERIAL_SRC}
-        ${DEFORMABLE_SRC} 
+        ${DEFORMABLE_SRC}
         ${RIGID_SRC}
-        ${RIGID_IO_SRC} 
-        ${IMPULSE_SERIES_SRC} 
+        ${RIGID_IO_SRC}
+        ${IMPULSE_SERIES_SRC}
         ${RIGID_PARSER_SRC}
         ${SND_IO_SRC}
         convert_dat_vtk.cpp)
@@ -90,32 +154,32 @@ if ( BUILD_WAVESOLVER_TOOLS )
         upsample_poser.cpp)
 
     add_executable(extract_surface_mesh
-        ${DISTANCEFIELD_SRC}              
-        ${WAVESOLVER_SRC} 
+        ${DISTANCEFIELD_SRC}
+        ${WAVESOLVER_SRC}
         ${MESH_UTILS_SRC}
-        ${GENERAL_TESTING_SRCS} 
-        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS} 
-        ${GENERIC_SRC}                    
-        ${IO_SRC} 
-        ${LOGGING_SRC}                    
-        ${LINEARALGEBRA_SRC} 
-        ${MATH_SRC} 
-        ${LINEARALGEBRA_BLAS_LAPACK_SRC}  
-        ${GEOMETRY_SRC} 
-        ${FIELD_SRC}                      
-        ${UTILS_SRC}                      
-        ${PARSER_SRC} 
-        ${GTS_GEOMETRY_SRC}               
-        ${CGAL_GEOMETRY_SRC} 
-        ${TRANSFER_SRC}                   
-        ${WAVELET_TRANSFER_SRC} 
-        ${SPARSE_LINEAR_ALGEBRA_SRC} 
+        ${GENERAL_TESTING_SRCS}
+        ${FDTD_ACOUSTIC_SIMULATOR_TESTING_SRCS}
+        ${GENERIC_SRC}
+        ${IO_SRC}
+        ${LOGGING_SRC}
+        ${LINEARALGEBRA_SRC}
+        ${MATH_SRC}
+        ${LINEARALGEBRA_BLAS_LAPACK_SRC}
+        ${GEOMETRY_SRC}
+        ${FIELD_SRC}
+        ${UTILS_SRC}
+        ${PARSER_SRC}
+        ${GTS_GEOMETRY_SRC}
+        ${CGAL_GEOMETRY_SRC}
+        ${TRANSFER_SRC}
+        ${WAVELET_TRANSFER_SRC}
+        ${SPARSE_LINEAR_ALGEBRA_SRC}
         ${MODAL_MODEL_SRC}
         ${MODAL_MATERIAL_SRC}
-        ${DEFORMABLE_SRC} 
+        ${DEFORMABLE_SRC}
         ${RIGID_SRC}
-        ${RIGID_IO_SRC} 
-        ${IMPULSE_SERIES_SRC} 
+        ${RIGID_IO_SRC}
+        ${IMPULSE_SERIES_SRC}
         ${RIGID_PARSER_SRC}
         ${SND_IO_SRC}
         extract_surface_mesh.cpp)
@@ -160,18 +224,18 @@ if ( BUILD_WAVESOLVER_TOOLS )
 
     target_link_libraries(extract_surface_mesh
         ${MKL_LIBRARY}
-        ${BLAS_LAPACK_LIBS}             
+        ${BLAS_LAPACK_LIBS}
         ${GTS_LIBRARIES}
-        ${GLIB_LIBRARIES}               
+        ${GLIB_LIBRARIES}
         ${CGAL_LIBRARIES}
-        ${GSL_LIBRARY}                  
+        ${GSL_LIBRARY}
         ${LibConfig_LIBRARY}
         ${VLFEAT_LIBRARY}
         sndfile
         boost_thread
-        boost_system                    
+        boost_system
         boost_timer
         boost_filesystem
-        boost_regex) 
+        boost_regex)
 
 endif ( BUILD_WAVESOLVER_TOOLS )

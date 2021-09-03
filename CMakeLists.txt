@@ -1,67 +1,81 @@
-# CMake Project file for isosurface stuffing  
+# CMake Project file for isosurface stuffing
 # Changxi Zheng (cxzheng@cs.cornell.edu)
 # Copyright @ Jan 2009
 project(isostuffer)
 
-cmake_minimum_required(VERSION 3.0.2)
-
-# set(CMAKE_C_COMPILER "/usr/bin/gcc-4.6")
-# set(CMAKE_CXX_COMPILER "/usr/bin/g++-4.6")
-
-# set(CMAKE_C_COMPILER "/usr/bin/gcc")
-# set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+cmake_minimum_required(VERSION 3.16.0)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
-# set c++14: https://stackoverflow.com/questions/40795474/qt-5-7-adding-std-gnu11-to-my-compiler-flags-clobbering-std-c14
-#SET(CMAKE_CXX_FLAGS "-std=c++14")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # General Configuration: find all the required libraries.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bk")
+list(PREPEND CMAKE_MODULE_PATH
+    "${PROJECT_SOURCE_DIR}/cmake/recipes/external/"
+    "${PROJECT_SOURCE_DIR}/cmake/recipes/internal/"
+)
+list(PREPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/acoustics/")
 
 # compile option
-option(USE_QT5 "Turn on for QT5. Turn off for QT4" ON)
-option(USE_DEBUG "Turn on the debug mode" OFF)
-option(USE_DEBUG_PRINT "Turn on debug print (can still be compiled with release mode" ON)
-option(USE_OPENMP "Turn on the OpenMP feature when compiling" ON)
-option(USE_64BIT_ARCH "Compile the 64bit executable" OFF)
-option(USE_CUDA "Use CUDA" OFF)
-option(USE_VLFEAT "Use VLFeat for KNN" ON)
-option(USE_BOOST "Use Boost" ON)
-option(USE_IGL "Use IGL" ON) 
-option(USE_MESHFIX "Use meshfix" OFF)
+option(USE_QT5                                  "Turn on for QT5. Turn off for QT4"                             ON)
+option(USE_DEBUG                                "Turn on the debug mode"                                        OFF)
+option(USE_DEBUG_PRINT                          "Turn on debug print (can still be compiled with release mode"  OFF)
+option(USE_OPENMP                               "Turn on the OpenMP feature when compiling"                     OFF)
+option(USE_64BIT_ARCH                           "Compile the 64bit executable"                                  OFF)
+option(USE_CUDA                                 "Use CUDA"                                                      OFF)
+option(USE_VLFEAT                               "Use VLFeat for KNN"                                            OFF)
+option(USE_BOOST                                "Use Boost"                                                     OFF)
+option(USE_IGL                                  "Use IGL"                                                       OFF)
+option(USE_MESHFIX                              "Use meshfix"                                                   OFF)
 
 # Options for building individual tools
-option(BUILD_ISOSTUFFER         "Compile the command-line isostuffer" ON)
-option(BUILD_ISOSTUFFER_GUI     "Compile the isostuffer GUI" ON)
-option(BUILD_TETVIEWER          "Compile tetmesh viewer" ON)
-option(BUILD_ELASTICITY_SOLVER  "Compiles elasticity solver" ON)
-option(BUILD_EIGENSOLVER        "Compile modal eigensolver" ON)
-option(BUILD_SINGLE_TET         "Compile single tet builder" ON)
-option(BUILD_FBEM_INPUT_GEN     "Compile FastBEM input file builder" ON)
-option(BUILD_RIGIDSIM           "Compile the command-line RBD solver" ON)
-option(BUILD_RIGIDSIM_GUI       "Compile rigid-body solver GUI" ON)
-option(BUILD_RIGIDSIM_PLAYER    "Compile the RBD solver replayer" ON)
-option(BUILD_PAT_PRECOMPUTE_GUI "Compile GUI for PAT precomputation" ON)
-option(BUILD_PAN_PRECOMPUTE_GUI "Compile GUI for PAN precomputation" ON)
-option(BUILD_RUN_PULSE_SOLVE    "Compile command-line PAN precomputation" ON)
-option(BUILD_MULTITERM_PAN      "Compile multi-term PAN system builder" ON)
-option(BUILD_COMPRESSED_PAN     "Compile compressed PAN system builder" ON)
-option(BUILD_INIT_RIGID_TOOLS   "Compiles tools for writing RBD data" ON)
-option(BUILD_WAVESOLVER_TOOLS   "Compiles tools for wave solver data" ON)
-option(BUILD_RIGID_SNDGEN       "Compiles the rigid-body sound generator" ON)
-option(BUILD_ESTIMATE_TIMESCALE "Compiles the Hertz timescale estimator" ON)
-option(BUILD_PYTHON_EXTENSIONS  "Compiles the Python extensions"    OFF)
+option(BUILD_ISOSTUFFER                         "Compile the command-line isostuffer"                           OFF)
+option(BUILD_ISOSTUFFER_GUI                     "Compile the isostuffer GUI"                                    OFF)
+option(BUILD_TETVIEWER                          "Compile tetmesh viewer"                                        OFF)
+option(BUILD_ELASTICITY_SOLVER                  "Compiles elasticity solver"                                    OFF)
+option(BUILD_EIGENSOLVER                        "Compile modal eigensolver"                                     OFF)
+option(BUILD_SINGLE_TET                         "Compile single tet builder"                                    OFF)
+option(BUILD_FBEM_INPUT_GEN                     "Compile FastBEM input file builder"                            OFF)
+option(BUILD_RIGIDSIM                           "Compile the command-line RBD solver"                           OFF)
+option(BUILD_RIGIDSIM_GUI                       "Compile rigid-body solver GUI"                                 OFF)
+option(BUILD_RIGIDSIM_PLAYER                    "Compile the RBD solver replayer"                               OFF)
+option(BUILD_PAT_PRECOMPUTE_GUI                 "Compile GUI for PAT precomputation"                            OFF)
+option(BUILD_PAN_PRECOMPUTE_GUI                 "Compile GUI for PAN precomputation"                            OFF)
+option(BUILD_RUN_PULSE_SOLVE                    "Compile command-line PAN precomputation"                       OFF)
+option(BUILD_MULTITERM_PAN                      "Compile multi-term PAN system builder"                         OFF)
+option(BUILD_COMPRESSED_PAN                     "Compile compressed PAN system builder"                         OFF)
+option(BUILD_INIT_RIGID_TOOLS                   "Compiles tools for writing RBD data"                           OFF)
+option(BUILD_WAVESOLVER_TOOLS                   "Compiles tools for wave solver data"                           OFF)
+option(BUILD_RIGID_SNDGEN                       "Compiles the rigid-body sound generator"                       OFF)
+option(BUILD_ESTIMATE_TIMESCALE                 "Compiles the Hertz timescale estimator"                        OFF)
+option(BUILD_PYTHOFF_EXTENSIOFFS                "Compiles the Python extensions"                                OFF)
+option(USE_MKL_BLAS                             "Get BLAS/LAPACK from MKL"                                      OFF)
 
-option(BUILD_DOWNSAMPLE_IMPULSE_RESPONSE     "Compiles the tool for downsampling the impulse response" ON)
-option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE     "Compiles the impulse response wavesolver" ON)
-option(BUILD_PRECOMPUTE_IMPULSE_RESPONSE_GUI "Compiles the gui of the impulse response wave solver" ON)
-option(BUILD_UNIT_TESTING                    "Compiles unit testing for some modules in the repository" ON) 
-option(BUILD_DIFFERENTIATE_INTERPOLATE_HRIR  "Compiles HRIR differentiation tools" ON) 
-option(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER  "Compiles FDTD Acoustic Simulator viewer" ON)
-option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER        "Compiles Kirchhoff integral solver for acoustic transfer" ON) 
+option(BUILD_DOWNSAMPLE_IMPULSE_RESPOFFSE       "Compiles the tool for downsampling the impulse response"       OFF)
+option(BUILD_PRECOMPUTE_IMPULSE_RESPOFFSE       "Compiles the impulse response wavesolver"                      OFF)
+option(BUILD_PRECOMPUTE_IMPULSE_RESPOFFSE_GUI   "Compiles the gui of the impulse response wave solver"          OFF)
+option(BUILD_UNIT_TESTING                       "Compiles unit testing for some modules in the repository"      OFF)
+option(BUILD_DIFFERENTIATE_INTERPOLATE_HRIR     "Compiles HRIR differentiation tools"                           OFF)
+option(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER     "Compiles FDTD Acoustic Simulator viewer"                       OFF)
+option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER          "Compiles Kirchhoff integral solver for acoustic transfer"      OFF)
+
+# Options for building Kleinpat support tools
+option(BUILD_KLEINPAT_TOOLS                     "Compile the KleinPAT tools"                                    ON)
+
+if (BUILD_KLEINPAT_TOOLS)
+    message(STATUS "Building all supporting tools for KleinPAT")
+    set(USE_MKL_BLAS ON)
+    # hack before we completely refactor find_package: use FetchContent to download and use find_package
+    # to include/link
+    set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external" CACHE PATH "Directory under which to collect all populated content")
+    include(eigen)
+    include(libigl)
+    include(mkl)
+endif ()
+
+
 
 # Try enabling diffs here...
 #   This is hacked in as a way to consolidate different codebases
@@ -105,9 +119,6 @@ if (USE_BOOST)
     add_definitions(-DUSE_BOOST)
 endif (USE_BOOST)
 
-
-option(USE_MKL_BLAS             "Get BLAS/LAPACK from MKL" ON)
-
 if ( USE_MKL_BLAS )
   # check for Intel MKL
   find_package(MKL REQUIRED)
@@ -127,7 +138,7 @@ find_package(Eigen REQUIRED)
 #
 # The prepackaged version that can be installed with Ubuntu doesn't
 # seem to work.  Try downloading and compiling the new version (v4.3).
-# 
+#
 # When setting up the cmake project, use the flag
 #   -DSUPERLU_LIBRARIES=<path to version 4.3 SuperLU library>
 #     NOTE: for now, includes aren't needed
@@ -155,21 +166,21 @@ find_package(LibConfig++ 1.0 REQUIRED)
 # Whether or not we need the GNU triangulated surface (GTS) package
 if ( BUILD_PAN_PRECOMPUTE_GUI
     OR BUILD_RUN_PULSE_SOLVE
-    OR BUILD_MULTITERM_PAN 
+    OR BUILD_MULTITERM_PAN
     OR BUILD_ESTIMATE_TIMESCALE )
     option(USE_GTS    "Compile with GTS"  ON)
-    option(USE_CGAL   "Compile with CGAL" ON) 
+    option(USE_CGAL   "Compile with CGAL" ON)
     option(USE_GSL    "Compile with GSL"  ON)
 else ( BUILD_PAN_PRECOMPUTE_GUI
        OR BUILD_RUN_PULSE_SOLVE
-       OR BUILD_MULTITERM_PAN 
+       OR BUILD_MULTITERM_PAN
        OR BUILD_ESTIMATE_TIMESCALE )
     option(USE_GTS    "Compile with GTS"  OFF)
-    option(USE_CGAL   "Compile with CGAL" OFF) 
+    option(USE_CGAL   "Compile with CGAL" OFF)
     option(USE_GSL    "Compile with GSL"  OFF)
 endif ( BUILD_PAN_PRECOMPUTE_GUI
         OR BUILD_RUN_PULSE_SOLVE
-        OR BUILD_MULTITERM_PAN 
+        OR BUILD_MULTITERM_PAN
         OR BUILD_ESTIMATE_TIMESCALE )
 
 if ( USE_GTS )
