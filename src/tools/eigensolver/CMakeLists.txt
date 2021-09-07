@@ -58,7 +58,7 @@ if ( BUILD_EIGENSOLVER )
 
         target_link_libraries(arpack-eigensolver
             ${SUPERLU_LIBRARIES}  ${ARPACK_LIBRARY}
-            ${BLAS_LAPACK_LIBS}   ${MKL_LIBRARY}
+            ${MKL_LIBRARY}
             boost_program_options rt)
 
         set_target_properties(arpack-eigensolver PROPERTIES LINK_FLAGS ${LINK_FLAGS})

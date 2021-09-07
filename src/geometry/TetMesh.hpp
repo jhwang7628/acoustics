@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <vector>
+#include <numeric>
 #include <valarray>
 #include <map>
 #ifdef DIFF_DEFINE

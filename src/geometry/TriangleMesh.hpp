@@ -31,8 +31,12 @@
 #ifdef DIFF_DEFINE
 #include <limits>
 #include <set>
+
+#ifdef USE_IGL
 #include <igl/cotmatrix.h>
 #include <igl/principal_curvature.h>
+#endif
+
 #include <Eigen/Dense> 
 #endif /* DIFF_DEFINE */
 

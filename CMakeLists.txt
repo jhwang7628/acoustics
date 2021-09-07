@@ -67,6 +67,8 @@ option(BUILD_KLEINPAT_TOOLS                     "Compile the KleinPAT tools"    
 if (BUILD_KLEINPAT_TOOLS)
     message(STATUS "Building all supporting tools for KleinPAT")
     set(USE_MKL_BLAS ON)
+    set(BUILD_ELASTICITY_SOLVER ON)
+    set(BUILD_EIGENSOLVER ON)
     # hack before we completely refactor find_package: use FetchContent to download and use find_package
     # to include/link
     set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external" CACHE PATH "Directory under which to collect all populated content")
