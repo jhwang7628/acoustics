@@ -17,8 +17,8 @@
 
 include(FindPackageHandleStandardArgs)
 
-set(INTEL_ROOT "/opt/intel" CACHE PATH "Folder contains intel libs")
-set(RTL_ROOT ${INTEL_ROOT}/oneapi/compiler/2021.3.0 CACHE PATH "Folder contains runtime libraries")
+set(INTEL_ROOT "/opt/intel/oneapi" CACHE PATH "Folder contains intel libs")
+set(RTL_ROOT ${INTEL_ROOT}/compiler/2021.3.0 CACHE PATH "Folder contains runtime libraries")
 set(MKL_ROOT ${INTEL_ROOT}/mkl/2021.3.0 CACHE PATH "Folder contains MKL")
 
 # Find include dir
@@ -98,10 +98,10 @@ else()
         message(FATAL_ERROR "Apple mkl not supported yet")
     else()
         set(MKL_RTL_LIBNAME iomp5)
-        set(RTL_DIR ${RTL_ROOT}/linux/compiler/lib/intel64_lin/)
+        set(RTL_DIR ${RTL_ROOT}/linux/compiler/lib/intel64/)
     endif()
     find_library(MKL_RTL_LIBRARY ${MKL_RTL_LIBNAME}
-        PATHS ${RTL_DIR}/linux/compiler/lib/intel64_lin/)
+        PATHS ${RTL_DIR})
 
     set(MKL_LIBRARY ${MKL_SCALAPACK_LIBRARY} ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_FFT_LIBRARY} ${MKL_RTL_LIBRARY})
     set(MKL_MINIMAL_LIBRARY ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_RTL_LIBRARY})
