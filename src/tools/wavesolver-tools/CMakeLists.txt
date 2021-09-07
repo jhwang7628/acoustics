@@ -11,10 +11,16 @@ if ( BUILD_KLEINPAT_TOOLS )
         ${LINEARALGEBRA_BLAS_LAPACK_SRC}
         ${GEOMETRY_SRC}
         extract_surface_mesh.cpp)
-    message("FIXME debug BLAS_LAPACK_LIBS = ${BLAS_LAPACK_LIBS}")
     target_link_libraries(extract_surface_mesh PUBLIC
         ${MKL_LIBRARY}
         igl::core)
+
+    add_executable(extract_surf_modes
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../geometry/TetMeshIndexToSurfaceMesh.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../geometry/TetMeshIndexToSurfaceMesh.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../deformable/ModeData.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../deformable/ModeData.cpp
+        extract_surf_modes.cpp)
 endif ()
 
 
