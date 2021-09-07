@@ -72,7 +72,6 @@ if (BUILD_KLEINPAT_TOOLS)
     set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external" CACHE PATH "Directory under which to collect all populated content")
     include(eigen)
     include(libigl)
-    include(mkl)
 endif ()
 
 

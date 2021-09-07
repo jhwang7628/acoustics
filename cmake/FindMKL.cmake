@@ -18,7 +18,8 @@
 include(FindPackageHandleStandardArgs)
 
 set(INTEL_ROOT "/opt/intel" CACHE PATH "Folder contains intel libs")
-set(MKL_ROOT ${INTEL_ROOT}/mkl CACHE PATH "Folder contains MKL")
+set(RTL_ROOT ${INTEL_ROOT}/oneapi/compiler/2021.3.0 CACHE PATH "Folder contains runtime libraries")
+set(MKL_ROOT ${INTEL_ROOT}/mkl/2021.3.0 CACHE PATH "Folder contains MKL")
 
 # Find include dir
 find_path(MKL_INCLUDE_DIR mkl.h
@@ -91,11 +92,16 @@ else()
     ############################ RTL layer ##########################
     if(WIN32)
         set(MKL_RTL_LIBNAME iomp5md)
+        message(FATAL_ERROR "Windows mkl not supported yet")
+    else if(APPLE)
+        set(MKL_RTL_LIBNAME iomp5)
+        message(FATAL_ERROR "Apple mkl not supported yet")
     else()
         set(MKL_RTL_LIBNAME iomp5)
+        set(RTL_DIR ${RTL_ROOT}/linux/compiler/lib/intel64_lin/)
     endif()
     find_library(MKL_RTL_LIBRARY ${MKL_RTL_LIBNAME}
-        PATHS ${INTEL_ROOT}/lib/intel64/)
+        PATHS ${RTL_DIR}/linux/compiler/lib/intel64_lin/)
 
     set(MKL_LIBRARY ${MKL_SCALAPACK_LIBRARY} ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_FFT_LIBRARY} ${MKL_RTL_LIBRARY})
     set(MKL_MINIMAL_LIBRARY ${MKL_INTERFACE_LIBRARY} ${MKL_THREADING_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_RTL_LIBRARY})
