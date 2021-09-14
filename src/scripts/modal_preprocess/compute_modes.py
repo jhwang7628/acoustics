@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     ## User defined settings
     installPath = projectPath()
-    binPath = '%s/build_modal_mkl/bin' %(installPath)
+    binPath = '%s/build/bin' %(installPath)
     # binPath = '%s/build_release/bin' %(installPath)
     redirect = '/dev/stdout';
 
