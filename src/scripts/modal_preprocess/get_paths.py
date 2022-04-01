@@ -13,5 +13,5 @@ def projectPath():
     strPath = scriptsPath()
     return strPath[:strPath.rfind('/src/scripts')]
 
-print projectPath()
+print(projectPath())
 

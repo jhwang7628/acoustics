@@ -34,7 +34,7 @@ class Modes:
                     ofs.write(struct.pack('d', self.eigenvectors[count_inner,d]))
                 count_inner += 1
         ofs.close()
-        print 'Wrote %d modes in %d stride to file: %s' %(self.num_modes, self.stride, out_mode_file)
+        print('Wrote %d modes in %d stride to file: %s' %(self.num_modes, self.stride, out_mode_file))
 
     def Remove_Leading_Modes(self, num_leading_modes_to_remove):
         assert(num_leading_modes_to_remove <= self.num_modes)
@@ -44,7 +44,7 @@ class Modes:
         new_eigenvectors[:,:] = self.eigenvectors[num_leading_modes_to_remove*self.num_vertices:,:]
         self.eigenvectors = new_eigenvectors
         self.num_modes = new_num_modes
-        print '%d leading modes removed, new object has %d modes' %(num_leading_modes_to_remove, self.num_modes)
+        print('%d leading modes removed, new object has %d modes' %(num_leading_modes_to_remove, self.num_modes))
 
     ############################################################################
     @staticmethod
@@ -75,8 +75,8 @@ class Modes:
         ifs = open(modes_file,'rb')
         nsz = struct.unpack('i', ifs.read(4))[0]
         nev = struct.unpack('i', ifs.read(4))[0]
-        print '#eigenvalues = %d' %(nev)
+        print('#eigenvalues = %d' %(nev))
         for e in range(nev): 
             omega_squared_times_density = struct.unpack('d', ifs.read(8))[0]
             frequency = math.sqrt(omega_squared_times_density/density)/(2.0*math.pi)
-            print 'Mode %d has frequency: %f Hz' %(e, frequency)
+            print('Mode %d has frequency: %f Hz' %(e, frequency))
