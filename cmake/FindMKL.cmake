@@ -18,8 +18,8 @@
 include(FindPackageHandleStandardArgs)
 
 set(INTEL_ROOT "/opt/intel/oneapi" CACHE PATH "Folder contains intel libs")
-set(RTL_ROOT ${INTEL_ROOT}/compiler/2021.3.0 CACHE PATH "Folder contains runtime libraries")
-set(MKL_ROOT ${INTEL_ROOT}/mkl/2021.3.0 CACHE PATH "Folder contains MKL")
+set(RTL_ROOT ${INTEL_ROOT}/compiler/latest CACHE PATH "Folder contains runtime libraries")
+set(MKL_ROOT ${INTEL_ROOT}/mkl/latest CACHE PATH "Folder contains MKL")
 
 # Find include dir
 find_path(MKL_INCLUDE_DIR mkl.h
