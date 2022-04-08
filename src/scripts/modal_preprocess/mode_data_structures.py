@@ -54,7 +54,7 @@ class Modes:
         ifs = open(mode_file, 'rb')
         modes.stride = struct.unpack('i', ifs.read(4))[0]
         modes.num_modes = struct.unpack('i', ifs.read(4))[0] 
-        modes.num_vertices = modes.stride / 3
+        modes.num_vertices = modes.stride // 3
         modes.eigenvalues = np.zeros(modes.num_modes)
         modes.eigenvectors = np.zeros((modes.num_vertices*modes.num_modes, 3))
         for m in range(modes.num_modes):
