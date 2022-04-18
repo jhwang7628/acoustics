@@ -62,7 +62,8 @@ option(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER     "Compiles FDTD Acoustic Simulato
 option(BUILD_KIRCHHOFF_INTEGRAL_SOLVER          "Compiles Kirchhoff integral solver for acoustic transfer"      OFF)
 
 # Options for building Kleinpat support tools
-option(BUILD_KLEINPAT_TOOLS                     "Compile the KleinPAT tools"                                    ON)
+option(BUILD_KLEINPAT_TOOLS                     "Compile the KleinPAT tools" OFF)
+option(BUILD_WAVESOLVER                         "Compile the wavesolver"                                        ON)
 
 if (BUILD_KLEINPAT_TOOLS)
     message(STATUS "Building all supporting tools for KleinPAT")
@@ -75,6 +76,18 @@ if (BUILD_KLEINPAT_TOOLS)
     include(eigen)
     include(libigl)
 endif ()
+
+if (BUILD_WAVESOLVER)
+    message(STATUS "Building all tools for the wavesolver")
+    set(BUILD_FDTD_ACOUSTIC_SIMULATOR_VIEWER ON)
+    set(USE_GTS ON)
+    set(USE_VLFEAT ON)
+    set(USE_IGL ON)
+    set(USE_BOOST ON)
+    set(USE_GSL ON)
+    set(USE_MKL_BLAS ON)
+endif ()
+
 
 
 

@@ -8,7 +8,7 @@ import scipy.io.wavfile as wavfile
 def readVectorBinary(filename):
     ifile = open( filename, 'rb' )
     N1 = np.fromfile( ifile, dtype=np.int32, count=1 )
-    print 'read vector size: (%u)' %(N1)
+    print('read vector size: (%u)' %(N1))
     tmp = np.fromfile( ifile, dtype=float, count=N1 )
     return tmp
 
@@ -19,7 +19,7 @@ def readMatrixXdBinary(filename, verbose=1):
     N1 = np.fromfile( ifile, dtype=np.int32, count=1 )[0]
     N2 = np.fromfile( ifile, dtype=np.int32, count=1 )[0]
     if (verbose >= 1):
-        print 'read matrix size: (%u x %u)' %(N1,N2)
+        print('read matrix size: (%u x %u)' %(N1,N2))
     tmp = np.fromfile( ifile, dtype=float, count=N1*N2 )
     tmp = tmp.reshape( (N1, N2) )
     return tmp
@@ -27,19 +27,19 @@ def readMatrixXdBinary(filename, verbose=1):
 ################################################################################
 ################################################################################
 def writeVectorBinary(filename, A):
-    print 'write vector size: (%u)' %(A.shape)
+    print('write vector size: (%u)' %(A.shape))
     ofile = open( filename, 'wb' )
     if ofile:
         ofile.write( struct.pack('i', int(A.shape[0])) )
         A.tofile( ofile )
         ofile.close()
     else:
-        print 'error'
+        print('error')
 
 ################################################################################
 ################################################################################
 def writeMatrixXdBinary(filename, A):
-    print 'write matrix size: (%u x %u)' %(A.shape[0],A.shape[1])
+    print('write matrix size: (%u x %u)' %(A.shape[0],A.shape[1]))
     ofile = open( filename, 'wb' )
     if ofile:
         ofile.write( struct.pack('i', int(A.shape[0])) )
@@ -47,7 +47,7 @@ def writeMatrixXdBinary(filename, A):
         A.tofile( ofile )
         ofile.close()
     else:
-        print 'error'
+        print('error')
 
 ################################################################################
 ################################################################################

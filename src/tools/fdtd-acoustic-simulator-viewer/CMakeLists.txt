@@ -78,7 +78,6 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
             ${QGLViewer_LIBRARY}
             ${OPENGL_LIBRARIES}     
             ${MKL_LIBRARY}
-            ${BLAS_LAPACK_LIBS}             
             ${GTS_LIBRARIES}
             ${GLIB_LIBRARIES}               
             ${CGAL_LIBRARIES}
@@ -97,6 +96,7 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
             jmeshext
             nl
             superlu
+            igl::core
             )
     else (USE_MESHFIX)
         target_link_libraries(fdtd-acoustic-simulator-viewer
@@ -105,7 +105,6 @@ add_definitions(-DUSE_RECORDER) # needed for testing recorder
             ${QGLViewer_LIBRARY}
             ${OPENGL_LIBRARIES}     
             ${MKL_LIBRARY}
-            ${BLAS_LAPACK_LIBS}             
             ${GTS_LIBRARIES}
             ${GLIB_LIBRARIES}               
             ${CGAL_LIBRARIES}

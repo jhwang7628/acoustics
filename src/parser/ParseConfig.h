@@ -1,6 +1,7 @@
 #ifndef PARSE_CONFIG_H
 #define PARSE_CONFIG_H
 #include <libconfig.h++>
+#include <stdexcept>
 //##############################################################################
 // Macros (only for this and inherited class
 //##############################################################################

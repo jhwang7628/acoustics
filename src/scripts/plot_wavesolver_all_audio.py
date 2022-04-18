@@ -5,7 +5,7 @@ from wavesolver_results import *
 import scipy
 
 if len(sys.argv) != 2: 
-    print '**Usage: %s <data_folder>' %sys.argv[0]
+    print('**Usage: %s <data_folder>' %sys.argv[0])
     sys.exit()
 
 ##

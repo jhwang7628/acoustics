@@ -54,7 +54,7 @@ public:
   // default epsilon is machine precision (which always converged with our matrices)
   // eigenvalues are sorted in decreasing abs order
   // returned eigenvectors are unit length
-  friend bool eigen_sym(Mat3d & a, Vec3d & eig_val, Vec3d eig_vec[3],
+  bool eigen_sym(Mat3d & a, Vec3d & eig_val, Vec3d eig_vec[3],
                         int maxIterations=50, double epsilon=0.0);
 
 protected:
